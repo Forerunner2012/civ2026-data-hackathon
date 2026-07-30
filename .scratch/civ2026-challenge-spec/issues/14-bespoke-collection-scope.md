@@ -101,3 +101,32 @@ exists to make possible. It belongs with the deferred extra track and the organi
 
 If it is later promoted, it needs: a right-turn survey of the route to confirm the manoeuvre
 occurs often enough, a labelling pass, and its own layout and topic inventory.
+
+## Update - REVERSED after tickets 20, 18 and the transfer grill
+
+**The French-city bags are in the main track, scored as a sealed generalisation test.** This
+overturns the resolution above, which put them out of scope.
+
+**Why.** Ticket 20 established a cohort of 30 experienced practitioners. Ticket 18 deliberately
+made the Kashiwa core a threshold-plus-timing exercise and recorded "detection no longer separates
+teams on cleverness" as an accepted cost - tolerable for a mixed room, not for this one. The
+Kashiwa core is now the warm-up, and the difficulty moves into transfer.
+
+**The arc.** Manual analysis first, so the room feels how tedious finding events by hand is; then
+`civ` is introduced as the facilitator; then the payoff is how easily evidence can be collected
+across *two structurally different datasets* - different sensor stack, different topics, mirrored
+driving rules.
+
+**What is labelled: left turns.** In right-hand traffic the manoeuvre that crosses oncoming
+traffic is the left turn. The publisher describes URT-Kashiwa as "equivalent to unprotected left
+turns in Europe". So the transfer is not a sign flip - it requires understanding that the event is
+defined by *conflict with oncoming traffic*, not by the word "right". A participant who copied a
+threshold fails; one who understood the event adapts. See ticket 18.
+
+**What this costs, all now in scope:**
+
+- A labelling pass on French data - blocked on ticket 24, which must first confirm the recording
+  contains enough left turns to build a sealed set from.
+- A second evaluator calibration on a different sensor stack - ticket 16.
+- Distribution of a French subset - ticket 17.
+- A topic inventory and viewer layout for the ZED/GNSS stack, which shares nothing with Autoware.

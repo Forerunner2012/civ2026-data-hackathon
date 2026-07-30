@@ -4,8 +4,8 @@ Label: `wayfinder:map`
 
 ## Destination
 
-A complete challenge spec: every decision in `HACKATHON-HANDOFF.md` §8 closed, so five
-owners can build the kit without re-litigating anything. The spec is the deliverable —
+A complete challenge spec: every decision in `HACKATHON-HANDOFF.md` §8 closed **and §5 Phase 0's
+gate satisfied**, so owners can build the kit without re-litigating anything. The spec is the deliverable —
 building the runner, dataset and evaluator is downstream execution, not part of this map.
 
 ## Notes
@@ -28,20 +28,23 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   once the main track is complete and rehearsable. Leave a named seam rather than an
   implementation. Established in [ticket 09](issues/09-detector-authoring-surface.md).
 
-> **Status: the map is complete.** All 19 tickets are resolved and nothing remains to decide
-> before the kit gets built. Building it is downstream execution and out of scope — see the
-> section below. Reopen this map only if a decision recorded here turns out to be wrong; new
-> work belongs in a fresh effort.
+
 - Data collection and rights are settled, so the substance lives in **definition, evaluation and
   rehearsal** — the parts that need real runs and real judgement rather than more code.
 - **Tooling will be AI-built with human review.** Ticket 15 defines those gates.
 - As decisions close, update §8 of `HACKATHON-HANDOFF.md` so the handoff and the map agree.
 
+> **Status: reopened, destination extended.** The map closed at 19 tickets, then two answers
+> widened it. Phase 0's gate turned out to carry three items the original §8 queue never listed
+> (cohort, skill floor, licensing — ticket 20), and the high skill floor forced the reversal of
+> ticket 14: the French-city dataset is back in the main track as a **scored** generalisation
+> test. Four tickets are open again: 21, 22, 23, 24.
+
 ## Decisions so far
 
 - [Which dataset carries the event?](issues/01-dataset-choice.md) — URT-Kashiwa is the hero
-  dataset and the freeze depends only on it; French-city bespoke bags are additive-only behind
-  a hard drop-dead date.
+  dataset and the freeze depends only on it. (The French-city bags were additive-only here; ticket
+  14 later brought them into the main track as a scored transfer test.)
 - [Which scenario anchors the challenge?](issues/02-scenario-anchor.md) — Unprotected right
   turns (URT). Creativity is expected in *how* teams express and capture the scenario with the
   OSS toolchain, not in inventing a different event class.
@@ -66,12 +69,6 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 - [Is the camera imagery clear to redistribute?](issues/19-personal-data-clearance.md) — **yes.**
   T-Lab participates in the hackathon, so this is a direct collaboration with the publishing lab.
   Attribution remains the one live obligation.
-- [What is an "unprotected right turn", operationally?](issues/18-urt-operational-definition.md)
-  — **the sealed labels mark the right-turn manoeuvre interval**; "unprotected" is scenario
-  context the brief supplies, not something the detector proves. Cheap to label with high
-  agreement. Cost, accepted: detection no longer separates teams on cleverness, so separation
-  moves to interval precision, robustness across all 16 routes, duplicate handling, and the other
-  75 points. Conflict geometry moves to the bonus track.
 - [Is the detector surface CEL-only, or CEL plus a Python API?](issues/09-detector-authoring-surface.md)
   — **EventSpec carries CEL conditions + `timing` (duration, merge gap) + `evidence` + a
   declarative `derive` stage.** `timing` is the pass mark, since ticket 18's interval labels are
@@ -94,10 +91,6 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   rung 3 deferred and no model shipped, the agent track is thin this edition — the AI story is
   carried by how the kit is built.
 - [Is the CLI `cive` or `civ`?](issues/13-cli-name.md) — **`civ`**.
-- [What do the bespoke French-city bags add?](issues/14-bespoke-collection-scope.md) — **out of
-  the main track.** Inspection showed a ZED + GNSS rig with no Autoware stack and no vehicle bus,
-  one continuous 38-minute drive, unlabelled. A Kashiwa detector cannot run on it at all. Good
-  "port your logic to a different sensor stack" material for the extra track.
 - [What are the review and test gates for AI-built tooling?](issues/15-ai-build-review-gates.md)
   — **gate by failure visibility × cost.** Evaluator gets golden files, a determinism check, the
   rank test and line-by-line review; runner gets behavioural tests and actionable errors; clips
@@ -108,6 +101,18 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   positives, which is what gives `merge_gap` teeth. Gaps excluded from both sets; deliberate
   quality defects scored under Quality, not Detection. Validated by ranking four deliberately
   different detectors; all values provisional until that run.
+- [Cohort, skill floor and "open source"](issues/20-cohort-skill-floor-licensing.md) — **30
+  participants, solo or in duos**, all experienced with robotic/vehicular data. Kit ships
+  permissively (MIT/Apache-2.0 code, CC BY 4.0 content) with credit suggested; workshop content
+  and the site go public. Closes the Phase 0 remainder the first map missed.
+- [What do the bespoke French-city bags add?](issues/14-bespoke-collection-scope.md) —
+  **REVERSED. In the main track, scored as a sealed generalisation test.** With 30 practitioners
+  the Kashiwa core is a warm-up, so the difficulty moves to transfer: manual analysis, then `civ`
+  as facilitator, then the same reasoning applied to a structurally different dataset.
+- [The event, defined semantically](issues/18-urt-operational-definition.md) — **the turn that
+  crosses oncoming traffic.** Right turns in Kashiwa, **left** turns in France, because handedness
+  is a property of the country and not of the detector. Converts transfer from a topic remap into
+  a comprehension test: copy a threshold and you find nothing.
 - [How does 112 GB reach BYOD laptops?](issues/17-dataset-subsetting-and-distribution.md) —
   **1 warm-up + 7 dev routes distributed, 8 sealed.** Drop point clouds and the map, keep scalars
   at full rate, keep camera downscaled and rate-limited. Target ≤ 15 GB, pre-event download with

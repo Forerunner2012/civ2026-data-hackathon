@@ -103,3 +103,26 @@ the "one ladder, not three hackathons" principle in §4.1 asks for.
 The brief must state plainly that the scored event is **the right-turn manoeuvre**, and that the
 scenario context is what makes those turns unprotected. Teams should not be left to guess whether
 conflict detection is required for the core score.
+
+## Update - the event is defined semantically, not by handedness
+
+Ticket 14's reversal extends this decision to a second dataset, and doing so sharpens what the
+definition has to say.
+
+**The brief defines the event as the turn that crosses oncoming traffic.** Handedness is a
+property of the country, not of the detector:
+
+| Dataset | Traffic | Labelled manoeuvre |
+|---|---|---|
+| URT-Kashiwa (Japan) | left-hand | **right** turns |
+| French city | right-hand | **left** turns |
+
+The sealed labels still mark the *manoeuvre interval* in both - "unprotected" remains scenario
+context the brief supplies rather than something the detector proves, exactly as decided above.
+
+**Why this matters more than it looks.** It converts the transfer task from a topic remap into a
+comprehension test. A participant who treats the detector as "yaw rate below a negative threshold"
+will find nothing in France. One who treats it as "the turn that conflicts with oncoming traffic"
+will invert the sign, remap the signal onto the ZED IMU, and be right. That is the reusable-logic
+lesson section 2 exists to teach, and it is now the scored centre of the event rather than a
+slogan.

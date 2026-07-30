@@ -90,3 +90,20 @@ warm-up route only, and ticket 10's Lichtblick decision falls with it.
 
 Also worth doing early, independent of the answer: **take a pinned local copy of all 16 source
 MCAPs with checksums**, since the published Drive folder can change at any time (ticket 05).
+
+## Update - a second dataset now has to be distributed
+
+Ticket 14's reversal puts the French-city recording in participants' hands. That adds to this
+ticket rather than changing what is above:
+
+- A **French subset** must be cut and distributed alongside the Kashiwa one. Source is ~18 GB for
+  a single 38-minute session, so the same levers apply: drop the ZED point cloud
+  (`/zed/zed_node/point_cloud/cloud_registered`), keep IMU, GNSS, fix velocity and object topics
+  at full rate, keep `rgb/image_rect_color/compressed` - already compressed, so cheaper than
+  Kashiwa's raw camera.
+- The **dev/sealed split for the French data is blocked on ticket 24**, which must first confirm
+  how many left turns the recording actually contains. If there are too few, the whole session may
+  have to be sealed, leaving teams no French data to iterate against - which would change the
+  shape of the transfer task.
+- The French stack shares **no topics** with Kashiwa, so it needs its own topic inventory and its
+  own viewer layout. That is real preparation work, not a copy.
