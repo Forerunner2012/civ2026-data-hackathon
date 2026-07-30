@@ -3,90 +3,90 @@
  *
  * Everything in this module is public to attendees. It states the contract they
  * are held to — brief, journey, deliverables, rubric, toolchain — but never the
- * organizer's preparation, evaluation internals or open decisions. Organizer
- * material lives in `organizers.server.ts`, which cannot be imported from here.
+ * organizer's preparation or evaluation internals. Organizer material lives in
+ * `organizers.server.ts`, which is absent from the production artifact.
  */
 
 export const brief =
-  "A fleet recorded several passages through a shared environment. A risky or operationally significant behaviour was reported, but the report is incomplete. Your team must locate relevant occurrences, encode a reusable detector, extract compact evidence, evaluate its limitations, and recommend what should happen when the event is detected.";
+  "A fleet recorded several passages through a shared environment. A risky or operationally significant behaviour was reported, but the report is incomplete. You must locate relevant occurrences, encode a reusable detector, transfer the reasoning to a structurally different recording, extract compact evidence, evaluate its limitations, and recommend what should happen next.";
 
-/** The three-hour ladder, told as activity and output rather than mechanics. */
+/** The three-hour rehearsal baseline, told as activity and output. */
 export const journey: { time: string; title: string; doing: string; produces: string }[] = [
   {
     time: "00:00",
     title: "Observe",
-    doing: "Explore one development bag with prepared layouts.",
-    produces: "A relevant topic, field and candidate window.",
+    doing: "Explore one development route manually with a prepared layout.",
+    produces: "A relevant signal, candidate interval and physical hypothesis.",
   },
   {
     time: "00:30",
     title: "Formalize",
-    doing: "Express the observation as one executable comparison.",
+    doing: "Express the observation as an executable EventSpec.",
     produces: "Your first normalized event and evidence clip.",
   },
   {
     time: "01:00",
-    title: "Contextualize",
-    doing: "Add a second signal, a derived feature, AND/OR, duration or ordering.",
-    produces: "An improved detector with a stated hypothesis.",
+    title: "Scale",
+    doing: "Batch the detector and inspect one false positive, miss or ambiguity.",
+    produces: "Events, clips, metrics and one reasoned iteration.",
   },
   {
-    time: "01:45",
-    title: "Scale",
-    doing: "Run the same detector across every development bag.",
-    produces: "events.jsonl, clips, metrics and a run manifest.",
+    time: "01:30",
+    title: "Transfer",
+    doing: "Map the same physical event onto a different sensor stack and driving context.",
+    produces: "A working detector on the second development set.",
   },
   {
     time: "02:15",
     title: "Challenge",
-    doing: "Investigate a false positive, a miss, a missing signal or an ambiguity.",
-    produces: "A documented failure and one iteration.",
+    doing: "Compare both datasets and state exactly what transferred and what did not.",
+    produces: "Defensible evidence and a documented boundary.",
   },
   {
     time: "02:45",
-    title: "Transfer",
-    doing: "Give a three-minute evidence pitch.",
-    produces: "Question, proof, limit and next action.",
+    title: "Submit",
+    doing: "Rerun reproduction, finalize the one-page report and hand in by 12:30.",
+    produces: "A valid submission ready for automated scoring.",
   },
 ];
 
 export const youOwn = [
-  "Which signals and fields are worth inspecting",
+  "Which signals and fields are worth inspecting on both recordings",
   "Preprocessing and derived features",
-  "Thresholds, CEL logic or model inference",
+  "Thresholds and CEL logic",
   "Boolean and temporal composition",
   "Debounce and deduplication parameters",
   "Evidence-window duration and retained topics",
-  "Statistical analysis and interpretation",
-  "Failure analysis and professional transfer",
+  "What transferred between sensor stacks — and what had to change",
+  "Failure analysis and professional recommendation",
 ];
 
 export const youReceive = [
   "MCAP/ROS decoding and schema availability",
-  "A topic and field inventory plus sampling utilities",
+  "Topic and field inventories plus sampling utilities",
   "A deterministic detector runner and batch iteration",
   "Time synchronization, hashes, provenance and run manifest",
   "Clip extraction and standardized output",
-  "Tested PlotJuggler 4 layouts and an offline bundle",
-  "A warm-up bag, a reference detector and a submission template",
+  "Tested PlotJuggler layouts and an offline bundle",
+  "Development data, a reference detector and a submission template",
 ];
 
 export const deliverables = [
   "The engineering question and your detection hypothesis",
-  "The data you used, what was missing, and what you judged unreliable",
+  "The signals you used, what was missing, and what you judged unreliable",
   "An executable EventSpec or detector",
   "Normalized events.jsonl and compact MCAP evidence clips",
   "A run manifest and metrics",
   "One synchronized evidence view",
   "One false positive, false negative or ambiguity — and what you changed",
   "A one-command reproduction path",
-  "The downstream action and the relevant deployment mode",
-  "Optional: an agent trace or advanced-analysis artifact",
+  "A one-page report: question, signals, transfer, failure and next action",
+  "Optional: an agent trace or extension artifact with provenance",
 ];
 
 export const scoring: { category: string; points: number; looksFor: string }[] = [
   { category: "Investigation and hypothesis", points: 15, looksFor: "Deliberate signal choice, inspection, physical reasoning" },
-  { category: "Detection", points: 25, looksFor: "Accuracy, temporal logic, duplicate handling, robustness" },
+  { category: "Detection", points: 25, looksFor: "15 points on the first set, 10 on transfer; timing, duplicates, robustness" },
   { category: "Evidence and extraction", points: 15, looksFor: "Useful context, correct clips, meaningful volume reduction" },
   { category: "Quality and evaluation", points: 15, looksFor: "Metrics, failure analysis, missing and bad data handling" },
   { category: "Visualization and explanation", points: 15, looksFor: "Synchronized, legible proof and careful claims" },
@@ -95,25 +95,25 @@ export const scoring: { category: string; points: number; looksFor: string }[] =
 
 export const bonus = [
   { label: "Bounded agent with a useful trace", points: 10 },
-  { label: "Advanced multimodal or data-quality method", points: 5 },
+  { label: "Advanced multimodal, data-quality or external-resource method", points: 5 },
   { label: "Regression test built from a failure you found", points: 5 },
 ];
 
-/**
- * Published scoring rules. Attendees are told up front that the final ranking
- * runs on a sealed set — the rule is public even though the labels are not.
- */
+/** Published scoring and judging rules; the labels themselves remain private. */
 export const scoringRules = [
   "The common score is 100 points, with up to 20 bonus points on top.",
-  "A public development score validates your submission format and basic metrics during the session.",
-  "The final ranking is computed on a sealed test set, so a detector tuned to one bag will not travel.",
+  "Detection is split 15 points on the first sealed set and 10 on the transfer set.",
+  "At 12:30, 55 points are machine-scored; the jury reads the one-page report for the other 45 over lunch.",
+  "A development score validates submission format and basic metrics during the session.",
+  "The final ranking runs on a sealed test set, so a detector tuned to one route will not travel.",
+  "Solo and duo entries share one leaderboard; the selected afternoon walkthroughs do not change the score.",
   "Bonus points cannot compensate for a core result that does not reproduce.",
   "Prompt style is not graded. Executed evidence is.",
 ];
 
 export const pipeline: { title: string; note: string; owner: "you" | "provided" }[] = [
-  { title: "MCAP", note: "raw recording", owner: "provided" },
-  { title: "PlotJuggler 4", note: "manual exploration", owner: "provided" },
+  { title: "MCAP", note: "two recording structures", owner: "provided" },
+  { title: "PlotJuggler", note: "manual exploration", owner: "provided" },
   { title: "Polars", note: "selected signals", owner: "provided" },
   { title: "EventSpec + CEL", note: "your detection logic", owner: "you" },
   { title: "Batch runner", note: "scale + provenance", owner: "provided" },
@@ -126,27 +126,28 @@ export const commands = [
   { command: "civ sample BAG --topic ...", note: "pull signals into a table" },
   { command: "civ detect SPEC DATASET", note: "run your detector, --dry-run first" },
   { command: "civ clip EVENTS DATASET", note: "cut compact evidence" },
-  { command: "civ score SUBMISSION", note: "public development score" },
-  { command: "civ report SUBMISSION", note: "package the write-up" },
+  { command: "civ score SUBMISSION", note: "development score" },
+  { command: "civ report SUBMISSION", note: "package the one-page argument" },
 ];
 
 export const submissionTree = `submission/
-├── detector/              # EventSpec and optional code
+├── detector/              # EventSpec and optional extension code
 ├── events.jsonl           # normalized detections
 ├── evidence/              # compact MCAP clips
 ├── metrics.json
 ├── run-manifest.json      # versions, hashes, parameters, timings
-├── report.md              # hypothesis, evidence, failure, transfer
+├── report.md              # one page: hypothesis, transfer, failure, action
+├── extension/             # optional resources and tool trace
 └── reproduce.ps1|sh       # one-command entry point`;
 
 export const comeReady = [
   "A laptop you can install software on. CPU-only is enough — no GPU is required.",
-  "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container, and this is the one step that cannot happen on the day.",
-  "Run the environment check in the week before the event. A support channel will be open — use it then, not at 09:00.",
+  "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container.",
+  "Run the environment check in the week before the event; use the support channel before event morning.",
   "Nothing to compile or download on the day: the kit is prebuilt, pinned and versioned.",
-  "No account, no paid model and no API key. The required path runs fully offline.",
-  "Teams of 3–5. Suggested roles: investigator, detector author, evidence reviewer, pitch owner.",
-  "Curiosity about physical signals matters more than ROS experience.",
+  "No account, paid model or API key is required. The required path runs fully offline.",
+  "Work solo or with one partner. Solo and duo entries share one leaderboard.",
+  "Bring experience with robotic or vehicular recordings; the challenge starts above the beginner floor.",
 ];
 
 export const notYourJob = [

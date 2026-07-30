@@ -38,7 +38,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 > widened it. Phase 0's gate turned out to carry three items the original §8 queue never listed
 > (cohort, skill floor, licensing — ticket 20), and the high skill floor forced the reversal of
 > ticket 14: the French-city dataset is back in the main track as a **scored** generalisation
-> test. Tickets 21, 24 and 25 have since closed; **22 and 23 remain open**.
+> test. Tickets 21–25 have now closed; **all 25 tickets are resolved and the destination is reached**.
 
 ## Decisions so far
 
@@ -131,6 +131,16 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   participants, solo or in duos**, all experienced with robotic/vehicular data. Kit ships
   permissively (MIT/Apache-2.0 code, CC BY 4.0 content) with credit suggested; workshop content
   and the site go public. Closes the Phase 0 remainder the first map missed.
+- [How is the organizer view kept out of the public site?](issues/22-public-site-organizer-gate.md)
+  — **production builds contain only the participant app.** `/` and `/participants` render the
+  public participant view; `/organizers` is absent from the route manifest and from both server
+  and client bundles. The full organizer app remains available through local development only.
+- [Do the golden-path tool licences compose cleanly?](issues/23-tool-licence-audit.md) — **yes,
+  with an artifact-level release gate.** Standardize on ROS 2 Humble / Ubuntu 22.04; pin the base
+  image by digest; treat PlotJuggler and Lichtblick as MPL-2.0 standalone programs with matching
+  source availability; pin custom schemas by commit plus MCAP schema hash; and generate the SBOM,
+  third-party notices and copyleft source/relinking paths from the built image. CIV code remains
+  MIT/Apache and data/content remain CC BY 4.0, but the aggregate image has no single licence.
 - [What do the bespoke French-city bags add?](issues/14-bespoke-collection-scope.md) —
   **REVERSED. In the main track, scored as a sealed generalisation test.** With 30 practitioners
   the Kashiwa core is a warm-up, so the difficulty moves to transfer: manual analysis, then `civ`
@@ -155,22 +165,24 @@ Fog — in scope, not yet sharp enough to ticket. Graduates as the frontier adva
   `detector:` seam for it.
 
 - **Labelling workflow for the sealed URT set** — who labels, in what tool, to what
-  inter-annotator agreement. Now waits on 18 (the definition) and 16 (tolerance semantics).
-- **Rebuilding the run-of-show around the real slots** — 09:30–12:30 produces a submission,
-  14:30–15:00 presents it, with a two-hour lunch in between to prepare. §4.2's 15-minute Transfer
-  block inside the three hours is now the wrong shape. Sharp enough to ticket once 18 lands and
-  the first-30-minutes design is known.
+  inter-annotator agreement. Definition and tolerance are closed; tool, ownership and agreement
+  targets are execution details for Phase 3.
+- **Minute-level cadence inside the three hours** — the handoff now carries a rehearsal baseline:
+  Kashiwa through 01:30, French transfer through 02:45, then submit. Internal evaluation may move
+  checkpoint minutes without reopening the two-dataset order or the 12:30 deadline.
 - **Warm-up design and the non-ROS fallback pack contents** — load-bearing because of the BYOD
   decision in 04. Waits on 09 (what a detector looks like) and 17 (what data a team holds).
-- **Coach guide and checkpoint prompts** — waits on the run-of-show above.
+- **Coach guide and checkpoint prompts** — tune against the rehearsal baseline and actual
+  solo/duo pacing.
 - **Internal mini-hackathon**: with whom, and what counts as passing the release gate. This is
-  where the evaluator gets validated, so it graduates once 16 and 18 land.
+  where the evaluator and two-dataset ranking get validated; scheduling and participant selection
+  are execution work.
 - **Jury composition and prize structure** — waits on 12 (how agentic work scores).
 - **Pre-event setup session** for the BYOD environment risk in 04. The programme has no slot, so
   it would be remote and voluntary in the week before.
-- **Attribution and licensing surface of the shipped kit** — the `NOTICE` file, the CLI's
-  `--about`, and whether the organizer-authored label set is published CC BY 4.0 to sidestep the
-  one grey area in 05.
+- **Publication choice for the organizer-authored sealed labels** — the toolchain obligations are
+  closed in ticket 23; whether the label set itself is published after the event remains an event
+  policy choice, not a software-licence uncertainty.
 
 ## Out of scope
 
@@ -178,8 +190,6 @@ Ruled beyond this map's destination. Does not graduate; would need a fresh effor
 
 - **Building the kit** — runner, CLI, dataset packaging, evaluator implementation. This map
   ends at the spec that lets five owners start.
-- **`handoff-site` as a todo/done tracker**, and the auth gate for `/organizers`. Real work and
-  worth doing, but it is support tooling for the effort rather than a §8 challenge decision.
-  Pull it back in by redrawing the destination if you disagree.
+
 - **Post-event deployment modes** (edge triage, OTA, fleet rollout). Teaching material inside
   the event; not something this spec has to settle.

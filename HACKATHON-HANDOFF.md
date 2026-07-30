@@ -6,31 +6,40 @@
 
 ## 1. Executive decision
 
-CIV 2026 should be a **three-hour, team-based data investigation workshop** in the ROS 2 ecosystem. Attendees explore a robot/vehicle recording, turn an observation into executable extraction logic, apply that logic across several recordings, inspect failure cases, and present compact evidence plus an operational recommendation.
+CIV 2026 should be a **three-hour data investigation for 30 experienced practitioners, working
+solo or in duos**. The Kashiwa recordings teach the prepared path; the French recording tests
+whether participants understood the manoeuvre well enough to transfer it across handedness,
+topics and sensor stacks. Every entry ends as compact evidence, a reproducible submission and a
+one-page argument—not a live pitch from every participant.
 
-The organizer provides the execution system. Attendees provide the valuable reasoning:
+The organizer provides the execution system. Participants provide the valuable reasoning:
 
-- which signals and fields matter;
-- which transformations, comparisons, temporal conditions, or model inference identify the event;
+- which signals and fields matter on each sensor stack;
+- which transformations, comparisons and temporal conditions identify the physical event;
 - how duplicate detections and evidence windows are handled;
+- what transfers between Kashiwa and France, and what must change;
 - which topics belong in the extracted clip;
-- what the results mean, where the detector fails, and what action should follow.
+- what the evidence supports, where the detector fails, and what action should follow.
 
 The attendee journey is:
 
 ```text
-observe → formalize → contextualize → temporalize → scale → challenge → transfer
+observe → formalize → scale → transfer → challenge → submit → explain
 ```
 
-The technical journey prepared by organizers is:
+The prepared technical journey is:
 
 ```text
-MCAP → PlotJuggler 4 exploration → selected signals in Polars
-     → derived features → CEL/EventSpec condition → normalized intervals
-     → MCAP evidence clips → visual validation → score + explanation
+Kashiwa MCAP → PlotJuggler → selected signals → EventSpec/CEL → evidence
+                                             │
+                                             └─ transfer the reasoning
+French ZED/GNSS → derived yaw + speed → same event/clip/report contracts
 ```
 
-The event is **not** an infrastructure-building contest. Attendees should not have to implement MCAP parsing, ROS message discovery, time synchronization, batch scheduling, provenance, clip generation, or hidden-label scoring.
+The event is **not** an infrastructure-building contest. Participants do not implement MCAP
+parsing, ROS message discovery, time synchronization, batch scheduling, provenance, clip
+generation or sealed-label scoring. The required path is deterministic and offline; the extension
+track may add outside resources or custom computation through named seams.
 
 ## 2. Intention and what is new
 
@@ -76,7 +85,7 @@ An attendee leaves able to explain and demonstrate how to go from a raw robotics
 
 - **Evidence-first:** a timestamp without synchronized context is incomplete.
 - **Local-first and offline-capable:** the required path must not depend on SaaS accounts, personal keys, or event-day downloads.
-- **Deterministic core, optional agent:** everyone can finish without a model; advanced teams may add a bounded, traceable agent.
+- **Deterministic core, optional agent:** everyone can finish without a model; advanced entries may add a bounded, traceable agent.
 - **Progressive disclosure:** one sample bag and one condition before multimodal and temporal logic.
 - **Quality over event count:** false positives, missed events, missing data, duplicates, and unstable thresholds matter.
 - **One prepared golden path:** attendee time is spent on reasoning, not ROS/container plumbing.
@@ -87,10 +96,11 @@ An attendee leaves able to explain and demonstrate how to go from a raw robotics
 
 The event is strategically successful if:
 
-- at least 80% of teams complete a batch run and valid submission;
-- every final pitch shows one piece of evidence and one failure or ambiguity;
+- at least 80% of entries complete both dataset runs and a valid submission;
+- every one-page report shows evidence, one failure or ambiguity, and what transferred;
 - a fresh laptop can run the required path offline;
 - the same submission produces stable results on rerun;
+- all 15–30 submissions can be scored during lunch without manual evaluator repair;
 - attendees can name a realistic downstream action and deployment mode;
 - agent use, when present, points to executed tools and evidence rather than unsupported claims.
 
@@ -100,177 +110,225 @@ The event is strategically successful if:
 - teaching ROS installation or container debugging;
 - requiring a dashboard, a GPU, a paid model, or an API key;
 - grading prompt style;
-- asking every team to invent an advanced anomaly detector;
+- asking every participant to invent an advanced anomaly detector;
 - deploying real edge/OTA infrastructure during the session.
 
 ## 4. Tactical planning
 
 ### 4.1 Challenge shape
 
-Use one coherent challenge with progressive ambition:
+Use one coherent challenge with a real transfer test:
 
-- **Warm-up — Smart Data OSS:** guided signal exploration and a first executable condition.
-- **Main challenge — Data Detective:** investigate a scenario, combine context and time, batch the detector, and build a case from evidence.
-- **Bonus — Agent / advanced analytics:** use a bounded agent, similarity search, anomaly detection, multimodal reasoning, or a regression test. Bonus cannot compensate for an irreproducible core.
+- **Kashiwa warm-up:** manually inspect the hero dataset, then express the turn interval as an
+  executable EventSpec and scale it across its development routes.
+- **French transfer challenge:** adapt the reasoning to a ZED + GNSS recording in right-hand
+  traffic. The target manoeuvre is a **left** turn that crosses oncoming traffic; yaw, speed and
+  object context come from different topics and schemas.
+- **Extension track:** extend either the inputs or the computation. The concrete input exemplar is
+  a participant-sourced Reims cave list through `resources:` and `min_distance_to`; the computation
+  exemplar remains the reserved Python/conflict-geometry seam. Judged qualitatively.
 
-This is one ladder, not three parallel hackathons.
+Kashiwa remains the hero dataset and carries the full learning arc. France carries the harder
+question: did the participant understand the event, or copy a threshold?
 
 ### 4.2 Three-hour run of show
 
+This is the **rehearsal baseline**, not an immutable minute plan. Internal evaluation may move the
+boundaries while preserving the order and the 12:30 submission deadline.
+
 | Time | Attendee activity | Observable checkpoint | Driving force |
 |---|---|---|---|
-| 00:00–00:30 | **Observe:** guided exploration of one development bag | Relevant topic, field, and candidate window | Curiosity + low-friction first success |
-| 00:30–01:00 | **Formalize:** write one comparison and run it | First normalized event and evidence clip | Executability, not speculation |
-| 01:00–01:45 | **Contextualize + temporalize:** add AND/OR, a derived feature, duration, transition, or ordering | Improved EventSpec/detector with stated hypothesis | Physical meaning + noise reduction |
-| 01:45–02:15 | **Scale:** batch execution over development bags | `events.jsonl`, clips, metrics, run manifest | Reuse and fleet-scale thinking |
-| 02:15–02:45 | **Challenge:** inspect one false positive, false negative, missing signal, or ambiguous case | Documented failure and one iteration | Hidden labels + quality pressure |
-| 02:45–03:00 | **Transfer:** three-minute evidence pitch | Question, proof, limit, next action, professional transfer | Communication + operational relevance |
+| 00:00–00:30 | **Observe:** inspect one Kashiwa development route manually | Relevant signal, candidate interval and physical hypothesis | Curiosity + low-friction first success |
+| 00:30–01:00 | **Formalize:** write and run a first EventSpec | Normalized event and evidence clip | Executability, not speculation |
+| 01:00–01:30 | **Scale:** batch the Kashiwa detector and inspect one failure | Events, clips, metrics and one iteration | Reuse + quality pressure |
+| 01:30–02:15 | **Transfer:** map the physical event onto French IMU, GNSS velocity and object topics | Working detector on French development chunks | Understanding across sensor stacks |
+| 02:15–02:45 | **Challenge:** compare both datasets, resolve ambiguity and prepare the report | Stated transfer boundary and defensible evidence | Generalisation + careful claims |
+| 02:45–03:00 | **Submit:** run reproduction, finalize the one-page report and hand in | Valid submission accepted by 12:30 | Reproducibility + throughput |
 
-If more time becomes available, add it to investigation and pitch review—not to installation.
+The separate results block is fixed:
+
+| When | What |
+|---|---|
+| 12:30 | Submissions close; unattended machine scoring starts. |
+| 12:30–14:30 | Jury splits the capped reports and awards judgement-based points. |
+| 14:30–14:40 | Leaderboard reveal and explanation of what the scores showed. |
+| 14:40–14:55 | Roughly four selected walkthroughs, including the most instructive failure. |
+| 14:55–15:00 | Wrap on the transfer lesson. |
 
 ### 4.3 Participant brief
 
-> A fleet recorded several passages through a shared environment. A risky or operationally significant behaviour was reported, but the report is incomplete. Your team must locate relevant occurrences, encode a reusable detector, extract compact evidence, evaluate its limitations, and recommend what should happen when the event is detected.
+> A fleet recorded several passages through a shared environment. A risky or operationally
+> significant behaviour was reported, but the report is incomplete. Locate relevant occurrences,
+> encode a reusable detector, transfer the reasoning to a structurally different recording,
+> extract compact evidence, evaluate the limits, and recommend what should happen next.
 
 ### 4.4 Participant deliverable
 
-Each team presents and submits:
+Each solo or duo entry submits:
 
 1. the engineering question and detection hypothesis;
-2. the data used, missing, or judged unreliable;
+2. the signals used, missing, or judged unreliable;
 3. an executable EventSpec or detector;
 4. normalized `events.jsonl` and compact MCAP evidence clips;
 5. a run manifest and metrics;
 6. one synchronized evidence view;
 7. one false positive, false negative, or ambiguity and the resulting change;
 8. a one-command reproduction path;
-9. the downstream action and the relevant deployment mode;
-10. optional agent trace or advanced-analysis artifact.
+9. a **one-page `report.md`** with fixed headings: question, signals, what transferred, one failure,
+   and downstream action;
+10. optional agent or extension artifact with provenance.
 
 ### 4.5 Ownership boundary
 
-| Attendees own | Organizers provide |
+| Participants own | Organizers provide |
 |---|---|
-| Signal and field selection | MCAP/ROS decoding and schema availability |
+| Signal and field selection on both stacks | MCAP/ROS decoding and schema availability |
 | Preprocessing and derived features | Topic/field inventory and sampling utilities |
-| Thresholds, CEL logic, or model inference | Deterministic detector runner |
+| Thresholds and CEL logic | Deterministic detector runner |
 | Boolean and temporal composition | Batch iteration and time synchronization |
 | Debounce/deduplication parameters | Clip extraction and standardized output |
-| Evidence-window duration and retained topics | Hashes, provenance, and run manifest |
-| Statistical analysis and interpretation | Hidden labels and scoring infrastructure |
-| Failure analysis and professional transfer | Tested visualization layouts and offline bundle |
+| Evidence-window duration and retained topics | Hashes, provenance and run manifest |
+| Transfer reasoning and interpretation | Sealed labels and scoring infrastructure |
+| Failure analysis and operational recommendation | Tested visualization layouts and offline bundle |
 
 ### 4.6 Evaluation
 
-Recommended common score: 100 points.
+The common score remains 100 points; 55 are machine-scored at 12:30 and 45 are jury-scored from
+the capped report over lunch.
 
-| Category | Points | What the jury looks for |
+| Category | Points | Method |
 |---|---:|---|
-| Investigation and hypothesis | 15 | Deliberate signal choice, inspection, physical reasoning |
-| Detection | 25 | Accuracy, temporal logic, duplicates, robustness |
-| Evidence and extraction | 15 | Useful context, correct clips, meaningful volume reduction |
-| Quality and evaluation | 15 | Metrics, failure analysis, missing/bad data handling |
-| Visualization and explanation | 15 | Synchronized, legible proof and careful claims |
-| Reproducibility | 15 | One command, pinned inputs, manifest, stable output |
+| Detection — Kashiwa | 15 | Sealed temporal matching |
+| Detection — French transfer | 10 | Sealed temporal matching |
+| Evidence and extraction | 15 | Machine checks: clip validity, topics, volume reduction |
+| Reproducibility | 15 | Machine checks: one command, pinned inputs, stable rerun |
+| Investigation and hypothesis | 15 | Jury reads `report.md` |
+| Quality and evaluation | 15 | Jury reads the failure analysis |
+| Visualization and explanation | 15 | Jury reads the evidence and claims |
 
-Optional bonus, maximum 20 points:
+The 15/10 Detection split is **provisional until the internal two-dataset ranking test**. Tune it
+if either set dominates ranking or adds excessive noise; do not change the 25-point total.
 
-- bounded agent with useful trace: 10;
-- advanced multimodal or data-quality method: 5;
-- regression test created from a discovered failure: 5.
+Optional bonus remains up to 20 points: bounded agent trace (10), advanced multimodal/data-quality
+method (5), and regression test from a discovered failure (5). Bonus cannot rescue an
+irreproducible core.
 
 ### 4.7 Facilitation mechanics
 
-- Teams of 3–5 with suggested roles: investigator, detector author, evidence reviewer, and pitch owner.
-- One shared warm-up; coaches intervene on blocked tooling after a short timebox.
-- Visible checkpoints at 30, 60, 105, 135, and 165 minutes.
-- A public development score can validate format and basic metrics; final ranking uses hidden labels.
+- Thirty experienced practitioners work solo or in duos, ranked together on one leaderboard.
+- The old four-role team model becomes a checklist one person can execute, not a division of labour.
+- One shared Kashiwa warm-up; coaches intervene on blocked tooling after a short timebox.
+- Visible checkpoints at 30, 60, 90, 135 and 165 minutes; tune them in rehearsal.
 - Coaches ask for evidence and assumptions before suggesting thresholds.
-- A fallback pack contains pre-extracted tables and clips so data reasoning can continue if ROS/container execution fails.
+- A non-ROS fallback pack contains pre-extracted tables and clips for both sensor stacks.
+- Submission intake and unattended scoring must handle 15–30 entries inside the lunch window.
+- Walkthrough selection is not itself scored; include the most instructive failure deliberately.
 
 ## 5. Operational planning
 
 ### Phase 0 — lock the challenge contract
 
-Decide the scenario, duration, team count, target hardware/OS, data rights, required skill floor, scoring role of agentic work, and the definition of “open source.”
+Closed: scenario, programme slots, 30-person solo/duo cohort, experienced skill floor, target
+machine, data rights, public/permissive outbound licensing, agent scoring and the inbound tool
+licence posture are all decided.
 
-**Gate:** one-page challenge contract approved.
+**Gate:** achieved when this revised one-page contract is approved.
 
 ### Phase 1 — prove the organizer vertical slice
 
-On one authorized bag, complete:
+Complete the required path first on one Kashiwa bag, then prove the transfer seam on one French
+chunk:
 
 ```text
-MCAP → inspect → PlotJuggler 4 → detector → batch runner
-     → events.jsonl → evidence clip → score → report
+inspect → PlotJuggler → EventSpec → batch → events.jsonl → clip → score → report
+                                      ↓
+                     remap signals and handedness to the French stack
 ```
 
-Measure runtime, RAM, disk use, bundle size, and offline behaviour.
+Measure runtime, RAM, disk use, bundle size and offline behaviour.
 
-**Gate:** complete path works on the minimum supported machine without Internet.
+**Gate:** both stacks complete on the minimum supported machine without Internet.
 
 ### Phase 2 — freeze interfaces and golden path
 
-- version EventSpec and event-output schemas;
+- version EventSpec, event-output and run-manifest schemas;
 - implement `doctor`, `inspect`, `sample`, `detect`, `clip`, `score`, and `report`;
-- provide declarative CEL/EventSpec support;
-- decide whether custom Python detectors are a supported advanced path;
-- embed or bundle custom ROS schemas;
-- prepare a reference detector and one-page quickstart;
-- pin runtime and dependencies.
+- freeze CEL + `timing` + `evidence` + declarative `derive`;
+- add the external-resource seam (`resources:` and `min_distance_to`) before schema freeze;
+- keep `detector:` reserved for the deferred Python/conflict-geometry extension;
+- pin schema-matching custom messages by repository commit and MCAP schema hash;
+- test `cel-python` 0.5.0 as the initial runtime candidate against every scoring operator/type;
+- prepare reference detectors, layouts and a one-page quickstart.
 
-**Gate:** a new user gets from unpacking the kit to a first clip in under 20 minutes.
+**Gate:** a new user gets from unpacking the kit to a first clip in under 20 minutes, and the same
+contracts run against both sensor stacks.
 
 ### Phase 3 — build data and evaluation
 
-- prepare `sample/`, `dev/`, and hidden `test/` sets;
-- publish a dataset manifest with sizes, durations, topics, hashes, provenance, and licence;
-- create partial development annotations and sealed ground truth;
-- define temporal matching tolerance, duplicate policy, and missing-data cases;
-- calibrate scoring against multiple deliberately different detectors;
-- inject one or two educational quality defects;
-- ensure evidence clips do not leak hidden labels.
+- Kashiwa: distribute 1 warm-up + 7 development routes; keep 8 routes sealed;
+- French: distribute signals-only chunks `_0`–`_4` (~21m49s, 7 clear left turns plus 2 borderline
+  teaching cases); keep `_5`–`_8` sealed (~16m09s, 9 clear left turns);
+- publish manifests with sizes, durations, topics, hashes, provenance and licences;
+- turn the planning-grade French intervals into reviewed ground truth;
+- apply temporal IoU ≥ 0.5, one-to-one best matching and F1 on both datasets;
+- run the deliberate-detector ranking test across both sealed sets and validate the 15/10 split;
+- verify 15–30 submissions score unattended within the lunch window;
+- ensure evidence clips and development output do not leak hidden labels.
 
-**Gate:** scoring rewards robust reasoning and separates plausible solutions without requiring one magic threshold.
+**Gate:** scoring separates plausible solutions across both stacks without one magic threshold or
+manual evaluator repair.
 
 ### Phase 4 — package the attendee experience
 
-- preconfigure PlotJuggler 4 layouts; add Lichtblick only if synchronized robotic context requires it;
-- prepare warm-up, challenge brief, cheat sheet, submission template, and pitch template;
-- create organizer solution, coach guide, troubleshooting tree, and checkpoint prompts;
-- prepare the optional agent tool boundary and trace example only after the deterministic path is stable;
-- build offline caches/bundles and a non-ROS fallback pack.
+- pin and smoke-test the exact PlotJuggler 3.999.3 “PlotJuggler 4: beta2” asset;
+- ship Lichtblick only if its exact artifact is pinned, audited and still earns its image-size cost;
+- prepare Kashiwa and French layouts, warm-up, brief, cheat sheet, submission template and fixed
+  one-page report template;
+- create organizer solution, jury rubric, coach guide, troubleshooting tree and checkpoints;
+- package the two-example extension track only after the deterministic path is stable;
+- build offline caches and a two-stack non-ROS fallback pack;
+- publish only the participant app; keep the organizer site in local development.
 
-**Gate:** all attendee-facing instructions fit behind one start page and one primary command path.
+**Gate:** all participant instructions fit behind one public start page and one command path; the
+public server and client artifacts contain no organizer route or organizer-only text.
 
 ### Phase 5 — rehearse and release-candidate
 
-- fresh-install on each supported OS/hardware class;
-- disconnect the Internet and rerun;
-- rehearse with representative novices and advanced users;
-- simulate simultaneous dataset distribution and scoring;
-- time every checkpoint and the final pitch turnover;
-- verify hashes, licences, SBOM, model-card/weight licence if applicable, and recovery media;
-- freeze versions several weeks before the event.
+- fresh-install on Windows/WSL2 and Ubuntu; disconnect the Internet and rerun;
+- rehearse with solo and duo personas from the actual skill floor;
+- simulate 15–30 submissions, concurrent intake, lunch scoring and report division;
+- run the two-dataset evaluator ranking test and tune the 15/10 split only if evidence requires it;
+- freeze the ROS 2 Humble / Ubuntu 22.04 base by multi-arch digest;
+- freeze every apt package, Python wheel, CLI, viewer asset and custom-schema commit/hash;
+- generate an image-level SBOM and `THIRD_PARTY_NOTICES.md`;
+- preserve Debian copyright files, archive exact MPL viewer source, and review every unknown,
+  GPL/LGPL and relinking/source finding against the built image;
+- verify CC BY data/content attribution separately and prepare recovery media.
 
-**Gate:** a two-hour internal mini-hackathon completes with no organizer-only workaround.
+**Gate:** a two-hour internal mini-hackathon completes with no organizer-only workaround, and the
+built image passes both the behavioural release gates and the licence/source-notice audit.
 
 ## 6. Required kit and readiness definition
 
 ### Data
 
-- authorized MCAP source data with embedded or bundled schemas;
-- small warm-up sample, several development bags, sealed test bags;
-- dataset manifest, checksums, provenance, and redistribution terms;
-- partial labels, hidden labels, and documented quality defects;
-- CPU/laptop-sized variant and distribution plan.
+- authorized Kashiwa MCAP source with a mirrored, checksummed copy;
+- Kashiwa warm-up/dev/sealed split: 1 + 7 + 8 routes;
+- French ZED/GNSS split: chunks `_0`–`_4` development, `_5`–`_8` sealed;
+- signals at full rate; point clouds and map removed; camera retained only at the evidence rate and
+  resolution justified by the tested layouts;
+- dataset manifests, checksums, provenance, CC BY attribution and modification records;
+- partial development annotations, sealed interval labels and documented quality defects;
+- pre-event download plus USB fallback. French detector signals measure ~350 MB for the full
+  38-minute session; Kashiwa still needs the same per-topic byte measurement.
 
 ### Code, API, and contracts
 
-- versioned EventSpec schema;
+- versioned EventSpec with CEL conditions, `timing`, `evidence`, declarative `derive`, `resources:`
+  and `min_distance_to`;
+- reserved `detector:` seam for the extension computation path;
 - stable event record schema and run manifest;
-- narrow detector interface;
-- deterministic batch engine;
+- deterministic two-stack batch engine;
 - evidence-window extraction and topic filtering;
 - offline evaluator and report generator;
 - optional read-only agent tools with bounded structured input/output.
@@ -289,30 +347,43 @@ civ score SUBMISSION
 civ report SUBMISSION
 ```
 
-Distribute a prebuilt, versioned bundle/image and checksums. No compile or package download should be required on the event day.
+Publish the `civ` CLI with the workshop kit under MIT and/or Apache-2.0. Frame it as a forkable
+gift, not a contribution programme: no roadmap, issue-triage or PR-review promise. Distribute a
+prebuilt, versioned image and checksums; no compile or package download on event day.
 
-### Dependencies and views
+### Dependencies, views and licences
 
-- one pinned ROS 2 distribution and MCAP tooling;
-- PlotJuggler 4 as the primary signal exploration surface;
-- Python MCAP reader + Polars for selected signals and derived features;
-- CEL evaluation inside EventSpec;
-- Lichtblick only where images, transforms, point clouds, or synchronized replay add required evidence;
+- ROS 2 Humble / Ubuntu 22.04 from a digest-pinned `ros:humble-ros-base-jammy`-derived image;
+- PlotJuggler 3.999.3 “PlotJuggler 4: beta2” required, invoked as a standalone MPL-2.0 program;
+- Lichtblick optional and MPL-2.0; ship only an exact pinned, tested and audited asset;
+- MCAP CLI, `mcap`, `mcap-ros2-support`, Polars and the chosen CEL runtime independently pinned
+  with hashes;
+- `cel-python` 0.5.0 is the initial Apache-2.0 candidate, gated by deterministic conformance tests;
+- custom message schemas pinned by repository commit plus embedded MCAP schema hash; compiled
+  packages included only if schema-driven decoding is insufficient;
 - CPU-only baseline; GPU/model path strictly optional;
-- locked dependency files, offline cache, and licence/SBOM inventory.
+- machine-readable SBOM plus human-readable notices/source index from the built image.
+
+The image is a mixed-licence aggregate: CIV code stays MIT/Apache, the viewers remain MPL, base
+packages keep their individual terms, and data/content remain CC BY 4.0. Do not label the whole
+container with one outbound licence.
 
 ### Submission structure
 
 ```text
 submission/
-├── detector/              # EventSpec and optional code
+├── detector/              # EventSpec and optional extension code
 ├── events.jsonl           # normalized detections
 ├── evidence/              # compact MCAP clips
 ├── metrics.json
 ├── run-manifest.json      # versions, hashes, parameters, timings
-├── report.md              # hypothesis, evidence, failure, transfer
+├── report.md              # one page, fixed five-heading argument
+├── extension/             # optional resources, provenance, agent/tool trace
 └── reproduce.ps1|sh       # one-command entry point
 ```
+
+The fixed report headings are: question and hypothesis; signals used/missing; what transferred and
+what did not; one failure and the resulting change; downstream action and deployment mode.
 
 ## 7. Driving forces during the hackathon
 
@@ -331,74 +402,128 @@ Competition provides energy, but the main pedagogical pressure comes from the ch
 ## 8. Decision queue — closed
 
 Tracked as a wayfinder map at [`.scratch/civ2026-challenge-spec/map.md`](.scratch/civ2026-challenge-spec/map.md).
-Each decision lives in exactly one place — its ticket. This section gists and links; it never
-restates the detail.
+Each decision lives in exactly one ticket; this section gists and links it.
 
-> **All 19 tickets are resolved.** Nothing remains to decide before the kit gets built. Building
-> it is downstream execution, deliberately outside this map's scope.
+> **All 25 tickets are resolved.** The specification is complete. Build, labelling, artifact
+> pinning, evaluator validation, rehearsal and licence compliance are downstream execution gates,
+> not open design questions.
 
-### 8.1 The challenge
+### 8.1 The challenge and room
 
-- ✅ **Dataset** ([01](.scratch/civ2026-challenge-spec/issues/01-dataset-choice.md)) — URT-Kashiwa is the hero dataset and the freeze depends only on it.
-- ✅ **Scenario** ([02](.scratch/civ2026-challenge-spec/issues/02-scenario-anchor.md)) — unprotected right turns; creativity lies in *how* teams capture them, not in inventing another event class.
-- ✅ **Event definition** ([18](.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)) — sealed labels mark the **right-turn manoeuvre interval**. "Unprotected" is scenario context the brief supplies, not something the detector proves. Accepted cost: detection no longer separates teams on cleverness, so separation comes from interval precision, robustness across all 16 routes, duplicate handling, and the other 75 points.
-- ✅ **Scoring basis** ([03](.scratch/civ2026-challenge-spec/issues/03-scoring-basis.md)) — sealed labels for the turn only; other event types are a qualitatively judged bonus.
-- ✅ **Duration** ([08](.scratch/civ2026-challenge-spec/issues/08-agenda-duration.md)) — fixed by the programme: **Thu 3 Sep 2026, 09:30–12:30**, plus a **14:30–15:00 results** slot. The three hours produce a submission; the pitch has its own slot after lunch.
+- ✅ **Dataset** ([01](.scratch/civ2026-challenge-spec/issues/01-dataset-choice.md)) — Kashiwa is
+  the hero dataset; France is the scored transfer test.
+- ✅ **Scenario** ([02](.scratch/civ2026-challenge-spec/issues/02-scenario-anchor.md)) — the event
+  is the turn that crosses oncoming traffic.
+- ✅ **Event definition** ([18](.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md))
+  — right turns in Kashiwa, left turns in France; sealed labels mark manoeuvre intervals, not
+  inferred right-of-way.
+- ✅ **Scoring basis** ([03](.scratch/civ2026-challenge-spec/issues/03-scoring-basis.md)) — sealed
+  labels score the target turn; other event types are qualitative bonus work.
+- ✅ **Programme** ([08](.scratch/civ2026-challenge-spec/issues/08-agenda-duration.md)) — Thu 3 Sep,
+  09:30–12:30, with results 14:30–15:00 after lunch.
+- ✅ **Cohort and publication** ([20](.scratch/civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md))
+  — 30 experienced practitioners, solo or in duos; CLI and content published permissively.
+- ✅ **Judging** ([21](.scratch/civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)) — 55
+  machine points at 12:30, 45 report points over lunch, then a reveal and ~4 walkthroughs. Detection
+  starts at 15 Kashiwa / 10 French, provisional until internal evaluation.
 
-### 8.2 The toolchain
+### 8.2 The toolchain and extension seams
 
-- ✅ **Detector surface** ([09](.scratch/civ2026-challenge-spec/issues/09-detector-authoring-surface.md)) — EventSpec carries CEL conditions + `timing` (min duration, merge gap) + `evidence` + a declarative `derive` stage. Rung 1 (CEL + timing + evidence) is the pass mark; rung 2 (`derive`) is the reach. Python and conflict geometry are **deferred** to the organizer demo and an extra track, behind a reserved `detector:` seam.
+- ✅ **Detector surface** ([09](.scratch/civ2026-challenge-spec/issues/09-detector-authoring-surface.md))
+  — CEL + `timing` + `evidence` is the pass mark; declarative `derive` is the reach; `detector:` is
+  reserved for Python/conflict geometry.
 - ✅ **CLI name** ([13](.scratch/civ2026-challenge-spec/issues/13-cli-name.md)) — **`civ`**.
-- ✅ **Viewer** ([10](.scratch/civ2026-challenge-spec/issues/10-visualization-surface.md)) — PlotJuggler 4 required and supported; Lichtblick shipped but optional. Contingent on 17 keeping a camera stream.
-- ✅ **Target machine** ([04](.scratch/civ2026-challenge-spec/issues/04-target-machine.md)) — container-first, BYOD only, Windows/WSL2 + Ubuntu, CPU-only. Risk accepted: no hardware swap on setup failure, so the non-ROS fallback pack (§4.7) is load-bearing.
-- ✅ **Model policy** ([11](.scratch/civ2026-challenge-spec/issues/11-model-policy.md)) — no model shipped. Teams may bring their own; the required path needs none.
-- ✅ **Agent scoring** ([12](.scratch/civ2026-challenge-spec/issues/12-agent-scoring.md)) — bonus up to 10 points, judged on a trace pointing to executed tools and evidence. Said plainly: with rung 3 deferred and no model shipped, the agent track is thin this edition — the AI story is carried by how the kit is built.
+- ✅ **Viewer** ([10](.scratch/civ2026-challenge-spec/issues/10-visualization-surface.md)) —
+  PlotJuggler required; Lichtblick optional.
+- ✅ **Target machine** ([04](.scratch/civ2026-challenge-spec/issues/04-target-machine.md)) —
+  container-first BYOD, Windows/WSL2 + Ubuntu, CPU-only; fallback pack is load-bearing.
+- ✅ **Model policy** ([11](.scratch/civ2026-challenge-spec/issues/11-model-policy.md)) — no model
+  shipped; participant-supplied models remain optional.
+- ✅ **Agent scoring** ([12](.scratch/civ2026-challenge-spec/issues/12-agent-scoring.md)) — up to 10
+  bonus points for a trace tied to executed tools and evidence.
+- ✅ **Extension track** ([25](.scratch/civ2026-challenge-spec/issues/25-geofence-agent-track.md)) —
+  participant-sourced cave zones plug in through `resources:` + `min_distance_to`; 40 m yields two
+  clear Reims encounters. Method is unconstrained and judged qualitatively.
+- ✅ **Tool licences** ([23](.scratch/civ2026-challenge-spec/issues/23-tool-licence-audit.md)) — named
+  licences compose, but the built image needs exact pins, SBOM/notices and MPL/GPL/LGPL
+  source/relink review. Standardize on ROS 2 Humble / Ubuntu 22.04; the aggregate has no one licence.
 
 ### 8.3 Data, rights and evaluation
 
-- ✅ **Data rights** ([05](.scratch/civ2026-challenge-spec/issues/05-kashiwa-redistribution-rights.md)) — CC BY 4.0 from Tsukada Laboratory, University of Tokyo. Subsets and permanent offline attendee copies expressly permitted; attribution is the only condition. A delete-after-the-event clause would itself breach the licence. Take a pinned local copy of the 16 MCAPs with checksums.
-- ✅ **Camera imagery** ([19](.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md)) — cleared; T-Lab participates in the hackathon.
-- ✅ **Subsetting and distribution** ([17](.scratch/civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)) — 1 warm-up + 7 development routes distributed, 8 sealed. Drop point clouds and the map, keep scalars at full rate, keep camera downscaled and rate-limited. Target 15 GB, pre-event download with checksums, USB fallback. **Needs a per-topic byte measurement to confirm.**
-- ✅ **Evaluator calibration** ([16](.scratch/civ2026-challenge-spec/issues/16-evaluator-calibration.md)) — temporal IoU >= 0.5, one-to-one best match, F1 across routes; extra overlapping predictions are false positives, which is what gives `merge_gap` teeth. Gaps excluded from both sets; deliberate quality defects scored under Quality, not Detection. Validated by ranking four deliberately different detectors. All values provisional until that run — there is no historical calibration data.
+- ✅ **Kashiwa rights** ([05](.scratch/civ2026-challenge-spec/issues/05-kashiwa-redistribution-rights.md))
+  — CC BY 4.0, permanent offline copies allowed; mirror the 16 MCAPs with checksums.
+- ✅ **Camera imagery** ([19](.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md))
+  — cleared through T-Lab’s participation.
+- ✅ **Kashiwa distribution** ([17](.scratch/civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md))
+  — 1 warm-up + 7 dev + 8 sealed; drop point clouds/map, retain full-rate detector signals and a
+  tested evidence camera stream. Kashiwa per-topic bytes still need measuring.
+- ✅ **French survey** ([24](.scratch/civ2026-challenge-spec/issues/24-survey-french-bag.md)) — 16
+  clear left turns; `_0`–`_4` dev and `_5`–`_8` sealed. Detector signals are ~350 MB for the full
+  session; Reims GNSS supports two 40 m cave zones.
+- ✅ **Evaluator semantics** ([16](.scratch/civ2026-challenge-spec/issues/16-evaluator-calibration.md))
+  — temporal IoU ≥ 0.5, one-to-one best match and F1; extra overlaps are false positives; validate
+  ranking across deliberate detectors and both sealed sets.
 
-### 8.4 Process
+### 8.4 Process and publication boundary
 
-- ✅ **Clean-room boundary** ([07](.scratch/civ2026-challenge-spec/issues/07-clean-room-boundary.md)) — independent functional reimplementation with provenance review, drawn around the Heex stack and its terminology, not the domain logic. Gate before the freeze: zero hits when grepping the kit, docs and site for the excluded vocabulary.
-- ✅ **AI build gates** ([15](.scratch/civ2026-challenge-spec/issues/15-ai-build-review-gates.md)) — gate by failure visibility x cost. The evaluator gets golden files, a determinism check, the rank test and line-by-line review; the runner gets behavioural tests and actionable errors; clips get structural assertions. Nothing ships without a test that fails when it breaks; a human writes the Tier A assertions; a component missing its gate is cut rather than slipped.
-- ✅ **French-city bags** ([14](.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)) — out of the main track. Inspection showed a ZED + GNSS rig with no Autoware stack and no vehicle bus, one continuous 38-minute drive, unlabelled; a Kashiwa detector cannot run on it at all. Excellent "port your logic to a different sensor stack" material for the extra track.
-- ✅ **Previous solution** ([06](.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md)) — reviewed. Logic, thresholds and workflow extracted; the stack and its terminology left behind.
+- ✅ **Clean-room boundary** ([07](.scratch/civ2026-challenge-spec/issues/07-clean-room-boundary.md))
+  — independent functional reimplementation around the prior stack and vocabulary, not the domain
+  logic; provenance and excluded-term review gate the freeze.
+- ✅ **AI build gates** ([15](.scratch/civ2026-challenge-spec/issues/15-ai-build-review-gates.md))
+  — failure visibility × cost; human-authored Tier A assertions; cut any component missing its gate.
+- ✅ **French role reversal** ([14](.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md))
+  — French data is in the main track as the scored generalisation test.
+- ✅ **Previous solution** ([06](.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md))
+  — reusable logic extracted; prior stack and terminology left behind.
+- ✅ **Public organizer gate** ([22](.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md))
+  — production builds contain only `/` and `/participants`; `/organizers` and its content are
+  absent from server and client artifacts and remain local-development only.
 
 ## 9. Immediate next actions
 
-All decisions are closed (§8). What follows is execution, in dependency order.
+The decisions are closed. Execution proceeds in dependency order:
 
-1. **Measure per-topic bytes on one bag** and confirm the subset lands under target. Everything about distribution, the container and the viewer choice rests on this number, and it is the one figure in §8 that is still assumed rather than observed.
-2. **Take a pinned local copy of the 16 source MCAPs** with checksums and a retrieval date. Rights are permanent; access is not.
-3. **Assign one owner each** for data, runner/contracts, evaluation, attendee experience, and release engineering.
-4. **Run the one-bag vertical slice** end to end — inspect, sample, EventSpec with `timing`, detect, clip, score, report — offline on the minimum machine, before building slides, dashboards or agents.
-5. **Write the URT reference detector** at rung 1 and confirm a mixed-skill team could have written it inside the Formalize block. Ticket 06 has reusable starting thresholds.
-6. **Label the sealed set**, then run the four-detector calibration (§8.3) and check the ranking holds before trusting any score.
-7. **Rebuild the run of show** around the real slots: 09:30–12:30 produces a submission, 14:30–15:00 presents it. §4.2's 15-minute Transfer block inside the three hours is now the wrong shape.
-8. **Schedule the internal mini-hackathon** as the release gate — it is the only place the evaluator gets validated against real behaviour.
+1. **Mirror the 16 Kashiwa source MCAPs** with checksums and retrieval date.
+2. **Assign owners** for data, runner/contracts, evaluation, attendee/jury experience and release
+   engineering/licence compliance.
+3. **Freeze the dependency candidates:** Humble base digest, exact PlotJuggler asset, optional
+   Lichtblick decision, MCAP/Polars/CEL hashes and schema-matching custom-message commits.
+4. **Run the two-stack vertical slice** offline on the minimum machine before slides, dashboards
+   or extension work.
+5. **Cut the real subsets:** measure Kashiwa per-topic bytes; produce Kashiwa 1+7+8 and French
+   five-chunk/four-chunk packages with manifests and CC BY records.
+6. **Finish sealed labels** for Kashiwa and turn the 16 French planning intervals into reviewed
+   ground truth.
+7. **Run the deliberate-detector evaluator test across both sealed sets** and tune 15/10 only if
+   ranking evidence requires it.
+8. **Prove intake and judging throughput** on 15–30 submissions, including one-page report division
+   and the four-walkthrough results block.
+9. **Generate the SBOM/notices/source bundle from the built image**, review unknown and copyleft
+   findings, and archive exact MPL viewer source.
+10. **Run the internal mini-hackathon** with solo and duo personas; release only when behavioural,
+    throughput, offline and licence gates all pass.
 
 > **The slot, verified.** CIV 2026 runs **31 August – 4 September 2026 in Miyazaki, Japan**. The
-> hackathon is **Thursday 3 September, 09:30–12:30**, with a separate **14:30–15:00 results**
-> block. Read these as design inputs: the three hours produce a submission, and the pitch has its
-> own slot after a two-hour lunch in which teams can prepare it.
+> hackathon is **Thursday 3 September, 09:30–12:30**, with results **14:30–15:00**.
 >
-> **Where the substance now sits.** Data, rights, scenario and toolchain are settled. What remains
-> is definition made concrete, evaluation made defensible, and the whole path proven end to end.
-> These reward care rather than volume of code.
+> **What can still move.** Internal evaluation may tune checkpoint minutes and the 15/10 Detection
+> split. It does not reopen the two-dataset arc, the 25-point Detection total, the report-based
+> judging model or the release-compliance boundary.
 
 ## 10. Source precedence and traceability
 
-This handoff synthesizes:
+This handoff synthesizes, in precedence order from broad context to current decisions:
 
 1. `exploration/data-hackathon-01-brainstorming.md` — initial goals and inheritance from CIV 2025;
-2. `exploration/data-hackathon-02-survey-and-directions.md` — expanded format, architecture, evaluation, and preparation workstreams;
-3. `exploration/open-source-landscape-research.md` — tool and licence landscape;
-4. `exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md` — latest rule ladder, three-hour schedule, and evidence-centred deliverable;
-5. `exploration/side-chat-explorations/handoff-early-vertical-slice.md` — latest ownership boundary and organizer-first vertical slice;
-6. `exploration/side-chat-explorations/handoff-agent-skills-for-hackathon.md` — latest reference flow through PlotJuggler/Lichtblick, Polars, derived features, CEL, evidence clips, and scoring;
-7. `exploration/exploration-notes-INBOX.md` — clean implementation intent, AI-as-enabler framing, deployment modes, and PlotJuggler 4 direction.
+2. `exploration/data-hackathon-02-survey-and-directions.md` — architecture, evaluation and preparation workstreams;
+3. `exploration/open-source-landscape-research.md` — initial tool and licence landscape;
+4. `exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md` — rule ladder and evidence-centred deliverable;
+5. `exploration/side-chat-explorations/handoff-early-vertical-slice.md` — ownership boundary and organizer-first slice;
+6. `exploration/side-chat-explorations/handoff-agent-skills-for-hackathon.md` — reference flow, derived features, CEL, evidence and scoring;
+7. `exploration/exploration-notes-INBOX.md` — clean implementation intent and AI-as-enabler framing;
+8. `.scratch/civ2026-challenge-spec/map.md` and its 25 linked tickets — the current decision authority;
+9. `.scratch/civ2026-challenge-spec/research/23-tool-licence-audit.md` — primary-source licence and release audit;
+10. `.scratch/civ2026-challenge-spec/research/survey_french_bag.py` plus ticket 24 — reproducible French manoeuvre, GNSS and byte evidence.
+
+Where these disagree, the resolved ticket and its measured evidence win.
 

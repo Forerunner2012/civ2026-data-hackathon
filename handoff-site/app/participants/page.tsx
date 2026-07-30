@@ -41,7 +41,7 @@ export default function Participants() {
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="kicker">
-            <span /> Data Detective · three hours · teams of 3–5
+            <span /> Data Detective · three hours · solo or duo
           </p>
           <h1>
             From raw bag
@@ -173,7 +173,7 @@ export default function Participants() {
             <span>Participant view</span>
             <h3>Your reasoning is the valuable part.</h3>
             <p>
-              Your team turns physical behaviour into executable data logic, tests it at scale and
+              You turn physical behaviour into executable data logic, test it at scale and
               explains what the evidence actually supports. The plumbing is already built.
             </p>
           </div>

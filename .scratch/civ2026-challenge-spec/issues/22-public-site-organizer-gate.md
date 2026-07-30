@@ -1,7 +1,7 @@
 # Gate the organizer view before the site goes public
 
 Type: task
-Status: open
+Status: resolved
 
 ## Question
 
@@ -29,3 +29,23 @@ that is already in place.
 
 The requirement is not in question — internal material must not be public. Only the mechanism is,
 and both mechanisms are small.
+
+## Answer
+
+**Use option 1: production builds contain the participant app only; the full organizer app is a
+local-development surface.** No credential, secret, or public organizer deployment is required.
+
+`handoff-site/vite.config.ts` now gives vinext two source roots:
+
+- `vinext build` scans `public-source/app`, whose `/` and `/participants` both render the
+  participant view and which has no organizer route;
+- `vinext dev` scans the full `app` tree, so organizers retain the entry door and the direct
+  `/organizers` view locally.
+
+This is an artifact boundary, not a navigation convention. The production worker returns 404 for
+`/organizers`; the organizer route pattern and organizer-only phrases are absent from both the
+server bundle and downloadable client assets. The public root has no organizer link. The internal
+route keeps its existing `noindex` metadata for any future private deployment.
+
+The rendered-output test suite enforces all four properties. `npm test` passes, and a local dev
+probe confirmed `/organizers` still returns 200.

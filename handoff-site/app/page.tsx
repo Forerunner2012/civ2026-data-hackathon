@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Entry door. Carries no audience-specific content of its own, so it can be
- * shown to either room while the two views stay separate underneath.
+ * Local entry door for organizers. Production builds scan `public-source/app`
+ * and never compile this route or its organizer link.
  */
 export default function Home() {
   return (
@@ -32,7 +32,7 @@ export default function Home() {
             <span className="door-index">01</span>
             <h2>Participants</h2>
             <p>
-              What the challenge is, how the three hours run, what your team owns, what you submit
+              What the challenge is, how the three hours run, what you own, what you submit
               and exactly how it is scored.
             </p>
             <b>
@@ -45,7 +45,7 @@ export default function Home() {
             <h2>Organizers</h2>
             <p>
               Strategy, teaching goals, preparation phases and gates, evaluation internals,
-              facilitation notes and everything still to be settled.
+              facilitation notes, closed decision history and release gates.
             </p>
             <b>
               Open the organizer view <span>→</span>
@@ -58,8 +58,9 @@ export default function Home() {
       <Footer
         note={
           <>
-            The two views are separate routes on purpose. Organizer material is never bundled into
-            the participant page — see <code>HACKATHON-HANDOFF.md</code> for the full handoff.
+            This local door exposes both views. Production contains only the participant app;
+            organizer material is absent from both server and client artifacts. See{" "}
+            <code>HACKATHON-HANDOFF.md</code> for the full handoff.
           </>
         }
         backTo="#top"

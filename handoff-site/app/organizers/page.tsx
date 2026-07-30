@@ -19,7 +19,7 @@ import {
 
 export const metadata: Metadata = {
   title: "CIV 2026 Data Hackathon — organizer handoff (internal)",
-  description: "Internal planning, evaluation design and open decisions. Not for participants.",
+  description: "Internal planning, evaluation design, closed decisions and release gates. Not for participants.",
   robots: { index: false, follow: false },
 };
 
@@ -42,7 +42,7 @@ export default function Organizers() {
       <Topbar nav={nav} pill="Internal" />
 
       <div className="internal-banner" role="note">
-        <b>Organizer view.</b> Teaching goals, evaluation internals and open decisions. Do not screen-share
+        <b>Organizer view.</b> Teaching goals, evaluation internals and release gates. Do not screen-share
         this page in a room with participants — the participant view lives at <a href="/participants">/participants</a>.
       </div>
 
@@ -75,7 +75,7 @@ export default function Organizers() {
               Jump to the decision queue <span>→</span>
             </a>
             <a className="text-link" href="#next">
-              The three blockers
+              Execution gates
             </a>
           </div>
         </div>

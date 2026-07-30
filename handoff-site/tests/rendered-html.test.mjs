@@ -59,13 +59,14 @@ const ORGANIZER_ONLY = [
   /quality defect/i,
 ];
 
-test("entry door offers both views without leaking either", async () => {
+test("public root is the participant view", async () => {
   const body = await html("/");
-  assert.match(body, /Data Hackathon 2026/);
-  assert.match(body, /href="\/participants"/);
-  assert.match(body, /href="\/organizers"/);
+  assert.match(body, /From raw bag/);
+  assert.match(body, /defensible proof/);
+  assert.doesNotMatch(body, /href="\/organizers"/);
+  assert.doesNotMatch(body, /internal handoff|organizer/i);
   for (const pattern of ORGANIZER_ONLY) {
-    assert.doesNotMatch(body, pattern, `entry door leaks ${pattern}`);
+    assert.doesNotMatch(body, pattern, `public root leaks ${pattern}`);
   }
 });
 
@@ -78,6 +79,11 @@ test("participant view states the contract", async () => {
   assert.match(body, /How the jury reads your work/);
   assert.match(body, /civ detect/);
   assert.match(body, /events\.jsonl/);
+  assert.match(body, /solo or duo/i);
+  assert.match(body, /different sensor stack/i);
+  assert.match(body, /55 points are machine-scored/i);
+  assert.match(body, /15 points on the first sealed set and 10 on the transfer set/i);
+  assert.match(body, /one-page report/i);
   // The ranking rule is published to participants even though the labels are not.
   assert.match(body, /sealed test set/i);
 });
@@ -89,32 +95,13 @@ test("participant view contains no organizer material", async () => {
   }
 });
 
-test("organizer view carries the internal planning", async () => {
-  const body = await html("/organizers");
-  assert.match(body, /Grilling complete/);
-  assert.match(body, /URT-Kashiwa/);
-  assert.match(body, /Six phases, six gates/);
-  assert.match(body, /The part participants never see/);
-  assert.match(body, /sealed ground truth/i);
-  assert.match(body, /DESIGN EARLY/);
-  assert.match(body, /not for participants/i);
-});
-
-test("organizer view groups the resolved decisions", async () => {
-  const body = await html("/organizers");
-  for (const group of ["Challenge", "Toolchain", "Process"]) {
-    assert.match(body, new RegExp(group), `missing decision group ${group}`);
+test("organizer view is absent from the public artifact", async () => {
+  const response = await render("/organizers");
+  assert.equal(response.status, 404);
+  const body = await response.text();
+  for (const pattern of ORGANIZER_ONLY) {
+    assert.doesNotMatch(body, pattern, `public 404 leaks ${pattern}`);
   }
-  // Decisions by their answers rather than their labels.
-  assert.match(body, /unprotected right turns/i);
-  assert.match(body, /Container-first, BYOD only/);
-  assert.match(body, /hero dataset/);
-  assert.match(body, /right-turn manoeuvre interval/);
-});
-
-test("organizer view is marked non-indexable", async () => {
-  const body = await html("/organizers");
-  assert.match(body, /<meta name="robots" content="[^"]*noindex/i);
 });
 
 /**
@@ -135,5 +122,17 @@ test("client bundle contains no organizer material", async () => {
     for (const pattern of ORGANIZER_ONLY) {
       assert.doesNotMatch(source, pattern, `${entry.name} leaks ${pattern}`);
     }
+  }
+});
+
+test("server bundle contains no organizer route or material", async () => {
+  const serverBundle = await readFile(
+    fileURLToPath(new URL("../dist/server/index.js", import.meta.url)),
+    "utf8",
+  );
+
+  assert.doesNotMatch(serverBundle, /pattern:\s*"\/organizers"/);
+  for (const pattern of ORGANIZER_ONLY) {
+    assert.doesNotMatch(serverBundle, pattern, `server bundle leaks ${pattern}`);
   }
 });
