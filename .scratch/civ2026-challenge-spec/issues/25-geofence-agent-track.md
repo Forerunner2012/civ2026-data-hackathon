@@ -160,3 +160,52 @@ Consequences for the zone predicate:
   pulled in by silently inflating one global radius.
 - `timing.min_duration` should remain sample-aware. A 1 s default is legible at 4 Hz and rejects
   isolated fixes without turning the exercise into parameter tuning.
+
+## Update - sizing: a 30-45 minute teaching module
+
+Stated by the organizer and not previously recorded: this is **a small-scope "teach-me" skill
+experience, 30-45 minutes for the most experienced participants.**
+
+That is a tighter constraint than "extra track" implied, and it changes the shape of the work.
+
+### What it means
+
+It is a **bounded teaching module with a payoff**, not an open-ended bonus that soaks up whatever
+time is left. It has a beginning, a middle and an end, and a participant who finishes it should be
+able to say what they learned. Design it like a tutorial with a real result, not like a
+competition category.
+
+### What the budget has to cover
+
+Within 30-45 minutes a participant must: understand the task, acquire the zone list by whatever
+means they choose, write or adapt the spec, run it, and look at the resulting evidence. Roughly:
+
+- ~10-15 min acquiring the zones — the part that carries the lesson;
+- ~10 min writing the spec against the `resources:` seam;
+- ~10 min running, inspecting clips, and reacting to what came out.
+
+Everything else must be scaffolded away.
+
+### Consequences for the design
+
+- **Ship a worked example spec.** The exercise should be *"swap the resource and adjust the
+  radius"*, not *"learn a new schema section from scratch"*. Nobody has 45 minutes to discover
+  `resources:` unaided.
+- **CSV wins over GeoJSON for the seed contract.** A hand-editable `name, lat, lon, radius` file is
+  something a participant, a spreadsheet or a chat assistant can produce in minutes. Polygons are
+  a nice-to-have; accept GeoJSON, but do not require it.
+- **Bound the target set.** A handful of caves on the route, not an exhaustive survey of the city.
+  Ticket 24 established the route and its extent; use it to pick a tractable set.
+- **Generous radius and forgiving duration**, per the measured 4 Hz GNSS. Tuning is not the lesson
+  and must not consume the budget.
+- **This reinforces the qualitative-scoring decision above.** With a 30-45 minute cap, marking
+  anyone down for finding eight caves instead of eleven would punish the clock rather than the
+  reasoning.
+
+### Open, and it belongs to the run of show
+
+**Where do the 30-45 minutes come from?** The three-hour block already carries the ladder, and
+ticket 21 moved pitches out to the afternoon. This module has to be placed deliberately — inside
+the three hours, in the two-hour lunch, or as a separate optional session — and that is a
+run-of-show question, not a spec question. Carry it into the attendee-experience map as a
+placement decision with a known duration.

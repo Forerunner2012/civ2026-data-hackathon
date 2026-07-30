@@ -174,7 +174,7 @@ export default function Participants() {
             <h3>Your reasoning is the valuable part.</h3>
             <p>
               You turn physical behaviour into executable data logic, test it at scale and
-              explains what the evidence actually supports. The plumbing is already built.
+              explain what the evidence actually supports. The plumbing is already built.
             </p>
           </div>
           <div className="list-column">
