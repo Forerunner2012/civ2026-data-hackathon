@@ -76,7 +76,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /The rule ladder/);
   assert.match(body, /A fleet recorded several passages/);
   assert.match(body, /How the jury reads your work/);
-  assert.match(body, /cive detect/);
+  assert.match(body, /civ detect/);
   assert.match(body, /events\.jsonl/);
   // The ranking rule is published to participants even though the labels are not.
   assert.match(body, /sealed test set/i);
@@ -91,7 +91,7 @@ test("participant view contains no organizer material", async () => {
 
 test("organizer view carries the internal planning", async () => {
   const body = await html("/organizers");
-  assert.match(body, /Grilling required/);
+  assert.match(body, /Grilling complete/);
   assert.match(body, /URT-Kashiwa/);
   assert.match(body, /Six phases, six gates/);
   assert.match(body, /The part participants never see/);
@@ -100,14 +100,16 @@ test("organizer view carries the internal planning", async () => {
   assert.match(body, /not for participants/i);
 });
 
-test("organizer view shows decided and open decisions separately", async () => {
+test("organizer view groups the resolved decisions", async () => {
   const body = await html("/organizers");
-  assert.match(body, /DECIDED/);
-  assert.match(body, /STILL OPEN/);
-  // The four charted decisions, by their answers rather than their labels.
+  for (const group of ["Challenge", "Toolchain", "Process"]) {
+    assert.match(body, new RegExp(group), `missing decision group ${group}`);
+  }
+  // Decisions by their answers rather than their labels.
   assert.match(body, /unprotected right turns/i);
   assert.match(body, /Container-first, BYOD only/);
-  assert.match(body, /additive-only/);
+  assert.match(body, /hero dataset/);
+  assert.match(body, /right-turn manoeuvre interval/);
 });
 
 test("organizer view is marked non-indexable", async () => {

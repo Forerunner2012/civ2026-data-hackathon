@@ -1,7 +1,7 @@
 # Is PlotJuggler 4 enough, or is Lichtblick required?
 
 Type: prototype
-Status: open
+Status: resolved
 
 ## Question
 
@@ -28,3 +28,29 @@ Produce and link: a PlotJuggler layout for URT, plus a note on what was not deci
 
 Nothing blocks it. Decide before the container image is frozen — adding a second viewer after
 the freeze is expensive.
+
+## Answer
+
+**PlotJuggler 4 is the required primary surface. Lichtblick ships in the image but is optional.**
+
+Ticket 18 changed the calculus: with labels as right-turn *intervals*, a detection can be judged
+from yaw rate and speed alone. Nothing on the required path needs 3D or camera context, so
+Lichtblick cannot be a dependency for completing the challenge — which keeps the floor low and
+the golden path single.
+
+But **Evidence and extraction (15) plus Visualization and explanation (15) is 30 of 100 points**,
+and ticket 19 cleared the camera topic. A team that can *show* the turn — ego view plus the
+detected object — makes a materially better case in the results slot than one showing three
+plotted scalars. Shipping Lichtblick and requiring nothing costs image size and buys that.
+
+Evidence from ticket 06: the previous event's layouts were Foxglove-family, using 3D, Image,
+Plot, RawMessages and StateTransitions panels. Whoever built them reached for visual context.
+
+### Consequences
+
+- Organizers prepare **PlotJuggler 4 layouts as the supported artifact** — topic inventory,
+  yaw rate, speed, object flag on one synchronized timebase. This is what the warm-up teaches.
+- A Lichtblick layout is provided **unsupported**, as a convenience for teams building their
+  pitch.
+- **Contingent on ticket 17 keeping a camera stream in the distributed subset.** If camera is
+  dropped for size, drop Lichtblick with it — a 3D viewer over scalars only is dead weight.

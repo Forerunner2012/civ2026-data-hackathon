@@ -1,7 +1,7 @@
 # What is the model policy?
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Question
 
@@ -28,3 +28,24 @@ What has to be settled:
 
 Nothing blocks it now that ticket 04 has fixed the environment. It blocks ticket 12 — how
 agentic work scores depends on what teams can actually run.
+
+## Answer
+
+**No model is shipped.**
+
+- Ticket 04 fixed a CPU-only BYOD container, and ticket 17 is already fighting the size of what
+  attendees must download. A bundled model makes both worse for something the required path
+  must not need.
+- §3.3 requires the deterministic core to work with no model at all, and §3.5 rules out requiring
+  a GPU, a paid model or an API key. A shipped model would sit unused on the required path and
+  become a trap on the optional one: CPU inference inside a three-hour session burns the middle
+  hour for most teams that try it.
+- A shared on-site inference service contradicts "local-first and offline-capable" and adds a
+  single point of failure for the whole room.
+
+**Teams may bring their own** — nothing forbids it, and with ticket 09 confining Python to the
+deferred extra track, a model can only contribute to bonus work that is judged qualitatively
+anyway. No fairness problem arises in the scored core, because the scored core cannot use one.
+
+**Revisit when the extra track is designed.** That is the point at which a pinned local model
+might earn its place, and by then the image and the golden path will be settled.

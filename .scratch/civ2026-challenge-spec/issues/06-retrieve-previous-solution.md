@@ -40,14 +40,16 @@ artifact from this ticket rather than pasting it in.
 
 ### Extraction boundary applied
 
-Per instruction, only the **logic combination** and the **workflow leading from raw bags to
-captured evidence** were extracted. Deliberately **not** carried across:
+**Corrected after ticket 07.** An earlier revision of this ticket withheld the previous
+solution's numeric thresholds on a cautious reading of §3.3. That was wrong. The boundary is the
+**Heex stack and its terminology**, not the domain logic: condition expressions and their
+thresholds describe the *physics of the vehicle in this dataset* and may be reused as-is or as
+inspiration. They are restored below.
 
-- The product entity model, its CLI verbs, its session/replay mechanics, and the setup scripts.
-- **The previous solution's tuned numeric thresholds.** They exist and were recorded per signal,
-  but §3.3 protects historical thresholds, and re-deriving them from the data is both the
-  cleaner position and better engineering — a threshold nobody on the team can defend from the
-  physics is a liability in a scored event. Ticket 07 should confirm this line.
+Deliberately **not** carried across:
+
+- The product entity model and its terminology — System, Datasource, Signal, Trigger, Recording.
+- Its CLI verbs, session/replay mechanics, setup scripts and API shapes.
 - Product naming and UI.
 
 ### The dataset, as it actually is
@@ -83,14 +85,27 @@ ownership boundary (§4.5) hands to attendees.
 ### The logic combination
 
 Three detectors of increasing ambition, all expressible as threshold comparisons combined with
-boolean AND:
+boolean AND. **Values are reusable** — they are properties of this vehicle and this data:
 
-1. **Emergency stop** — longitudinal acceleration below a negative threshold. Single condition.
-2. **Basic turn** — yaw rate beyond a threshold, sign selecting the direction. Single condition.
-3. **Unprotected right turn** — *(turn condition)* **AND** *(object-present flag is true)*.
-   Optional extra AND guards, all chosen because they need no preprocessing: steering enabled,
-   no steering out-of-range warning, longitudinal velocity above a walking-pace threshold, gear
-   within the drive range.
+1. **Emergency stop** — `/localization/acceleration.accel.accel.linear.x <= -3.0` (preferred).
+   Alternates: `/sensing/imu/imu_data.linear_acceleration.x <= -2.0`, or the equivalent GNSS IMU
+   field at the same value.
+2. **Basic turn** — `/localization/acceleration.accel.accel.angular.z <= -0.5`. Alternates:
+   `/sensing/imu/imu_data.angular_velocity.z <= -0.25`, or
+   `/vehicle/status/steering_status.steering_tire_angle <= -0.5` rad (custom message; radians,
+   `+` = left, `−` = right, consistent with REP-103).
+3. **Unprotected right turn** — *(turn condition)* **AND**
+   `/perception/object_recognition/is_object_detected.data == true`.
+
+Optional extra AND guards, all chosen because they need no preprocessing: steering enabled
+(`vcu_chassis_steer_en_sta == 1`), no steering out-of-range warning
+(`vcu_chassis_steer_slopover == 0`), moving forward
+(`/vehicle/status/velocity_status.longitudinal_velocity_mps > 1.0`), and gear within the drive
+range (`/vehicle/status/gear_status.report` in `[2, 24]`).
+
+These are a **starting point for the reference detector, not a target to match.** They were tuned
+for instantaneous triggering, whereas ticket 18 defines events as *intervals* — so the turn
+threshold in particular will need revisiting alongside `timing.min_duration`.
 
 ### The finding that matters most
 

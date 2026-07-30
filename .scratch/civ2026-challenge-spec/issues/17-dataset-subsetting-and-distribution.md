@@ -1,7 +1,7 @@
 # How does 112 GB reach BYOD laptops offline?
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Question
 
@@ -42,3 +42,44 @@ a pure size-and-logistics question, not a rights one. Attribution travels with t
 One thing worth doing early regardless of the answer: **take a pinned local copy of all 16 MCAPs
 with checksums**, since the published distribution is a Drive folder the publisher can change at
 any time. That is cheap insurance, not a deadline.
+
+## Answer
+
+### Split
+
+| Set | Routes | Distributed | Labels |
+|---|---|---|---|
+| Warm-up | 1 | yes | fully published |
+| Development | 7 | yes | partial |
+| Sealed test | 8 | **never** | held by organizers |
+
+### Reduction
+
+- **Drop point clouds and the map entirely.** `/map/pointcloud_map` and the
+  `/perception/object_recognition/detection/clustering/*/pointcloud` topics are the bulk of the
+  7 GB and contribute nothing to an interval-based right-turn detector.
+- **Keep every scalar topic at full rate** — localization, acceleration, vehicle status, GNSS,
+  IMU, object flags. These are small and are where the detector actually operates.
+- **Keep `/sensing/camera/traffic_light/image_raw`, downscaled and rate-limited** (target ~5 Hz
+  at 640×360). Preserves the evidence and pitch value that ticket 10 depends on at a fraction of
+  the size. Ticket 19 cleared the imagery.
+
+**Target: ≤ 15 GB for the 8 distributed routes.**
+
+### Distribution
+
+Pre-event download with published checksums as the primary path — it is the only option that
+consumes no session time and it pairs with the pre-arrival setup the BYOD decision (ticket 04)
+already requires. USB SSDs at the venue as the fallback. The container image ships separately so
+a failed data download does not also cost the environment.
+
+### Required next step, before the numbers are trusted
+
+**Measure per-topic bytes on one bag** (`civ inspect`, or a plain MCAP topic-size pass) and
+confirm the reduction actually lands under target. The 15 GB figure is derived from the stated
+7 GB per bag and the assumption that point clouds and raw camera dominate — plausible from the
+topic list, but unverified. If camera cannot be reduced enough, the fallback is to keep it on the
+warm-up route only, and ticket 10's Lichtblick decision falls with it.
+
+Also worth doing early, independent of the answer: **take a pinned local copy of all 16 source
+MCAPs with checksums**, since the published Drive folder can change at any time (ticket 05).

@@ -3,8 +3,8 @@ import { Footer, Topbar } from "../_components/chrome";
 import { LevelTabs, type LevelPanel } from "../_components/level-tabs";
 import {
   blockers,
+  decisionGroups,
   decisionsMade,
-  decisionsOpen,
   drivingForces,
   evaluationDesign,
   eventFacts,
@@ -231,50 +231,43 @@ export default function Organizers() {
       <section className="decision-section" id="decisions">
         <div className="decision-intro">
           <span>05 / DECISION QUEUE</span>
-          <h2>⚠️ Grilling required.</h2>
+          <h2>Grilling complete.</h2>
           <p>
-            These choices are deliberately visible. Resolve them in dependency order; do not let
-            them hide inside implementation. Detail lives in the wayfinder map under{" "}
-            <code>.scratch/civ2026-challenge-spec/</code> — one decision, one ticket.
+            All {decisionsMade.length} decisions are closed — nothing remains to settle before the
+            kit gets built. Detail lives in the wayfinder map under{" "}
+            <code>.scratch/civ2026-challenge-spec/</code>: one decision, one ticket, and the
+            reasoning that produced it.
           </p>
-          <a href="#next">Start with the three blockers ↓</a>
+          <a href="#next">What happens next ↓</a>
         </div>
         <div className="decision-column">
-          <b className="decision-heading done">
-            DECIDED <i>{decisionsMade.length}</i>
-          </b>
-          <div className="decision-list">
-            {decisionsMade.map(({ ticket, title, answer, caveat }) => (
-              <article className="made" key={ticket}>
-                <span>{ticket}</span>
-                <p>
-                  <b>{title}:</b> {answer}
-                  {caveat && <em className="decision-caveat">{caveat}</em>}
-                </p>
-              </article>
-            ))}
-          </div>
-
-          <b className="decision-heading">
-            STILL OPEN <i>{decisionsOpen.length}</i>
-          </b>
-          <div className="decision-list">
-            {decisionsOpen.map(({ ticket, choices, blocked }) => (
-              <article key={ticket}>
-                <span>{ticket}</span>
-                <p>
-                  {choices}
-                  {blocked && <em className="decision-caveat">Blocked by {blocked}.</em>}
-                </p>
-              </article>
-            ))}
-          </div>
+          {decisionGroups.map((group) => {
+            const rows = decisionsMade.filter((item) => item.group === group);
+            return (
+              <div key={group}>
+                <b className="decision-heading done">
+                  {group} <i>{rows.length}</i>
+                </b>
+                <div className="decision-list">
+                  {rows.map(({ ticket, title, answer, caveat }) => (
+                    <article className="made" key={ticket}>
+                      <span>{ticket}</span>
+                      <p>
+                        <b>{title}:</b> {answer}
+                        {caveat && <em className="decision-caveat">{caveat}</em>}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       <section className="next-section" id="next">
         <div>
-          <span>NEXT 72 HOURS</span>
+          <span>WHAT HAPPENS NEXT</span>
           <h2>
             Prove the journey
             <br />

@@ -121,13 +121,13 @@ export const pipeline: { title: string; note: string; owner: "you" | "provided" 
 ];
 
 export const commands = [
-  { command: "cive doctor", note: "check your machine" },
-  { command: "cive inspect BAG", note: "topics, fields, durations" },
-  { command: "cive sample BAG --topic ...", note: "pull signals into a table" },
-  { command: "cive detect SPEC DATASET", note: "run your detector, --dry-run first" },
-  { command: "cive clip EVENTS DATASET", note: "cut compact evidence" },
-  { command: "cive score SUBMISSION", note: "public development score" },
-  { command: "cive report SUBMISSION", note: "package the write-up" },
+  { command: "civ doctor", note: "check your machine" },
+  { command: "civ inspect BAG", note: "topics, fields, durations" },
+  { command: "civ sample BAG --topic ...", note: "pull signals into a table" },
+  { command: "civ detect SPEC DATASET", note: "run your detector, --dry-run first" },
+  { command: "civ clip EVENTS DATASET", note: "cut compact evidence" },
+  { command: "civ score SUBMISSION", note: "public development score" },
+  { command: "civ report SUBMISSION", note: "package the write-up" },
 ];
 
 export const submissionTree = `submission/

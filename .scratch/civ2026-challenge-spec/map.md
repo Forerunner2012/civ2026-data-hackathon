@@ -27,10 +27,14 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   track now and **defer the ceiling to the organizer demo and an extra track**, to be designed
   once the main track is complete and rehearsable. Leave a named seam rather than an
   implementation. Established in [ticket 09](issues/09-detector-authoring-surface.md).
+
+> **Status: the map is complete.** All 19 tickets are resolved and nothing remains to decide
+> before the kit gets built. Building it is downstream execution and out of scope — see the
+> section below. Reopen this map only if a decision recorded here turns out to be wrong; new
+> work belongs in a fresh effort.
 - Data collection and rights are settled, so the substance lives in **definition, evaluation and
   rehearsal** — the parts that need real runs and real judgement rather than more code.
-- **Tooling will be AI-built with human review.** Ticket 15 defines those gates; until it
-  closes, treat "we'll generate it" as an unbounded estimate.
+- **Tooling will be AI-built with human review.** Ticket 15 defines those gates.
 - As decisions close, update §8 of `HACKATHON-HANDOFF.md` so the handoff and the map agree.
 
 ## Decisions so far
@@ -51,9 +55,9 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   — **Copyright cleared: CC BY 4.0**, subsets and permanent offline attendee copies expressly
   permitted, attribution the only condition. Two catches: a delete-after-the-event clause would
   itself breach the licence, and access is not guaranteed to persist, so mirror the 16 MCAPs now.
-  **Personal data is not cleared** — graduated to ticket 19.
+  Personal data graduated to ticket 19, since closed.
 - [Retrieve and review the previous hackathon's solution](issues/06-retrieve-previous-solution.md)
-  — logic and workflow extracted, tool usage and tuned thresholds deliberately left behind. The
+  — logic, thresholds and workflow extracted; Heex stack and terminology left behind (07). The
   prior "unprotected right turn" detector was really *a right turn while something was detected*,
   and nothing was ever scored against ground truth, so **no historical calibration data exists**.
 - [Is the agenda three hours or three and a half?](issues/08-agenda-duration.md) — **not a
@@ -74,6 +78,40 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   unreachable without it. Python and conflict geometry are **deferred** to the organizer demo and
   an extra track, with a reserved `detector:` seam. The enforceable line is what the runner
   executes for the scored submission, not what teams may write.
+- [Where is the clean-room boundary?](issues/07-clean-room-boundary.md) — **independent functional
+  reimplementation with provenance review**, drawn around the **Heex stack and its terminology**,
+  not the domain logic. Never System/Datasource/Signal/Trigger/Recording; always
+  bag/topic/field/EventSpec/detector/event/clip. Condition expressions and their thresholds are
+  reusable — they describe the data, not the product.
+- [Is PlotJuggler 4 enough?](issues/10-visualization-surface.md) — **PlotJuggler 4 required,
+  Lichtblick shipped but optional.** Nothing on the required path needs 3D, but Evidence +
+  Visualization is 30 points and the camera is cleared. Contingent on 17 keeping a camera stream.
+- [What is the model policy?](issues/11-model-policy.md) — **no model shipped.** The core must
+  work without one, CPU inference inside three hours is a trap, and a shared service breaks
+  local-first. Teams may bring their own. Revisit with the extra track.
+- [How does agentic work score?](issues/12-agent-scoring.md) — **bonus up to 10 points**, judged
+  on a trace pointing to executed tools and evidence, never prompt style. Said plainly: with
+  rung 3 deferred and no model shipped, the agent track is thin this edition — the AI story is
+  carried by how the kit is built.
+- [Is the CLI `cive` or `civ`?](issues/13-cli-name.md) — **`civ`**.
+- [What do the bespoke French-city bags add?](issues/14-bespoke-collection-scope.md) — **out of
+  the main track.** Inspection showed a ZED + GNSS rig with no Autoware stack and no vehicle bus,
+  one continuous 38-minute drive, unlabelled. A Kashiwa detector cannot run on it at all. Good
+  "port your logic to a different sensor stack" material for the extra track.
+- [What are the review and test gates for AI-built tooling?](issues/15-ai-build-review-gates.md)
+  — **gate by failure visibility × cost.** Evaluator gets golden files, a determinism check, the
+  rank test and line-by-line review; runner gets behavioural tests and actionable errors; clips
+  get structural assertions. Nothing ships without a test that fails when it breaks, a human
+  writes the Tier A assertions, and a component missing its gate is cut rather than slipped.
+- [How is the URT evaluator calibrated?](issues/16-evaluator-calibration.md) — **temporal
+  IoU ≥ 0.5, one-to-one best-match, F1 across routes.** Extra overlapping predictions are false
+  positives, which is what gives `merge_gap` teeth. Gaps excluded from both sets; deliberate
+  quality defects scored under Quality, not Detection. Validated by ranking four deliberately
+  different detectors; all values provisional until that run.
+- [How does 112 GB reach BYOD laptops?](issues/17-dataset-subsetting-and-distribution.md) —
+  **1 warm-up + 7 dev routes distributed, 8 sealed.** Drop point clouds and the map, keep scalars
+  at full rate, keep camera downscaled and rate-limited. Target ≤ 15 GB, pre-event download with
+  checksums, USB fallback. Needs a per-topic byte measurement to confirm.
 
 ## Not yet specified
 

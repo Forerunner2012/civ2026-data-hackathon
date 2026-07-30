@@ -1,7 +1,7 @@
 # Is the CLI `cive` or `civ`?
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Question
 
@@ -25,3 +25,17 @@ like an abbreviation of the conference rather than a tool, and the collision ris
 
 Nothing blocks it, and it is the cheapest close on the board. Take it when a session has
 capacity left over.
+
+## Answer
+
+**`civ`.**
+
+Overrides the recommendation recorded above, which favoured `cive` on the grounds that existing
+examples used it. Existing examples are cheap to change now and expensive after the Phase 2
+freeze, which was the actual argument this ticket raised.
+
+Every occurrence must be updated together: §6's command block, the participant-facing toolkit
+list on the handoff site, the quickstart and cheat sheet, the container entrypoint, and the
+submission `reproduce.ps1|sh` template.
+
+Clear of the ticket 07 boundary: `civ` carries no product terminology.

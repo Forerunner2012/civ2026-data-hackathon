@@ -156,65 +156,68 @@ export const drivingForces = [
  * Closed decisions, charted 30 July 2026. Detail lives in the wayfinder tickets
  * under `.scratch/civ2026-challenge-spec/`; this only gists them.
  */
-export const decisionsMade: { ticket: string; title: string; answer: string; caveat?: string }[] = [
-  {
-    ticket: "01",
-    title: "Dataset",
-    answer:
-      "URT-Kashiwa is the hero dataset and the freeze depends only on it. French-city bespoke bags are additive-only, behind a hard drop-dead date.",
-    caveat: "Assumes redistribution rights that are not yet confirmed — ticket 05.",
-  },
-  {
-    ticket: "02",
-    title: "Scenario",
-    answer:
-      "Unprotected right turns (URT). Teams may catch other event types, but the creativity expected is in how they express and capture the scenario with the OSS toolchain.",
-  },
-  {
-    ticket: "03",
-    title: "Scoring basis",
-    answer:
-      "Sealed labels exist for URT only, so the 25-point detection category stays objective. Other event types are judged qualitatively in the bonus track.",
-  },
-  {
-    ticket: "04",
-    title: "Target machine",
-    answer:
-      "Container-first, BYOD only, Windows/WSL2 + Ubuntu, CPU-only. Also settles native-vs-container bundling.",
-    caveat:
-      "Risk accepted: no hardware swap when setup fails, so the non-ROS fallback pack is load-bearing.",
-  },
-  {
-    ticket: "05",
-    title: "Data rights",
-    answer:
-      "URT-Kashiwa is published by Tsukada Laboratory, University of Tokyo, under CC BY 4.0. Subsets and permanent offline attendee copies are expressly permitted; attribution is the only condition.",
-    caveat:
-      "A delete-after-the-event clause would breach the licence. Take a pinned local copy of the 16 MCAPs with checksums, since the published distribution can change.",
-  },
-  {
-    ticket: "19",
-    title: "Camera imagery",
-    answer:
-      "Cleared. T-Lab participates in the hackathon, so the data relationship is a direct collaboration with the publishing lab rather than an arm's-length licence.",
-    caveat: "Attribution remains the one live obligation and ships with the kit.",
-  },
-  {
-    ticket: "06",
-    title: "Previous solution",
-    answer:
-      "Reviewed. Logic and workflow extracted; tool usage and tuned thresholds deliberately left behind. The prior detector was really “a right turn while something was detected”, and nothing was scored against ground truth.",
-    caveat: "No historical calibration data exists. The internal mini-hackathon is the only source.",
-  },
-  {
-    ticket: "08",
-    title: "Duration",
-    answer:
-      "Not a decision — fixed by the published programme. Thursday 3 September 2026, 09:30–12:30, with a separate 14:30–15:00 results slot.",
-    caveat:
-      "Pitches can leave the three-hour block entirely, and teams get the two-hour lunch to prepare one. §4.2 needs rebuilding around this.",
-  },
+export type Decision = { ticket: string; group: string; title: string; answer: string; caveat?: string };
+
+/**
+ * All 19 wayfinder tickets, resolved. Detail lives in the tickets under
+ * `.scratch/civ2026-challenge-spec/`; this only gists them.
+ */
+export const decisionsMade: Decision[] = [
+  { ticket: "01", group: "Challenge", title: "Dataset",
+    answer: "URT-Kashiwa is the hero dataset and the freeze depends only on it." },
+  { ticket: "02", group: "Challenge", title: "Scenario",
+    answer: "Unprotected right turns. Creativity lies in how teams capture them, not in inventing another event class." },
+  { ticket: "18", group: "Challenge", title: "Event definition",
+    answer: "Sealed labels mark the right-turn manoeuvre interval. “Unprotected” is scenario context the brief supplies, not something the detector proves.",
+    caveat: "Accepted cost: detection no longer separates on cleverness. Separation comes from interval precision, robustness across 16 routes, duplicates, and the other 75 points." },
+  { ticket: "03", group: "Challenge", title: "Scoring basis",
+    answer: "Sealed labels for the turn only; other event types are a qualitatively judged bonus." },
+  { ticket: "08", group: "Challenge", title: "Duration",
+    answer: "Fixed by the programme: Thu 3 Sep, 09:30–12:30, plus a 14:30–15:00 results slot.",
+    caveat: "The three hours produce a submission; the pitch has its own slot after lunch. §4.2 needs rebuilding around this." },
+
+  { ticket: "09", group: "Toolchain", title: "Detector surface",
+    answer: "EventSpec carries CEL conditions + timing (min duration, merge gap) + evidence + a declarative derive stage. Rung 1 is the pass mark; rung 2 is the reach.",
+    caveat: "Python and conflict geometry are deferred to the organizer demo and an extra track, behind a reserved detector: seam." },
+  { ticket: "13", group: "Toolchain", title: "CLI name", answer: "civ." },
+  { ticket: "10", group: "Toolchain", title: "Viewer",
+    answer: "PlotJuggler 4 required and supported; Lichtblick shipped but optional.",
+    caveat: "Contingent on 17 keeping a camera stream in the distributed subset." },
+  { ticket: "04", group: "Toolchain", title: "Target machine",
+    answer: "Container-first, BYOD only, Windows/WSL2 + Ubuntu, CPU-only.",
+    caveat: "Risk accepted: no hardware swap on setup failure, so the non-ROS fallback pack is load-bearing." },
+  { ticket: "11", group: "Toolchain", title: "Model policy",
+    answer: "No model shipped. Teams may bring their own; the required path needs none." },
+  { ticket: "12", group: "Toolchain", title: "Agent scoring",
+    answer: "Bonus up to 10 points, judged on a trace pointing to executed tools and evidence.",
+    caveat: "Said plainly: with rung 3 deferred and no model shipped, the agent track is thin this edition. The AI story is carried by how the kit is built." },
+
+  { ticket: "05", group: "Data & evaluation", title: "Data rights",
+    answer: "CC BY 4.0 from Tsukada Laboratory, University of Tokyo. Subsets and permanent offline attendee copies expressly permitted; attribution is the only condition.",
+    caveat: "A delete-after-the-event clause would breach the licence. Take a pinned local copy of the 16 MCAPs with checksums — rights are permanent, access is not." },
+  { ticket: "19", group: "Data & evaluation", title: "Camera imagery",
+    answer: "Cleared. T-Lab participates in the hackathon." },
+  { ticket: "17", group: "Data & evaluation", title: "Subsetting and distribution",
+    answer: "1 warm-up + 7 development routes distributed, 8 sealed. Drop point clouds and the map, keep scalars at full rate, keep camera downscaled and rate-limited. Target 15 GB.",
+    caveat: "Needs a per-topic byte measurement to confirm — the one figure still assumed rather than observed." },
+  { ticket: "16", group: "Data & evaluation", title: "Evaluator calibration",
+    answer: "Temporal IoU ≥ 0.5, one-to-one best match, F1 across routes. Extra overlapping predictions are false positives, which is what gives merge_gap teeth.",
+    caveat: "Validated by ranking four deliberately different detectors. All values provisional until that run — there is no historical calibration data." },
+
+  { ticket: "07", group: "Process", title: "Clean-room boundary",
+    answer: "Independent functional reimplementation with provenance review, drawn around the Heex stack and its terminology — not the domain logic. Condition expressions and thresholds are reusable.",
+    caveat: "Gate before the freeze: zero hits when grepping the kit, docs and site for the excluded vocabulary." },
+  { ticket: "15", group: "Process", title: "AI build gates",
+    answer: "Gate by failure visibility × cost. The evaluator gets golden files, a determinism check, the rank test and line-by-line review; the runner gets behavioural tests and actionable errors.",
+    caveat: "Nothing ships without a test that fails when it breaks. A human writes the Tier A assertions. A component missing its gate is cut, not slipped." },
+  { ticket: "14", group: "Process", title: "French-city bags",
+    answer: "Out of the main track. A ZED + GNSS rig with no Autoware stack and no vehicle bus, one continuous 38-minute drive, unlabelled — a Kashiwa detector cannot run on it at all.",
+    caveat: "Excellent “port your logic to a different sensor stack” material for the extra track." },
+  { ticket: "06", group: "Process", title: "Previous solution",
+    answer: "Reviewed. Logic, thresholds and workflow extracted; the stack and its terminology left behind." },
 ];
+
+export const decisionGroups = ["Challenge", "Toolchain", "Data & evaluation", "Process"];
 
 /** Verified against the published programme. Design inputs, not a countdown. */
 export const eventFacts = {
@@ -224,25 +227,27 @@ export const eventFacts = {
   results: "Results 14:30–15:00",
 };
 
-/** Open questions. Deliberately visible; resolve in dependency order. */
-export const decisionsOpen: { ticket: string; choices: string; blocked?: string }[] = [
-  { ticket: "18", choices: "what is an “unprotected right turn” operationally? you cannot label what you have not defined" },
-  { ticket: "17", choices: "how does 112 GB (16 bags × ~7 GB) reach BYOD laptops offline? subsetting and distribution" },
-  { ticket: "15", choices: "review and test gates for AI-built tooling — no definition of done yet" },
-  { ticket: "09", choices: "EventSpec with CEL only | EventSpec plus an advanced Python detector API" },
-  { ticket: "10", choices: "PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context" },
-  { ticket: "11", choices: "no model supplied | one pinned local CPU model | shared on-site inference service" },
-  { ticket: "12", choices: "agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize", blocked: "11" },
-  { ticket: "13", choices: "`cive` CLI name | `civ` CLI name" },
-  { ticket: "07", choices: "strict legal clean-room process | independent functional reimplementation with provenance review" },
-  { ticket: "16", choices: "URT evaluator calibration: tolerance, duplicates, missing data — no historical calibration data exists", blocked: "09, 18" },
-  { ticket: "14", choices: "bespoke French-city bags — which role? France is right-hand traffic, so they hold the mirror manoeuvre: weak as extra dev bags, strong as a sealed generalisation test" },
-];
-
 export const blockers = [
-  { title: "Resolve the three blockers", detail: "Scenario and data rights, target machine, and the three-hour contract. They constrain everything else." },
-  { title: "Assign five owners", detail: "Data, runner/contracts, evaluation, attendee experience, release engineering." },
-  { title: "Run the one-bag slice", detail: "MCAP → detector → batch → evidence clip → score, offline, before building slides or agents." },
+  {
+    title: "Measure per-topic bytes on one bag",
+    detail:
+      "Everything about distribution, the container and the viewer choice rests on this number — and it is the one figure in the decisions above that is still assumed rather than observed.",
+  },
+  {
+    title: "Mirror the 16 source MCAPs",
+    detail:
+      "With checksums and a retrieval date. The CC BY grant is irrevocable, but the publisher can stop distributing at any time: rights are permanent, access is not.",
+  },
+  {
+    title: "Run the one-bag vertical slice",
+    detail:
+      "inspect → sample → EventSpec with timing → detect → clip → score → report, offline on the minimum machine, before slides, dashboards or agents.",
+  },
+  {
+    title: "Label, then calibrate",
+    detail:
+      "Label the sealed set, run the four-detector ranking, and confirm it holds before trusting any score. There is no historical calibration data to fall back on.",
+  },
 ];
 
 export const sources = [

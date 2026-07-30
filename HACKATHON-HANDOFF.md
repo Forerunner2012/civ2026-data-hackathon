@@ -81,7 +81,7 @@ An attendee leaves able to explain and demonstrate how to go from a raw robotics
 - **Quality over event count:** false positives, missed events, missing data, duplicates, and unstable thresholds matter.
 - **One prepared golden path:** attendee time is spent on reasoning, not ROS/container plumbing.
 - **Open contracts:** MCAP, EventSpec/JSON Schema, JSONL, run manifests, and portable reports are the stable seams.
-- **Clean implementation boundary:** replace observable workflow capabilities, not protected code, names, UI, or historical thresholds.
+- **Clean implementation boundary:** replace observable workflow capabilities. The line runs around the **Heex stack and its terminology** — never *System, Datasource, Signal, Trigger, Recording*; always *bag, topic, field, EventSpec, detector, event, clip, manifest*. It does **not** run around the domain logic: condition expressions and their thresholds describe this vehicle in this dataset and are reusable. Settled in [ticket 07](.scratch/civ2026-challenge-spec/issues/07-clean-room-boundary.md).
 
 ### 3.4 Strategic success criteria
 
@@ -280,13 +280,13 @@ Measure runtime, RAM, disk use, bundle size, and offline behaviour.
 Minimum commands:
 
 ```text
-cive doctor
-cive inspect BAG
-cive sample BAG --topic ...
-cive detect SPEC DATASET [--dry-run]
-cive clip EVENTS DATASET
-cive score SUBMISSION
-cive report SUBMISSION
+civ doctor
+civ inspect BAG
+civ sample BAG --topic ...
+civ detect SPEC DATASET [--dry-run]
+civ clip EVENTS DATASET
+civ score SUBMISSION
+civ report SUBMISSION
 ```
 
 Distribute a prebuilt, versioned bundle/image and checksums. No compile or package download should be required on the event day.
@@ -328,98 +328,67 @@ The attendee experience is shaped by seven forces:
 
 Competition provides energy, but the main pedagogical pressure comes from the checkpoints and proof contract. Teams are rewarded for a traceable process, not only the highest raw metric.
 
-## 8. Decision queue
+## 8. Decision queue — closed
 
 Tracked as a wayfinder map at [`.scratch/civ2026-challenge-spec/map.md`](.scratch/civ2026-challenge-spec/map.md).
 Each decision lives in exactly one place — its ticket. This section gists and links; it never
 restates the detail.
 
-### 8.1 Decided
+> **All 19 tickets are resolved.** Nothing remains to decide before the kit gets built. Building
+> it is downstream execution, deliberately outside this map's scope.
 
-Charted and resolved 30 July 2026. These close all three blockers named in §9.
+### 8.1 The challenge
 
-- ✅ **Dataset** ([ticket 01](.scratch/civ2026-challenge-spec/issues/01-dataset-choice.md)) — the
-  URT-Kashiwa subset is the hero dataset and the freeze depends only on it. French-city bespoke
-  bags are **additive-only**, behind a hard drop-dead date, and can never block the freeze.
-  *Assumes redistribution rights that are not yet confirmed — see ticket 05.*
-- ✅ **Scenario** ([ticket 02](.scratch/civ2026-challenge-spec/issues/02-scenario-anchor.md)) —
-  **unprotected right turns (URT)**, the purpose the dataset was collected for. Teams may catch
-  other event types too; the creativity expected is in *how* they express and capture the
-  scenario with the OSS toolchain, not in inventing a different event class.
-- ✅ **Scoring basis** ([ticket 03](.scratch/civ2026-challenge-spec/issues/03-scoring-basis.md)) —
-  sealed labels exist for URT only, keeping the 25-point detection category objective and
-  comparable. Other event types are judged qualitatively in the bonus track.
-- ✅ **Target machine and bundling** ([ticket 04](.scratch/civ2026-challenge-spec/issues/04-target-machine.md))
-  — container-first, **BYOD only**, Windows/WSL2 + Ubuntu, CPU-only baseline. This also settles
-  the former "native bundles vs container-first" item. Risk accepted: no hardware swap exists
-  when a team's setup fails, which makes the non-ROS fallback pack (§4.7) load-bearing rather
-  than optional.
+- ✅ **Dataset** ([01](.scratch/civ2026-challenge-spec/issues/01-dataset-choice.md)) — URT-Kashiwa is the hero dataset and the freeze depends only on it.
+- ✅ **Scenario** ([02](.scratch/civ2026-challenge-spec/issues/02-scenario-anchor.md)) — unprotected right turns; creativity lies in *how* teams capture them, not in inventing another event class.
+- ✅ **Event definition** ([18](.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)) — sealed labels mark the **right-turn manoeuvre interval**. "Unprotected" is scenario context the brief supplies, not something the detector proves. Accepted cost: detection no longer separates teams on cleverness, so separation comes from interval precision, robustness across all 16 routes, duplicate handling, and the other 75 points.
+- ✅ **Scoring basis** ([03](.scratch/civ2026-challenge-spec/issues/03-scoring-basis.md)) — sealed labels for the turn only; other event types are a qualitatively judged bonus.
+- ✅ **Duration** ([08](.scratch/civ2026-challenge-spec/issues/08-agenda-duration.md)) — fixed by the programme: **Thu 3 Sep 2026, 09:30–12:30**, plus a **14:30–15:00 results** slot. The three hours produce a submission; the pitch has its own slot after lunch.
 
-- ✅ **Data rights** ([ticket 05](.scratch/civ2026-challenge-spec/issues/05-kashiwa-redistribution-rights.md))
-  — URT-Kashiwa is published by Tsukada Laboratory, University of Tokyo, under **CC BY 4.0**.
-  Subsets and permanent offline attendee copies are expressly permitted; attribution is the only
-  condition. Two catches: a delete-after-the-event clause would itself breach the licence, and
-  the published distribution can change, so take a pinned local copy of the 16 MCAPs with
-  checksums.
-- ✅ **Camera imagery cleared** ([ticket 19](.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md))
-  — **T-Lab participates in the hackathon**, so the data relationship is a direct collaboration
-  with the publishing lab rather than an arm's-length licence. The camera topic is cleared for
-  use. Attribution remains the one live obligation and ships with the kit.
-- ✅ **Previous solution reviewed** ([ticket 06](.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md))
-  — logic and workflow extracted; tool usage and tuned thresholds deliberately left behind.
-- ✅ **Duration** ([ticket 08](.scratch/civ2026-challenge-spec/issues/08-agenda-duration.md)) —
-  **not a decision.** The published programme fixes it: **Thu 3 Sep 2026, 09:30–12:30**, with a
-  separate **14:30–15:00 results slot**. Pitches can therefore leave the three-hour block, and
-  teams get the two-hour lunch to prepare one.
+### 8.2 The toolchain
 
-### 8.2 Still open
+- ✅ **Detector surface** ([09](.scratch/civ2026-challenge-spec/issues/09-detector-authoring-surface.md)) — EventSpec carries CEL conditions + `timing` (min duration, merge gap) + `evidence` + a declarative `derive` stage. Rung 1 (CEL + timing + evidence) is the pass mark; rung 2 (`derive`) is the reach. Python and conflict geometry are **deferred** to the organizer demo and an extra track, behind a reserved `detector:` seam.
+- ✅ **CLI name** ([13](.scratch/civ2026-challenge-spec/issues/13-cli-name.md)) — **`civ`**.
+- ✅ **Viewer** ([10](.scratch/civ2026-challenge-spec/issues/10-visualization-surface.md)) — PlotJuggler 4 required and supported; Lichtblick shipped but optional. Contingent on 17 keeping a camera stream.
+- ✅ **Target machine** ([04](.scratch/civ2026-challenge-spec/issues/04-target-machine.md)) — container-first, BYOD only, Windows/WSL2 + Ubuntu, CPU-only. Risk accepted: no hardware swap on setup failure, so the non-ROS fallback pack (§4.7) is load-bearing.
+- ✅ **Model policy** ([11](.scratch/civ2026-challenge-spec/issues/11-model-policy.md)) — no model shipped. Teams may bring their own; the required path needs none.
+- ✅ **Agent scoring** ([12](.scratch/civ2026-challenge-spec/issues/12-agent-scoring.md)) — bonus up to 10 points, judged on a trace pointing to executed tools and evidence. Said plainly: with rung 3 deferred and no model shipped, the agent track is thin this edition — the AI story is carried by how the kit is built.
 
-- ⚠️ **How does 112 GB reach BYOD laptops offline?** — [ticket 17](.scratch/civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md).
-  16 bags at ~7 GB each against a BYOD, offline environment. Nothing in §6's "laptop-sized
-  variant and distribution plan" has been sized.
-- ⚠️ **What is an "unprotected right turn", operationally?** — [ticket 18](.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md).
-  The previous event's detector was really *a right turn while something was detected*. That was
-  fine for scoring tool operation; it cannot support sealed labels. You cannot label what you
-  have not defined.
-- ⚠️ **The review and test gates for AI-built tooling have no definition of done** — [ticket 15](.scratch/civ2026-challenge-spec/issues/15-ai-build-review-gates.md).
-  Until they do, "we will generate it" is an unbounded estimate on the critical path.
-- ⚠️ **grilling required: possible choices:** EventSpec with CEL only | EventSpec plus advanced Python detector API — [ticket 09](.scratch/civ2026-challenge-spec/issues/09-detector-authoring-surface.md)
-- ⚠️ **grilling required: possible choices:** PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context — [ticket 10](.scratch/civ2026-challenge-spec/issues/10-visualization-surface.md)
-- ⚠️ **grilling required: possible choices:** no model supplied | one pinned local CPU model | shared on-site inference service — [ticket 11](.scratch/civ2026-challenge-spec/issues/11-model-policy.md)
-- ⚠️ **grilling required: possible choices:** agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize — [ticket 12](.scratch/civ2026-challenge-spec/issues/12-agent-scoring.md)
-- ⚠️ **grilling required: possible choices:** `cive` CLI name | `civ` CLI name — [ticket 13](.scratch/civ2026-challenge-spec/issues/13-cli-name.md)
-- ⚠️ **grilling required: possible choices:** strict legal clean-room process | independent functional reimplementation with provenance review — [ticket 07](.scratch/civ2026-challenge-spec/issues/07-clean-room-boundary.md)
-- ⚠️ **Evaluator calibration for URT** — [ticket 16](.scratch/civ2026-challenge-spec/issues/16-evaluator-calibration.md).
-  Blocked on 09 and 18. Note there is **no historical calibration data**: the previous event never
-  scored against ground truth, so the internal mini-hackathon is the only source.
-- ⚠️ **What the bespoke French-city bags are for** — [ticket 14](.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md).
-  The real question is which *role* they play, not in-or-out. Extra development bags is the weak
-  option, because France is right-hand traffic and the publisher describes URT as "equivalent to
-  unprotected left turns in Europe" — the French bags hold the mirror manoeuvre, so a Kashiwa
-  detector will not transfer unchanged. That same mirroring makes them a strong candidate for a
-  **sealed generalisation test**: "now make it work where the traffic runs the other way" is the
-  reusable-logic lesson §2 exists to teach.
+### 8.3 Data, rights and evaluation
+
+- ✅ **Data rights** ([05](.scratch/civ2026-challenge-spec/issues/05-kashiwa-redistribution-rights.md)) — CC BY 4.0 from Tsukada Laboratory, University of Tokyo. Subsets and permanent offline attendee copies expressly permitted; attribution is the only condition. A delete-after-the-event clause would itself breach the licence. Take a pinned local copy of the 16 MCAPs with checksums.
+- ✅ **Camera imagery** ([19](.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md)) — cleared; T-Lab participates in the hackathon.
+- ✅ **Subsetting and distribution** ([17](.scratch/civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)) — 1 warm-up + 7 development routes distributed, 8 sealed. Drop point clouds and the map, keep scalars at full rate, keep camera downscaled and rate-limited. Target 15 GB, pre-event download with checksums, USB fallback. **Needs a per-topic byte measurement to confirm.**
+- ✅ **Evaluator calibration** ([16](.scratch/civ2026-challenge-spec/issues/16-evaluator-calibration.md)) — temporal IoU >= 0.5, one-to-one best match, F1 across routes; extra overlapping predictions are false positives, which is what gives `merge_gap` teeth. Gaps excluded from both sets; deliberate quality defects scored under Quality, not Detection. Validated by ranking four deliberately different detectors. All values provisional until that run — there is no historical calibration data.
+
+### 8.4 Process
+
+- ✅ **Clean-room boundary** ([07](.scratch/civ2026-challenge-spec/issues/07-clean-room-boundary.md)) — independent functional reimplementation with provenance review, drawn around the Heex stack and its terminology, not the domain logic. Gate before the freeze: zero hits when grepping the kit, docs and site for the excluded vocabulary.
+- ✅ **AI build gates** ([15](.scratch/civ2026-challenge-spec/issues/15-ai-build-review-gates.md)) — gate by failure visibility x cost. The evaluator gets golden files, a determinism check, the rank test and line-by-line review; the runner gets behavioural tests and actionable errors; clips get structural assertions. Nothing ships without a test that fails when it breaks; a human writes the Tier A assertions; a component missing its gate is cut rather than slipped.
+- ✅ **French-city bags** ([14](.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)) — out of the main track. Inspection showed a ZED + GNSS rig with no Autoware stack and no vehicle bus, one continuous 38-minute drive, unlabelled; a Kashiwa detector cannot run on it at all. Excellent "port your logic to a different sensor stack" material for the extra track.
+- ✅ **Previous solution** ([06](.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md)) — reviewed. Logic, thresholds and workflow extracted; the stack and its terminology left behind.
 
 ## 9. Immediate next actions
 
-1. Approve the strategic frame, three-hour rule ladder, and attendee/organizer ownership boundary.
-2. ~~Resolve the scenario, data-rights, and target-machine decisions first~~ — **done**, see §8.1.
-   Data rights remain provisional until ticket 05 closes.
-3. Assign one owner each for data, runner/contracts, evaluation, attendee experience, and release engineering.
-4. Execute the one-bag organizer vertical slice before building slides, dashboards, agents, or a broad platform.
-5. Review the first slice with a novice and an advanced attendee persona.
-6. Freeze the event schema and scoring semantics before expanding the dataset.
-7. Schedule the internal mini-hackathon as the release gate.
+All decisions are closed (§8). What follows is execution, in dependency order.
+
+1. **Measure per-topic bytes on one bag** and confirm the subset lands under target. Everything about distribution, the container and the viewer choice rests on this number, and it is the one figure in §8 that is still assumed rather than observed.
+2. **Take a pinned local copy of the 16 source MCAPs** with checksums and a retrieval date. Rights are permanent; access is not.
+3. **Assign one owner each** for data, runner/contracts, evaluation, attendee experience, and release engineering.
+4. **Run the one-bag vertical slice** end to end — inspect, sample, EventSpec with `timing`, detect, clip, score, report — offline on the minimum machine, before building slides, dashboards or agents.
+5. **Write the URT reference detector** at rung 1 and confirm a mixed-skill team could have written it inside the Formalize block. Ticket 06 has reusable starting thresholds.
+6. **Label the sealed set**, then run the four-detector calibration (§8.3) and check the ranking holds before trusting any score.
+7. **Rebuild the run of show** around the real slots: 09:30–12:30 produces a submission, 14:30–15:00 presents it. §4.2's 15-minute Transfer block inside the three hours is now the wrong shape.
+8. **Schedule the internal mini-hackathon** as the release gate — it is the only place the evaluator gets validated against real behaviour.
 
 > **The slot, verified.** CIV 2026 runs **31 August – 4 September 2026 in Miyazaki, Japan**. The
 > hackathon is **Thursday 3 September, 09:30–12:30**, with a separate **14:30–15:00 results**
 > block. Read these as design inputs: the three hours produce a submission, and the pitch has its
 > own slot after a two-hour lunch in which teams can prepare it.
 >
-> **Where the substance now sits.** Data, rights and scenario are settled. What remains is
-> definition, evaluation and rehearsal — deciding what an unprotected right turn *is*, making the
-> evaluator defensible, and proving the whole path end to end. These reward care rather than
-> volume of code.
+> **Where the substance now sits.** Data, rights, scenario and toolchain are settled. What remains
+> is definition made concrete, evaluation made defensible, and the whole path proven end to end.
+> These reward care rather than volume of code.
 
 ## 10. Source precedence and traceability
 

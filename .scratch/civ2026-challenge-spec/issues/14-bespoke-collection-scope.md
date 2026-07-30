@@ -1,7 +1,7 @@
 # What do the bespoke French-city bags add, and when is their drop-dead date?
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Question
 
@@ -58,3 +58,46 @@ opposite directions:
 
 So the real question is not "in or out" but **which role**: additional dev bags (weak — handedness
 breaks reuse), a sealed generalisation test (strong), or a demo asset. Decide the role first.
+
+## Answer
+
+**Out of the 2026 main track. Strong candidate for the deferred extra track.**
+
+### What the recordings actually contain
+
+Inspected at `D:\Bags\Data Hackathon\2025-07-30 Recording sessions`: one continuous session of
+**38 minutes**, 1 102 384 messages, ~18 GB, MCAP with a rosbag2 `metadata.yaml`.
+
+```
+/zed/zed_node/obj_det/objects                    zed_msgs/msg/ObjectsStamped
+/zed/zed_node/imu/data                           sensor_msgs/msg/Imu
+/zed/zed_node/rgb/image_rect_color/compressed    sensor_msgs/msg/CompressedImage
+/zed/zed_node/point_cloud/cloud_registered       sensor_msgs/msg/PointCloud2
+/fix                                             sensor_msgs/msg/NavSatFix
+/fix_velocity                                    geometry_msgs/msg/TwistWithCovarianceStamped
+/tf  /tf_static                                  tf2_msgs/msg/TFMessage
+```
+
+### Why this is a different exercise, not more of the same
+
+This corrects the earlier framing in this ticket, which assumed a shared structure and treated
+handedness as the obstacle. The real difference is larger: **there is no Autoware stack and no
+vehicle bus.** No `/localization/acceleration`, no `/vehicle/status/*`, no
+`/perception/object_recognition/*`. It is a ZED stereo rig plus GNSS on a vehicle.
+
+A Kashiwa detector therefore cannot run here at all. The equivalents exist but must be derived:
+yaw rate from `/zed/zed_node/imu/data.angular_velocity.z`, speed from `/fix_velocity`, objects
+from `zed_msgs/ObjectsStamped` rather than a boolean flag.
+
+Two further mismatches with the main track: it is **one continuous drive**, not staged scenario
+routes, so there is no per-route event structure; and **nothing is labelled**.
+
+### Where it belongs
+
+This is an excellent *"port your logic to a different sensor stack"* exercise — arguably a better
+transfer lesson than the handedness one, and exactly the kind of thing rung 2's `derive` stage
+exists to make possible. It belongs with the deferred extra track and the organizer demo
+(ticket 09), to be designed once the main track is complete.
+
+If it is later promoted, it needs: a right-turn survey of the route to confirm the manoeuvre
+occurs often enough, a labelling pass, and its own layout and topic inventory.
