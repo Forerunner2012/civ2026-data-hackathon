@@ -3,7 +3,8 @@ import { Footer, Topbar } from "../_components/chrome";
 import { LevelTabs, type LevelPanel } from "../_components/level-tabs";
 import {
   blockers,
-  decisions,
+  decisionsMade,
+  decisionsOpen,
   drivingForces,
   evaluationDesign,
   facilitation,
@@ -223,19 +224,41 @@ export default function Organizers() {
           <h2>⚠️ Grilling required.</h2>
           <p>
             These choices are deliberately visible. Resolve them in dependency order; do not let
-            them hide inside implementation.
+            them hide inside implementation. Detail lives in the wayfinder map under{" "}
+            <code>.scratch/civ2026-challenge-spec/</code> — one decision, one ticket.
           </p>
           <a href="#next">Start with the three blockers ↓</a>
         </div>
-        <div className="decision-list">
-          {decisions.map((decision, index) => (
-            <article key={decision}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <p>
-                <b>Possible choices:</b> {decision}
-              </p>
-            </article>
-          ))}
+        <div className="decision-column">
+          <b className="decision-heading done">
+            DECIDED <i>{decisionsMade.length}</i>
+          </b>
+          <div className="decision-list">
+            {decisionsMade.map(({ ticket, title, answer, caveat }) => (
+              <article className="made" key={ticket}>
+                <span>{ticket}</span>
+                <p>
+                  <b>{title}:</b> {answer}
+                  {caveat && <em className="decision-caveat">{caveat}</em>}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <b className="decision-heading">
+            STILL OPEN <i>{decisionsOpen.length}</i>
+          </b>
+          <div className="decision-list">
+            {decisionsOpen.map(({ ticket, choices, blocked }) => (
+              <article key={ticket}>
+                <span>{ticket}</span>
+                <p>
+                  {choices}
+                  {blocked && <em className="decision-caveat">Blocked by {blocked}.</em>}
+                </p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

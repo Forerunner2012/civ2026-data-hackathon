@@ -328,28 +328,73 @@ The attendee experience is shaped by seven forces:
 
 Competition provides energy, but the main pedagogical pressure comes from the checkpoints and proof contract. Teams are rewarded for a traceable process, not only the highest raw metric.
 
-## 8. Grilling queue — decisions intentionally left open
+## 8. Decision queue
 
-- ⚠️ **grilling required: possible choices:** 3-hour fixed agenda | 3.5-hour agenda with longer pitch and quality review
-- ⚠️ **grilling required: possible choices:** authorized URT-Kashiwa subset | new/synthetic CIV-owned dataset | another redistributable ROS 2 dataset
-- ⚠️ **grilling required: possible choices:** hard-braking/intersection scenario | disengagement sequence | data-quality/diagnostic incident
-- ⚠️ **grilling required: possible choices:** EventSpec with CEL only | EventSpec plus advanced Python detector API
-- ⚠️ **grilling required: possible choices:** `cive` CLI name | `civ` CLI name
-- ⚠️ **grilling required: possible choices:** native Windows + Ubuntu bundles | container-first with Windows/WSL + Ubuntu support
-- ⚠️ **grilling required: possible choices:** PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context
-- ⚠️ **grilling required: possible choices:** no model supplied | one pinned local CPU model | shared on-site inference service
-- ⚠️ **grilling required: possible choices:** agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize
-- ⚠️ **grilling required: possible choices:** strict legal clean-room process | independent functional reimplementation with provenance review
+Tracked as a wayfinder map at [`.scratch/civ2026-challenge-spec/map.md`](.scratch/civ2026-challenge-spec/map.md).
+Each decision lives in exactly one place — its ticket. This section gists and links; it never
+restates the detail.
+
+### 8.1 Decided
+
+Charted and resolved 30 July 2026. These close all three blockers named in §9.
+
+- ✅ **Dataset** ([ticket 01](.scratch/civ2026-challenge-spec/issues/01-dataset-choice.md)) — the
+  URT-Kashiwa subset is the hero dataset and the freeze depends only on it. French-city bespoke
+  bags are **additive-only**, behind a hard drop-dead date, and can never block the freeze.
+  *Assumes redistribution rights that are not yet confirmed — see ticket 05.*
+- ✅ **Scenario** ([ticket 02](.scratch/civ2026-challenge-spec/issues/02-scenario-anchor.md)) —
+  **unprotected right turns (URT)**, the purpose the dataset was collected for. Teams may catch
+  other event types too; the creativity expected is in *how* they express and capture the
+  scenario with the OSS toolchain, not in inventing a different event class.
+- ✅ **Scoring basis** ([ticket 03](.scratch/civ2026-challenge-spec/issues/03-scoring-basis.md)) —
+  sealed labels exist for URT only, keeping the 25-point detection category objective and
+  comparable. Other event types are judged qualitatively in the bonus track.
+- ✅ **Target machine and bundling** ([ticket 04](.scratch/civ2026-challenge-spec/issues/04-target-machine.md))
+  — container-first, **BYOD only**, Windows/WSL2 + Ubuntu, CPU-only baseline. This also settles
+  the former "native bundles vs container-first" item. Risk accepted: no hardware swap exists
+  when a team's setup fails, which makes the non-ROS fallback pack (§4.7) load-bearing rather
+  than optional.
+
+### 8.2 Still open
+
+- ⚠️ **grilling required: possible choices:** 3-hour fixed agenda | 3.5-hour agenda with longer pitch and quality review — [ticket 08](.scratch/civ2026-challenge-spec/issues/08-agenda-duration.md)
+- ⚠️ **grilling required: possible choices:** EventSpec with CEL only | EventSpec plus advanced Python detector API — [ticket 09](.scratch/civ2026-challenge-spec/issues/09-detector-authoring-surface.md)
+- ⚠️ **grilling required: possible choices:** PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context — [ticket 10](.scratch/civ2026-challenge-spec/issues/10-visualization-surface.md)
+- ⚠️ **grilling required: possible choices:** no model supplied | one pinned local CPU model | shared on-site inference service — [ticket 11](.scratch/civ2026-challenge-spec/issues/11-model-policy.md)
+- ⚠️ **grilling required: possible choices:** agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize — [ticket 12](.scratch/civ2026-challenge-spec/issues/12-agent-scoring.md)
+- ⚠️ **grilling required: possible choices:** `cive` CLI name | `civ` CLI name — [ticket 13](.scratch/civ2026-challenge-spec/issues/13-cli-name.md)
+- ⚠️ **grilling required: possible choices:** strict legal clean-room process | independent functional reimplementation with provenance review — [ticket 07](.scratch/civ2026-challenge-spec/issues/07-clean-room-boundary.md)
+
+### 8.3 Surfaced while charting — not previously in this queue
+
+- ⚠️ **URT-Kashiwa redistribution terms are assumed, never confirmed** — [ticket 05](.scratch/civ2026-challenge-spec/issues/05-kashiwa-redistribution-rights.md).
+  Reuse at a previous hackathon does not establish a right to hand subsets to attendees offline.
+  If this fails, the hero dataset changes and most of the map is re-cut.
+- ⚠️ **The review and test gates for AI-built tooling have no definition of done** — [ticket 15](.scratch/civ2026-challenge-spec/issues/15-ai-build-review-gates.md).
+  Until they do, "we will generate it" is an unbounded estimate on the critical path. The
+  evaluator is where a silent defect is most expensive.
+- ⚠️ **What the bespoke French-city bags are for, and their drop-dead date** — [ticket 14](.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md).
+  Note that France is right-hand traffic and Kashiwa is left-hand, so an unprotected *right*
+  turn is a different manoeuvre in each — URT detector reuse across the two sets may not hold.
+- ⚠️ **Evaluator calibration for URT** — [ticket 16](.scratch/civ2026-challenge-spec/issues/16-evaluator-calibration.md).
+  Temporal tolerance, duplicate policy, missing-data cases and the calibration set.
+- ⚠️ **Retrieve the previous hackathon's solution** — [ticket 06](.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md).
+  A task, not a decision; blocks the clean-room boundary and feeds calibration.
 
 ## 9. Immediate next actions
 
 1. Approve the strategic frame, three-hour rule ladder, and attendee/organizer ownership boundary.
-2. Resolve the scenario, data-rights, and target-machine decisions first; they constrain almost everything else.
+2. ~~Resolve the scenario, data-rights, and target-machine decisions first~~ — **done**, see §8.1.
+   Data rights remain provisional until ticket 05 closes.
 3. Assign one owner each for data, runner/contracts, evaluation, attendee experience, and release engineering.
 4. Execute the one-bag organizer vertical slice before building slides, dashboards, agents, or a broad platform.
 5. Review the first slice with a novice and an advanced attendee persona.
 6. Freeze the event schema and scoring semantics before expanding the dataset.
 7. Schedule the internal mini-hackathon as the release gate.
+
+> **What charting changed about the risk.** Data collection is already solved, which takes it off
+> the critical path and puts **evaluation and rehearsal** there instead — the two things AI
+> assistance cannot compress, because both need real runs and real humans.
 
 ## 10. Source precedence and traceability
 

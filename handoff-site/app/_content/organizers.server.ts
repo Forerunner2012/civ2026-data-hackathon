@@ -111,7 +111,7 @@ export const phases: { id: string; title: string; work: string; gate: string }[]
 ];
 
 export const readiness: { name: string; status: string; detail: string }[] = [
-  { name: "Data", status: "DECIDE FIRST", detail: "Scenario, source rights, sample/dev/test split, hidden truth, laptop-sized subset." },
+  { name: "Data", status: "RIGHTS PENDING", detail: "Hero set and scenario fixed. Still to cut: sample/dev/sealed-test split, hidden truth, laptop-sized subset — and redistribution terms are unconfirmed." },
   { name: "Contracts", status: "DRAFT → FREEZE", detail: "EventSpec + CEL, event JSONL, run manifest, detector interface, time semantics." },
   { name: "Runner", status: "BUILD", detail: "doctor, inspect, sample, detect, clip, score and report; dry-run and actionable errors." },
   { name: "Views", status: "PREPARE", detail: "PlotJuggler 4 primary layouts; Lichtblick only if robotic context is required." },
@@ -152,18 +152,54 @@ export const drivingForces = [
   { title: "Operational transfer", effect: "turns the detector into a decision." },
 ];
 
+/**
+ * Closed decisions, charted 30 July 2026. Detail lives in the wayfinder tickets
+ * under `.scratch/civ2026-challenge-spec/`; this only gists them.
+ */
+export const decisionsMade: { ticket: string; title: string; answer: string; caveat?: string }[] = [
+  {
+    ticket: "01",
+    title: "Dataset",
+    answer:
+      "URT-Kashiwa is the hero dataset and the freeze depends only on it. French-city bespoke bags are additive-only, behind a hard drop-dead date.",
+    caveat: "Assumes redistribution rights that are not yet confirmed — ticket 05.",
+  },
+  {
+    ticket: "02",
+    title: "Scenario",
+    answer:
+      "Unprotected right turns (URT). Teams may catch other event types, but the creativity expected is in how they express and capture the scenario with the OSS toolchain.",
+  },
+  {
+    ticket: "03",
+    title: "Scoring basis",
+    answer:
+      "Sealed labels exist for URT only, so the 25-point detection category stays objective. Other event types are judged qualitatively in the bonus track.",
+  },
+  {
+    ticket: "04",
+    title: "Target machine",
+    answer:
+      "Container-first, BYOD only, Windows/WSL2 + Ubuntu, CPU-only. Also settles native-vs-container bundling.",
+    caveat:
+      "Risk accepted: no hardware swap when setup fails, so the non-ROS fallback pack is load-bearing.",
+  },
+];
+
 /** Open questions. Deliberately visible; resolve in dependency order. */
-export const decisions = [
-  "3-hour fixed agenda | 3.5-hour agenda with longer pitch and quality review",
-  "authorized URT-Kashiwa subset | new/synthetic CIV-owned dataset | another redistributable ROS 2 dataset",
-  "hard-braking/intersection scenario | disengagement sequence | data-quality/diagnostic incident",
-  "EventSpec with CEL only | EventSpec plus an advanced Python detector API",
-  "`cive` CLI name | `civ` CLI name",
-  "native Windows + Ubuntu bundles | container-first with Windows/WSL + Ubuntu support",
-  "PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context",
-  "no model supplied | one pinned local CPU model | shared on-site inference service",
-  "agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize",
-  "strict legal clean-room process | independent functional reimplementation with provenance review",
+export const decisionsOpen: { ticket: string; choices: string; blocked?: string }[] = [
+  { ticket: "05", choices: "confirm URT-Kashiwa redistribution terms — assumed, never verified" },
+  { ticket: "06", choices: "retrieve the previous hackathon's solution (task, not a decision)" },
+  { ticket: "07", choices: "strict legal clean-room process | independent functional reimplementation with provenance review", blocked: "06" },
+  { ticket: "08", choices: "3-hour fixed agenda | 3.5-hour agenda with longer pitch and quality review" },
+  { ticket: "09", choices: "EventSpec with CEL only | EventSpec plus an advanced Python detector API" },
+  { ticket: "10", choices: "PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context" },
+  { ticket: "11", choices: "no model supplied | one pinned local CPU model | shared on-site inference service" },
+  { ticket: "12", choices: "agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize", blocked: "11" },
+  { ticket: "13", choices: "`cive` CLI name | `civ` CLI name" },
+  { ticket: "14", choices: "what the bespoke French-city bags are for, and their drop-dead date" },
+  { ticket: "15", choices: "review and test gates for AI-built tooling — no definition of done yet" },
+  { ticket: "16", choices: "URT evaluator calibration: tolerance, duplicates, missing data", blocked: "06, 09" },
 ];
 
 export const blockers = [

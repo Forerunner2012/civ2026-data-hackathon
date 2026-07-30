@@ -40,6 +40,10 @@ async function html(path) {
  */
 const ORGANIZER_ONLY = [
   /URT-Kashiwa/i,
+  // The scenario is revealed at the event, not before: §4.3's brief is
+  // deliberately an *incomplete* incident report.
+  /unprotected right turn/i,
+  /\bURT\b/,
   /grilling/i,
   /clean[- ]room/i,
   /sealed ground truth/i,
@@ -48,7 +52,7 @@ const ORGANIZER_ONLY = [
   /vertical slice/i,
   /mini-hackathon/i,
   /coach guide/i,
-  /DECIDE FIRST/,
+  /RIGHTS PENDING/,
   /non-goals/i,
   /driving force/i,
   /source precedence/i,
@@ -92,8 +96,18 @@ test("organizer view carries the internal planning", async () => {
   assert.match(body, /Six phases, six gates/);
   assert.match(body, /The part participants never see/);
   assert.match(body, /sealed ground truth/i);
-  assert.match(body, /DECIDE FIRST/);
+  assert.match(body, /RIGHTS PENDING/);
   assert.match(body, /not for participants/i);
+});
+
+test("organizer view shows decided and open decisions separately", async () => {
+  const body = await html("/organizers");
+  assert.match(body, /DECIDED/);
+  assert.match(body, /STILL OPEN/);
+  // The four charted decisions, by their answers rather than their labels.
+  assert.match(body, /unprotected right turns/i);
+  assert.match(body, /Container-first, BYOD only/);
+  assert.match(body, /additive-only/);
 });
 
 test("organizer view is marked non-indexable", async () => {

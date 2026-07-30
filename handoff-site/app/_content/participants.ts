@@ -140,8 +140,10 @@ export const submissionTree = `submission/
 └── reproduce.ps1|sh       # one-command entry point`;
 
 export const comeReady = [
-  "A laptop. CPU-only is enough — no GPU is required.",
-  "Nothing to install on the day: the kit is prebuilt, pinned and versioned.",
+  "A laptop you can install software on. CPU-only is enough — no GPU is required.",
+  "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container, and this is the one step that cannot happen on the day.",
+  "Run the environment check in the week before the event. A support channel will be open — use it then, not at 09:00.",
+  "Nothing to compile or download on the day: the kit is prebuilt, pinned and versioned.",
   "No account, no paid model and no API key. The required path runs fully offline.",
   "Teams of 3–5. Suggested roles: investigator, detector author, evidence reviewer, pitch owner.",
   "Curiosity about physical signals matters more than ROS experience.",
