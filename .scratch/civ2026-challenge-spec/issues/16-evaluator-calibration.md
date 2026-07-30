@@ -2,7 +2,7 @@
 
 Type: grilling
 Status: open
-Blocked by: 06, 09, 18
+Blocked by: 09
 
 ## Question
 
@@ -23,6 +23,15 @@ What has to be settled:
 - **Calibration set:** which deliberately different detectors do you run against it — a naive
   threshold, a good declarative spec, a deliberately overfit one? You need the score to
   separate them in the expected order before you trust it.
+
+## Update after ticket 18
+
+The definition is now **the right-turn manoeuvre interval**, so this ticket sharpens
+considerably: it is interval matching, not conflict adjudication. And it inherits a
+responsibility it did not have before — since detection no longer separates teams on cleverness,
+**the tolerance semantics are what convert careful interval reasoning into points.** Set the
+tolerance too loose and everyone scores the same; too tight and it rewards luck. That calibration
+is now the single most consequential number in the rubric.
 
 ## Why it is blocked
 

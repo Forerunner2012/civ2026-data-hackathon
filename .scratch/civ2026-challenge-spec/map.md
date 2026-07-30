@@ -23,6 +23,10 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 - **Schedule is not a constraint on this map.** Decide what the event *should* be; the build
   follows. Do not water down a decision to fit a calendar, and do not carry delay caveats into
   tickets.
+- **Main track first, ceiling second.** Where a decision has an advanced tier, specify the main
+  track now and **defer the ceiling to the organizer demo and an extra track**, to be designed
+  once the main track is complete and rehearsable. Leave a named seam rather than an
+  implementation. Established in [ticket 09](issues/09-detector-authoring-surface.md).
 - Data collection and rights are settled, so the substance lives in **definition, evaluation and
   rehearsal** — the parts that need real runs and real judgement rather than more code.
 - **Tooling will be AI-built with human review.** Ticket 15 defines those gates; until it
@@ -55,10 +59,31 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 - [Is the agenda three hours or three and a half?](issues/08-agenda-duration.md) — **not a
   decision; fixed by the programme at three hours.** Plus a separate 14:30–15:00 results slot,
   which means pitches can leave the three-hour block entirely and teams get lunch to prepare.
+- [Is the camera imagery clear to redistribute?](issues/19-personal-data-clearance.md) — **yes.**
+  T-Lab participates in the hackathon, so this is a direct collaboration with the publishing lab.
+  Attribution remains the one live obligation.
+- [What is an "unprotected right turn", operationally?](issues/18-urt-operational-definition.md)
+  — **the sealed labels mark the right-turn manoeuvre interval**; "unprotected" is scenario
+  context the brief supplies, not something the detector proves. Cheap to label with high
+  agreement. Cost, accepted: detection no longer separates teams on cleverness, so separation
+  moves to interval precision, robustness across all 16 routes, duplicate handling, and the other
+  75 points. Conflict geometry moves to the bonus track.
+- [Is the detector surface CEL-only, or CEL plus a Python API?](issues/09-detector-authoring-surface.md)
+  — **EventSpec carries CEL conditions + `timing` (duration, merge gap) + `evidence` + a
+  declarative `derive` stage.** `timing` is the pass mark, since ticket 18's interval labels are
+  unreachable without it. Python and conflict geometry are **deferred** to the organizer demo and
+  an extra track, with a reserved `detector:` seam. The enforceable line is what the runner
+  executes for the scored submission, not what teams may write.
 
 ## Not yet specified
 
 Fog — in scope, not yet sharp enough to ticket. Graduates as the frontier advances.
+
+- **The extra track and the organizer demo** — Python detectors and conflict geometry (rung 3 of
+  [ticket 09](issues/09-detector-authoring-surface.md)). Sharp enough to describe, deliberately
+  **not** ticketed: it is gated on the main track being complete and rehearsable, and designing
+  it earlier would pull effort away from the path every team has to walk. EventSpec reserves a
+  `detector:` seam for it.
 
 - **Labelling workflow for the sealed URT set** — who labels, in what tool, to what
   inter-annotator agreement. Now waits on 18 (the definition) and 16 (tolerance semantics).

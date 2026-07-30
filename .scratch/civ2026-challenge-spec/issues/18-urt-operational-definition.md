@@ -1,7 +1,7 @@
 # What is an "unprotected right turn", operationally?
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Question
 
@@ -47,3 +47,59 @@ The publisher's own framing is worth keeping: they describe the manoeuvre as "a 
 manoeuvre for autonomous vehicles (equivalent to unprotected left turns in Europe)" — i.e. the
 turn that crosses oncoming traffic. That crossing-conflict framing is the substance the
 definition should capture.
+
+## Answer
+
+**The sealed labels mark the right-turn manoeuvre interval.** "Unprotected" is a property of the
+site and the scenario the data was staged for — it is context the brief supplies, not something
+the detector has to prove.
+
+This is the cheap, high-agreement definition: the dataset was recorded for this manoeuvre across
+16 routes, so a labeller marking turn intervals has an unambiguous job, and inter-annotator
+agreement should be high without a written adjudication procedure.
+
+### What this makes easier
+
+- **Labelling is tractable** and needs no judgement about conflict, gap acceptance or intent.
+- **Ticket 09** gets much simpler: a yaw-rate threshold with duration and debounce is expressible
+  declaratively. CEL-only is now the defensible default rather than a hopeful one.
+- **Ticket 16** becomes interval matching — overlap or onset tolerance, duplicates, misses —
+  rather than an argument about whether a detection was "really" contested.
+- **Ticket 10** weakens: a turn interval can be judged from yaw rate and speed alone, so visual
+  context is desirable rather than required.
+
+### The cost, recorded rather than argued
+
+**Detection stops separating teams on cleverness.** A single well-chosen yaw-rate threshold gets
+most of the way to the answer, so the 25-point detection category cannot reward insight the way a
+conflict-based definition would. That is a real consequence of a deliberate choice, and the
+design has to absorb it rather than pretend otherwise.
+
+**Where separation comes from instead** — this is the part that now has to be got right:
+
+- **Interval precision.** Onset and end are the hard part. Where does a turn begin — steering
+  onset, yaw-rate threshold crossing, junction entry? A team that thinks about boundaries beats
+  one that does not, and the tolerance semantics in ticket 16 are what convert that into points.
+- **Robustness across all 16 routes.** One threshold tuned on one route will miss or over-fire on
+  others. Scale is the discriminator, which is exactly §2's "reusable logic executed across
+  multiple bags".
+- **Duplicates and debounce.** A turn is one event, not three overlapping detections.
+- **The other 75 points.** Hypothesis, evidence, quality, visualization and reproducibility were
+  always the majority of the rubric. This choice leans on that harder.
+
+### Where the ambition goes
+
+The conflict-geometry version — *was a road user actually in the crossing or opposing path during
+the turn?* — moves **out of the core and into the bonus/advanced track** established in
+ticket 03. It is a natural fit there: it needs `detected_object` position and heading rather than
+the bare boolean, it is genuinely harder, and it is judged qualitatively, so it never has to be
+labelled. Teams that want to prove a turn was *contested* have somewhere to do it.
+
+That keeps the core honest and cheap while leaving the interesting work available — which is what
+the "one ladder, not three hackathons" principle in §4.1 asks for.
+
+### Consequence for the brief
+
+The brief must state plainly that the scored event is **the right-turn manoeuvre**, and that the
+scenario context is what makes those turns unprotected. Teams should not be left to guess whether
+conflict detection is required for the core score.
