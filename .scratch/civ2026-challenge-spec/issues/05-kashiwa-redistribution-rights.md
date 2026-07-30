@@ -60,7 +60,9 @@ Three operative consequences:
 **Personal data: not cleared — verified silence, not verified safety.** No consent,
 anonymisation, ethics, APPI or GDPR statement exists in any published artifact, and CC BY 4.0
 §2(b)(1) expressly does not license privacy or personality rights. The bags carry a front RGB
-camera and GNSS. Graduated to **ticket 19**, which is now the highest-urgency item on the board.
+camera and GNSS. Graduated to **ticket 19** — since **closed**: T-Lab participates in the
+hackathon, so the data relationship is a direct collaboration with the publishing lab and the
+camera topic is cleared. Attribution remains the one live obligation.
 
 Two corrections to this ticket's framing, both verified: the event is in **Miyazaki, Japan**, not
 France (GDPR reaches Heex via its French establishment, not the venue); and the dataset's

@@ -359,8 +359,12 @@ Charted and resolved 30 July 2026. These close all three blockers named in §9.
   — URT-Kashiwa is published by Tsukada Laboratory, University of Tokyo, under **CC BY 4.0**.
   Subsets and permanent offline attendee copies are expressly permitted; attribution is the only
   condition. Two catches: a delete-after-the-event clause would itself breach the licence, and
-  access is not guaranteed to persist, so **mirror the 16 MCAPs now**. *Personal data is a
-  separate, unresolved question — ticket 19.*
+  the published distribution can change, so take a pinned local copy of the 16 MCAPs with
+  checksums.
+- ✅ **Camera imagery cleared** ([ticket 19](.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md))
+  — **T-Lab participates in the hackathon**, so the data relationship is a direct collaboration
+  with the publishing lab rather than an arm's-length licence. The camera topic is cleared for
+  use. Attribution remains the one live obligation and ships with the kit.
 - ✅ **Previous solution reviewed** ([ticket 06](.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md))
   — logic and workflow extracted; tool usage and tuned thresholds deliberately left behind.
 - ✅ **Duration** ([ticket 08](.scratch/civ2026-challenge-spec/issues/08-agenda-duration.md)) —
@@ -370,12 +374,6 @@ Charted and resolved 30 July 2026. These close all three blockers named in §9.
 
 ### 8.2 Still open
 
-- ⚠️ **Is the camera imagery clear to redistribute?** — [ticket 19](.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md).
-  **Highest urgency on the board.** CC BY 4.0 does not license privacy rights, and no consent,
-  anonymisation or ethics statement exists anywhere in the public record. Two parallel tracks:
-  decode sample camera frames and look (no external dependency, an afternoon's work), and send
-  one email to Manabu Tsukada — the dataset's corresponding author, who is also on the CIV 2026
-  organizing committee.
 - ⚠️ **How does 112 GB reach BYOD laptops offline?** — [ticket 17](.scratch/civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md).
   16 bags at ~7 GB each against a BYOD, offline environment. Nothing in §6's "laptop-sized
   variant and distribution plan" has been sized.
@@ -395,9 +393,12 @@ Charted and resolved 30 July 2026. These close all three blockers named in §9.
   Blocked on 09 and 18. Note there is **no historical calibration data**: the previous event never
   scored against ground truth, so the internal mini-hackathon is the only source.
 - ⚠️ **What the bespoke French-city bags are for** — [ticket 14](.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md).
-  Recommendation after tickets 05/06/08 is to **rule this out of scope**: 35 days, mirrored
-  handedness (France is right-hand traffic, so the French bags hold the opposite manoeuvre), and
-  a far worse personal-data posture on open public roads. Scoping is the organizers' call.
+  The real question is which *role* they play, not in-or-out. Extra development bags is the weak
+  option, because France is right-hand traffic and the publisher describes URT as "equivalent to
+  unprotected left turns in Europe" — the French bags hold the mirror manoeuvre, so a Kashiwa
+  detector will not transfer unchanged. That same mirroring makes them a strong candidate for a
+  **sealed generalisation test**: "now make it work where the traffic runs the other way" is the
+  reusable-logic lesson §2 exists to teach.
 
 ## 9. Immediate next actions
 
@@ -410,15 +411,15 @@ Charted and resolved 30 July 2026. These close all three blockers named in §9.
 6. Freeze the event schema and scoring semantics before expanding the dataset.
 7. Schedule the internal mini-hackathon as the release gate.
 
-> **The date, verified.** CIV 2026 runs **31 August – 4 September 2026 in Miyazaki, Japan**. The
-> hackathon is **Thursday 3 September, 09:30–12:30**, with results at 14:30–15:00. As of charting
-> on 30 July 2026 that is **35 days out** — materially tighter than the "under three months" this
-> plan was written against. Every estimate predating this should be re-checked.
+> **The slot, verified.** CIV 2026 runs **31 August – 4 September 2026 in Miyazaki, Japan**. The
+> hackathon is **Thursday 3 September, 09:30–12:30**, with a separate **14:30–15:00 results**
+> block. Read these as design inputs: the three hours produce a submission, and the pitch has its
+> own slot after a two-hour lunch in which teams can prepare it.
 >
-> **What charting changed about the risk.** Data collection is already solved, which takes it off
-> the critical path and puts **evaluation and rehearsal** there instead — the two things AI
-> assistance cannot compress, because both need real runs and real humans. With 35 days, the
-> internal mini-hackathon needs a date before it needs a design.
+> **Where the substance now sits.** Data, rights and scenario are settled. What remains is
+> definition, evaluation and rehearsal — deciding what an unprotected right turn *is*, making the
+> evaluator defensible, and proving the whole path end to end. These reward care rather than
+> volume of code.
 
 ## 10. Source precedence and traceability
 

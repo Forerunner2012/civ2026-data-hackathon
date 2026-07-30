@@ -45,14 +45,13 @@ Two consequences that change the design rather than merely confirming it:
    14:30–15:00, which buys back 15 minutes of investigation *and* gives teams the two-hour lunch
    to prepare a pitch instead of writing it under the clock. The run-of-show should be rebuilt
    around 09:30–12:30 producing a submission, and 14:30–15:00 presenting it.
-2. **The event is 35 days out** (charted 30 July 2026). This is materially tighter than the
-   "under three months" the map was charted against. Re-scope accordingly — see the map's
-   Destination note.
+2. **The three hours are for producing a submission, not presenting one.** The ladder in §4.2
+   should end at a complete, reproducible submission at 12:30; the pitch belongs in the
+   afternoon slot.
 
 Also settled by the same source: the organizing committee includes both Manabu Tsukada
 (University of Tokyo, and the URT-Kashiwa corresponding author — see ticket 05) and Matthieu
 Carré (Heex Technologies).
 
-Still open, and now urgent rather than leisurely: whether a pre-event setup session exists for
-the BYOD environment risk accepted in ticket 04. The programme shows no such slot, so it would
-have to be remote and voluntary in the week before.
+Still open: whether a pre-event setup session exists for the BYOD environment risk accepted in
+ticket 04. The programme shows no such slot, so it would be remote and voluntary beforehand.

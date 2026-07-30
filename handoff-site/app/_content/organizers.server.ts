@@ -111,7 +111,7 @@ export const phases: { id: string; title: string; work: string; gate: string }[]
 ];
 
 export const readiness: { name: string; status: string; detail: string }[] = [
-  { name: "Data", status: "RIGHTS PENDING", detail: "Hero set and scenario fixed. Still to cut: sample/dev/sealed-test split, hidden truth, laptop-sized subset — and redistribution terms are unconfirmed." },
+  { name: "Data", status: "SUBSET + LABEL", detail: "Hero set, scenario and rights all settled. Still to cut: the sample/dev/sealed-test split, the laptop-sized subset, and the sealed labels themselves." },
   { name: "Contracts", status: "DRAFT → FREEZE", detail: "EventSpec + CEL, event JSONL, run manifest, detector interface, time semantics." },
   { name: "Runner", status: "BUILD", detail: "doctor, inspect, sample, detect, clip, score and report; dry-run and actionable errors." },
   { name: "Views", status: "PREPARE", detail: "PlotJuggler 4 primary layouts; Lichtblick only if robotic context is required." },
@@ -190,7 +190,14 @@ export const decisionsMade: { ticket: string; title: string; answer: string; cav
     answer:
       "URT-Kashiwa is published by Tsukada Laboratory, University of Tokyo, under CC BY 4.0. Subsets and permanent offline attendee copies are expressly permitted; attribution is the only condition.",
     caveat:
-      "A delete-after-the-event clause would breach the licence. Access is not guaranteed to persist — mirror the 16 MCAPs now. Personal data is a separate, open question (19).",
+      "A delete-after-the-event clause would breach the licence. Take a pinned local copy of the 16 MCAPs with checksums, since the published distribution can change.",
+  },
+  {
+    ticket: "19",
+    title: "Camera imagery",
+    answer:
+      "Cleared. T-Lab participates in the hackathon, so the data relationship is a direct collaboration with the publishing lab rather than an arm's-length licence.",
+    caveat: "Attribution remains the one live obligation and ships with the kit.",
   },
   {
     ticket: "06",
@@ -209,24 +216,18 @@ export const decisionsMade: { ticket: string; title: string; answer: string; cav
   },
 ];
 
-/** Verified against the published programme on 30 July 2026. */
+/** Verified against the published programme. Design inputs, not a countdown. */
 export const eventFacts = {
   where: "Miyazaki City, Japan",
   when: "31 Aug – 4 Sep 2026",
-  slot: "Hackathon Thu 3 Sep, 09:30–12:30 · results 14:30–15:00",
-  daysOut: 35,
+  slot: "Hackathon Thu 3 Sep, 09:30–12:30",
+  results: "Results 14:30–15:00",
 };
 
 /** Open questions. Deliberately visible; resolve in dependency order. */
-export const decisionsOpen: { ticket: string; choices: string; blocked?: string; urgent?: boolean }[] = [
-  {
-    ticket: "19",
-    choices:
-      "is the camera imagery clear to redistribute? CC BY 4.0 does not license privacy rights, and no consent, anonymisation or ethics statement exists in the public record",
-    urgent: true,
-  },
-  { ticket: "17", choices: "how does 112 GB (16 bags × ~7 GB) reach BYOD laptops offline? subsetting and distribution", urgent: true },
-  { ticket: "18", choices: "what is an “unprotected right turn” operationally? you cannot label what you have not defined", urgent: true },
+export const decisionsOpen: { ticket: string; choices: string; blocked?: string }[] = [
+  { ticket: "18", choices: "what is an “unprotected right turn” operationally? you cannot label what you have not defined" },
+  { ticket: "17", choices: "how does 112 GB (16 bags × ~7 GB) reach BYOD laptops offline? subsetting and distribution" },
   { ticket: "15", choices: "review and test gates for AI-built tooling — no definition of done yet" },
   { ticket: "09", choices: "EventSpec with CEL only | EventSpec plus an advanced Python detector API" },
   { ticket: "10", choices: "PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context" },
@@ -235,7 +236,7 @@ export const decisionsOpen: { ticket: string; choices: string; blocked?: string;
   { ticket: "13", choices: "`cive` CLI name | `civ` CLI name" },
   { ticket: "07", choices: "strict legal clean-room process | independent functional reimplementation with provenance review" },
   { ticket: "16", choices: "URT evaluator calibration: tolerance, duplicates, missing data — no historical calibration data exists", blocked: "09, 18" },
-  { ticket: "14", choices: "bespoke French-city bags — recommendation is now to rule out of scope: 35 days, mirrored handedness, worse personal-data posture" },
+  { ticket: "14", choices: "bespoke French-city bags — which role? France is right-hand traffic, so they hold the mirror manoeuvre: weak as extra dev bags, strong as a sealed generalisation test" },
 ];
 
 export const blockers = [

@@ -31,9 +31,9 @@ What has to be settled:
   depend entirely on this.
 - **Can a labeller apply the definition consistently** to 16 routes without ambiguity, and what
   is the inter-annotator agreement target?
-- **Is the honest fallback acceptable?** If a rigorous definition proves too costly at 35 days,
-  scoring a well-specified proxy — "right turn with a conflicting object present" — and *saying
-  so plainly* is defensible. Silently scoring a proxy while calling it URT is not.
+- **Is a proxy acceptable, if named as one?** Scoring a well-specified proxy — "right turn with a
+  conflicting object present" — and *saying so plainly* is defensible. Silently scoring a proxy
+  while calling it URT is not. Decide which you are doing, on the merits.
 
 ## Why this is on the frontier
 

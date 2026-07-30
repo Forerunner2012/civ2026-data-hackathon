@@ -16,15 +16,15 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   detector-surface and visualization tickets, `/research` for the licence ticket.
 - **Plan, don't do.** This map produces decisions. The one exception is ticket 06, a task
   that retrieves an artifact a decision waits on.
-- **The date is fixed and close.** CIV 2026 runs 31 Aug – 4 Sep 2026 in **Miyazaki, Japan**; the
-  **hackathon is Thu 3 Sep, 09:30–12:30**, with a separate results slot at 14:30–15:00
-  ([ticket 08](issues/08-agenda-duration.md), verified against the published programme).
-  **That is 35 days from charting.** The map was charted against "under three months" — treat
-  every estimate made before this was known as optimistic and re-check it.
-- Data collection is already solved, so **evaluation and rehearsal are the long poles** — the two
-  things AI assistance cannot compress, because both need real runs and real humans. Prefer the
-  answer that shortens the path to a frozen, rehearsable kit; where an answer cannot be reached
-  in the time, prefer a well-specified honest proxy over a silent one.
+- **Event facts** (verified against the published programme): CIV 2026 runs 31 Aug – 4 Sep 2026
+  in **Miyazaki, Japan**; the **hackathon is Thu 3 Sep, 09:30–12:30**, with a separate results
+  slot at **14:30–15:00** ([ticket 08](issues/08-agenda-duration.md)). These are design inputs —
+  the three-hour ladder and the fact that pitches have their own slot — not a countdown.
+- **Schedule is not a constraint on this map.** Decide what the event *should* be; the build
+  follows. Do not water down a decision to fit a calendar, and do not carry delay caveats into
+  tickets.
+- Data collection and rights are settled, so the substance lives in **definition, evaluation and
+  rehearsal** — the parts that need real runs and real judgement rather than more code.
 - **Tooling will be AI-built with human review.** Ticket 15 defines those gates; until it
   closes, treat "we'll generate it" as an unbounded estimate.
 - As decisions close, update §8 of `HACKATHON-HANDOFF.md` so the handoff and the map agree.
@@ -69,8 +69,8 @@ Fog — in scope, not yet sharp enough to ticket. Graduates as the frontier adva
 - **Warm-up design and the non-ROS fallback pack contents** — load-bearing because of the BYOD
   decision in 04. Waits on 09 (what a detector looks like) and 17 (what data a team holds).
 - **Coach guide and checkpoint prompts** — waits on the run-of-show above.
-- **Internal mini-hackathon**: when, with whom, and what counts as passing the release gate. At
-  35 days this needs a date before it needs a design.
+- **Internal mini-hackathon**: with whom, and what counts as passing the release gate. This is
+  where the evaluator gets validated, so it graduates once 16 and 18 land.
 - **Jury composition and prize structure** — waits on 12 (how agentic work scores).
 - **Pre-event setup session** for the BYOD environment risk in 04. The programme has no slot, so
   it would be remote and voluntary in the week before.

@@ -33,19 +33,28 @@ set after the fact is not a deadline.
 
 ## Update after tickets 05, 06 and 08
 
-The honest recommendation is now **rule this out of scope** rather than set a date.
+Schedule is explicitly not an argument here. Two substantive points remain, and they pull in
+opposite directions:
 
-- **The event is 35 days out** (Thu 3 Sep 2026, verified in ticket 08). Collecting, cleaning,
-  manifesting, inventorying and building layouts for a second dataset inside that window, while
-  evaluation and rehearsal are the acknowledged long poles, is not credible.
+**Against including them in the scored challenge:**
+
 - **The handedness problem is confirmed by the publisher**, who describe URT as "equivalent to
-  unprotected left turns in Europe". France is right-hand traffic: the French bags would contain
-  the *mirror* manoeuvre. Detector and layout reuse does not hold.
-- **The personal-data posture is far worse.** Ticket 05 found Kashiwa is a controlled campus with
-  staged actors; French-city bags are open public roads — uninvolved pedestrians, real plates,
-  real addresses, real GDPR, and none of it covered by CC BY 4.0. This is a bigger problem than
-  the one ticket 19 is already trying to close in time.
-- The same-programme Kashiwa collection event (7–9 Sep 2026) also lands *after* CIV 2026.
+  unprotected left turns in Europe". France is right-hand traffic, so the French bags hold the
+  *mirror* manoeuvre. A URT detector written against Kashiwa will not transfer unchanged, and
+  neither will the layouts. That breaks the "same detector, more bags" story.
+- **Different personal-data posture.** Kashiwa is a controlled campus with staged actors and a
+  participating publisher (ticket 19). French-city bags are open public roads — uninvolved
+  pedestrians, real plates, real addresses — governed by whatever Heex arranges for its own rig,
+  with no CC BY 4.0 umbrella. Solvable, but it is separate work with a different owner.
 
-Ruling this out of scope is a scoping act and therefore the user's call, not the agent's — but
-the effort is better spent as seed data for a future edition.
+**For including them, and worth weighing seriously:**
+
+- The mirrored manoeuvre is arguably the *best possible* transfer exercise. "Your detector works
+  in Kashiwa — now make it work where the traffic runs the other way" is exactly the reusable-
+  logic lesson §2 is trying to teach, and it is a far better use of the rig than extra bags of
+  the same thing.
+- It would make the bonus/advanced track genuinely about generalisation rather than about
+  bolting an agent onto a working detector.
+
+So the real question is not "in or out" but **which role**: additional dev bags (weak — handedness
+breaks reuse), a sealed generalisation test (strong), or a demo asset. Decide the role first.

@@ -47,12 +47,12 @@ export default function Organizers() {
       </div>
 
       <div className="event-strip">
-        <span>
-          <b>{eventFacts.daysOut}</b> days out
-        </span>
         <span>{eventFacts.when}</span>
         <span>{eventFacts.where}</span>
-        <span>{eventFacts.slot}</span>
+        <span>
+          <b>{eventFacts.slot}</b>
+        </span>
+        <span>{eventFacts.results}</span>
       </div>
 
       <section className="hero organizer-hero" id="top">
@@ -259,11 +259,10 @@ export default function Organizers() {
             STILL OPEN <i>{decisionsOpen.length}</i>
           </b>
           <div className="decision-list">
-            {decisionsOpen.map(({ ticket, choices, blocked, urgent }) => (
-              <article className={urgent ? "urgent" : ""} key={ticket}>
+            {decisionsOpen.map(({ ticket, choices, blocked }) => (
+              <article key={ticket}>
                 <span>{ticket}</span>
                 <p>
-                  {urgent && <b className="urgent-tag">URGENT</b>}
                   {choices}
                   {blocked && <em className="decision-caveat">Blocked by {blocked}.</em>}
                 </p>

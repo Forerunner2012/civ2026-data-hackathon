@@ -282,14 +282,9 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 .decision-list article.made > span { color:#698210; }
 .decision-list article.made > p > b { color:#4a5c1a; }
 .decision-caveat { display:block; margin-top:7px; font-style:normal; font-size:12px; line-height:1.5; color:#8b6423; }
-.decision-list article.urgent { background:rgba(255,184,77,.16); }
-.decision-list article.urgent > span { color:#8b6423; }
-.urgent-tag { display:inline-block; margin-right:9px; padding:3px 6px; background:var(--amber); color:var(--ink); font:800 8px/1.3 ui-monospace,Consolas,monospace; letter-spacing:.1em; vertical-align:1px; }
-
 .event-strip { display:flex; flex-wrap:wrap; align-items:center; gap:10px 30px; padding:13px 7vw; background:var(--ink); color:var(--white); font:11px/1.4 ui-monospace,Consolas,monospace; letter-spacing:.03em; }
 .event-strip span { color:#a9b3ae; }
-.event-strip span:first-child { color:var(--white); }
-.event-strip b { color:var(--lime); font-size:15px; font-weight:800; margin-right:4px; }
+.event-strip b { color:var(--lime); font-weight:800; }
 
 .sources-section { padding:70px 7vw 90px; background:var(--paper-2); }
 .source-list { margin:22px 0 0; padding:0 0 0 22px; display:grid; gap:9px; }

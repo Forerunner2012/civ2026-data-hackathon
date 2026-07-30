@@ -52,7 +52,7 @@ const ORGANIZER_ONLY = [
   /vertical slice/i,
   /mini-hackathon/i,
   /coach guide/i,
-  /RIGHTS PENDING/,
+  /DESIGN EARLY/,
   /non-goals/i,
   /driving force/i,
   /source precedence/i,
@@ -96,7 +96,7 @@ test("organizer view carries the internal planning", async () => {
   assert.match(body, /Six phases, six gates/);
   assert.match(body, /The part participants never see/);
   assert.match(body, /sealed ground truth/i);
-  assert.match(body, /RIGHTS PENDING/);
+  assert.match(body, /DESIGN EARLY/);
   assert.match(body, /not for participants/i);
 });
 

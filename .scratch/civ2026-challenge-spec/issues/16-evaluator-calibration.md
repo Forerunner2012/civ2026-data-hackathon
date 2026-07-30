@@ -32,5 +32,7 @@ against.
 
 ## Note
 
-Flagged in the map as a long pole. This and rehearsal are the two things AI assistance cannot
-compress, because both need real runs and real humans.
+This is where care pays off most. Calibration is not a coding problem — it needs real detector
+runs against real bags and a human judging whether the ranking that comes out is the one a jury
+would defend. Ticket 06 established there is no historical calibration data to lean on, so the
+internal mini-hackathon is where this gets validated.

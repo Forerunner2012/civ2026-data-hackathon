@@ -31,11 +31,14 @@ What has to be settled:
 ## Why this is on the frontier
 
 Nothing blocks it. It is a hard constraint on ticket 04's environment and on the warm-up design
-sitting in the map's fog, and with 35 days left a distribution plan that needs shipping hardware
-is already marginal.
+sitting in the map's fog.
 
 ## Note
 
-Ticket 05 established that redistributing subsets is expressly permitted under CC BY 4.0, and
-that attendees may keep them permanently. Attribution must travel with the subset. Also from
-ticket 05: mirror the source data locally now, since access is not guaranteed to persist.
+Ticket 05 established that redistributing subsets is expressly permitted under CC BY 4.0 and that
+attendees may keep them permanently; ticket 19 confirmed the camera topic is cleared, so this is
+a pure size-and-logistics question, not a rights one. Attribution travels with the subset.
+
+One thing worth doing early regardless of the answer: **take a pinned local copy of all 16 MCAPs
+with checksums**, since the published distribution is a Drive folder the publisher can change at
+any time. That is cheap insurance, not a deadline.
