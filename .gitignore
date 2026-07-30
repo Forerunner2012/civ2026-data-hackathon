@@ -78,6 +78,32 @@ build/
 # Keep pyproject.toml and uv.lock committed for reproducibility.
 
 # ---------------------------------------------------------------------------
+# Node.js and web front-ends (handoff-site and any future companion app)
+# ---------------------------------------------------------------------------
+node_modules/
+.pnp
+.pnp.*
+.yarn/cache/
+.yarn/install-state.gz
+
+.next/
+.vinext/
+.wrangler/
+.vercel/
+.turbo/
+.svelte-kit/
+out/
+.eslintcache
+.tsbuildinfo
+*.tsbuildinfo
+next-env.d.ts
+
+# Keep package.json and package-lock.json committed for reproducibility.
+# Note: `build/` and `dist/` are ignored globally below/above for Python and
+# ROS artifacts. A web sub-project that keeps *source* in `build/` must
+# re-include it from its own .gitignore (see handoff-site/.gitignore).
+
+# ---------------------------------------------------------------------------
 # Jupyter and interactive analysis
 # ---------------------------------------------------------------------------
 .ipynb_checkpoints/
