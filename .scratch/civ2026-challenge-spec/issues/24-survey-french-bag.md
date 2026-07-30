@@ -1,7 +1,7 @@
 # Does the French recording contain enough of the target manoeuvre?
 
 Type: task
-Status: open
+Status: resolved
 
 ## Question
 
@@ -55,9 +55,9 @@ positive yaw-rate excursions above a walking-pace speed floor. Needs `mcap` and
 
 ## Progress - tooling resolved, structure measured
 
-The `mcap` CLI is available at `C:\Program Files\MCAP\mcap.exe` and on PATH, so **no Python
-install is needed**. Relevant subcommands: `info` (statistics, channels, rates), `du` (per-topic
-bytes), `cat` (dump messages), `filter` (subset to an output file).
+The `mcap` CLI is available at `C:\Program Files\MCAP\mcap.exe` and on PATH, so **no CLI install
+is needed**. It handles `info`, `du` and `filter`; its JSON output does not decode `ros2msg`, which
+is why the final survey uses ephemeral Python packages through `uv` below.
 
 Established so far:
 
@@ -66,14 +66,109 @@ Established so far:
   `/fix` and `/fix_velocity` **4 Hz**.
 - Per-topic byte breakdown recorded in ticket 17 - signals are 1.2% of the file.
 
-**Still outstanding, and the reason this ticket stays open:** the actual counts.
+## Answer — measured and visually validated
 
-1. **How many left turns**, from sustained positive yaw-rate excursions on
-   `/zed/zed_node/imu/data.angular_velocity.z` above a speed floor from `/fix_velocity`.
-2. **Which city and what route**, from the `/fix` latitude/longitude track - and therefore how many
-   champagne caves the drive plausibly passes (ticket 25).
-3. Whether the standalone `rosbag2_2025_07_30-17_00_08_0.mcap` (2.3 MB) is a fragment or a
-   separate short session.
+### Tooling correction
 
-Method: `mcap cat` the two topics to JSON and aggregate. Note `/fix` at 4 Hz gives ~9 100 position
-samples across the session, which is a small, easily-plotted track.
+The `mcap` CLI can inspect and size `ros2msg` channels, but `mcap cat --json` cannot decode them.
+The survey therefore used `uv run --no-project` with `mcap` 1.4.0 and
+`mcap-ros2-support` 0.5.7. The reproducible streaming helper is
+`../research/survey_french_bag.py`; no project environment or intermediate message dump is
+required.
+
+Decoded counts across the nine chunks:
+
+| Topic | Messages |
+|---|---:|
+| `/fix` | 9,112 |
+| `/fix_velocity` | 9,112 |
+| `/zed/zed_node/imu/data` | 435,113 |
+| `/zed/zed_node/obj_det/objects` | 42,786 |
+
+### Left turns: enough for development and sealed sets
+
+A 0.15 s EMA over yaw rate, 0.06 rad/s positive-yaw threshold, 0.5 m/s speed floor, short-gap
+merge and 20 degree minimum produced **25 signal candidates**. The count is stable under stricter
+settings: 20–22 candidates remain at a 30 degree minimum, and 16 remain at 45 degrees.
+
+GNSS course change confirmed the yaw sign and magnitude. Before/mid/after camera frames then
+separated manoeuvres from road geometry:
+
+- **16 clear junction-left manoeuvres**;
+- **2 borderline junction/traffic-island cases**, both in the development portion;
+- 6 curves, roundabout/U-turn or roadworks cases;
+- one stop-split manoeuvre emitted as two adjacent yaw excursions and merged into one label.
+
+The clear events are spread across the drive rather than clustered at one moment. The natural file
+boundary is also the pedagogically useful split:
+
+| Set | Chunks | Duration | Clear events |
+|---|---|---:|---:|
+| Development | `_0`–`_4` | ~21m49s | 7, plus 2 borderline teaching cases |
+| Sealed | `_5`–`_8` | ~16m09s | 9 |
+
+Participants receive the first five signals-only chunks. The final four stay with the organizers.
+This supports the scored transfer task without leaking its labels and resolves ticket 17's French
+distribution dependency.
+
+These are planning-grade counts, not sealed ground truth. The labelling pass must still set the
+full intervals and review edge cases; internal evaluation may refine labels without changing the
+five-chunk/four-chunk split.
+
+The confirmed Detection split is **15 Kashiwa / 10 French**, provisional until ticket 16's
+internal evaluator run shows how both sealed sets affect ranking.
+
+### Objects help evidence, not the definition
+
+`obj_det/objects` contains `VEHICLE` and `PERSON` detections with confidence, 3D position,
+velocity and tracking state. Objects appear in 82% of frames; vehicles appear around every clear
+turn candidate. That makes the topic useful for evidence and failure analysis.
+
+It does **not** carry lane association, road topology or right-of-way state. It cannot establish
+that a vehicle is oncoming or that the manoeuvre is protected. "Unprotected" therefore remains
+scenario context; sealed labels mark the interval of the turn that crosses the opposing lane by
+road geometry, consistent with ticket 18.
+
+### Route, caves and GNSS
+
+The main session is a 13.3 km drive in **Reims**, bounded by:
+
+- south 49.234444, west 4.035455;
+- north 49.265558, east 4.061915.
+
+Officially documented cellar addresses were geocoded through Nominatim and compared with the
+private track locally; no route coordinates were sent to a public service. The route's nearest
+approaches are:
+
+| Cellar | Nearest route point |
+|---|---:|
+| G.H. Martel | 15.6 m |
+| Pommery | 35.7 m |
+| Ruinart | 65.4 m |
+| Taittinger | 127 m |
+| Veuve Clicquot | 250 m |
+
+At a 40 m radius, the extension track therefore has **two clear zone encounters**: Martel and
+Pommery. It is viable as a small external-resource exercise, not as a rich many-cave hunt.
+Address provenance: [City of Reims cellar directory](https://en.reims.fr/visit-reims/cellars-in-champagne),
+the published visitor addresses for [Taittinger](https://www.taittinger.com/faq),
+[Ruinart](https://www.ruinart.com/fr-fr/foire-aux-questions.html) and
+[Veuve Clicquot](https://www.veuveclicquot.com/fr-FR/conditions-generales-de-vente), plus
+OpenStreetMap/Nominatim (© OpenStreetMap contributors).
+
+Every fix has status 0 and known covariance (type 2). Reported horizontal sigma is 0.73 m median,
+0.97 m at p95 and 4.36 m maximum. Across 18 stops of at least 5 s:
+
+- median per-stop p95 radial jitter: **0.26 m**;
+- p95 of those stop values: **0.81 m**;
+- maximum observed radial displacement: **1.32 m**.
+
+`NavSatFix` has no satellite-count field, so visible satellites cannot be recovered from this
+recording. The empirical quality is nevertheless comfortably sufficient for the zone exercise.
+
+### The standalone MCAP is a separate session
+
+`rosbag2_2025_07_30-17_00_08_0.mcap` is a prior-day **GNSS-only drive**, not a fragment of the
+main session: 16m43s, 4.29 km, with 4,014 fixes and 4,014 velocity messages but no IMU, objects or
+camera. Its route stays more than 1 km from the nearest checked cellar, so it adds nothing to the
+extension track.

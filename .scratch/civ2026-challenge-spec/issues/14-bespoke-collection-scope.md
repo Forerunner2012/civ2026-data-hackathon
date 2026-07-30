@@ -125,8 +125,8 @@ threshold fails; one who understood the event adapts. See ticket 18.
 
 **What this costs, all now in scope:**
 
-- A labelling pass on French data - blocked on ticket 24, which must first confirm the recording
-  contains enough left turns to build a sealed set from.
+- A labelling pass on French data. Ticket 24 confirms enough events and fixes the split:
+  chunks `_0`–`_4` development, `_5`–`_8` sealed with 9 clear left turns.
 - A second evaluator calibration on a different sensor stack - ticket 16.
 - Distribution of a French subset - ticket 17.
 - A topic inventory and viewer layout for the ZED/GNSS stack, which shares nothing with Autoware.

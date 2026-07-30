@@ -132,10 +132,11 @@ came from. That is also precisely what ticket 12 asks an agent trace to demonstr
 - **Zone file format** — GeoJSON, or a flat CSV of `name, lat, lon, radius`. CSV is friendlier to
   hand-editing and to a chat assistant emitting a list; GeoJSON handles polygons. Recommend CSV
   for the seed contract, with GeoJSON accepted.
-- **Radius versus GNSS error.** Urban multipath moves fixes by metres, so a radius in the tens of
-  metres, not single digits. The `timing.min_duration` block already suppresses glancing hits.
-- **Which city, and whether caves are actually on the route** — folded into ticket 24's survey.
-  This track is only viable if the drive passes a usable number of them.
+- **Radius versus road-to-resource distance.** Ticket 24 measured sub-metre typical jitter, so
+  GNSS error is not the binding constraint. The seed radius is 40 m because the road passes
+  Martel at 15.6 m and Pommery at 35.7 m. The `timing.min_duration` block suppresses glancing hits.
+- **City and route viability** — ticket 24 identifies Reims and two clear 40 m encounters. This
+  is a small extension exercise, not a many-cave hunt.
 
 ## Update - measured GNSS characteristics
 
@@ -148,9 +149,14 @@ From `mcap info` on the French recording:
 
 Consequences for the zone predicate:
 
-- A radius in the tens of metres is not just tolerable, it is **required**: at 4 Hz the vehicle can
-  cross a 10 m zone entirely between samples and never register.
-- `timing.min_duration` must be set against the sample rate, not against intuition. A minimum
-  duration below ~0.5 s is meaningless when samples arrive every 250 ms.
-- Both facts are good news for a 30-45 minute teaching module: a generous radius and a forgiving
-  duration make the exercise about *acquiring and plugging in the zones*, not about tuning.
+- **Correction:** 4 Hz does not require a tens-of-metres radius. At 50 km/h the vehicle travels
+  ~3.5 m between fixes; it cannot cross a 10 m-radius zone between adjacent samples on a
+  centreline pass. The earlier claim that it could was arithmetic error.
+- Ticket 24's stationary analysis found 0.26 m median per-stop p95 radial jitter, 0.81 m at the
+  95th percentile of stops and 1.32 m maximum observed displacement. Sampling and jitter are both
+  adequate.
+- A **40 m seed radius** is still appropriate, but because of the measured road-to-address
+  geometry: Martel is 15.6 m from the track and Pommery 35.7 m. Ruinart at 65.4 m should not be
+  pulled in by silently inflating one global radius.
+- `timing.min_duration` should remain sample-aware. A 1 s default is legible at 4 Hz and rejects
+  isolated fixes without turning the exercise into parameter tuning.

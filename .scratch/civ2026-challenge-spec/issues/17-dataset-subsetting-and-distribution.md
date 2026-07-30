@@ -101,10 +101,9 @@ ticket rather than changing what is above:
   (`/zed/zed_node/point_cloud/cloud_registered`), keep IMU, GNSS, fix velocity and object topics
   at full rate, keep `rgb/image_rect_color/compressed` - already compressed, so cheaper than
   Kashiwa's raw camera.
-- The **dev/sealed split for the French data is blocked on ticket 24**, which must first confirm
-  how many left turns the recording actually contains. If there are too few, the whole session may
-  have to be sealed, leaving teams no French data to iterate against - which would change the
-  shape of the transfer task.
+- Ticket 24 resolves the **French development/sealed split** at a natural file boundary:
+  chunks `_0`–`_4` are development (~21m49s, 7 clear left turns plus 2 borderline teaching
+  cases); chunks `_5`–`_8` stay sealed (~16m09s, 9 clear left turns).
 - The French stack shares **no topics** with Kashiwa, so it needs its own topic inventory and its
   own viewer layout. That is real preparation work, not a copy.
 

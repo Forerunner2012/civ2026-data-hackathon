@@ -38,7 +38,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 > widened it. Phase 0's gate turned out to carry three items the original §8 queue never listed
 > (cohort, skill floor, licensing — ticket 20), and the high skill floor forced the reversal of
 > ticket 14: the French-city dataset is back in the main track as a **scored** generalisation
-> test. Tickets 21 and 25 have since closed; **22, 23 and 24 remain open**.
+> test. Tickets 21, 24 and 25 have since closed; **22 and 23 remain open**.
 
 ## Decisions so far
 
@@ -107,21 +107,26 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   knowledge plugs in, not that AI does it. Requires an `external-resource seam` in EventSpec
   (`resources:` plus a `min_distance_to` derive op), which must land before the schema freezes.
   Judged qualitatively, not against a sealed cave list. Unifies with ticket 09's deferred rung 3:
-  one extends the inputs, the other the computation. Viability depends on ticket 24 confirming the
-  route passes enough caves.
-- **MEASURED, not decided** — `mcap du` on the French recording shows detection signals are
-  **1.2% of the bytes**: point cloud 71.5%, compressed RGB 27.3%, everything a detector reads
-  (IMU, objects, tf, fix, fix_velocity) under 40 MB per 3.2 GB chunk. Signals-only for the whole
-  38-minute session is **~350 MB**. Ticket 17's 15 GB target and its 8-of-16 route split were
-  solving a problem that does not exist; the dev/sealed split now rests on pedagogy alone. GNSS is
-  4 Hz, which sets the floor on zone precision in ticket 25. **Kashiwa is still unmeasured.**
+  one extends the inputs, the other the computation. Ticket 24 confirms Reims and two clear 40 m
+  zone encounters (Martel and Pommery), so this is viable as a small extension exercise.
+- **MEASURED** — `mcap du` on the French recording shows detection signals are **1.2% of the
+  bytes**: point cloud 71.5%, compressed RGB 27.3%, everything a detector reads (IMU, objects, tf,
+  fix, fix_velocity) under 40 MB per 3.2 GB chunk. Signals-only for the whole 38-minute session is
+  **~350 MB**. Ticket 17's 15 GB target was solving a problem that does not exist; the French
+  dev/sealed split rests on pedagogy alone. **Kashiwa is still unmeasured.**
+- [Does the French recording contain enough of the target manoeuvre?](issues/24-survey-french-bag.md)
+  — **yes: 16 clear junction-left manoeuvres plus 2 development-side borderline cases.** Chunks
+  `_0`–`_4` become development (~21m49s, 7 clear events); `_5`–`_8` stay sealed (~16m09s, 9 clear
+  events). Objects support evidence but cannot establish right-of-way. The 13.3 km route is in
+  Reims; 40 m zones produce two clear cellar encounters. GNSS jitter is sub-metre typically and
+  1.32 m at the maximum observed stationary displacement; satellite count is not recorded.
 - [How do 15–30 submissions get judged?](issues/21-pitch-and-judging-model.md) — **auto-score at
   12:30, jury reads capped one-page reports over lunch, results block is a reveal plus ~4
   walkthroughs including the most instructive failure.** 55 points machine-scored (detection,
   evidence, reproducibility), 45 jury-scored from the report, bonus 20 with the jury. `report.md`
   gains a fixed structure with a "what transferred and what did not" heading, which is what makes
-  the transfer insight scoreable. Solo and duos rank together. Provisional: detection splits
-  10 Kashiwa / 15 French, pending ticket 24.
+  the transfer insight scoreable. Solo and duos rank together. Detection splits **15 Kashiwa / 10
+  French**, provisional until the internal evaluator run shows how both sealed sets affect ranking.
 - [Cohort, skill floor and "open source"](issues/20-cohort-skill-floor-licensing.md) — **30
   participants, solo or in duos**, all experienced with robotic/vehicular data. Kit ships
   permissively (MIT/Apache-2.0 code, CC BY 4.0 content) with credit suggested; workshop content

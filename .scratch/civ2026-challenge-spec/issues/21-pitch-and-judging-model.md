@@ -94,15 +94,23 @@ not a consolation prize — §2 makes failure a deliverable, and a room of pract
 more from one honest dead end than from three clean wins. Say so when introducing it, or it reads
 as a booby prize.
 
-### Open sub-question this inherits from ticket 16
+### Detection split — confirmed after ticket 24
 
-**How the 25 Detection points divide between Kashiwa and the French transfer.** Recommendation:
-**10 Kashiwa / 15 French**, because ticket 20 established that transfer is where the difficulty
-lives and Kashiwa detection is effectively the warm-up. Someone who never reaches the second
-dataset scores 10 of 25 — harsh, and the correct incentive.
+**15 Kashiwa / 10 French.**
 
-**Provisional on ticket 24.** If the French recording turns out to hold few left turns, the
-transfer score becomes noisy and the weighting has to move back toward Kashiwa.
+Ticket 24 found enough French left turns for a stable sealed set, but that does not make the
+transfer recording the event's primary dataset. Kashiwa carries the full learning arc:
+investigation, detector construction, tuning, evidence extraction, visualization and failure
+analysis. French is the shorter sealed generalisation test. Giving it 15 of the 25 Detection
+points would confuse "harder test" with "hero dataset."
+
+Ten points still makes transfer consequential: it is 40% of Detection, and the report separately
+scores what transferred and what did not. A team cannot ignore it without a visible loss.
+
+**Provisional until the internal evaluation.** Run the deliberate-detector ranking test from
+ticket 16 across both sealed sets. The split may be tuned before the challenge contract freezes if
+the evaluator shows that either dataset dominates the ranking or contributes excessive score
+noise. The current prior is 15/10, not an immutable constant.
 
 ### Two operational requirements this creates
 
