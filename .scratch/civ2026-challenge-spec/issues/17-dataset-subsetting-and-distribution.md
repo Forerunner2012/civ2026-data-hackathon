@@ -28,6 +28,13 @@ What has to be settled:
   that does not consume session time.
 - **Disk space on a BYOD laptop** is itself a prerequisite to publish alongside the RAM floor.
 
+**Correction on what the constraint actually is.** MCAP is read as a *stream* with an index —
+neither the runner nor Polars holds a whole bag in memory, so a 7 GB bag does not need 7 GB of
+RAM. 16 GB is a comfort recommendation, not a gate. The binding constraints are therefore
+**transfer size, disk space and per-bag processing time**, not memory. That means the reduction
+below is justified by what attendees can realistically download and store, not by what their
+machine can compute over — and if transfer turns out to be cheap, keeping more data costs little.
+
 ## Why this is on the frontier
 
 Nothing blocks it. It is a hard constraint on ticket 04's environment and on the warm-up design
