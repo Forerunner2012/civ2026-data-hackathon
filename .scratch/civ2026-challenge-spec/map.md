@@ -38,7 +38,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 > widened it. Phase 0's gate turned out to carry three items the original §8 queue never listed
 > (cohort, skill floor, licensing — ticket 20), and the high skill floor forced the reversal of
 > ticket 14: the French-city dataset is back in the main track as a **scored** generalisation
-> test. Four tickets are open again: 21, 22, 23, 24.
+> test. Ticket 21 has since closed; **22, 23 and 24 remain open**.
 
 ## Decisions so far
 
@@ -101,6 +101,13 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   positives, which is what gives `merge_gap` teeth. Gaps excluded from both sets; deliberate
   quality defects scored under Quality, not Detection. Validated by ranking four deliberately
   different detectors; all values provisional until that run.
+- [How do 15–30 submissions get judged?](issues/21-pitch-and-judging-model.md) — **auto-score at
+  12:30, jury reads capped one-page reports over lunch, results block is a reveal plus ~4
+  walkthroughs including the most instructive failure.** 55 points machine-scored (detection,
+  evidence, reproducibility), 45 jury-scored from the report, bonus 20 with the jury. `report.md`
+  gains a fixed structure with a "what transferred and what did not" heading, which is what makes
+  the transfer insight scoreable. Solo and duos rank together. Provisional: detection splits
+  10 Kashiwa / 15 French, pending ticket 24.
 - [Cohort, skill floor and "open source"](issues/20-cohort-skill-floor-licensing.md) — **30
   participants, solo or in duos**, all experienced with robotic/vehicular data. Kit ships
   permissively (MIT/Apache-2.0 code, CC BY 4.0 content) with credit suggested; workshop content
