@@ -7,6 +7,7 @@ import {
   decisionsOpen,
   drivingForces,
   evaluationDesign,
+  eventFacts,
   facilitation,
   nonGoals,
   phases,
@@ -43,6 +44,15 @@ export default function Organizers() {
       <div className="internal-banner" role="note">
         <b>Organizer view.</b> Teaching goals, evaluation internals and open decisions. Do not screen-share
         this page in a room with participants — the participant view lives at <a href="/participants">/participants</a>.
+      </div>
+
+      <div className="event-strip">
+        <span>
+          <b>{eventFacts.daysOut}</b> days out
+        </span>
+        <span>{eventFacts.when}</span>
+        <span>{eventFacts.where}</span>
+        <span>{eventFacts.slot}</span>
       </div>
 
       <section className="hero organizer-hero" id="top">
@@ -249,10 +259,11 @@ export default function Organizers() {
             STILL OPEN <i>{decisionsOpen.length}</i>
           </b>
           <div className="decision-list">
-            {decisionsOpen.map(({ ticket, choices, blocked }) => (
-              <article key={ticket}>
+            {decisionsOpen.map(({ ticket, choices, blocked, urgent }) => (
+              <article className={urgent ? "urgent" : ""} key={ticket}>
                 <span>{ticket}</span>
                 <p>
+                  {urgent && <b className="urgent-tag">URGENT</b>}
                   {choices}
                   {blocked && <em className="decision-caveat">Blocked by {blocked}.</em>}
                 </p>

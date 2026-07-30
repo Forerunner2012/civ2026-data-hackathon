@@ -184,22 +184,58 @@ export const decisionsMade: { ticket: string; title: string; answer: string; cav
     caveat:
       "Risk accepted: no hardware swap when setup fails, so the non-ROS fallback pack is load-bearing.",
   },
+  {
+    ticket: "05",
+    title: "Data rights",
+    answer:
+      "URT-Kashiwa is published by Tsukada Laboratory, University of Tokyo, under CC BY 4.0. Subsets and permanent offline attendee copies are expressly permitted; attribution is the only condition.",
+    caveat:
+      "A delete-after-the-event clause would breach the licence. Access is not guaranteed to persist — mirror the 16 MCAPs now. Personal data is a separate, open question (19).",
+  },
+  {
+    ticket: "06",
+    title: "Previous solution",
+    answer:
+      "Reviewed. Logic and workflow extracted; tool usage and tuned thresholds deliberately left behind. The prior detector was really “a right turn while something was detected”, and nothing was scored against ground truth.",
+    caveat: "No historical calibration data exists. The internal mini-hackathon is the only source.",
+  },
+  {
+    ticket: "08",
+    title: "Duration",
+    answer:
+      "Not a decision — fixed by the published programme. Thursday 3 September 2026, 09:30–12:30, with a separate 14:30–15:00 results slot.",
+    caveat:
+      "Pitches can leave the three-hour block entirely, and teams get the two-hour lunch to prepare one. §4.2 needs rebuilding around this.",
+  },
 ];
 
+/** Verified against the published programme on 30 July 2026. */
+export const eventFacts = {
+  where: "Miyazaki City, Japan",
+  when: "31 Aug – 4 Sep 2026",
+  slot: "Hackathon Thu 3 Sep, 09:30–12:30 · results 14:30–15:00",
+  daysOut: 35,
+};
+
 /** Open questions. Deliberately visible; resolve in dependency order. */
-export const decisionsOpen: { ticket: string; choices: string; blocked?: string }[] = [
-  { ticket: "05", choices: "confirm URT-Kashiwa redistribution terms — assumed, never verified" },
-  { ticket: "06", choices: "retrieve the previous hackathon's solution (task, not a decision)" },
-  { ticket: "07", choices: "strict legal clean-room process | independent functional reimplementation with provenance review", blocked: "06" },
-  { ticket: "08", choices: "3-hour fixed agenda | 3.5-hour agenda with longer pitch and quality review" },
+export const decisionsOpen: { ticket: string; choices: string; blocked?: string; urgent?: boolean }[] = [
+  {
+    ticket: "19",
+    choices:
+      "is the camera imagery clear to redistribute? CC BY 4.0 does not license privacy rights, and no consent, anonymisation or ethics statement exists in the public record",
+    urgent: true,
+  },
+  { ticket: "17", choices: "how does 112 GB (16 bags × ~7 GB) reach BYOD laptops offline? subsetting and distribution", urgent: true },
+  { ticket: "18", choices: "what is an “unprotected right turn” operationally? you cannot label what you have not defined", urgent: true },
+  { ticket: "15", choices: "review and test gates for AI-built tooling — no definition of done yet" },
   { ticket: "09", choices: "EventSpec with CEL only | EventSpec plus an advanced Python detector API" },
   { ticket: "10", choices: "PlotJuggler 4 only | PlotJuggler 4 plus Lichtblick for robotic context" },
   { ticket: "11", choices: "no model supplied | one pinned local CPU model | shared on-site inference service" },
   { ticket: "12", choices: "agent as unscored demonstration | agent bonus up to 10 points | separate advanced prize", blocked: "11" },
   { ticket: "13", choices: "`cive` CLI name | `civ` CLI name" },
-  { ticket: "14", choices: "what the bespoke French-city bags are for, and their drop-dead date" },
-  { ticket: "15", choices: "review and test gates for AI-built tooling — no definition of done yet" },
-  { ticket: "16", choices: "URT evaluator calibration: tolerance, duplicates, missing data", blocked: "06, 09" },
+  { ticket: "07", choices: "strict legal clean-room process | independent functional reimplementation with provenance review" },
+  { ticket: "16", choices: "URT evaluator calibration: tolerance, duplicates, missing data — no historical calibration data exists", blocked: "09, 18" },
+  { ticket: "14", choices: "bespoke French-city bags — recommendation is now to rule out of scope: 35 days, mirrored handedness, worse personal-data posture" },
 ];
 
 export const blockers = [

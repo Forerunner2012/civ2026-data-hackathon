@@ -30,3 +30,22 @@ What has to be settled:
 
 Nothing blocks it, and the drop-dead date needs to exist *now* to be meaningful — a deadline
 set after the fact is not a deadline.
+
+## Update after tickets 05, 06 and 08
+
+The honest recommendation is now **rule this out of scope** rather than set a date.
+
+- **The event is 35 days out** (Thu 3 Sep 2026, verified in ticket 08). Collecting, cleaning,
+  manifesting, inventorying and building layouts for a second dataset inside that window, while
+  evaluation and rehearsal are the acknowledged long poles, is not credible.
+- **The handedness problem is confirmed by the publisher**, who describe URT as "equivalent to
+  unprotected left turns in Europe". France is right-hand traffic: the French bags would contain
+  the *mirror* manoeuvre. Detector and layout reuse does not hold.
+- **The personal-data posture is far worse.** Ticket 05 found Kashiwa is a controlled campus with
+  staged actors; French-city bags are open public roads — uninvolved pedestrians, real plates,
+  real addresses, real GDPR, and none of it covered by CC BY 4.0. This is a bigger problem than
+  the one ticket 19 is already trying to close in time.
+- The same-programme Kashiwa collection event (7–9 Sep 2026) also lands *after* CIV 2026.
+
+Ruling this out of scope is a scoping act and therefore the user's call, not the agent's — but
+the effort is better spent as seed data for a future edition.

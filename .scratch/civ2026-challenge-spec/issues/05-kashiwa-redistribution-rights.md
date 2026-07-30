@@ -1,7 +1,7 @@
 # Are URT-Kashiwa redistribution terms sufficient?
 
 Type: research
-Status: open
+Status: resolved
 
 ## Question
 
@@ -34,3 +34,38 @@ though nothing is blocked on it yet.
 
 Resolvable by a `/research` subagent plus whatever agreement paperwork exists outside the repo.
 The repo contains no licence file for the dataset.
+
+## Answer
+
+Full findings with verbatim licence clauses and sources:
+[`../research/05-kashiwa-redistribution-rights.md`](../research/05-kashiwa-redistribution-rights.md).
+
+**Copyright: cleared.** URT-Kashiwa is `github.com/tlab-wide/URT-Kashiwa`, published by Tsukada
+Laboratory, The University of Tokyo, under **CC BY 4.0**. Subset redistribution is expressly
+granted ("in whole **or in part**"), the grant is irrevocable, and attendees keep offline copies
+**as of right** — as direct licensees of UTokyo, not by the organizers' grace. Attribution is the
+only condition: no share-alike, no embargo, no research-only limit. Ticket 01's assumption holds.
+
+Three operative consequences:
+
+1. **The organizers may not impose a delete-after-the-event clause** on Kashiwa material —
+   §2(a)(5)(b) forbids downstream restrictions, so such a rule would breach the licence being
+   relied on. Attendee submissions may be licensed however they like.
+2. **Mirror the data now.** §6(c) lets T-Lab stop distributing at any time without affecting
+   granted rights — rights survive, *access* does not. Take a pinned local copy of all 16 MCAPs
+   with checksums and a retrieval date before further planning depends on them.
+3. Sealed labels the organizers author are the one grey case. Cheapest fix: publish them CC BY
+   4.0 anyway and stop caring.
+
+**Personal data: not cleared — verified silence, not verified safety.** No consent,
+anonymisation, ethics, APPI or GDPR statement exists in any published artifact, and CC BY 4.0
+§2(b)(1) expressly does not license privacy or personality rights. The bags carry a front RGB
+camera and GNSS. Graduated to **ticket 19**, which is now the highest-urgency item on the board.
+
+Two corrections to this ticket's framing, both verified: the event is in **Miyazaki, Japan**, not
+France (GDPR reaches Heex via its French establishment, not the venue); and the dataset's
+corresponding author, Manabu Tsukada, is on the CIV 2026 organizing committee — every remaining
+unknown is one email away.
+
+**Newly collected data is not covered.** The grant attaches only to the 16 routes published
+2025-09-24. Immaterial for the freeze, since ticket 01 already made Kashiwa the only dependency.

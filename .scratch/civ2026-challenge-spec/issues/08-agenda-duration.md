@@ -1,7 +1,7 @@
 # Is the agenda three hours or three and a half?
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Question
 
@@ -26,3 +26,33 @@ What has to be settled:
 
 Nothing blocks it, and it constrains the run-of-show, the coach guide and the checkpoint
 timings currently sitting in the map's fog.
+
+## Answer
+
+**Not a decision — settled by the published programme.** Verified at
+`https://civ-summerschool.org/` on 30 July 2026:
+
+- **CIV 2026: 31 August – 4 September 2026, Miyazaki City, Japan.**
+- **Hackathon: Thursday 3 September, 09:30 – 12:30.** Three hours, fixed. The 3.5-hour option
+  never existed.
+- **12:30 – 14:30 lunch break.**
+- **14:30 – 15:00 "Hackathon results".**
+
+Two consequences that change the design rather than merely confirming it:
+
+1. **There is a separate 30-minute results slot after lunch.** §4.2 currently spends the last 15
+   minutes of the three hours on Transfer. It does not have to: judging and pitches can move to
+   14:30–15:00, which buys back 15 minutes of investigation *and* gives teams the two-hour lunch
+   to prepare a pitch instead of writing it under the clock. The run-of-show should be rebuilt
+   around 09:30–12:30 producing a submission, and 14:30–15:00 presenting it.
+2. **The event is 35 days out** (charted 30 July 2026). This is materially tighter than the
+   "under three months" the map was charted against. Re-scope accordingly — see the map's
+   Destination note.
+
+Also settled by the same source: the organizing committee includes both Manabu Tsukada
+(University of Tokyo, and the URT-Kashiwa corresponding author — see ticket 05) and Matthieu
+Carré (Heex Technologies).
+
+Still open, and now urgent rather than leisurely: whether a pre-event setup session exists for
+the BYOD environment risk accepted in ticket 04. The programme shows no such slot, so it would
+have to be remote and voluntary in the week before.
