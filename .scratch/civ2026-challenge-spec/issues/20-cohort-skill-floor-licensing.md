@@ -49,3 +49,18 @@ Two distinct obligations:
 
 **The workshop content and the website will be public for the event.** That has an immediate
 consequence for the organizer view — see ticket 22.
+
+## Update - the CLI is published too
+
+The `civ` CLI ships public alongside the workshop content, so participants can tune or customise
+it. **No contributions are expected back** - it is a gift, not a community project.
+
+Two consequences worth carrying:
+
+- **It extends the extensibility lesson one level down.** Ticket 25 makes external *data* plug in
+  through the `resources:` seam; a published, forkable CLI means the *tool* is a seam too. "If the
+  runner does not do what you need, change it" is a stronger closing message than "here is our
+  tool".
+- **Framing and maintenance expectations.** Say "take it" rather than "join us". No issue tracker
+  triage, no PR review burden, no roadmap implied. That also keeps the ticket 07 clean-room story
+  simple: the published artifact stands alone and owes nothing upstream.

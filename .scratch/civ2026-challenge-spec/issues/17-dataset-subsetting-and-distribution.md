@@ -107,3 +107,51 @@ ticket rather than changing what is above:
   shape of the transfer task.
 - The French stack shares **no topics** with Kashiwa, so it needs its own topic inventory and its
   own viewer layout. That is real preparation work, not a copy.
+
+## Update - MEASURED. The size problem was an illusion.
+
+Measured with the `mcap` CLI (`C:\Program Files\MCAP\mcap.exe`, on PATH) against French chunk 0
+(3.22 GB, 4m21s, 127 102 messages, uncompressed chunks):
+
+| Topic | Bytes | Share |
+|---|---|---|
+| `/zed/zed_node/point_cloud/cloud_registered` | 2.30 GB | **71.5%** |
+| `/zed/zed_node/rgb/image_rect_color/compressed` | 877 MB | **27.3%** |
+| `/zed/zed_node/imu/data` | 16.6 MB | 0.52% |
+| `/zed/zed_node/obj_det/objects` | 15.4 MB | 0.48% |
+| `/tf` | 7.2 MB | 0.22% |
+| `/fix_velocity` | 372 kB | 0.01% |
+| `/fix` | 134 kB | 0.004% |
+
+**Every signal a detector operates on is 1.2% of the bytes.** Extrapolated across the 9 chunks
+(28.1 GB on disk for the full 38-minute session):
+
+- **signals only: ~350 MB**
+- signals + compressed images: **~8 GB**
+- point cloud alone: **~21 GB**, and it contributes nothing to any track in this event
+
+### What this changes
+
+- **The 15 GB target and the "8 of 16 routes" split were solving a problem that does not exist.**
+  Size stopped being the constraint the moment images and point clouds came off. The dev/sealed
+  split still stands, but it is now justified **only by pedagogy** — you need a sealed set — not
+  by bytes.
+- **Ship signals-only as the default distribution.** It fits anywhere, downloads in seconds, and
+  it is the complete input surface for detection, timing, transfer and the geofence track.
+- **Images become an optional context pack**, per the organizer's direction that video and images
+  are "highly contextual (can be stripped for faster pipelines when prototyping/testing)". This
+  also settles ticket 10's contingency: PlotJuggler over signals is the required path, and image
+  context is an opt-in extra rather than a distribution problem.
+- **The progressive plan still helps, for a different reason.** Starting with roughly a quarter of
+  the data by SSD and expanding as people settle their pipelines is now about *iteration speed*,
+  not disk space. A smaller working set means faster runs while prototyping.
+- **The "send only CLI calls to the organizer's machine" option** stays valuable for full-resolution
+  or image-heavy work, and it has a side benefit worth naming: a run that only exists as a CLI
+  invocation someone else executes is **reproducible by construction**, which is exactly what the
+  Reproducibility category (15 points) is trying to measure.
+
+### Still unmeasured
+
+**Kashiwa has not been measured** - this ratio is from French data. Kashiwa carries *uncompressed*
+`image_raw` plus clustering point clouds, so its signal fraction is likely even smaller, but that
+is inference. Run `mcap du` on one Kashiwa route before fixing the numbers.

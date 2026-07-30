@@ -109,6 +109,12 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   Judged qualitatively, not against a sealed cave list. Unifies with ticket 09's deferred rung 3:
   one extends the inputs, the other the computation. Viability depends on ticket 24 confirming the
   route passes enough caves.
+- **MEASURED, not decided** — `mcap du` on the French recording shows detection signals are
+  **1.2% of the bytes**: point cloud 71.5%, compressed RGB 27.3%, everything a detector reads
+  (IMU, objects, tf, fix, fix_velocity) under 40 MB per 3.2 GB chunk. Signals-only for the whole
+  38-minute session is **~350 MB**. Ticket 17's 15 GB target and its 8-of-16 route split were
+  solving a problem that does not exist; the dev/sealed split now rests on pedagogy alone. GNSS is
+  4 Hz, which sets the floor on zone precision in ticket 25. **Kashiwa is still unmeasured.**
 - [How do 15–30 submissions get judged?](issues/21-pitch-and-judging-model.md) — **auto-score at
   12:30, jury reads capped one-page reports over lunch, results block is a reveal plus ~4
   walkthroughs including the most instructive failure.** 55 points machine-scored (detection,

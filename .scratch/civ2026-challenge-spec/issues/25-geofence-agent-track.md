@@ -136,3 +136,21 @@ came from. That is also precisely what ticket 12 asks an agent trace to demonstr
   metres, not single digits. The `timing.min_duration` block already suppresses glancing hits.
 - **Which city, and whether caves are actually on the route** — folded into ticket 24's survey.
   This track is only viable if the drive passes a usable number of them.
+
+## Update - measured GNSS characteristics
+
+From `mcap info` on the French recording:
+
+- **`/fix` (NavSatFix) is 4 Hz**, and `/fix_velocity` likewise. At 50 km/h that is ~3.5 m of travel
+  between fixes; at 30 km/h, ~2 m.
+- `/tf` runs at 229 Hz and `/zed/zed_node/imu/data` at 191 Hz, so the *pose* is available far more
+  finely than the *fix* - worth knowing if zone entry timing needs to be sharper than 250 ms.
+
+Consequences for the zone predicate:
+
+- A radius in the tens of metres is not just tolerable, it is **required**: at 4 Hz the vehicle can
+  cross a 10 m zone entirely between samples and never register.
+- `timing.min_duration` must be set against the sample rate, not against intuition. A minimum
+  duration below ~0.5 s is meaningless when samples arrive every 250 ms.
+- Both facts are good news for a 30-45 minute teaching module: a generous radius and a forgiving
+  duration make the exercise about *acquiring and plugging in the zones*, not about tuning.
