@@ -49,3 +49,38 @@ route keeps its existing `noindex` metadata for any future private deployment.
 
 The rendered-output test suite enforces all four properties. `npm test` passes, and a local dev
 probe confirmed `/organizers` still returns 200.
+
+## Deployment state and standing constraints
+
+Recorded here because it existed nowhere in the repo — only in a temporary handoff document that
+has since been deleted. This is operational state, not a decision.
+
+**Nothing is deployed.** No site source was uploaded, no hosted version was saved, and nothing is
+publicly reachable today.
+
+**A Sites project shell exists.** Its non-secret project id is committed in
+`handoff-site/.openai/hosting.json`. **Do not create the site again** — creating a second shell
+for the same site is the failure mode this note exists to prevent.
+
+**A private source upload was attempted and correctly refused**, because copying the source to an
+external private repository had not been explicitly authorized. No repository credential was
+stored anywhere. If authorization arrives, obtain a fresh short-lived credential, use it
+in-memory per command, and never persist it.
+
+**Publishing requires an explicit instruction from the organizer** — something unambiguous such
+as "approve the private Sites source upload and deployment". Absent that, the site stays local.
+
+When that authorization arrives, the sequence is:
+
+1. Re-verify a clean tree and a clean production build (`npm test` must pass; the public artifact
+   must still contain no organizer route or organizer-only text).
+2. Compute the site-root commit from the approved branch state:
+   `git subtree split --prefix=handoff-site <approved-commit>`.
+3. Push that exact commit to the existing Sites source repository with a per-command, in-memory
+   credential.
+4. Package with the Sites plugin's `scripts/package-site.sh`.
+5. Save one version, prefer owner-only deployment, poll to completion, then open the resulting URL.
+
+**Before any public deployment**, confirm the artifact boundary above still holds — the tests are
+the gate, and they should be re-run against the exact commit being published rather than against
+the working tree.

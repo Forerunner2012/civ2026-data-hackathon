@@ -150,9 +150,10 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   is a property of the country and not of the detector. Converts transfer from a topic remap into
   a comprehension test: copy a threshold and you find nothing.
 - [How does 112 GB reach BYOD laptops?](issues/17-dataset-subsetting-and-distribution.md) —
-  **1 warm-up + 7 dev routes distributed, 8 sealed.** Drop point clouds and the map, keep scalars
-  at full rate, keep camera downscaled and rate-limited. Target ≤ 15 GB, pre-event download with
-  checksums, USB fallback. Needs a per-topic byte measurement to confirm.
+  **1 warm-up + 7 dev routes distributed, 8 sealed**, drop point clouds and the map, keep scalars
+  at full rate. Pre-event download with checksums, USB fallback. Superseded in part by the
+  measurement above: the ≤ 15 GB target was never the binding constraint, and the split now rests
+  on pedagogy rather than bytes.
 
 ## Not yet specified
 
