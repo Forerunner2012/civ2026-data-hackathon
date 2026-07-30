@@ -33,6 +33,20 @@ A sealed generalisation test cannot rest on an assumption about event counts. If
 "four left turns in 38 minutes", the transfer task needs redesigning — more collection, a
 different manoeuvre, or a qualitatively judged rather than scored transfer.
 
+## Also establish, for ticket 25
+
+The extension track (ticket 25) detects passes in front of champagne caves by GNSS. It is only
+viable if the drive actually passes a usable number of them, so the same survey should answer:
+
+- **Which city is this**, from the `/fix` track. Champagne caves points at Reims or Épernay, but
+  that is inference from the premise, not something anyone has read off the data.
+- **The route's extent and shape** — a bounding box and a rough path, enough to check against a
+  list of cave locations.
+- **How many known caves the route plausibly passes**, and whether they are clustered on one
+  street or spread across the drive.
+- **GNSS quality** — fix status, visible satellite count, and how much the position jitters when
+  stationary. This sets the zone radius in ticket 25 and decides whether the track works at all.
+
 ## Method
 
 Decode `/zed/zed_node/imu/data` and `/fix_velocity`, integrate heading, and count sustained

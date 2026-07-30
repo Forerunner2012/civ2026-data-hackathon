@@ -38,7 +38,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 > widened it. Phase 0's gate turned out to carry three items the original §8 queue never listed
 > (cohort, skill floor, licensing — ticket 20), and the high skill floor forced the reversal of
 > ticket 14: the French-city dataset is back in the main track as a **scored** generalisation
-> test. Ticket 21 has since closed; **22, 23 and 24 remain open**.
+> test. Tickets 21 and 25 have since closed; **22, 23 and 24 remain open**.
 
 ## Decisions so far
 
@@ -101,6 +101,14 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   positives, which is what gives `merge_gap` teeth. Gaps excluded from both sets; deliberate
   quality defects scored under Quality, not Detection. Validated by ranking four deliberately
   different detectors; all values provisional until that run.
+- [Zone monitoring: champagne caves by GNSS](issues/25-geofence-agent-track.md) — **the extra
+  track becomes the *extension* track.** Participants acquire cave locations by any means they
+  like — agent, chat assistant, OSM query, or by hand — because the lesson is that outside
+  knowledge plugs in, not that AI does it. Requires an `external-resource seam` in EventSpec
+  (`resources:` plus a `min_distance_to` derive op), which must land before the schema freezes.
+  Judged qualitatively, not against a sealed cave list. Unifies with ticket 09's deferred rung 3:
+  one extends the inputs, the other the computation. Viability depends on ticket 24 confirming the
+  route passes enough caves.
 - [How do 15–30 submissions get judged?](issues/21-pitch-and-judging-model.md) — **auto-score at
   12:30, jury reads capped one-page reports over lunch, results block is a reveal plus ~4
   walkthroughs including the most instructive failure.** 55 points machine-scored (detection,
