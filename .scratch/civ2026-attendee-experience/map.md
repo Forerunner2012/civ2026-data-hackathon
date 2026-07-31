@@ -59,6 +59,44 @@ to the 15:00 wrap, without inventing anything on the day. The map produces **dec
 - As decisions close, update **§4.2 and §4.7** of `HACKATHON-HANDOFF.md` so the handoff and the map
   agree. Both sections currently describe a room that does not exist.
 
+## Say it in plain words
+
+Map one's coinages are opaque to a reader who was not in the room, including native and non-native
+speakers alike. Its own tickets keep their wording — they are a decision record — but **everything
+written from here on, and everything a coach or participant reads, uses the plain term.**
+
+| Instead of | Say | Which means |
+|---|---|---|
+| sealed labels | **the answer key** | The list of time ranges the organizers write by hand: *route 7, a turn crossing oncoming traffic, 03:14.2 → 03:19.8* |
+| sealed set / sealed routes | **the held-back routes** | Recordings participants never receive, and never see answers for. Scoring runs against these |
+| development set | **the practice routes** | Recordings participants do get, with the answer key for 2–3 events only |
+| unsealed labels | **the worked examples** | Those 2–3 published answers. They show where a turn starts and ends; they are not a training set |
+
+If a term needs a paragraph to explain, it is the wrong term.
+
+## Where this map hands over
+
+This map ends at decisions. **The build is handed over through
+[`/to-spec`](../../.agents/skills/to-spec/SKILL.md) then
+[`/to-tickets`](../../.agents/skills/to-tickets/SKILL.md), not through a third map** — the route
+`/ask-matt` calls the main flow, where these two maps are steps 1–2.
+
+The reasoning, so nobody re-opens it: the build has almost no fog. Map one froze every contract it
+needs — EventSpec's shape, the CLI surface, output schemas, evaluator semantics, licence posture — so
+what remains is execution, and wayfinder tickets resolve decisions rather than slicing a build. A
+third map would produce a project plan wearing a wayfinder costume.
+
+**Spec the Phase 1 vertical slice first**, not the whole kit: `inspect → detect → clip → score →
+report` on one Kashiwa bag then one French chunk, offline. It is already the shape `/to-tickets`
+wants, it de-risks everything downstream, and specifying the rest afterwards means doing it with real
+knowledge. The four requirements the organizer named — *does `civ` run on both stacks, does the page
+advance on schedule, does the form accept a submission, can 15–30 entries be scored inside the lunch
+window* — become archived requirements there rather than notes scattered across these tickets.
+
+**Only one thing would justify a third map:** the vertical slice going badly. Then *what do we cut*
+becomes real fog — drop the French dataset, drop `derive`, one dataset and a deeper report — and
+those questions cannot be phrased sharply until the size of the slip is known.
+
 ## The fixed frame
 
 Design inputs, all settled upstream. Listed once so no ticket re-derives them.
