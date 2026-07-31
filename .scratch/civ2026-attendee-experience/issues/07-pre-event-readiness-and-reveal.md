@@ -123,13 +123,32 @@ different and better thing.
 
 ### What ships when
 
+**Corrected.** The first version of this row said *brief, scenario, rubric, report template* all
+arrive at 09:30. That was too coarse and it contradicted the live participant site, which already
+publishes the brief and the rubric. The site is right; this table was wrong.
+
+**The embargoed thing is the scenario, not the paperwork.** §4.3's brief is deliberately an
+*incomplete incident report* — it never names the manoeuvre — and the rubric reveals nothing about
+the event while helping people arrive prepared, which serves §3.4's *80% complete both dataset runs*
+better than withholding it. Conflating the two would have forced a working public page to be
+stripped for no gain.
+
 | | Pre-event | 09:30 |
 |---|---|---|
 | Container image, `civ`, quickstart | ✅ | |
 | **Both datasets**, with checksums | ✅ | |
 | The gate command and the support channel | ✅ | |
-| Brief (§4.3), scenario, rubric, report template | | ✅ |
-| [The attendee page](17-attendee-page.md) and its timetable | | ✅ |
+| **Brief (§4.3)** — the incomplete incident report | ✅ | |
+| **Rubric, scoring rules, recognition, report template** | ✅ | |
+| The run of show, and what to bring | ✅ | |
+| **The scenario** — which manoeuvre, on which recordings | | ✅ |
+| [The attendee page](17-attendee-page.md), its hints and its unlocks | | ✅ |
+
+**What enforces it is the test, not this table.** `handoff-site`'s leakage suite bans the scenario
+from the public bundle by pattern
+([ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)). Anything that
+belongs in the 09:30 column and reaches the site will fail `npm test` — so the boundary is executable
+rather than remembered, and this table is documentation of it rather than the control.
 
 ### Exploring the data beforehand is allowed, and say so
 

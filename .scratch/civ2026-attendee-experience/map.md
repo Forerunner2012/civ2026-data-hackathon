@@ -172,8 +172,10 @@ Design inputs, all settled upstream. Listed once so no ticket re-derives them.
   drop-ins at ~10 days out**, because the week before is the week everyone is travelling. The
   readiness token is the same command pair as the in-session gate, so the gate becomes a re-check.
   **The whole task is known at 09:30** — a visible tempo requires a visible shape, so the transfer
-  cannot be held back. Exploring the data beforehand is explicitly encouraged. **Naming trap:**
-  *URT*-Kashiwa expands to the scenario, so material says "the Kashiwa recordings", never the acronym.
+  cannot be held back. Exploring the data beforehand is explicitly encouraged. **The embargoed thing
+  is the scenario, not the paperwork** — the brief, rubric and run of show all ship early, and the
+  leakage test is what enforces the line rather than a table. **Naming trap:** *URT*-Kashiwa expands
+  to the scenario, so material says "the Kashiwa recordings", never the acronym.
 - [Submission intake](issues/09-submission-intake.md) — **LAN endpoint on the organizer box, USB as
   the stated fallback, and unlimited resubmission.** Resubmission is not a nicety: two of
   [03](issues/03-cadence.md)'s beats are lies without it, and early submissions flatten the day's one
