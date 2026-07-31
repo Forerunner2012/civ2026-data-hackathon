@@ -176,7 +176,21 @@ expensive thing only if evidence demands it.
 
 ### Coach count and identity
 
-**Three minimum, four preferred. A floor, not a ratio.**
+> **Amended: it is 2–3, not 3–4.** Organizer's answer — that is how many people are on the floor on
+> the day. The floor below was derived, not given, and reality does not meet it at the low end.
+>
+> **What changes at two:** a 30-desk sweep is 10 minutes each rather than 3–4, so **sweep every
+> other beat**, not every beat. And when both are at a desk, nobody is watching the room at all.
+>
+> **What that means:** the page and pairing carry more weight, and those are precisely the two
+> mechanisms [18](18-rehearsal-observations.md) says a two-person rehearsal **cannot test**. That
+> loop is worth naming rather than discovering: if the page is not self-sufficient, the fallback is
+> a coach who is already busy. It is the strongest argument for spending rehearsal time on *where
+> Arnaud stalls* rather than on mechanics.
+>
+> At three, the original arithmetic holds and sweeps stay per-beat.
+
+**Three minimum, four preferred. A floor, not a ratio.** *(Superseded — see above.)*
 
 The arithmetic: a sweep of 30 desks at ~20 seconds each is 10 minutes for one coach — most of the
 gap between beats. Split three ways it is 3–4 minutes, leaving room to answer cards. Below three, a

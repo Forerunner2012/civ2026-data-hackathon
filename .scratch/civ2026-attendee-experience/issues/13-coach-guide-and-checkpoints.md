@@ -55,6 +55,9 @@ Contents to specify:
   one today.** Advancing the page still helps the whole room, but it now delivers hints and tips
   rather than answers. Brief this hardest of all: it is a judgement held under time pressure, it
   bites worst at [03](03-cadence.md)'s 11:00 cliff, and the failure is invisible.
+- **Coach count is 2–3, not 3–4** ([02](02-help-protocol.md)). At two, sweep every other beat and
+  accept that when both are at a desk nobody is watching the room. Brief that the page has to carry
+  more than the design assumed.
 - **Cohort under- or over-fill.** Graduated here from the map's fog now that
   [01](01-pace-car.md) and [02](02-help-protocol.md) have chosen their mechanisms. What changes if
   10 people show up, or 40? The per-beat sweep is the thing that breaks first — 40 desks does not
@@ -125,7 +128,7 @@ not usable in ten seconds is not on it.
  If the room needs more, ADVANCE THE PAGE: the next hints
  and tips, for everyone, at once, visibly.
 
- CARD UP, SIDE A → environment. ~10 min, then the runner.
+ CARD UP, SIDE A → environment. ~10 min, then PAIR THEM.
  CARD UP, SIDE B → approach. This is your job.
 ────────────────────────────────────────────────────────────────
 
@@ -143,7 +146,8 @@ not usable in ten seconds is not on it.
    Say: bag · topic · field · EventSpec · detector ·
         event · clip · manifest
 
- SWEEP once per beat. Glance, do not interrupt.
+ SWEEP every other beat (every beat if 3 of you).
+ Glance, do not interrupt.
  LOG who you spent real time with — the jury needs it.
 ────────────────────────────────────────────────────────────────
 ```

@@ -13,6 +13,59 @@ as a gate — *a two-hour internal mini-hackathon completes with no organizer-on
 nothing says what an attendee-experience rehearsal is **watching for**. A rehearsal that only checks
 "did the software work" would pass while every mechanism this map installed silently failed.
 
+## Update — the rehearsal is two people, and Arnaud is the test
+
+Organizer's decision. It **replaces the six-observation checklist below** as the primary framing,
+though the observations survive as what to watch for.
+
+**The shape:** Matt runs it alone, wearing the organizer and attendee caps at once. **Arnaud plays
+attendee only**, with access to the attendee page and the pace car and nothing else. It is
+experimentation with the thing live, not a formal gate.
+
+### The reframe: one fresh pair of eyes is worth more than a checklist
+
+Arnaud is the only person available who **did not design any of this**. That makes the rehearsal's
+real question much simpler than six observations:
+
+> **Where does Arnaud stall, and what does he reach for when he does?**
+
+Every mechanism in this map exists to be used by someone who has not read the map. A checklist run
+by the person who wrote it tests the checklist. Arnaud tests the design.
+
+Specifically, watch for the three things nobody can self-assess:
+
+- **Does he open the page unprompted**, or does he ask Matt what to do next? Asking is the failure —
+  it means the page is not the first thing he reaches for, and on the day there is no Matt per desk.
+- **Does he stall at the 11:00 cliff?** It lost its solution handover
+  ([17](17-attendee-page.md) Update 3) and is now carried by permission, pulled-forward hints and a
+  coach. Arnaud is the only chance to see whether that is enough before thirty people meet it.
+- **Is any hint or tip unreadable to someone who did not write it?** Every stall is a page unit to
+  rewrite, and [13](13-coach-guide-and-checkpoints.md) already established that discovering these on
+  the day is too late.
+
+### What two people can and cannot test
+
+Being honest about this matters more than pretending the rehearsal covers everything.
+
+| Testable with two | Not testable — stays unknown until 3 September |
+|---|---|
+| `civ` runs on both stacks, offline | Will anyone **raise a help card**? |
+| The page advances on schedule | Will anyone **pair up** when their laptop fails? |
+| The form accepts a submission | Does a **per-beat sweep** catch a quiet staller? |
+| 15–30 entries score inside the lunch window | Does a **room** self-diagnose against the page? |
+| The 11:00 cliff, on one person | |
+| **The analogue block's disagreement** — two people marking the same window is exactly the exercise | |
+
+The right-hand column is the social half of the design, and it fails **softly**: if nobody raises a
+card, coaches still sweep; if nobody pairs, a broken laptop still has the fallback pack. Accept the
+gap rather than recruiting bodies to close it — but know it is there, and brief coaches to assume
+those mechanisms may not fire.
+
+Observation 4 lands unexpectedly well: **two people is the minimum and sufficient number** to
+discover that experienced practitioners mark the same turn differently. Matt and Arnaud should do
+this exercise **before** labelling the answer key, since it is the same act and it produces the
+boundary convention the key depends on.
+
 ## Answer
 
 **Six observations. Each one corresponds to a mechanism that has never been run, and each has a

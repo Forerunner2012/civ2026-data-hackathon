@@ -208,6 +208,48 @@ The *assume a fifth to a third arrive cold* estimate stands, but the **consequen
 arrival is now a two-minute copy rather than a lost morning. Chasing non-responders stays worth doing
 once and not worth doing three times.
 
+## Update — participants get **2–3 worked examples**, not a labelled development set
+
+Organizer's decision, and it fills in the cell map one
+[ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md) left as
+just *"partial"*.
+
+> On the development routes, publish the answer key for **2–3 events maximum**. Not seven, not one
+> per route.
+
+### Why this is the right number
+
+The given-away answers do one job and it is **not** practice: they communicate **where a turn starts
+and ends**. That is the convention the whole 25-point Detection category hangs on, and it cannot be
+described in prose — *the turn begins when the steering goes in* and *when the yaw rate crosses a
+threshold* produce different intervals, and matching at 50% overlap is sensitive to which you meant.
+
+Two or three worked examples convey it exactly. More of them stop being examples and start being a
+**training set**: with enough labelled events, a participant tunes thresholds until they fit, and the
+score measures curve-fitting rather than comprehension — the precise failure
+[ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md) designed the event
+to avoid.
+
+**Consequence to state in the brief:** the examples show the convention, they are not a validation
+set, and there are deliberately few. Otherwise the first thing a practitioner asks at 10:15 is *where
+are the rest of the labels*.
+
+### The examples must come from the boundary convention, not before it
+
+Sequencing, since it is easy to get backwards: Matt and Arnaud agree the boundary convention first —
+by both marking the same route independently and comparing
+([18](18-rehearsal-observations.md)) — **then** cut 2–3 of those agreed events as the published
+examples, **then** label the held-back routes to the same convention. Publishing examples drawn
+before the convention exists would ship the disagreement rather than resolve it.
+
+### Still to do, deferred
+
+**Recheck the recordings for a proper count of event types.** Not now, per the organizer. It affects
+how many categories the answer key carries and whether anything beyond the target turn is worth
+labelling — [ticket 03](../../civ2026-challenge-spec/issues/03-scoring-basis.md) scores only the turn
+that crosses oncoming traffic, so extra categories are optional colour. Folded into the data trip in
+[16](16-decoy-event-class.md).
+
 ### What this hands on
 
 - **[14](14-participant-materials.md)** can now mark every artifact public-early / public-on-the-day

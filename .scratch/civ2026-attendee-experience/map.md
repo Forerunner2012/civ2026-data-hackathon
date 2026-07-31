@@ -90,7 +90,8 @@ Design inputs, all settled upstream. Listed once so no ticket re-derives them.
   be prescriptive. **Handedness is the one thing nothing ever solves.** Page design is
   [17](issues/17-attendee-page.md).
 - [The help protocol](issues/02-help-protocol.md) — **a two-sided card on the laptop, one sweep per
-  beat, 3–4 coaches, and coaches never hand over solutions.** A coach who wants to give more help
+  beat, **2–3 coaches** (the derived floor was 3–4; reality is 2–3, so sweeps go every other
+  beat), and coaches never hand over solutions.** A coach who wants to give more help
   **advances the schedule for everyone** rather than rescuing one person quietly, so help is never
   private and never improvised. (The original justification — *the page will hand over the solution
   instead* — no longer holds now that solutions publish after the event, so around the 11:00 cliff
@@ -223,8 +224,13 @@ Design inputs, all settled upstream. Listed once so no ticket re-derives them.
   card** — a sheet that duplicates a screen is what people hunt for at minute 95. Layouts ship
   pre-loaded; the submission skeleton is a `civ` command. The brief carries eight rules that exist
   nowhere else a participant would look, including that the jury is AI and that winners are published.
-- [What the rehearsal must observe](issues/18-rehearsal-observations.md) — **six observations, each
-  with a stated failure signal, because every mechanism here degrades invisibly.** A pace car nobody
+- [What the rehearsal must observe](issues/18-rehearsal-observations.md) — **Arnaud is the test.**
+  Matt runs it alone wearing both caps; Arnaud plays attendee only, with the page and pace car and
+  nothing else — the one person who did not design any of this. The question is *where does he stall,
+  and what does he reach for*, which is worth more than a checklist run by its own author. Two people
+  can test the mechanics and the cliff; they **cannot** test cards, pairing or sweeps, and that half
+  stays unknown until the day. Six observations with stated failure signals back it up, because
+  **every mechanism here degrades invisibly.** A pace car nobody
   reads still looks like a pace car; a help card nobody raises looks like a room with no problems. So
   **name a dedicated observer** — a rehearsal where everyone participates produces no observations.
   Three deliberate breakages: a broken container, **the network pulled mid-session** — internet and

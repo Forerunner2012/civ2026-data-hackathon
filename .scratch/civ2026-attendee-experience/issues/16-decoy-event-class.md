@@ -92,6 +92,17 @@ small:
 Adds about ten minutes: `mcap du` on one route, then the same after dropping point clouds and the
 map and rate-limiting the camera.
 
+## Ride-along 2: count the event types properly
+
+Organizer's note, explicitly deferred: **recheck the recordings for a better count of event-specific
+types.** Same trip, same machine.
+
+It matters for exactly one thing — how many categories the answer key carries.
+[Ticket 03](../../civ2026-challenge-spec/issues/03-scoring-basis.md) scores **only** the turn that
+crosses oncoming traffic, so any other category is optional colour: useful for the extension track
+and for the report's *what else did you find*, worth nothing on the 25 points. So this is a
+nice-to-have on the trip, not a gate.
+
 ## Access note — the one thing this map cannot do
 
 This map holds no bag data, and the paths in map-one
