@@ -57,6 +57,13 @@ const ORGANIZER_ONLY = [
   /driving force/i,
   /source precedence/i,
   /quality defect/i,
+  // Map two's internal vocabulary. "held-back", "answer key" and "worked
+  // example" are deliberately NOT here — participants are told those.
+  /pace car/i,
+  /\bdecoy\b/i,
+  /hard braking/i,
+  /boundary convention/i,
+  /sealed label/i,
 ];
 
 test("public root is the participant view", async () => {
@@ -82,10 +89,15 @@ test("participant view states the contract", async () => {
   assert.match(body, /solo or duo/i);
   assert.match(body, /different sensor stack/i);
   assert.match(body, /55 points are machine-scored/i);
-  assert.match(body, /15 points on the first sealed set and 10 on the transfer set/i);
+  assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
   assert.match(body, /one-page report/i);
-  // The ranking rule is published to participants even though the labels are not.
-  assert.match(body, /sealed test set/i);
+  // The ranking rule is published to participants even though the answer key is not.
+  assert.match(body, /held-back test set/i);
+  // Rules that change behaviour, so they must survive a redesign of the page.
+  assert.match(body, /Submit as often as you like/i);
+  assert.match(body, /scored by AI agents/i);
+  assert.match(body, /your clips stay on your machine/i);
+  assert.match(body, /pairing up on the day is normal/i);
 });
 
 test("participant view contains no organizer material", async () => {
@@ -97,6 +109,19 @@ test("participant view contains no organizer material", async () => {
 
 test("organizer view is absent from the public artifact", async () => {
   const response = await render("/organizers");
+  assert.equal(response.status, 404);
+  const body = await response.text();
+  for (const pattern of ORGANIZER_ONLY) {
+    assert.doesNotMatch(body, pattern, `public 404 leaks ${pattern}`);
+  }
+});
+
+/**
+ * The live session page carries hints and, eventually, worked solutions. It is
+ * served from the organizer's machine on the day — never from the public site.
+ */
+test("live session page is absent from the public artifact", async () => {
+  const response = await render("/live");
   assert.equal(response.status, 404);
   const body = await response.text();
   for (const pattern of ORGANIZER_ONLY) {
@@ -132,6 +157,7 @@ test("server bundle contains no organizer route or material", async () => {
   );
 
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/organizers"/);
+  assert.doesNotMatch(serverBundle, /pattern:\s*"\/live"/);
   for (const pattern of ORGANIZER_ONLY) {
     assert.doesNotMatch(serverBundle, pattern, `server bundle leaks ${pattern}`);
   }

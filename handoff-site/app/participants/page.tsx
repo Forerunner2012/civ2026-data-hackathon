@@ -10,8 +10,10 @@ import {
   journey,
   notYourJob,
   pipeline,
+  recognition,
   scoring,
   scoringRules,
+  theDayPage,
   submissionTree,
   youOwn,
   youReceive,
@@ -155,6 +157,11 @@ export default function Participants() {
             </article>
           ))}
         </div>
+        <ul className="rule-list">
+          {theDayPage.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
       </section>
 
       <section className="perspective-section">
@@ -278,6 +285,12 @@ export default function Participants() {
         <ul className="rule-list">
           {scoringRules.map((rule) => (
             <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+        <h3>What is recognised at 15:00</h3>
+        <ul className="rule-list">
+          {recognition.map((line) => (
+            <li key={line}>{line}</li>
           ))}
         </ul>
       </section>

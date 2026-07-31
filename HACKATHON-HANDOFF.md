@@ -133,17 +133,39 @@ question: did the participant understand the event, or copy a threshold?
 
 ### 4.2 Three-hour run of show
 
-This is the **rehearsal baseline**, not an immutable minute plan. Internal evaluation may move the
-boundaries while preserving the order and the 12:30 submission deadline.
+This is the **rehearsal baseline**, not an immutable minute plan; Phase 5 may move any beat.
+Resolved as [ticket 03](.scratch/civ2026-attendee-experience/issues/03-cadence.md) of the
+attendee-experience map. The stage order and the 12:30 deadline do not move.
 
-| Time | Attendee activity | Observable checkpoint | Driving force |
-|---|---|---|---|
-| 00:00–00:30 | **Observe:** inspect one Kashiwa development route manually | Relevant signal, candidate interval and physical hypothesis | Curiosity + low-friction first success |
-| 00:30–01:00 | **Formalize:** write and run a first EventSpec | Normalized event and evidence clip | Executability, not speculation |
-| 01:00–01:30 | **Scale:** batch the Kashiwa detector and inspect one failure | Events, clips, metrics and one iteration | Reuse + quality pressure |
-| 01:30–02:15 | **Transfer:** map the physical event onto French IMU, GNSS velocity and object topics | Working detector on French development chunks | Understanding across sensor stacks |
-| 02:15–02:45 | **Challenge:** compare both datasets, resolve ambiguity and prepare the report | Stated transfer boundary and defensible evidence | Generalisation + careful claims |
-| 02:45–03:00 | **Submit:** run reproduction, finalize the one-page report and hand in | Valid submission accepted by 12:30 | Reproducibility + throughput |
+The room is paced by **one progressive attendee page**, not by a facilitator. It shows what was
+expected at each stage, then hints, tips and — once a stage's points are settled — its solution.
+Nothing is delivered live except a five-minute opening briefing.
+
+| Time | | Attendee activity | `BY NOW YOU SHOULD HAVE` / `IF YOU DON'T` | Page unlocks |
+|---|---|---|---|---|
+| 09:30 | | **Briefing** — organizational, five minutes | where things are; what to do if lost; the page exists and waiting for a hint is legitimate | — |
+| 09:35 | | **Observe (analogue)** — pen on a printed signal trace | one candidate interval, marked by hand | — |
+| 09:45 | | **Compare** with a neighbour | you disagree — and that is why labels are intervals, why matching needs a tolerance, and why a sealed set exists | — |
+| 09:50 | | **Gate** | card down: `civ doctor && civ inspect` passed **and the page opens**. Still up → recovery | — |
+| 10:00 | B1 | **Formalize** | a first `civ detect` on the warm-up route / run the shipped example unchanged | Formalize expectation + hints |
+| 10:20 | B2 | Formalize | a condition that fires at all — even a bad one / loosen until it fires, then tighten | Formalize tips |
+| 10:40 | B3 | **Scale** | events across more than one route, and one failure you can name / run one route and move on. **Write report headings 1–2 now** | Scale hints + tips |
+| 11:00 | B4 | **Transfer** | a Kashiwa detector you are willing to stop improving, submitted once / stop improving it anyway. Submit what you have and open the French data — **the transfer hints are open now**, and a coach will work through it with you | Transfer expectation **+ hints, pulled forward** |
+| 11:25 | B5 | Transfer | the French signals identified, and a condition that fires / the equivalents are in the hints. The manoeuvre is yours | Transfer hints |
+| 11:45 | B6 | **Challenge** | French events, however imperfect / take what you have. **Write headings 3–4 now**, while the transfer is fresh | Transfer tips |
+| 12:10 | B7 | **Submit** | a submission already accepted — and be improving it / submit an incomplete one now, you can submit again. **Write heading 5** | — |
+| 12:30 | | **Close** | hard cutoff | — (solutions publish after the event) |
+
+Three properties of this cadence are load-bearing and should not be quietly dropped:
+
+- **`IF YOU DON'T` is always a permission to do less.** A beat that only asserts tells a stuck
+  person they are stuck, which they already know.
+- **The cliff at 11:00 is carried without an answer.** Three things arrive together: the permission
+  stated plainly, the **transfer hints pulled forward** to that beat, and a coach. Nothing hands over
+  a threshold, which is what keeps Detection discriminating on both datasets.
+- **The report is written in three instalments**, at the beats where each heading is freshest. That
+  is a 30-minute report budget rather than 15, and it makes Submit *finish and check* rather than
+  *write*.
 
 The separate results block is fixed:
 
@@ -200,7 +222,7 @@ the capped report over lunch.
 |---|---:|---|
 | Detection — Kashiwa | 15 | Sealed temporal matching |
 | Detection — French transfer | 10 | Sealed temporal matching |
-| Evidence and extraction | 15 | Machine checks: clip validity, topics, volume reduction |
+| Evidence and extraction | 15 | Machine checks from the run manifest: topics retained, volume reduction, self-attested clip validity |
 | Reproducibility | 15 | Machine checks: one command, pinned inputs, stable rerun |
 | Investigation and hypothesis | 15 | Jury reads `report.md` |
 | Quality and evaluation | 15 | Jury reads the failure analysis |
@@ -215,14 +237,77 @@ irreproducible core.
 
 ### 4.7 Facilitation mechanics
 
-- Thirty experienced practitioners work solo or in duos, ranked together on one leaderboard.
-- The old four-role team model becomes a checklist one person can execute, not a division of labour.
-- One shared Kashiwa warm-up; coaches intervene on blocked tooling after a short timebox.
-- Visible checkpoints at 30, 60, 90, 135 and 165 minutes; tune them in rehearsal.
-- Coaches ask for evidence and assumptions before suggesting thresholds.
-- A non-ROS fallback pack contains pre-extracted tables and clips for both sensor stacks.
-- Submission intake and unattended scoring must handle 15–30 entries inside the lunch window.
-- Walkthrough selection is not itself scored; include the most instructive failure deliberately.
+Resolved across the [attendee-experience map](.scratch/civ2026-attendee-experience/map.md). This
+section replaces the earlier reactive sketch: the room is paced **proactively**, and coaching is the
+exception handler rather than the mechanism.
+
+**Why the inversion.** The binding constraint is not skill and not blockage — it is **budget
+awareness**. Every participant can do this work; what they cannot do is do it in 180 minutes without
+knowing the budget. Someone who spends 70 minutes perfecting a Kashiwa detector has done excellent
+work and failed the event, and that failure is invisible from outside: not blocked, just absorbed
+down a defensible branch. Broadcast tempo is the only mechanism whose cost does not grow with the
+cohort, because it moves the noticing to the participant.
+
+**Tempo.** One progressive attendee page (§4.2), served from an organizer machine over **both**
+Tailscale Funnel — enabled on the morning only, so nothing leaks early. If the internet dies, the
+static export on the SSDs is already in the room. Submission goes through a form; there is no room
+LAN and no organizer machine.
+It advances automatically and **any coach may advance
+it early; nobody may hold it back**. **Solutions are handed over only after the event**: during the
+session the ladder stops at hints and tips, and the pace car and coaches guide *towards* an answer
+without giving one. No material ever resolves handedness. No live teaching: it
+penalises deep work, since the people most likely to miss it are the ones head-down doing what the
+event wants.
+
+**Help.** A two-sided card on the laptop. Side A is environment and routes to recovery; side B is
+approach and routes to a coach. It needs no network, and the side showing triages the request before
+anyone arrives. **Coaches guide towards a solution and never hand one over** — no thresholds, no
+specs, not even at the cliff. A coach who wants to give the room more advances the page, which
+delivers the next hints and tips to everyone at once. Help is never private and never improvised.
+
+**Coaches.** Three minimum, four preferred — a floor, not a ratio. They sweep the room once per beat,
+glancing rather than interrupting, and otherwise answer cards. Before anything else they ask *what
+have you got* and *what do you think is happening*, then answer the hypothesis rather than the code.
+They log who they spent real time with, so the jury can route around conflicts. **They do not rescue
+people from the designed friction:** the warm-up's tedium is the lesson.
+
+**Opening.** A five-minute organizational briefing, then a deliberately **analogue** block — pen on a
+printed signal trace — so a broken laptop costs time but not the lesson. Its output is *disagreement*
+between neighbours, which is what makes intervals, tolerance and sealed labels concrete. The
+environment gate runs underneath it: everyone starts with the card up and puts it down when
+`civ doctor && civ inspect` passes and the page opens, so recovery starts at minute ten without anyone announcing
+anything.
+
+**Recovery.** **Pair up.** A broken container and an underpowered laptop have the same answer, and
+solo and duo already rank together, so a paired participant has a complete entry rather than a
+degraded one. Offer it aloud in the briefing — nobody volunteers *my laptop is too weak* to a room of
+peers. The fallback pack on the SSDs supports reasoning meanwhile. No organizer runner, no room LAN,
+no standby machine: all three were designed and cut once pairing was shown to cover the case.
+
+**Intake.** **Metadata only — no evidence data is collected.** A submission is the EventSpec,
+`events.jsonl`, an extended run manifest and the one-page report: kilobytes, sent through a simple
+form, with a local/USB fallback. The manifest carries what the clips used to prove — topics
+retained, window durations, input versus output bytes, hashes — so *correct topics* and *volume
+reduction* stay machine-checkable while *clip validity* weakens to self-attested, offset by every
+spec being re-runnable on the sealed data. **Unlimited resubmission** is unchanged and load-bearing;
+two beats depend on it. `civ` validates structure **before** submission rather than at intake, so a
+missing manifest fails at 11:00 rather than 12:29. Participants keep their own evidence.
+
+**Materials.** Three things on the desk — printed trace, help card, one-page brief. Everything else
+is on the page. No cheat sheet and no pace card: a sheet that duplicates a screen is what people hunt
+for at minute 95.
+
+**Extension.** The *lesson* closes the event at 14:55. The *exercise* is a page section unlocked
+in-session as an optional branch and **scored** under the existing bonus, remaining available
+afterwards. The run of show allocates it no time and says so, or it becomes a trap.
+
+**Judging and the afternoon.** One organizer, two AI agents against human-written anchors, and a
+T-Lab owner if confirmed; the agents read each report **against the submission**, which no human jury
+could do in the time. Disagreement between the two routes to the human. Walkthroughs are **narrated by the organizer** from the
+submitted spec, report and figure — nobody presents or is interviewed; the participant stays seated
+and receives applause. Picks are known by ~13:15, and the instructive-failure entry is told
+beforehand rather than shown unannounced. **Every participant receives written feedback**,
+which is what finally makes "every submission is genuinely assessed" true in their hands.
 
 ## 5. Operational planning
 
@@ -319,7 +404,13 @@ built image passes both the behavioural release gates and the licence/source-not
   resolution justified by the tested layouts;
 - dataset manifests, checksums, provenance, CC BY attribution and modification records;
 - partial development annotations, sealed interval labels and documented quality defects;
-- pre-event download plus USB fallback. French detector signals measure ~350 MB for the full
+- pre-event download plus **four 2 TB high-speed SSDs**, each a complete event-in-a-box: container
+  image, both datasets, the optional image context pack, the static attendee-page export and the
+  fallback pack. exFAT, USB-C and USB-A adapters, checksum-verified before travel, circulating from
+  the moment people arrive rather than held for failures
+  ([ticket 07](.scratch/civ2026-attendee-experience/issues/07-pre-event-readiness-and-reveal.md)).
+  The image, not the data, is the payload that matters — nobody downloads a ROS 2 image in the room.
+  French detector signals measure ~350 MB for the full
   38-minute session; Kashiwa still needs the same per-topic byte measurement.
 
 ### Code, API, and contracts
@@ -370,20 +461,31 @@ container with one outbound licence.
 
 ### Submission structure
 
+The participant's working directory holds everything, including the evidence clips. **What is
+*submitted* is metadata only** — see
+[attendee-experience ticket 09](.scratch/civ2026-attendee-experience/issues/09-submission-intake.md).
+Clips stay with the participant.
+
 ```text
-submission/
-├── detector/              # EventSpec and optional extension code
-├── events.jsonl           # normalized detections
-├── evidence/              # compact MCAP clips
-├── metrics.json
-├── run-manifest.json      # versions, hashes, parameters, timings
-├── report.md              # one page, fixed five-heading argument
-├── extension/             # optional resources, provenance, agent/tool trace
-└── reproduce.ps1|sh       # one-command entry point
+working/                          submitted?
+├── detector/                     ✅  EventSpec and optional extension code
+├── events.jsonl                  ✅  normalized detections — intervals, not data
+├── run-manifest.json             ✅  versions, hashes, parameters, timings, and
+│                                     per-clip topics / durations / bytes-in-vs-out /
+│                                     `civ clip` validity result
+├── metrics.json                  ✅
+├── report.md                     ✅  one page, five headings, **one required figure**
+├── extension/                    ✅  optional resources, provenance, agent/tool trace
+├── reproduce.ps1|sh              ✅  one-command entry point
+└── evidence/                     ❌  compact MCAP clips — kept locally, never uploaded
 ```
 
+`civ` validates this structure **before** submission and refuses to emit a submission blob that is
+incomplete, so a missing manifest fails at 11:00 rather than 12:29.
+
 The fixed report headings are: question and hypothesis; signals used/missing; what transferred and
-what did not; one failure and the resulting change; downstream action and deployment mode.
+what did not; one failure and the resulting change; downstream action and deployment mode. The
+figure is required because no clip reaches the jury.
 
 ## 7. Driving forces during the hackathon
 
@@ -403,6 +505,12 @@ Competition provides energy, but the main pedagogical pressure comes from the ch
 
 Tracked as a wayfinder map at [`.scratch/civ2026-challenge-spec/map.md`](.scratch/civ2026-challenge-spec/map.md).
 Each decision lives in exactly one ticket; this section gists and links it.
+
+> **The challenge spec is closed; the attendee experience is not.** A second map,
+> [`.scratch/civ2026-attendee-experience/map.md`](.scratch/civ2026-attendee-experience/map.md),
+> charts the room: tempo, coaching, recovery, cadence, extension placement, the jury and the
+> afternoon. §4.2 and §4.7 above are its inputs, and both will be rewritten from it. It may not
+> reopen anything in this section.
 
 > **All 25 tickets are resolved.** The specification is complete. Build, labelling, artifact
 > pinning, evaluator validation, rehearsal and licence compliance are downstream execution gates,
@@ -481,7 +589,9 @@ Each decision lives in exactly one ticket; this section gists and links it.
 
 ## 9. Immediate next actions
 
-The decisions are closed. Execution proceeds in dependency order:
+The **challenge** decisions are closed and execution proceeds in dependency order. The **attendee
+experience** — the room, the tempo, the support and the afternoon — is charted separately and is
+still open; item 10 below tracks it.
 
 1. **Mirror the 16 Kashiwa source MCAPs** with checksums and retrieval date.
 2. **Assign owners** for data, runner/contracts, evaluation, attendee/jury experience and release
@@ -500,7 +610,14 @@ The decisions are closed. Execution proceeds in dependency order:
    and the four-walkthrough results block.
 9. **Generate the SBOM/notices/source bundle from the built image**, review unknown and copyleft
    findings, and archive exact MPL viewer source.
-10. **Run the internal mini-hackathon** with solo and duo personas; release only when behavioural,
+10. **Work the attendee-experience map** at
+    [`.scratch/civ2026-attendee-experience/map.md`](.scratch/civ2026-attendee-experience/map.md).
+    **17 of 18 tickets are resolved and §4.2 and §4.7 above are rewritten from it.** One item
+    remains: [ticket 16](.scratch/civ2026-attendee-experience/issues/16-decoy-event-class.md) needs a
+    twenty-minute check against the Kashiwa warm-up route on a machine holding the bags. The map's
+    exit condition is [ticket 18](.scratch/civ2026-attendee-experience/issues/18-rehearsal-observations.md),
+    six things the Phase 5 rehearsal must observe.
+11. **Run the internal mini-hackathon** with solo and duo personas; release only when behavioural,
     throughput, offline and licence gates all pass.
 
 > **The slot, verified.** CIV 2026 runs **31 August – 4 September 2026 in Miyazaki, Japan**. The
