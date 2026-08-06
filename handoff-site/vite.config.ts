@@ -50,7 +50,12 @@ export default defineConfig(async ({ command }) => {
     plugins: [
       // Production builds are participant-only. The full app — including the
       // organizer route — exists only in the local development server.
-      vinext({ appDir: command === "build" ? "public-source" : "." }),
+      vinext({
+        appDir:
+          command === "build" && process.env.CIV_BUILD_AUDIENCE !== "internal"
+            ? "public-source"
+            : ".",
+      }),
       sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

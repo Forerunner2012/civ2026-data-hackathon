@@ -8,6 +8,8 @@ audience views so organizer material is never shown to participants.
 | `/` | either | Entry door. Links to both views, carries no audience content of its own. |
 | `/participants` | attendees | Brief, the three-hour ladder, ownership boundary, deliverables, the published rubric, toolkit and CLI, submission layout, what to come ready with. |
 | `/organizers` | **internal** | Strategy/tactics/operations, success criteria and non-goals, the six preparation phases and gates, readiness workstreams, evaluation internals, facilitation mechanics, the seven driving forces, the open decision queue, source precedence. |
+| `/live` | attendees, **local only** | Current session beat, cumulative unlocked guidance, countdown, and static fallback. |
+| `/live/coach` | coach, **local only** | One authorized, next-only advance action. |
 
 ## How the boundary is enforced
 
@@ -16,6 +18,10 @@ Content lives in `app/_content/`, split by audience:
 - `participants.ts` — safe for attendees, may be bundled anywhere.
 - `organizers.server.ts` — starts with `import "server-only"`. Importing it from a client component
   is a **build error**, so internal material cannot reach a browser bundle by accident.
+- `live-content.server.ts` — holds the complete time-embargoed live copy behind the same structural
+  server-only boundary. Client components receive only the current stage and cumulative unlocked
+  guidance selected by `live-store.server.ts`.
+- `live-state.ts` — contains content-free schedule and monotonic advance mechanics plus shared types.
 - `site.ts` — the small neutral set both views share.
 
 Client components (`app/_components/level-tabs.tsx`) are deliberately generic: they render whatever
@@ -39,6 +45,36 @@ npm run dev
 ```
 
 Then open `http://localhost:3000`.
+
+## Live session operation
+
+The live page and coach API exist in local development and internal acceptance builds only. A normal
+`npm run build` produces the participant-facing public artifact and excludes `/live`, `/live/coach`,
+and `/api/live`. The current beats and guidance are representative Phase 1 copy for testing every
+transition; final teaching-unit authoring remains later-phase work.
+
+Set a private coach token before starting the local server:
+
+```powershell
+$env:LIVE_COACH_TOKEN = "replace-with-a-long-random-value"
+npm run dev
+```
+
+Participants open `/live`; the facilitator opens `/live/coach` and enters the same token. The page
+advances from the Tokyo schedule automatically. The coach can only advance it one state early;
+advances cannot delay, relock, or reverse the room. The in-memory coach floor survives browser
+refreshes but resets when the server restarts.
+
+For rehearsals only, enable a controlled clock and append an ISO-8601 `now` query:
+
+```powershell
+$env:LIVE_ALLOW_CONTROLLED_CLOCK = "true"
+# http://localhost:3000/live?now=2026-09-03T10:40:00%2B09:00
+```
+
+Leave `LIVE_ALLOW_CONTROLLED_CLOCK` unset on event day. If the local server or network is
+unavailable, serve or open `/session-fallback.html`; it is static, script-free, and
+participant-safe.
 
 ## Verification
 

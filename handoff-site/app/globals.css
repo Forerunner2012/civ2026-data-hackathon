@@ -21,6 +21,63 @@ a { color: inherit; }
 button { color: inherit; }
 main { overflow: hidden; }
 
+.live-page { background: var(--paper); min-height: 100vh; }
+.live-hero { padding: 72px 7vw 64px; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 7vw; align-items: end; }
+.live-stage-copy h1 { max-width: 920px; font-size: clamp(50px, 7vw, 94px); }
+.live-stage-number { margin: 26px 0 18px; color: var(--muted); font: 700 10px/1 ui-monospace, Consolas, monospace; letter-spacing: .14em; }
+.live-progress { width: min(620px, 100%); height: 4px; background: rgba(16,32,27,.14); }
+.live-progress i { display: block; height: 100%; background: var(--ink); transition: width .25s ease; }
+.live-advanced { display: inline-block; margin: 24px 0 0; padding: 9px 12px; background: var(--amber); font: 700 10px/1 ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.live-countdown { min-height: 250px; background: var(--night); color: var(--white); padding: 28px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 14px 14px 0 #d8d2c4; }
+.live-countdown span, .live-countdown small, .live-checks span, .live-report-prompt span, .live-fallback span, .coach-card span { font: 700 10px/1.3 ui-monospace, Consolas, monospace; letter-spacing: .13em; text-transform: uppercase; }
+.live-countdown span { color: var(--lime); }
+.live-countdown b { font: 700 clamp(52px, 7vw, 78px)/1 ui-monospace, Consolas, monospace; letter-spacing: -.07em; }
+.live-countdown small { color: #9ca8a3; }
+.live-checks { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.live-checks article { padding: 42px 7vw; }
+.live-checks article + article { border-left: 1px solid var(--line); }
+.live-checks span { color: var(--muted); }
+.live-checks p { margin: 18px 0 0; max-width: 650px; font-size: 20px; line-height: 1.55; }
+.live-report-prompt { margin: 54px 7vw 0; padding: 26px 30px; display: grid; grid-template-columns: 170px 1fr; gap: 24px; align-items: center; background: var(--amber); }
+.live-report-prompt p { margin: 0; font-size: 18px; font-weight: 700; }
+.live-guidance { padding: 96px 7vw; }
+.live-guidance ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+.live-guidance li { display: grid; grid-template-columns: 42px 1fr; gap: 16px; padding: 24px 24px 24px 0; border-bottom: 1px solid var(--line); }
+.live-guidance li:nth-child(even) { border-left: 1px solid var(--line); padding-left: 24px; }
+.live-guidance li span { color: var(--muted); font: 700 10px/1.4 ui-monospace, Consolas, monospace; }
+.live-guidance li p { margin: 0; line-height: 1.55; }
+.live-fallback { background: var(--night); color: var(--white); padding: 72px 7vw; display: grid; grid-template-columns: 1fr 1fr auto; gap: 5vw; align-items: center; }
+.live-fallback > div > span { color: var(--lime); }
+.live-fallback h2 { margin: 12px 0 0; font-size: clamp(34px, 4vw, 58px); line-height: .98; letter-spacing: -.045em; }
+.live-fallback > p { color: #a5b0ab; line-height: 1.6; }
+.live-fallback .primary-button { background: var(--lime); color: var(--ink); white-space: nowrap; }
+.coach-console { min-height: 720px; padding: 80px 7vw; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 520px); column-gap: 8vw; align-content: center; }
+.coach-console > .kicker, .coach-console > h1, .coach-console > .lede { grid-column: 1; }
+.coach-console h1 { font-size: clamp(50px, 6.5vw, 92px); }
+.coach-card { grid-column: 2; grid-row: 1 / span 4; background: var(--night); color: var(--white); padding: 30px; display: grid; gap: 24px; box-shadow: 14px 14px 0 #d8d2c4; }
+.coach-card label { display: grid; gap: 10px; font-size: 12px; font-weight: 700; }
+.coach-card input { width: 100%; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: white; padding: 14px; }
+.coach-card div { display: grid; gap: 10px; border-top: 1px solid rgba(255,255,255,.2); padding-top: 20px; }
+.coach-card div span { color: var(--lime); }
+.coach-card button { border: 0; background: var(--lime); color: var(--ink); padding: 17px 20px; font-weight: 800; cursor: pointer; }
+.coach-card button:disabled { opacity: .45; cursor: not-allowed; }
+.coach-card p { min-height: 24px; margin: 0; color: #a5b0ab; }
+
+@media (max-width: 900px) {
+  .live-hero, .coach-console { grid-template-columns: 1fr; }
+  .live-countdown { margin-top: 20px; min-height: 210px; }
+  .live-fallback { grid-template-columns: 1fr; }
+  .coach-card { grid-column: 1; grid-row: auto; margin-top: 34px; }
+}
+
+@media (max-width: 680px) {
+  .live-hero { padding-top: 48px; }
+  .live-checks, .live-guidance ol { grid-template-columns: 1fr; }
+  .live-checks article + article, .live-guidance li:nth-child(even) { border-left: 0; }
+  .live-guidance li:nth-child(even) { padding-left: 0; }
+  .live-report-prompt { grid-template-columns: 1fr; }
+}
+
 .topbar {
   min-height: 76px; padding: 0 4.5vw; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 30px; position: relative; z-index: 2;
 }

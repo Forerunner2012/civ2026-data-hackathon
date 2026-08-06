@@ -66,6 +66,13 @@ const ORGANIZER_ONLY = [
   /sealed label/i,
 ];
 
+const LIVE_INTERNAL_ONLY = [
+  /\/api\/live/,
+  /LIVE_COACH_TOKEN/,
+  /Advance room to next state/i,
+  /Transfer expectation: keep the command/i,
+];
+
 test("public root is the participant view", async () => {
   const body = await html("/");
   assert.match(body, /From raw bag/);
@@ -147,7 +154,19 @@ test("client bundle contains no organizer material", async () => {
     for (const pattern of ORGANIZER_ONLY) {
       assert.doesNotMatch(source, pattern, `${entry.name} leaks ${pattern}`);
     }
+    for (const pattern of LIVE_INTERNAL_ONLY) {
+      assert.doesNotMatch(source, pattern, `${entry.name} leaks live-only ${pattern}`);
+    }
   }
+});
+
+test("public artifact retains the participant-safe static fallback", async () => {
+  const fallback = await readFile(
+    fileURLToPath(new URL("../dist/client/session-fallback.html", import.meta.url)),
+    "utf8",
+  );
+  assert.match(fallback, /Session fallback/);
+  assert.doesNotMatch(fallback, /<script|coach|advance|solution|Kashiwa/i);
 });
 
 test("server bundle contains no organizer route or material", async () => {
@@ -158,7 +177,12 @@ test("server bundle contains no organizer route or material", async () => {
 
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/organizers"/);
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/live"/);
+  assert.doesNotMatch(serverBundle, /pattern:\s*"\/live\/coach"/);
+  assert.doesNotMatch(serverBundle, /pattern:\s*"\/api\/live"/);
   for (const pattern of ORGANIZER_ONLY) {
     assert.doesNotMatch(serverBundle, pattern, `server bundle leaks ${pattern}`);
+  }
+  for (const pattern of LIVE_INTERNAL_ONLY) {
+    assert.doesNotMatch(serverBundle, pattern, `server bundle leaks live-only ${pattern}`);
   }
 });
