@@ -19,6 +19,7 @@ from tests.helpers import (
     write_raw_ros2_bag,
     write_ros2_bool_bag,
     write_ros2_nested_bag,
+    write_ros2_steering_bag,
 )
 
 
@@ -209,6 +210,26 @@ evidence:
     assert event["start_ns"] == 1_000_000_000
     assert event["end_ns"] == 2_000_000_000
     assert event["trigger_values"] == {"enabled": True}
+
+
+def test_kashiwa_example_detects_long_and_context_free_turns(tmp_path: Path) -> None:
+    bag = tmp_path / "kashiwa-steering.mcap"
+    output = tmp_path / "working"
+    spec = Path(__file__).parents[1] / "examples" / "kashiwa" / "right_turn.yaml"
+    write_ros2_steering_bag(bag)
+
+    result = run_civ(tmp_path, ["detect", str(spec), str(bag), "--output", str(output)])
+
+    assert result.returncode == 0, result.stderr
+    events = [
+        json.loads(line)
+        for line in (output / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert [(event["start_ns"], event["end_ns"]) for event in events] == [
+        (1_000_000_000, 21_000_000_000),
+        (30_000_000_000, 35_000_000_000),
+    ]
+    assert all(event["trigger_values"] == {"steering_angle": 15} for event in events)
 
 
 @pytest.mark.parametrize(

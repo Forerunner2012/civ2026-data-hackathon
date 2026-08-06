@@ -1,6 +1,7 @@
 # Kashiwa Phase 1 acceptance record
 
-Status: **partial — organizer visual confirmation and the telemetry-contract decision remain open**
+Status: **partial — three organizer observations are covered; two additional steering candidates
+still need visual classification**
 
 Recorded: 2026-08-06
 
@@ -16,9 +17,8 @@ Recorded: 2026-08-06
 - File modified: 2025-08-31 19:50:08 UTC
 
 The bag, descriptor, provisional organizer labels, evidence clip, caches, submission bundle, and all
-runtime outputs remained outside the repository. The external working directory used on Windows was
-`%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-20260806-yaw`; exact-container outputs were written to
-`%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-humble`.
+runtime outputs remained outside the repository. The corrected exact-container outputs were written
+to `%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-steering-humble-v2`.
 
 ## Inspection and selected signals
 
@@ -28,62 +28,72 @@ the candidate detector path.
 
 | Topic | Schema | Count | Rate | Selected field or evidence role |
 |---|---|---:|---:|---|
-| `/localization/kinematic_state` | `nav_msgs/msg/Odometry` | 4,204 | 39.157617 Hz | `twist.twist.angular.z` |
+| `/pix_hooke/v2a_steerstafb` | `pix_hooke_driver_msgs/msg/V2aSteerStaFb` | 5,219 | 48.611703 Hz | `vcu_chassis_steer_angle_fb` detector signal, degrees |
+| `/pix_hooke/v2a_drivestafb` | `pix_hooke_driver_msgs/msg/V2aDriveStaFb` | 5,219 | 48.611703 Hz | `vcu_chassis_speed_fb` evidence, m/s |
+| `/pix_hooke/v2a_vehiclestafb` | `pix_hooke_driver_msgs/msg/V2aVehicleStaFb` | 5,214 | 48.565131 Hz | indicator evidence |
+| `/localization/kinematic_state` | `nav_msgs/msg/Odometry` | 4,204 | 39.157617 Hz | yaw-rate evidence |
 | `/perception/object_recognition/is_object_detected` | `std_msgs/msg/Bool` | 1,049 | 9.770775 Hz | `data` |
-| `/perception/object_recognition/detected_object` | `visualization_msgs/msg/Marker` | 136 | 1.266754 Hz | object-context evidence |
 | `/sensing/camera/traffic_light/image_raw/compressed` | `sensor_msgs/msg/CompressedImage` | 228 | 2.123677 Hz | visual evidence |
 
 The candidate EventSpec is [`examples/kashiwa/right_turn.yaml`](../../examples/kashiwa/right_turn.yaml).
-It uses real CDR fields, CEL, timing, and evidence declarations. No derivation is required for these
-already-normalized signals.
+It uses a real Pix Hooke CDR field, CEL, timing, and evidence declarations. The mandatory evidence
+set contains only topics present in every candidate window. Sparse `detected_object` markers remain
+available in the full bag for optional conflict-geometry work but are not required in every clip.
 
 ## Detector observation
 
-The localization field is angular velocity in rad/s, not angular acceleration. Its observed range is
-`-0.3659635624258629` to `0.12175168003023576`. The historical instantaneous threshold
-`yaw_rate <= -0.5 rad/s` therefore cannot fire on this route. At `-0.25`, the real timing and object
-context produce two provisional intervals; PlotJuggler review must confirm whether the sign and both
-intervals correspond to the intended right-turn manoeuvre.
+The first candidate incorrectly ANDed yaw rate with object presence. Organizer review showed why that
+proxy is unsuitable for the scored manoeuvre interval:
 
-That candidate emits two intervals:
+- The first accepted turn is a long episode, approximately 23.5–44 s. A vehicle in the intersection
+  interrupts it, the steering remains held while the ego vehicle waits, and a pedestrian jaywalks at
+  the end. The yaw-only candidate covered only 39.358–41.225 s.
+- A turn at approximately 60–65 s was missing. Every inspected yaw source records it, but
+  `object_detected` is false for the entire window, so the context gate suppressed it.
+- The previously detected interval near 96 s is also visually accepted.
 
-- `ee7df0ff5795408a8a51759a0a6dcdb4b170925b5c6202fef552584e1e762d40`:
-  1,756,268,573,666,554,460–1,756,268,575,533,441,579 ns, or
-  39.358251–41.225138 s after bag start; duration 1,866,887,119 ns; trigger
-  `yaw_rate=-0.26279298084794533`, `object_detected=true`.
-- `7da224524fa6b5d1cd21205d90ef2238eb803c36d9a0ba0aafd925177543a9da`:
-  1,756,268,630,748,779,481–1,756,268,631,384,602,075 ns, or
-  96.440476–97.076299 s after bag start; duration 635,822,594 ns; trigger
-  `yaw_rate=-0.30079431928938716`, `object_detected=true`.
-- Byte-stable `events.jsonl` SHA-256 across fresh Windows directories and the exact Humble container:
-  `93ea2a3d84e586fade0c171378175ec8dfc01d50a4af810f29cc0ca71853a451`.
+Yaw-only diagnostic intervals achieved approximate best IoUs of 0.328 and 0.201 against the first
+two organizer windows. A Pix Hooke steering threshold of 10 degrees, 2-second debounce, and
+30-second maximum produced approximate best IoUs of 0.771 and 0.519. Adding yaw direction did not
+materially alter those boundaries. The steering baseline therefore replaces the yaw-and-object
+condition; yaw, speed, indicator state, object presence, and camera remain evidence.
+
+The corrected candidate emits five intervals:
+
+| Event | Relative interval | Duration | Initial steering | Review status |
+|---|---:|---:|---:|---|
+| `7266f77d…715f228` | 3.000915–5.220780 s | 2.219866 s | 18° | pending |
+| `a960a16f…15c0ed1` | 19.000892–45.600922 s | 26.600030 s | 16° | covers reviewed 23.5–44 s episode |
+| `71d3490d…eee6340` | 55.640932–65.281312 s | 9.640381 s | 13° | covers reviewed missing 60–65 s turn |
+| `9502b726…24447ed7` | 91.740873–100.960918 s | 9.220045 s | 12° | contains previously accepted ~96 s turn |
+| `a5d2609e…0cb86e9` | 103.980911–104.780927 s | 0.800016 s | 10° | pending |
+
+- Byte-stable `events.jsonl` SHA-256 across Windows and the exact Humble container:
+  `798d05a6ebc46536d0aa32b0f03911f47e2b72ffd41bb11224a61c895e3490a9`.
 
 This is a detector candidate, not ground truth. The external label pack used below mirrors the
-provisional intervals solely to exercise the sealed-label scoring interface. It must not be treated
+five provisional intervals solely to exercise the sealed-label scoring interface. It must not be treated
 as a reviewed Kashiwa label.
 
 ## Clip, score, and report results
 
-- Both evidence clips reopen as valid MCAP and contain exactly the four declared topics.
-- First requested window: 37.358251–43.225138 s relative to bag start; actual message window:
-  37.361915–43.217063 s; boundary differences +3.664 ms and -8.075 ms; size 5,283,242 bytes.
-- Second requested window: 94.440476–99.076299 s; actual message window:
-  94.454350–99.060243 s; boundary differences +13.874 ms and -16.056 ms; size 5,594,000 bytes.
-- Scoring interface result with the external provisional pack: TP 2, FP 0, FN 0, F1 1.0.
-- Metadata-only bundle size: 6,825 bytes.
-- Bundle SHA-256, stable across repeated Windows builds:
-  `21bf82946adf9162426885d31a680eec150e8124c0cd4bd685a4646a67dcf5f6`
-- Exact-container bundle size: 6,816 bytes; SHA-256 stable across fresh network-disabled container
-  builds: `e37783f6c531b298438a602bb1538c436424d4fa92fc8dd9177bedf44d5d44a1`.
+- All five evidence clips reopen as valid MCAP and contain exactly the six declared dense topics.
+- Clip sizes are 4,663,801; 35,292,537; 16,161,201; 16,978,226; and 6,990,215 bytes.
+- Total clip size is 80,085,980 bytes, down from five copies of the 7,875,976,476-byte input.
+- Scoring-interface result with the external mirror pack: TP 5, FP 0, FN 0, F1 1.0. This validates
+  only the sealed-label interface; it is not an accuracy claim.
+- Exact-container metadata-only bundle size: 10,410 bytes; SHA-256 stable across fresh
+  network-disabled builds:
+  `8ea429d6ec9547f3efcfee232907044b4bd222c35209528201d176d0143c7173`.
 - Bundle entries: EventSpec, `events.jsonl`, figure, `metrics.json`, `report.md`, reproduction entry,
   and `run-manifest.json`. It contains no bag, clip, or label pack.
-- External working-directory disk use after the complete run: 10,890,492 bytes across 11 files.
+- External working-directory disk use after the complete run: 80,110,724 bytes across 22 files.
 
 ## Host and offline telemetry
 
 Windows proof host: Microsoft Windows 11 Pro 64-bit, version 10.0.26200, build 26200. The corrected
-detect-to-report path ran successfully there in approximately 26.5 seconds from observed command
-wall times; inspection had already succeeded against the same bag and schemas.
+detector ran in 15.1 seconds and produced byte-identical events to the Humble container; inspection
+had already succeeded against the same bag and schemas.
 
 The exact target run used Ubuntu 22.04.5 LTS, ROS distribution `humble`, CPython 3.10.12, and
 Linux amd64. The prepared acceptance image was `civ-phase1:humble-jammy` with image ID
@@ -99,24 +109,33 @@ for every command.
 | Command | Wall time | Peak RSS | File-system input blocks | File-system output blocks |
 |---|---:|---:|---:|---:|
 | `civ inspect` | 90.19 s | 105,668 KB | 15,362,066 | 2,712 |
-| `civ detect` | 95.42 s | 74,908 KB | 24,373,124 | 0 |
-| `civ clip` | 62.79 s | 67,212 KB | 16,368,928 | 0 |
-| `civ score` | 0.45 s | 29,836 KB | 101 | 0 |
-| `civ report` | 0.73 s | 31,000 KB | 21,377 | 0 |
+| `civ detect` | 97.35 s | 116,564 KB | 27,626,824 | 0 |
+| `civ clip` | 92.30 s | 80,352 KB | 24,145,546 | 0 |
+| `civ score` | 0.73 s | 29,428 KB | 44,060 | 0 |
+| `civ report` | 1.39 s | 30,576 KB | 156,573 | 0 |
 
-The measured command total is approximately 249.58 seconds; the complete container invocation took
-251.5 seconds. It is dominated by reading a 7.9 GB file through a Docker Desktop bind mount and is
-not representative of a native Linux disk.
+Inspection plus the corrected detector-to-report measurements total approximately 281.96 seconds.
+The run is dominated by reading a 7.9 GB file through a Docker Desktop bind mount and is not
+representative of a native Linux disk.
 
-## Open gates and candidate-contract consequences
+## Platform, version, and deferred-schema decisions
 
-1. An organizer must open the route and extracted evidence in PlotJuggler, inspect the
-   39.358–41.225 s and 96.440–97.076 s intervals, identify the actual manoeuvres, and record whether
-   the negative yaw rate plus object and camera context support the right-turn definition.
-2. `run-manifest.json` still lacks operation timings, peak memory, tool versions, and host/container
-   identity. Adding nondeterministic telemetry directly would conflict with the current byte-stable
-   bundle contract. Phase 2 must decide whether to normalize/exclude local measurements in the
-   submitted manifest or keep this organizer acceptance record as the authoritative telemetry sidecar.
-3. The five `ros2idl` inspection warnings are actionable and bounded. The candidate avoids those
-   topics; supporting IDL schemas can remain a separate contract decision unless later routes require
-   them.
+- Humble on Ubuntu 22.04 remains a proven compatibility floor for the supplied Kashiwa recording.
+  The forward participant/release target is ROS 2 Lyrical Luth on Ubuntu 26.04, the latest stable OSS
+  LTS, subject to a dedicated rehearsal rather than silently changing this acceptance environment.
+- Submitted metadata will carry deterministic minimum supported tool-version floors. Actual command
+  timings, peak memory, and host/container identity remain in this organizer acceptance sidecar so
+  local measurements do not make the metadata bundle nondeterministic.
+- Five `ros2idl` topics include Tier IV/Autoware vehicle-status types that may later be useful. The
+  organizer has external Lyrical setup notes with pinned source hashes. IDL decoding and those notes
+  will be investigated in a later phase; the current Pix Hooke `ros2msg` steering/speed path does not
+  depend on them.
+
+## Open gates
+
+1. Review the 3.001–5.221 s and 103.981–104.781 s steering candidates in PlotJuggler and classify
+   each as a labelled right-turn manoeuvre, a duplicate fragment, or a false positive.
+2. Convert the three confirmed observations and those two classifications into the sealed Kashiwa
+   label pack; do not use the external mirror pack as ground truth.
+3. Rehearse the same public contracts on ROS 2 Lyrical/Ubuntu 26.04 and record minimum supported tool
+   versions before the attendee release is frozen.

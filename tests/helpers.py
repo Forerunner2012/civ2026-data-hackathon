@@ -155,6 +155,26 @@ float64 z
         writer.finish()
 
 
+def write_ros2_steering_bag(path: Path) -> None:
+    values = [0, *([15] * 21), 0, 0, 0, 0, 0, 0, 0, 0, *([15] * 6), 0]
+    with path.open("wb") as stream:
+        writer = Ros2Writer(stream, compression=CompressionType.NONE)
+        schema = writer.register_msgdef(
+            "pix_hooke_driver_msgs/msg/V2aSteerStaFb",
+            "int32 vcu_chassis_steer_angle_fb\n",
+        )
+        for second, value in enumerate(values):
+            timestamp = second * NANOSECONDS
+            writer.write_message(
+                topic="/pix_hooke/v2a_steerstafb",
+                schema=schema,
+                message={"vcu_chassis_steer_angle_fb": value},
+                log_time=timestamp,
+                publish_time=timestamp,
+            )
+        writer.finish()
+
+
 def write_raw_ros2_bag(path: Path, schema_data: bytes) -> None:
     with path.open("wb") as stream:
         writer = Writer(stream, compression=CompressionType.NONE)
