@@ -1,0 +1,31 @@
+spec: civ.eventspec/v1alpha1
+name: french-left-turn-transfer-baseline
+signals:
+  yaw_rate:
+    topic: /zed/zed_node/imu/data
+    field: angular_velocity.z
+  velocity_x:
+    topic: /fix_velocity
+    field: twist.twist.linear.x
+  velocity_y:
+    topic: /fix_velocity
+    field: twist.twist.linear.y
+  velocity_z:
+    topic: /fix_velocity
+    field: twist.twist.linear.z
+condition: >-
+  yaw_rate >= 0.08 &&
+  (velocity_x * velocity_x + velocity_y * velocity_y + velocity_z * velocity_z) >= 16.0
+timing:
+  min_duration: 0.5s
+  merge_gap: 2s
+  max_duration: 30s
+evidence:
+  before: 2s
+  after: 2s
+  topics:
+    - /fix
+    - /fix_velocity
+    - /zed/zed_node/imu/data
+    - /zed/zed_node/obj_det/objects
+    - /zed/zed_node/rgb/image_rect_color/compressed

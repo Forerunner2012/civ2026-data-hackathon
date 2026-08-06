@@ -175,6 +175,66 @@ def write_ros2_steering_bag(path: Path) -> None:
         writer.finish()
 
 
+def write_ros2_french_turn_bag(path: Path) -> None:
+    imu_schema_text = """\
+geometry_msgs/Vector3 angular_velocity
+================================================================================
+MSG: geometry_msgs/Vector3
+float64 x
+float64 y
+float64 z
+"""
+    velocity_schema_text = """\
+geometry_msgs/TwistWithCovariance twist
+================================================================================
+MSG: geometry_msgs/TwistWithCovariance
+geometry_msgs/Twist twist
+================================================================================
+MSG: geometry_msgs/Twist
+geometry_msgs/Vector3 linear
+================================================================================
+MSG: geometry_msgs/Vector3
+float64 x
+float64 y
+float64 z
+"""
+    with path.open("wb") as stream:
+        writer = Ros2Writer(stream, compression=CompressionType.NONE)
+        imu_schema = writer.register_msgdef("sensor_msgs/msg/Imu", imu_schema_text)
+        velocity_schema = writer.register_msgdef(
+            "geometry_msgs/msg/TwistWithCovarianceStamped", velocity_schema_text
+        )
+        for index in range(40):
+            timestamp = index * 250_000_000
+            yaw_rate = 0.0
+            speed = 2.0 if 19 <= index <= 23 else 4.0
+            if 4 <= index <= 7:
+                yaw_rate = 0.1
+            elif 12 <= index <= 15:
+                yaw_rate = -0.1
+            elif 20 <= index <= 22 or 36 <= index <= 37:
+                yaw_rate = 0.1
+            writer.write_message(
+                topic="/zed/zed_node/imu/data",
+                schema=imu_schema,
+                message={"angular_velocity": {"x": 0.0, "y": 0.0, "z": yaw_rate}},
+                log_time=timestamp,
+                publish_time=timestamp,
+            )
+            writer.write_message(
+                topic="/fix_velocity",
+                schema=velocity_schema,
+                message={
+                    "twist": {
+                        "twist": {"linear": {"x": speed, "y": 0.0, "z": 0.0}}
+                    }
+                },
+                log_time=timestamp,
+                publish_time=timestamp,
+            )
+        writer.finish()
+
+
 def write_raw_ros2_bag(path: Path, schema_data: bytes) -> None:
     with path.open("wb") as stream:
         writer = Writer(stream, compression=CompressionType.NONE)

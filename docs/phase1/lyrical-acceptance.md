@@ -86,7 +86,7 @@ The replay exposed one Python 3.12 path-normalization defect at the existing pub
 A public-CLI regression test now locks this invocation, and the report boundary normalizes the root
 once before validation and bundling. The fix changes no command, artifact contract, or bundle bytes.
 
-French transfer issue #7 and the integrated Phase 1 gate in issue #11 must use this pinned Lyrical
-environment and the same prepared dependency floor. Tier IV `ros2idl` decoding remains explicitly
-out of scope and deferred to issue #13, including the organizer's external notes and pinned source
-hashes.
+French transfer issue #7 is complete in [`french-acceptance.md`](french-acceptance.md); the integrated
+Phase 1 gate in issue #11 must use this pinned Lyrical environment and the same prepared dependency
+floor. Tier IV `ros2idl` decoding remains explicitly out of scope and deferred to issue #13,
+including the organizer's external notes and pinned source hashes.
