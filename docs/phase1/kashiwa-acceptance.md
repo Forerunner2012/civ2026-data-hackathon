@@ -1,6 +1,6 @@
 # Kashiwa Phase 1 acceptance record
 
-Status: **partial — organizer visual confirmation and the exact Ubuntu 22.04/ROS 2 Humble container gate remain open**
+Status: **partial — organizer visual confirmation and the telemetry-contract decision remain open**
 
 Recorded: 2026-08-06
 
@@ -17,7 +17,8 @@ Recorded: 2026-08-06
 
 The bag, descriptor, provisional organizer labels, evidence clip, caches, submission bundle, and all
 runtime outputs remained outside the repository. The external working directory used on Windows was
-`%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-20260806-yaw`.
+`%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-20260806-yaw`; exact-container outputs were written to
+`%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-humble`.
 
 ## Inspection and selected signals
 
@@ -54,7 +55,7 @@ That candidate emits two intervals:
   1,756,268,630,748,779,481–1,756,268,631,384,602,075 ns, or
   96.440476–97.076299 s after bag start; duration 635,822,594 ns; trigger
   `yaw_rate=-0.30079431928938716`, `object_detected=true`.
-- Byte-stable `events.jsonl` SHA-256 across fresh Windows directories:
+- Byte-stable `events.jsonl` SHA-256 across fresh Windows directories and the exact Humble container:
   `93ea2a3d84e586fade0c171378175ec8dfc01d50a4af810f29cc0ca71853a451`.
 
 This is a detector candidate, not ground truth. The external label pack used below mirrors the
@@ -72,6 +73,8 @@ as a reviewed Kashiwa label.
 - Metadata-only bundle size: 6,825 bytes.
 - Bundle SHA-256, stable across repeated Windows builds:
   `21bf82946adf9162426885d31a680eec150e8124c0cd4bd685a4646a67dcf5f6`
+- Exact-container bundle size: 6,816 bytes; SHA-256 stable across fresh network-disabled container
+  builds: `e37783f6c531b298438a602bb1538c436424d4fa92fc8dd9177bedf44d5d44a1`.
 - Bundle entries: EventSpec, `events.jsonl`, figure, `metrics.json`, `report.md`, reproduction entry,
   and `run-manifest.json`. It contains no bag, clip, or label pack.
 - External working-directory disk use after the complete run: 10,890,492 bytes across 11 files.
@@ -82,35 +85,38 @@ Windows proof host: Microsoft Windows 11 Pro 64-bit, version 10.0.26200, build 2
 detect-to-report path ran successfully there in approximately 26.5 seconds from observed command
 wall times; inspection had already succeeded against the same bag and schemas.
 
-Near-target Linux telemetry ran before review under Ubuntu 24.04.4 LTS on WSL2 kernel
-`6.18.33.2-microsoft-standard-WSL2`, CPython 3.12.3, and uv 0.11.2. Dependencies were prepared first;
-each acceptance command then used `uv run --offline`. GNU `time -v` reported zero socket messages
-sent or received for every measured command. This run used the superseded angular-acceleration
-candidate, so it is infrastructure evidence only and does not validate the corrected EventSpec.
+The exact target run used Ubuntu 22.04.5 LTS, ROS distribution `humble`, CPython 3.10.12, and
+Linux amd64. The prepared acceptance image was `civ-phase1:humble-jammy` with image ID
+`sha256:7b436200ca124a8bfc42d5ccedba66d35af6e3bcc44f68b3e1cf7c30ad3444f3`, derived from
+`ros:humble-ros-base-jammy` digest
+`sha256:7bea3d9aa2483d3ca34c8e30d921b79273b0913bd7dc64bebf51d082b5d107e4`.
+
+Dependencies were prepared before acceptance. The complete acceptance path then ran in a fresh
+container with `--network none`, no GPU access, the repository and bag mounted read-only, and only
+the external output directory writable. GNU `time -v` reported zero socket messages sent or received
+for every command.
 
 | Command | Wall time | Peak RSS | File-system input blocks | File-system output blocks |
 |---|---:|---:|---:|---:|
-| `civ inspect` | 79.81 s | 108,216 KB | 15,523,664 | 5,704 |
-| `civ detect` | 92.71 s | 74,132 KB | 24,425,910 | 5,728 |
-| `civ clip` | 59.11 s | 68,540 KB | 16,044,816 | 5,704 |
-| `civ score` | 0.49 s | 38,580 KB | 353 | 112 |
-| `civ report` | 1.19 s | 38,040 KB | 9,327 | 0 |
+| `civ inspect` | 90.19 s | 105,668 KB | 15,362,066 | 2,712 |
+| `civ detect` | 95.42 s | 74,908 KB | 24,373,124 | 0 |
+| `civ clip` | 62.79 s | 67,212 KB | 16,368,928 | 0 |
+| `civ score` | 0.45 s | 29,836 KB | 101 | 0 |
+| `civ report` | 0.73 s | 31,000 KB | 21,377 | 0 |
 
-The Linux total is approximately 233.31 seconds. It is dominated by reading a 7.9 GB file across
-the WSL/NTFS boundary and is not representative of a native Linux disk.
+The measured command total is approximately 249.58 seconds; the complete container invocation took
+251.5 seconds. It is dominated by reading a 7.9 GB file through a Docker Desktop bind mount and is
+not representative of a native Linux disk.
 
 ## Open gates and candidate-contract consequences
 
 1. An organizer must open the route and extracted evidence in PlotJuggler, inspect the
    39.358–41.225 s and 96.440–97.076 s intervals, identify the actual manoeuvres, and record whether
    the negative yaw rate plus object and camera context support the right-turn definition.
-2. The exact Ubuntu 22.04/ROS 2 Humble CPU-only container run remains open. This host has Ubuntu
-   24.04 and 26.04 WSL distributions; Docker Desktop was not running and no 22.04 environment was
-   available. The 24.04 offline result is evidence, not a substitute acceptance.
-3. `run-manifest.json` still lacks operation timings, peak memory, tool versions, and host/container
+2. `run-manifest.json` still lacks operation timings, peak memory, tool versions, and host/container
    identity. Adding nondeterministic telemetry directly would conflict with the current byte-stable
    bundle contract. Phase 2 must decide whether to normalize/exclude local measurements in the
    submitted manifest or keep this organizer acceptance record as the authoritative telemetry sidecar.
-4. The five `ros2idl` inspection warnings are actionable and bounded. The candidate avoids those
+3. The five `ros2idl` inspection warnings are actionable and bounded. The candidate avoids those
    topics; supporting IDL schemas can remain a separate contract decision unless later routes require
    them.
