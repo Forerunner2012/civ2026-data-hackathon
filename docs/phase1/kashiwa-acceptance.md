@@ -1,7 +1,7 @@
 # Kashiwa Phase 1 acceptance record
 
-Status: **partial — three organizer observations are covered; two additional steering candidates
-still need visual classification**
+Status: **complete — the external Kashiwa label pack is sealed and the candidate has been scored
+without hiding its boundary errors or false positives**
 
 Recorded: 2026-08-06
 
@@ -16,7 +16,7 @@ Recorded: 2026-08-06
 - Descriptor message count: 560,611
 - File modified: 2025-08-31 19:50:08 UTC
 
-The bag, descriptor, provisional organizer labels, evidence clip, caches, submission bundle, and all
+The bag, descriptor, organizer labels, evidence clips, caches, submission bundle, and all
 runtime outputs remained outside the repository. The corrected exact-container outputs were written
 to `%LOCALAPPDATA%\Temp\civ-phase1-kashiwa-steering-humble-v2`.
 
@@ -62,32 +62,35 @@ The corrected candidate emits five intervals:
 
 | Event | Relative interval | Duration | Initial steering | Review status |
 |---|---:|---:|---:|---|
-| `7266f77d…715f228` | 3.000915–5.220780 s | 2.219866 s | 18° | pending |
+| `7266f77d…715f228` | 3.000915–5.220780 s | 2.219866 s | 18° | organizer-classified false positive |
 | `a960a16f…15c0ed1` | 19.000892–45.600922 s | 26.600030 s | 16° | covers reviewed 23.5–44 s episode |
 | `71d3490d…eee6340` | 55.640932–65.281312 s | 9.640381 s | 13° | covers reviewed missing 60–65 s turn |
-| `9502b726…24447ed7` | 91.740873–100.960918 s | 9.220045 s | 12° | contains previously accepted ~96 s turn |
-| `a5d2609e…0cb86e9` | 103.980911–104.780927 s | 0.800016 s | 10° | pending |
+| `9502b726…24447ed7` | 91.740873–100.960918 s | 9.220045 s | 12° | contains true ~96 s turn but is too broad for 0.5 IoU |
+| `a5d2609e…0cb86e9` | 103.980911–104.780927 s | 0.800016 s | 10° | organizer-classified false positive |
 
 - Byte-stable `events.jsonl` SHA-256 across Windows and the exact Humble container:
   `798d05a6ebc46536d0aa32b0f03911f47e2b72ffd41bb11224a61c895e3490a9`.
 
-This is a detector candidate, not ground truth. The external label pack used below mirrors the
-five provisional intervals solely to exercise the sealed-label scoring interface. It must not be treated
-as a reviewed Kashiwa label.
+The external authoritative label pack contains three organizer-reviewed manoeuvres: 23.5–44 s,
+60–65 s, and 96.440476–97.076299 s. Its SHA-256 is
+`1ee742010744686c07b552aed2c6192622613f5ff9734ec3160d5286db94f201`. The pack remains outside
+the repository and participant artifacts.
 
 ## Clip, score, and report results
 
 - All five evidence clips reopen as valid MCAP and contain exactly the six declared dense topics.
 - Clip sizes are 4,663,801; 35,292,537; 16,161,201; 16,978,226; and 6,990,215 bytes.
 - Total clip size is 80,085,980 bytes, down from five copies of the 7,875,976,476-byte input.
-- Scoring-interface result with the external mirror pack: TP 5, FP 0, FN 0, F1 1.0. This validates
-  only the sealed-label interface; it is not an accuracy claim.
-- Exact-container metadata-only bundle size: 10,410 bytes; SHA-256 stable across fresh
-  network-disabled builds:
-  `8ea429d6ec9547f3efcfee232907044b4bd222c35209528201d176d0143c7173`.
+- Authoritative scoring result: TP 2, FP 3, FN 1; precision 0.4, recall 0.666666666667,
+  F1 0.5, and mean matched temporal IoU 0.644663772045.
+- The false positives include the organizer-rejected 3.001–5.221 s and 103.981–104.781 s clips.
+  The remaining FP/FN pair comes from the 91.741–100.961 s candidate containing, but failing the
+  0.5-IoU threshold against, the much shorter third label.
+- Exact-container metadata-only bundle size: 10,596 bytes; SHA-256:
+  `31f4eb3ad1cc3c003e0dc5474dad52d7a08ece183a095b3ef0a50c1e5588ca9c`.
 - Bundle entries: EventSpec, `events.jsonl`, figure, `metrics.json`, `report.md`, reproduction entry,
   and `run-manifest.json`. It contains no bag, clip, or label pack.
-- External working-directory disk use after the complete run: 80,110,724 bytes across 22 files.
+- External working-directory disk use after the complete run: 80,113,928 bytes across 27 files.
 
 ## Host and offline telemetry
 
@@ -131,11 +134,13 @@ representative of a native Linux disk.
   will be investigated in a later phase; the current Pix Hooke `ros2msg` steering/speed path does not
   depend on them.
 
-## Open gates
+## Closure and routed follow-up
 
-1. Review the 3.001–5.221 s and 103.981–104.781 s steering candidates in PlotJuggler and classify
-   each as a labelled right-turn manoeuvre, a duplicate fragment, or a false positive.
-2. Convert the three confirmed observations and those two classifications into the sealed Kashiwa
-   label pack; do not use the external mirror pack as ground truth.
-3. Rehearse the same public contracts on ROS 2 Lyrical/Ubuntu 26.04 and record minimum supported tool
-   versions before the attendee release is frozen.
+- Visual classification is complete and the three-interval external Kashiwa label pack is sealed.
+- Candidate quality is intentionally recorded rather than tuned against the sealed labels: false
+  positives and the broad third prediction demonstrate why interval boundaries remain a scored
+  participant decision. They do not invalidate the public workflow proof.
+- GitHub issue #12 owns the ROS 2 Lyrical/Ubuntu 26.04 rehearsal and deterministic minimum-version
+  floors before French transfer and attendee release.
+- GitHub issue #13 owns the later Tier IV `ros2idl` investigation with the organizer's external,
+  pinned-source setup notes.
