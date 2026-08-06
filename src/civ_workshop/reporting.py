@@ -163,6 +163,7 @@ def _bundle_entries(
 
 
 def build_report_bundle(working: Path) -> dict[str, str]:
+    working = working.resolve()
     if not working.is_dir():
         raise CivError(f"submission working directory does not exist: {working}")
     figure_path, reproduction_path = _validate_report(working)

@@ -426,6 +426,18 @@ def test_report_assembles_stable_metadata_only_bundle(
         assert "labels.json" not in archive.namelist()
 
 
+def test_report_accepts_current_directory_submission(
+    micro_case: MicroCase, tmp_path: Path
+) -> None:
+    working = tmp_path / "working"
+    prepare_scored_submission(micro_case, working)
+
+    result = run_civ(working, ["report", "."])
+
+    assert result.returncode == 0, result.stderr
+    assert (working / "submission.zip").is_file()
+
+
 @pytest.mark.parametrize(
     ("arguments", "expected_error"),
     [

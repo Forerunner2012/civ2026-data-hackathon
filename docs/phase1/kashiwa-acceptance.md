@@ -124,8 +124,8 @@ representative of a native Linux disk.
 ## Platform, version, and deferred-schema decisions
 
 - Humble on Ubuntu 22.04 remains a proven compatibility floor for the supplied Kashiwa recording.
-  The forward participant/release target is ROS 2 Lyrical Luth on Ubuntu 26.04, the latest stable OSS
-  LTS, subject to a dedicated rehearsal rather than silently changing this acceptance environment.
+  The forward participant/release target is ROS 2 Lyrical Luth on Ubuntu 26.04. Its dedicated
+  rehearsal is complete and recorded in [`lyrical-acceptance.md`](lyrical-acceptance.md).
 - Submitted metadata will carry deterministic minimum supported tool-version floors. Actual command
   timings, peak memory, and host/container identity remain in this organizer acceptance sidecar so
   local measurements do not make the metadata bundle nondeterministic.
@@ -140,7 +140,7 @@ representative of a native Linux disk.
 - Candidate quality is intentionally recorded rather than tuned against the sealed labels: false
   positives and the broad third prediction demonstrate why interval boundaries remain a scored
   participant decision. They do not invalidate the public workflow proof.
-- GitHub issue #12 owns the ROS 2 Lyrical/Ubuntu 26.04 rehearsal and deterministic minimum-version
-  floors before French transfer and attendee release.
+- GitHub issue #12 records the completed ROS 2 Lyrical/Ubuntu 26.04 rehearsal and deterministic
+  minimum-version floors that gate French transfer and attendee release.
 - GitHub issue #13 owns the later Tier IV `ros2idl` investigation with the organizer's external,
   pinned-source setup notes.
