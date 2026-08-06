@@ -16,6 +16,9 @@ from tests.helpers import (
     prepare_scored_submission,
     run_civ,
     run_complete_workflow,
+    write_raw_ros2_bag,
+    write_ros2_bool_bag,
+    write_ros2_nested_bag,
 )
 
 
@@ -72,6 +75,65 @@ def test_inspect_renders_concise_human_inventory(micro_case: MicroCase) -> None:
     )
 
 
+def test_inspect_discovers_fields_in_embedded_ros2_cdr_schema(tmp_path: Path) -> None:
+    bag = tmp_path / "ros2.mcap"
+    write_ros2_bool_bag(bag)
+
+    result = run_civ(tmp_path, ["inspect", str(bag), "--json"])
+
+    assert result.returncode == 0, result.stderr
+    inventory = json.loads(result.stdout)
+    assert inventory["topics"] == [
+        {
+            "fields": ["data"],
+            "message_count": 1,
+            "message_encoding": "cdr",
+            "message_rate_hz": 0.0,
+            "schema_encoding": "ros2msg",
+            "schema_id": 1,
+            "schema_name": "std_msgs/msg/Bool",
+            "schema_sha256": sha256(b"bool data\n").hexdigest(),
+            "topic": "/ros2/enabled",
+        }
+    ]
+    assert inventory["warnings"] == []
+
+
+def test_inspect_discovers_nested_ros2_field_paths(tmp_path: Path) -> None:
+    bag = tmp_path / "ros2-nested.mcap"
+    write_ros2_nested_bag(bag)
+
+    result = run_civ(tmp_path, ["inspect", str(bag), "--json"])
+
+    assert result.returncode == 0, result.stderr
+    topic = json.loads(result.stdout)["topics"][0]
+    assert topic["fields"] == [
+        "turn.angular.x",
+        "turn.angular.y",
+        "turn.angular.z",
+    ]
+
+
+def test_inspect_reports_nested_message_arrays_as_consumable_fields(tmp_path: Path) -> None:
+    bag = tmp_path / "ros2-array.mcap"
+    write_raw_ros2_bag(
+        bag,
+        b"""geometry_msgs/Point[] points
+================================================================================
+MSG: geometry_msgs/Point
+float64 x
+float64 y
+float64 z
+""",
+    )
+
+    result = run_civ(tmp_path, ["inspect", str(bag), "--json"])
+
+    assert result.returncode == 0, result.stderr
+    topic = json.loads(result.stdout)["topics"][0]
+    assert topic["fields"] == ["points"]
+
+
 def test_detect_emits_one_normalized_interval_and_manifest(
     micro_case: MicroCase, tmp_path: Path
 ) -> None:
@@ -108,6 +170,88 @@ def test_detect_emits_one_normalized_interval_and_manifest(
         "before_ns": 500_000_000,
         "topics": ["/micro/evidence", "/micro/signal"],
     }
+
+
+def test_detect_evaluates_embedded_ros2_cdr_messages(tmp_path: Path) -> None:
+    bag = tmp_path / "ros2.mcap"
+    spec = tmp_path / "detector.yaml"
+    output = tmp_path / "working"
+    write_ros2_bool_bag(bag, (False, True, True, False))
+    spec.write_text(
+        """\
+spec: civ.eventspec/v1alpha1
+name: ros2-enabled
+signals:
+  enabled:
+    topic: /ros2/enabled
+    field: data
+condition: enabled == true
+timing:
+  min_duration: 1s
+  merge_gap: 1.1s
+  max_duration: 5s
+evidence:
+  before: 0s
+  after: 0s
+  topics:
+    - /ros2/enabled
+""",
+        encoding="utf-8",
+    )
+
+    result = run_civ(
+        tmp_path,
+        ["detect", str(spec), str(bag), "--output", str(output)],
+    )
+
+    assert result.returncode == 0, result.stderr
+    event = json.loads((output / "events.jsonl").read_text(encoding="utf-8"))
+    assert event["start_ns"] == 1_000_000_000
+    assert event["end_ns"] == 2_000_000_000
+    assert event["trigger_values"] == {"enabled": True}
+
+
+@pytest.mark.parametrize(
+    "schema_data",
+    [
+        pytest.param(b"\xff", id="invalid-utf8"),
+        pytest.param(b"not valid", id="invalid-field"),
+    ],
+)
+def test_detect_reports_topic_for_invalid_embedded_ros2_schema(
+    tmp_path: Path, schema_data: bytes
+) -> None:
+    bag = tmp_path / "ros2-invalid-schema.mcap"
+    spec = tmp_path / "detector.yaml"
+    write_raw_ros2_bag(bag, schema_data)
+    spec.write_text(
+        """\
+spec: civ.eventspec/v1alpha1
+name: invalid-schema
+signals:
+  signal:
+    topic: /ros2/broken
+    field: data
+condition: signal == true
+timing:
+  min_duration: 1s
+  merge_gap: 1s
+  max_duration: 2s
+evidence:
+  before: 0s
+  after: 0s
+  topics:
+    - /ros2/broken
+""",
+        encoding="utf-8",
+    )
+
+    result = run_civ(tmp_path, ["detect", str(spec), str(bag)])
+
+    assert result.returncode == 2
+    assert "topic /ros2/broken has invalid ROS 2 schema" in result.stderr
+    assert "valid embedded ros2msg definition" in result.stderr
+    assert "Traceback" not in result.stderr
 
 
 def test_detect_dry_run_validates_without_writing(micro_case: MicroCase, tmp_path: Path) -> None:
@@ -266,7 +410,7 @@ def test_report_assembles_stable_metadata_only_bundle(
     [
         (["inspect", "missing.mcap"], "bag does not exist"),
         (["detect", "bad-topic.yaml", "micro.mcap"], "EventSpec topics not found in bag"),
-        (["detect", "bad-field.yaml", "micro.mcap"], "field not found in JSON message"),
+        (["detect", "bad-field.yaml", "micro.mcap"], "field not found in decoded message"),
         (["detect", "bad-cel.yaml", "micro.mcap"], "invalid CEL condition"),
         (["detect", "bad-timing.yaml", "micro.mcap"], "must not exceed"),
         (

@@ -9,6 +9,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from mcap.writer import CompressionType, Writer
+from mcap_ros2.writer import Writer as Ros2Writer
 
 NANOSECONDS = 1_000_000_000
 
@@ -110,6 +111,70 @@ def write_micro_bag(path: Path) -> None:
                 publish_time=timestamp,
                 data=json.dumps({"label": f"frame-{second}"}).encode(),
             )
+        writer.finish()
+
+
+def write_ros2_bool_bag(path: Path, values: Sequence[bool] = (True,)) -> None:
+    with path.open("wb") as stream:
+        writer = Ros2Writer(stream, compression=CompressionType.NONE)
+        schema = writer.register_msgdef("std_msgs/msg/Bool", "bool data\n")
+        for second, value in enumerate(values):
+            timestamp = second * NANOSECONDS
+            writer.write_message(
+                topic="/ros2/enabled",
+                schema=schema,
+                message={"data": value},
+                log_time=timestamp,
+                publish_time=timestamp,
+            )
+        writer.finish()
+
+
+def write_ros2_nested_bag(path: Path) -> None:
+    schema_text = """\
+civ_msgs/TurnState turn
+================================================================================
+MSG: civ_msgs/TurnState
+geometry_msgs/Vector3 angular
+================================================================================
+MSG: geometry_msgs/Vector3
+float64 x
+float64 y
+float64 z
+"""
+    with path.open("wb") as stream:
+        writer = Ros2Writer(stream, compression=CompressionType.NONE)
+        schema = writer.register_msgdef("civ_msgs/msg/TurnSample", schema_text)
+        writer.write_message(
+            topic="/ros2/turn",
+            schema=schema,
+            message={"turn": {"angular": {"x": 0.0, "y": 0.0, "z": -0.25}}},
+            log_time=1_000_000_000,
+            publish_time=1_000_000_000,
+        )
+        writer.finish()
+
+
+def write_raw_ros2_bag(path: Path, schema_data: bytes) -> None:
+    with path.open("wb") as stream:
+        writer = Writer(stream, compression=CompressionType.NONE)
+        writer.start(profile="ros2", library="civ-test-fixture")
+        schema_id = writer.register_schema(
+            name="civ_msgs/msg/Broken",
+            encoding="ros2msg",
+            data=schema_data,
+        )
+        channel_id = writer.register_channel(
+            schema_id=schema_id,
+            topic="/ros2/broken",
+            message_encoding="cdr",
+        )
+        writer.add_message(
+            channel_id=channel_id,
+            log_time=1_000_000_000,
+            publish_time=1_000_000_000,
+            data=b"\x00",
+        )
         writer.finish()
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from hashlib import sha256
 from pathlib import Path
@@ -21,6 +22,75 @@ def _schema_fields(schema_data: bytes) -> list[str]:
     if not isinstance(properties, dict):
         return []
     return sorted(str(name) for name in properties)
+
+
+ROS_PRIMITIVES = {
+    "bool",
+    "byte",
+    "char",
+    "float32",
+    "float64",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "string",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "wstring",
+}
+
+
+def _normalized_ros_type(type_name: str) -> str:
+    return type_name.replace("/msg/", "/")
+
+
+def _ros2msg_fields(schema_name: str, schema_data: bytes) -> list[str]:
+    root_type = _normalized_ros_type(schema_name)
+    definitions: dict[str, list[tuple[str, str]]] = {root_type: []}
+    current_type = root_type
+    for raw_line in schema_data.decode().splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.startswith("="):
+            continue
+        if line.startswith("MSG:"):
+            current_type = _normalized_ros_type(line.removeprefix("MSG:").strip())
+            definitions.setdefault(current_type, [])
+            continue
+        if "=" in line:
+            continue
+        parts = line.split()
+        if len(parts) == 2:
+            definitions[current_type].append((parts[0], parts[1]))
+
+    def leaf_paths(
+        type_name: str, prefix: str, ancestors: frozenset[str]
+    ) -> list[str]:
+        fields: list[str] = []
+        for raw_field_type, field_name in definitions.get(type_name, []):
+            path = f"{prefix}.{field_name}" if prefix else field_name
+            if re.search(r"\[.*\]$", raw_field_type):
+                fields.append(path)
+                continue
+            field_type = raw_field_type
+            if field_type in ROS_PRIMITIVES:
+                fields.append(path)
+                continue
+            normalized = _normalized_ros_type(field_type)
+            if "/" not in normalized:
+                package = type_name.split("/", 1)[0]
+                normalized = f"{package}/{normalized}"
+            if normalized not in definitions or normalized in ancestors:
+                fields.append(path)
+                continue
+            fields.extend(leaf_paths(normalized, path, ancestors | {normalized}))
+        return fields
+
+    return sorted(leaf_paths(root_type, "", frozenset({root_type})))
 
 
 def inspect_bag(path: Path) -> dict[str, Any]:
@@ -60,6 +130,11 @@ def inspect_bag(path: Path) -> dict[str, Any]:
                             fields = _schema_fields(schema.data)
                         except (UnicodeDecodeError, json.JSONDecodeError):
                             warnings.add(f"{channel.topic}: invalid JSON schema")
+                    elif schema.encoding == "ros2msg":
+                        try:
+                            fields = _ros2msg_fields(schema.name, schema.data)
+                        except UnicodeDecodeError:
+                            warnings.add(f"{channel.topic}: invalid ros2msg schema")
                     else:
                         encoding = schema.encoding or "unknown"
                         warnings.add(f"{channel.topic}: field discovery unsupported for {encoding}")
