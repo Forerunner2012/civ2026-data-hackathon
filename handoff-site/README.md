@@ -57,6 +57,7 @@ Set a private coach token before starting the local server:
 
 ```powershell
 $env:LIVE_COACH_TOKEN = "replace-with-a-long-random-value"
+$env:SUBMISSION_FORM_URL = "https://your-configured-form.example/response"
 npm run dev
 ```
 
@@ -75,6 +76,11 @@ $env:LIVE_ALLOW_CONTROLLED_CLOCK = "true"
 Leave `LIVE_ALLOW_CONTROLLED_CLOCK` unset on event day. If the local server or network is
 unavailable, serve or open `/session-fallback.html`; it is static, script-free, and
 participant-safe.
+
+`SUBMISSION_FORM_URL` is participant-visible by design. It must be HTTPS and must not contain
+credentials. Configure the external form to collect participant identity, the SHA-256 printed by
+`civ report`, and the unchanged `submission.zip`, and to show a confirmation containing its server
+receipt timestamp. Organizer credentials and response exports remain outside this site.
 
 ## Verification
 

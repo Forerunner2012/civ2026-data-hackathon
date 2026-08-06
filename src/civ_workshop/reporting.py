@@ -22,6 +22,10 @@ REPORT_HEADINGS = (
     "Downstream action and deployment mode",
 )
 FIGURE_SUFFIXES = {".jpeg", ".jpg", ".png", ".svg", ".webp"}
+MAX_SUBMISSION_BUNDLE_BYTES = 12 * 1024 * 1024
+MAX_SUBMISSION_ENTRY_BYTES = 8 * 1024 * 1024
+MAX_SUBMISSION_UNCOMPRESSED_BYTES = 10 * 1024 * 1024
+MAX_SUBMISSION_ARCHIVE_ENTRIES = 16
 
 
 def _detector_spec(working: Path) -> Path:
@@ -86,7 +90,7 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
     return figure_path, reproduction[0]
 
 
-def _validate_manifest(working: Path, spec_path: Path) -> None:
+def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence: bool) -> None:
     manifest = read_json_file(working / "run-manifest.json", "run manifest")
     if manifest.get("contract") != "civ.run-manifest/v1alpha1":
         raise CivError("unsupported run manifest contract")
@@ -134,12 +138,12 @@ def _validate_manifest(working: Path, spec_path: Path) -> None:
             clip_path.relative_to(evidence_root)
         except ValueError as error:
             raise CivError(f"clip path is outside evidence/: {clip_name}") from error
-        if not clip_path.is_file():
-            raise CivError(f"manifest clip does not exist: {clip_name}")
-        if file_sha256(clip_path) != require_string(
-            clip.get("sha256"), f"run manifest clip {index} sha256"
-        ):
-            raise CivError(f"clip hash does not match the run manifest: {clip_name}")
+        clip_hash = require_string(clip.get("sha256"), f"run manifest clip {index} sha256")
+        if require_local_evidence:
+            if not clip_path.is_file():
+                raise CivError(f"manifest clip does not exist: {clip_name}")
+            if file_sha256(clip_path) != clip_hash:
+                raise CivError(f"clip hash does not match the run manifest: {clip_name}")
         if clip.get("valid") is not True:
             raise CivError(f"clip is not marked valid: {clip_name}")
 
@@ -162,18 +166,58 @@ def _bundle_entries(
     return sorted(required, key=lambda path: path.relative_to(working).as_posix())
 
 
-def build_report_bundle(working: Path) -> dict[str, str]:
+def _validate_bundle_limits(working: Path, entries: list[Path]) -> None:
+    if len(entries) > MAX_SUBMISSION_ARCHIVE_ENTRIES:
+        raise CivError(
+            f"submission has more than {MAX_SUBMISSION_ARCHIVE_ENTRIES} metadata artifacts"
+        )
+    total_size = 0
+    projected_archive_size = 22
+    for path in entries:
+        try:
+            size = path.stat().st_size
+        except OSError as error:
+            raise CivError(f"cannot inspect submission artifact {path}: {error}") from error
+        relative_name = path.relative_to(working).as_posix()
+        if size > MAX_SUBMISSION_ENTRY_BYTES:
+            raise CivError(
+                f"submission artifact exceeds {MAX_SUBMISSION_ENTRY_BYTES} bytes: {relative_name}"
+            )
+        total_size += size
+        projected_archive_size += size + 76 + 2 * len(relative_name.encode("utf-8"))
+    if total_size > MAX_SUBMISSION_UNCOMPRESSED_BYTES:
+        raise CivError(
+            "submission metadata exceeds "
+            f"{MAX_SUBMISSION_UNCOMPRESSED_BYTES} uncompressed bytes"
+        )
+    if projected_archive_size > MAX_SUBMISSION_BUNDLE_BYTES:
+        raise CivError(
+            f"submission bundle would exceed {MAX_SUBMISSION_BUNDLE_BYTES} bytes"
+        )
+
+
+def validate_submission_directory(
+    working: Path, *, require_local_evidence: bool = True
+) -> list[Path]:
     working = working.resolve()
     if not working.is_dir():
         raise CivError(f"submission working directory does not exist: {working}")
     figure_path, reproduction_path = _validate_report(working)
     spec_path = _detector_spec(working)
-    _validate_manifest(working, spec_path)
+    _validate_manifest(working, spec_path, require_local_evidence=require_local_evidence)
     entries = _bundle_entries(working, spec_path, figure_path, reproduction_path)
-    bundle_path = working / "submission.zip"
+    _validate_bundle_limits(working, entries)
+    return entries
+
+
+def write_canonical_submission_bundle(
+    bundle_path: Path, working: Path, entries: list[Path]
+) -> None:
     try:
         with zipfile.ZipFile(bundle_path, "w", compression=zipfile.ZIP_STORED) as archive:
-            for path in entries:
+            for path in sorted(
+                entries, key=lambda candidate: candidate.relative_to(working).as_posix()
+            ):
                 relative_name = path.relative_to(working).as_posix()
                 info = zipfile.ZipInfo(relative_name, date_time=(1980, 1, 1, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_STORED
@@ -182,4 +226,11 @@ def build_report_bundle(working: Path) -> dict[str, str]:
                 archive.writestr(info, path.read_bytes())
     except OSError as error:
         raise CivError(f"cannot assemble submission bundle: {error}") from error
+
+
+def build_report_bundle(working: Path) -> dict[str, str]:
+    working = working.resolve()
+    entries = validate_submission_directory(working)
+    bundle_path = working / "submission.zip"
+    write_canonical_submission_bundle(bundle_path, working, entries)
     return {"bundle": bundle_path.name, "sha256": file_sha256(bundle_path)}

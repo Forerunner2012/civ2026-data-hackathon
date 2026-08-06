@@ -4,12 +4,14 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from dataclasses import asdict
 from pathlib import Path
 
 from civ_workshop.clipping import clip_events
 from civ_workshop.detection import detect_events
 from civ_workshop.errors import CivError
 from civ_workshop.inspection import inspect_bag, render_inventory
+from civ_workshop.intake import IntakeLedger, import_form_response
 from civ_workshop.reporting import build_report_bundle
 from civ_workshop.scoring import score_submission
 
@@ -38,6 +40,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     report_parser = commands.add_parser("report", help="validate and bundle a submission")
     report_parser.add_argument("submission", type=Path)
+
+    form_parser = commands.add_parser(
+        "intake-form", help="import one exported online form response"
+    )
+    form_parser.add_argument("response", type=Path)
+    form_parser.add_argument("--ledger", type=Path, required=True)
+
+    local_parser = commands.add_parser(
+        "intake-local", help="record one local or USB submission bundle"
+    )
+    local_parser.add_argument("bundle", type=Path)
+    local_parser.add_argument("--ledger", type=Path, required=True)
+    local_parser.add_argument("--identity", required=True)
+    local_parser.add_argument("--received-at", required=True)
+    local_parser.add_argument("--sha256", required=True)
+    local_parser.add_argument("--delivery-id", required=True)
     return parser
 
 
@@ -64,6 +82,18 @@ def main(argv: Sequence[str] | None = None) -> None:
         elif args.command == "report":
             report_result = build_report_bundle(args.submission)
             print(json.dumps(report_result, sort_keys=True, separators=(",", ":")))
+        elif args.command == "intake-form":
+            receipt = import_form_response(args.response, args.ledger)
+            print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
+        elif args.command == "intake-local":
+            receipt = IntakeLedger(args.ledger).accept_local(
+                identity=args.identity,
+                received_at=args.received_at,
+                submitted_sha256=args.sha256,
+                bundle_path=args.bundle,
+                delivery_id=args.delivery_id,
+            )
+            print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
     except CivError as error:
         print(f"civ: {error}", file=sys.stderr)
         raise SystemExit(2) from None

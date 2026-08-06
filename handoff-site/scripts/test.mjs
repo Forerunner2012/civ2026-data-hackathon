@@ -4,7 +4,10 @@ const testEnvironment = {
   ...process.env,
   LIVE_ALLOW_CONTROLLED_CLOCK: "true",
   LIVE_COACH_TOKEN: "test-coach-token",
+  SUBMISSION_FORM_URL: "https://forms.example.test/civ-phase1",
 };
+const noFormEnvironment = { ...testEnvironment };
+delete noFormEnvironment.SUBMISSION_FORM_URL;
 
 function run(arguments_, environment = process.env) {
   return new Promise((resolve, reject) => {
@@ -32,6 +35,11 @@ await run(
     "tests/live-rendered.test.mjs",
   ],
   testEnvironment,
+);
+await run(["scripts/build-audience.mjs", "internal"], noFormEnvironment);
+await run(
+  ["--experimental-strip-types", "--test", "tests/live-rendered.test.mjs"],
+  noFormEnvironment,
 );
 await run(["scripts/build-audience.mjs", "public"]);
 await run(["--test", "tests/rendered-html.test.mjs"]);

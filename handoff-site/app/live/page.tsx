@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Footer, Topbar } from "../_components/chrome";
 import { liveSnapshotAt, requestClockFromValue } from "../_content/live-store.server";
+import { configuredSubmissionFormUrl } from "../_content/submission.server";
 import { LiveSession } from "./live-session";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 const nav = [
   { href: "#current", label: "Current beat" },
   { href: "#guidance", label: "Unlocked guidance" },
+  { href: "#submission", label: "Submit" },
   { href: "#fallback", label: "Offline fallback" },
 ];
 
@@ -29,7 +31,11 @@ export default async function Live({
   return (
     <main className="live-page">
       <Topbar nav={nav} pill="Live · participant" />
-      <LiveSession initialSnapshot={snapshot} controlledNow={controlledNow ?? null} />
+      <LiveSession
+        initialSnapshot={snapshot}
+        controlledNow={controlledNow ?? null}
+        submissionFormUrl={configuredSubmissionFormUrl()}
+      />
       <Footer
         note="This local session page advances automatically. The participant-safe static fallback is available for network loss."
         backTo="#current"

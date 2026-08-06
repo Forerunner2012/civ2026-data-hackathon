@@ -63,6 +63,19 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   assert.match(await htmlAt("11:45"), /headings 3 and 4/i);
   assert.match(await htmlAt("12:10"), /heading 5/i);
   assert.match(await htmlAt("12:30"), /Submissions closed/i);
+
+  assert.match(b1, /Submit metadata bundle/i);
+  assert.match(b1, /civ report/i);
+  assert.match(b1, /submission\.zip/i);
+  assert.match(b1, /12 MiB per bundle.*8 MiB per metadata artifact/i);
+  assert.match(b1, /USB fallback/i);
+  if (process.env.SUBMISSION_FORM_URL) {
+    assert.match(b1, /https:\/\/forms\.example\.test\/civ-phase1/);
+  } else {
+    assert.doesNotMatch(b1, /forms\.example\.test/);
+    assert.match(b1, /online form is not configured.*USB fallback/i);
+  }
+  assert.match(b1, /confirmation.*receipt timestamp/i);
 });
 
 test("authorized coach advance is next-only, idempotent, and survives refresh", async () => {
@@ -131,6 +144,7 @@ test("internal browser assets do not reveal future transfer guidance", async () 
   for (const entry of entries.filter((item) => item.isFile() && /\.(?:js|mjs|json)$/.test(item.name))) {
     const source = await readFile(`${entry.parentPath ?? entry.path}/${entry.name}`, "utf8");
     assert.doesNotMatch(source, /Transfer expectation: keep the command/i);
+    assert.doesNotMatch(source, /SUBMISSION_FORM_URL|LIVE_COACH_TOKEN|intake\.sqlite3/i);
   }
 });
 

@@ -16,9 +16,11 @@ function countdown(nowMs: number, nextStartMs: number | null): string {
 export function LiveSession({
   initialSnapshot,
   controlledNow,
+  submissionFormUrl,
 }: {
   initialSnapshot: LivePublicSnapshot;
   controlledNow: string | null;
+  submissionFormUrl: string | null;
 }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [nowMs, setNowMs] = useState(initialSnapshot.nowMs);
@@ -116,6 +118,41 @@ export function LiveSession({
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="live-submission" id="submission">
+        <div>
+          <span>SUBMISSION · METADATA ONLY</span>
+          <h2>Submit metadata bundle</h2>
+          <ol>
+            <li>Run <code>civ report working</code>.</li>
+            <li>Copy the printed SHA-256 exactly.</li>
+            <li>Send your identity, hash, and unchanged <code>submission.zip</code>.</li>
+          </ol>
+          <p>Limit: 12 MiB per bundle and 8 MiB per metadata artifact.</p>
+        </div>
+        <div className="live-submission-action">
+          {submissionFormUrl ? (
+            <a
+              className="primary-button"
+              href={submissionFormUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open submission form <span>→</span>
+            </a>
+          ) : (
+            <p role="status">The online form is not configured. Use the USB fallback now.</p>
+          )}
+          <p>
+            Keep the form confirmation with its receipt timestamp. You may submit again; the last
+            valid response received by 12:30 JST is authoritative.
+          </p>
+          <p>
+            <b>USB fallback:</b> hand over the identical <code>submission.zip</code>, your identity,
+            and the same printed hash. Do not unpack or reformat it.
+          </p>
+        </div>
       </section>
 
       <section className="live-fallback" id="fallback">
