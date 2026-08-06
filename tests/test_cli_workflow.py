@@ -203,14 +203,28 @@ def test_score_writes_deterministic_metrics_from_separate_labels(
     assert second.returncode == 0, second.stderr
     assert (working / "metrics.json").read_bytes() == first_metrics
     assert json.loads(first_metrics) == {
+        "aggregate": {
+            "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
+            "f1": 1.0,
+            "match_quality": {"mean_temporal_iou": 1.0},
+            "precision": 1.0,
+            "recall": 1.0,
+        },
         "contract": "civ.metrics/v1alpha1",
-        "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
-        "dataset": "micro",
-        "f1": 1.0,
+        "datasets": [
+            {
+                "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
+                "dataset": "micro",
+                "excluded": {"data_gaps": 0, "labels": 0, "predictions": 0},
+                "f1": 1.0,
+                "match_quality": {"mean_temporal_iou": 1.0},
+                "precision": 1.0,
+                "recall": 1.0,
+                "source_sha256": sha256(micro_case.bag.read_bytes()).hexdigest(),
+            }
+        ],
         "label_pack_sha256": sha256(micro_case.labels.read_bytes()).hexdigest(),
         "matching": {"assignment": "one_to_one_best", "temporal_iou_threshold": 0.5},
-        "precision": 1.0,
-        "recall": 1.0,
     }
     assert not (working / "labels.json").exists()
 
@@ -255,7 +269,10 @@ def test_report_assembles_stable_metadata_only_bundle(
         (["detect", "bad-field.yaml", "micro.mcap"], "field not found in JSON message"),
         (["detect", "bad-cel.yaml", "micro.mcap"], "invalid CEL condition"),
         (["detect", "bad-timing.yaml", "micro.mcap"], "must not exceed"),
-        (["clip", "bad-events.jsonl", "micro.mcap"], "invalid interval"),
+        (
+            ["clip", "bad-events.jsonl", "micro.mcap"],
+            "end_ns must be greater than start_ns",
+        ),
         (["report", "incomplete"], "submission is missing report.md"),
     ],
 )

@@ -5,6 +5,7 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path
 
 from mcap.writer import CompressionType, Writer
@@ -33,6 +34,7 @@ evidence:
 
 MICRO_LABEL_PACK = {
     "contract": "civ.label-pack/v1alpha1",
+    "data_gaps": [],
     "dataset": "micro",
     "labels": [{"end_ns": 2_000_000_000, "label_id": "turn-1", "start_ns": 1_000_000_000}],
 }
@@ -117,7 +119,8 @@ def create_micro_case(root: Path) -> MicroCase:
     labels = root / "labels.json"
     write_micro_bag(bag)
     spec.write_text(MICRO_SPEC, encoding="utf-8")
-    labels.write_text(json.dumps(MICRO_LABEL_PACK, sort_keys=True), encoding="utf-8")
+    label_pack = {**MICRO_LABEL_PACK, "source_sha256": sha256(bag.read_bytes()).hexdigest()}
+    labels.write_text(json.dumps(label_pack, sort_keys=True), encoding="utf-8")
     return MicroCase(root=root, bag=bag, spec=spec, labels=labels)
 
 

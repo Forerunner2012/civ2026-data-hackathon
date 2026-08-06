@@ -49,8 +49,16 @@ def read_json_file(path: Path, context: str) -> dict[str, Any]:
 def interval_from_mapping(value: dict[str, Any], context: str) -> Interval:
     start = value.get("start_ns")
     end = value.get("end_ns")
-    if not isinstance(start, int) or not isinstance(end, int) or start < 0 or end < start:
-        raise CivError(f"{context} has an invalid interval")
+    if isinstance(start, bool) or not isinstance(start, int):
+        raise CivError(f"{context} start_ns must be an integer")
+    if isinstance(end, bool) or not isinstance(end, int):
+        raise CivError(f"{context} end_ns must be an integer")
+    if start < 0:
+        raise CivError(f"{context} start_ns must be non-negative")
+    if end < 0:
+        raise CivError(f"{context} end_ns must be non-negative")
+    if end <= start:
+        raise CivError(f"{context} end_ns must be greater than start_ns")
     return Interval(start_ns=start, end_ns=end)
 
 

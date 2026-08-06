@@ -1,0 +1,27 @@
+{
+  "dataset": "known-data-gap",
+  "data_gaps": [
+    {
+      "end_ns": 150,
+      "reason": "missing required localization topic",
+      "start_ns": 0
+    }
+  ],
+  "labels": [
+    {"end_ns": 100, "label_id": "excluded-label", "start_ns": 0},
+    {"end_ns": 300, "label_id": "scored-label", "start_ns": 200}
+  ],
+  "predictions": [
+    {"end_ns": 100, "event_id": "excluded-prediction", "start_ns": 0},
+    {"end_ns": 300, "event_id": "scored-prediction", "start_ns": 200}
+  ],
+  "expected": {
+    "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
+    "excluded": {"data_gaps": 1, "labels": 1, "predictions": 1},
+    "f1": 1.0,
+    "mean_temporal_iou": 1.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "source_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+}
