@@ -68,7 +68,10 @@ class MicroCase:
     labels: Path
 
 
-def write_micro_bag(path: Path) -> None:
+MICRO_SIGNAL_VALUES = (0.0, 2.0, 2.0, 0.0, 0.0)
+
+
+def write_micro_bag(path: Path, values: Sequence[float] = MICRO_SIGNAL_VALUES) -> None:
     schemas = {
         "/micro/signal": (
             "civ.micro.Signal",
@@ -79,7 +82,7 @@ def write_micro_bag(path: Path) -> None:
             {"type": "object", "properties": {"label": {"type": "string"}}},
         ),
     }
-    signal_values = [0.0, 2.0, 2.0, 0.0, 0.0]
+    signal_values = list(values)
 
     with path.open("wb") as stream:
         writer = Writer(stream, compression=CompressionType.NONE)
@@ -258,11 +261,12 @@ def write_raw_ros2_bag(path: Path, schema_data: bytes) -> None:
         writer.finish()
 
 
-def create_micro_case(root: Path) -> MicroCase:
+def create_micro_case(root: Path, values: Sequence[float] = MICRO_SIGNAL_VALUES) -> MicroCase:
+    root.mkdir(parents=True, exist_ok=True)
     bag = root / "micro.mcap"
     spec = root / "detector.yaml"
     labels = root / "labels.json"
-    write_micro_bag(bag)
+    write_micro_bag(bag, values)
     spec.write_text(MICRO_SPEC, encoding="utf-8")
     label_pack = {**MICRO_LABEL_PACK, "source_sha256": sha256(bag.read_bytes()).hexdigest()}
     labels.write_text(json.dumps(label_pack, sort_keys=True), encoding="utf-8")

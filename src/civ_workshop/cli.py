@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
 
+from civ_workshop.batch import run_batch
 from civ_workshop.clipping import clip_events
 from civ_workshop.detection import detect_events
 from civ_workshop.errors import CivError
@@ -56,6 +57,13 @@ def build_parser() -> argparse.ArgumentParser:
     local_parser.add_argument("--received-at", required=True)
     local_parser.add_argument("--sha256", required=True)
     local_parser.add_argument("--delivery-id", required=True)
+
+    batch_parser = commands.add_parser(
+        "score-batch", help="score every authoritative submission in an intake ledger"
+    )
+    batch_parser.add_argument("--ledger", type=Path, required=True)
+    batch_parser.add_argument("--labels", type=Path, required=True)
+    batch_parser.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -94,6 +102,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                 delivery_id=args.delivery_id,
             )
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
+        elif args.command == "score-batch":
+            summary = run_batch(args.ledger, args.labels, args.output)
+            print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
     except CivError as error:
         print(f"civ: {error}", file=sys.stderr)
         raise SystemExit(2) from None

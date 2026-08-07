@@ -4,7 +4,7 @@ import os
 import shutil
 import sqlite3
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -39,6 +39,22 @@ class IntakeReceipt:
     received_at_utc: str
     bundle_sha256: str
     status: Literal["on_time", "late"]
+
+
+def latest_receipt(
+    receipts: Sequence[IntakeReceipt], identity: str, status: Literal["on_time", "late"]
+) -> IntakeReceipt | None:
+    candidates = [
+        (index, receipt)
+        for index, receipt in enumerate(receipts)
+        if receipt.identity == identity and receipt.status == status
+    ]
+    if not candidates:
+        return None
+    return max(
+        candidates,
+        key=lambda item: (datetime.fromisoformat(item[1].received_at_utc), item[0]),
+    )[1]
 
 
 def _parse_received_at(value: str) -> tuple[str, datetime]:
@@ -122,8 +138,7 @@ def _files_are_identical(first: Path, second: Path) -> bool:
                 return True
 
 
-def validate_submission_bundle(bundle_path: Path) -> str:
-    bundle_path = bundle_path.resolve()
+def _extract_validated_submission(bundle_path: Path, extracted: Path) -> None:
     if not bundle_path.is_file():
         raise CivError(f"submission bundle does not exist: {bundle_path}")
     try:
@@ -137,46 +152,58 @@ def validate_submission_bundle(bundle_path: Path) -> str:
         with zipfile.ZipFile(bundle_path) as archive:
             infos = _safe_archive_infos(archive)
             names = [info.filename for info in infos]
-            with TemporaryDirectory(prefix="civ-intake-") as temporary:
-                extracted = Path(temporary)
-                for info in infos:
-                    name = info.filename
-                    destination = extracted.joinpath(*PurePosixPath(name).parts)
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    with archive.open(info) as source, destination.open("xb") as target:
-                        shutil.copyfileobj(source, target, length=1024 * 1024)
-                    if destination.stat().st_size != info.file_size:
-                        raise CivError(
-                            f"submission bundle artifact size changed while reading: {name}"
-                        )
-                expected_paths = validate_submission_directory(
-                    extracted, require_local_evidence=False
-                )
-                expected = {
-                    path.relative_to(extracted).as_posix() for path in expected_paths
-                }
-                unexpected = sorted(set(names) - expected)
-                missing = sorted(expected - set(names))
-                if unexpected or missing:
-                    details = []
-                    if unexpected:
-                        details.append(f"unexpected: {', '.join(unexpected)}")
-                    if missing:
-                        details.append(f"missing: {', '.join(missing)}")
+            for info in infos:
+                name = info.filename
+                destination = extracted.joinpath(*PurePosixPath(name).parts)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(info) as source, destination.open("xb") as target:
+                    shutil.copyfileobj(source, target, length=1024 * 1024)
+                if destination.stat().st_size != info.file_size:
                     raise CivError(
-                        f"unexpected submission artifacts ({'; '.join(details)})"
+                        f"submission bundle artifact size changed while reading: {name}"
                     )
-                canonical_bundle = extracted / ".canonical-submission.zip"
-                write_canonical_submission_bundle(
-                    canonical_bundle, extracted, expected_paths
+            expected_paths = validate_submission_directory(
+                extracted, require_local_evidence=False
+            )
+            expected = {
+                path.relative_to(extracted).as_posix() for path in expected_paths
+            }
+            unexpected = sorted(set(names) - expected)
+            missing = sorted(expected - set(names))
+            if unexpected or missing:
+                details = []
+                if unexpected:
+                    details.append(f"unexpected: {', '.join(unexpected)}")
+                if missing:
+                    details.append(f"missing: {', '.join(missing)}")
+                raise CivError(
+                    f"unexpected submission artifacts ({'; '.join(details)})"
                 )
-                if not _files_are_identical(bundle_path, canonical_bundle):
-                    raise CivError(
-                        "submission bundle must be the unchanged ZIP emitted by civ report"
-                    )
+            canonical_bundle = extracted / ".canonical-submission.zip"
+            write_canonical_submission_bundle(
+                canonical_bundle, extracted, expected_paths
+            )
+            if not _files_are_identical(bundle_path, canonical_bundle):
+                raise CivError(
+                    "submission bundle must be the unchanged ZIP emitted by civ report"
+                )
+            canonical_bundle.unlink()
     except (OSError, zipfile.BadZipFile, RuntimeError) as error:
         raise CivError(f"cannot read submission bundle: {error}") from error
-    return file_sha256(bundle_path)
+
+
+@contextmanager
+def open_validated_submission(bundle_path: Path) -> Iterator[Path]:
+    """Yield a private working directory holding the validated bundle contents."""
+
+    with TemporaryDirectory(prefix="civ-intake-") as temporary:
+        _extract_validated_submission(bundle_path.resolve(), Path(temporary))
+        yield Path(temporary)
+
+
+def validate_submission_bundle(bundle_path: Path) -> str:
+    with open_validated_submission(bundle_path):
+        return file_sha256(bundle_path)
 
 
 def _receipt_from_row(record: sqlite3.Row) -> IntakeReceipt:
@@ -243,27 +270,24 @@ class IntakeLedger:
         return [_receipt_from_row(row) for row in rows]
 
     def authoritative(self, identity: str) -> IntakeReceipt:
-        candidates = [
-            (index, receipt)
-            for index, receipt in enumerate(self.receipts())
-            if receipt.identity == identity and receipt.status == "on_time"
-        ]
-        if not candidates:
+        receipt = latest_receipt(self.receipts(), identity, "on_time")
+        if receipt is None:
             raise CivError(f"no on-time submission exists for identity: {identity}")
-        return max(
-            candidates,
-            key=lambda item: (datetime.fromisoformat(item[1].received_at_utc), item[0]),
-        )[1]
+        return receipt
 
     def quarantined(self) -> list[IntakeReceipt]:
         return [receipt for receipt in self.receipts() if receipt.status == "late"]
 
-    def scorer_input(self, identity: str) -> Path:
-        receipt = self.authoritative(identity)
+    def bundle_for(self, receipt: IntakeReceipt) -> Path:
         path = self.bundles_path / f"{receipt.bundle_sha256}.zip"
         if not path.is_file() or file_sha256(path) != receipt.bundle_sha256:
-            raise CivError(f"authoritative bundle is missing or corrupt for identity: {identity}")
+            raise CivError(
+                f"authoritative bundle is missing or corrupt for identity: {receipt.identity}"
+            )
         return path
+
+    def scorer_input(self, identity: str) -> Path:
+        return self.bundle_for(self.authoritative(identity))
 
     def accept_online(
         self,
