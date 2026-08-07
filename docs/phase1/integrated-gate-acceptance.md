@@ -115,8 +115,13 @@ On the organizer laptop, not in the container. Follow `handoff-site/README.md`: 
 `LIVE_COACH_TOKEN`, `SUBMISSION_FORM_URL` and `LIVE_ALLOW_CONTROLLED_CLOCK=true`, then walk `/live`
 with an ISO-8601 `now` query per scheduled state, and advance once from `/live/coach`.
 
+Serve `/live` from the exact process you will use on the day. `SUBMISSION_FORM_URL` is read at
+runtime from that process, not baked into the build, so a page served from the wrong shell or
+directory silently degrades to the USB-only wording with no error.
+
 | Check | Observed | Pass |
 |---|---|---|
+| `/live` renders the configured Tally form action, not the "not configured" fallback | | |
 | Every scheduled state renders in order | | |
 | Countdown and report prompts display | | |
 | Coach advance moves the room one state early | | |

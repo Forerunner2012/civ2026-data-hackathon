@@ -124,8 +124,9 @@ form URL, and response identifier in the issue after completing both paths:
 1. From a device on public Internet, open `/live`, follow the configured form action, upload a known
    `submission.zip`, paste its `civ report` hash, submit, and retain the visible submission
    reference.
-2. Export that response, import it with `civ intake-form`, and compare the receipt hash/timestamp with
-   the known bundle and provider confirmation.
+2. Export that response and import it with `civ intake-form`. Confirm the receipt hash matches the
+   known bundle, `received_at` matches the `Submitted at` export column with its zone unchanged, and
+   `delivery_id` matches the submission reference the confirmation displayed.
 3. Remove connectivity from the intake laptop, copy the same bundle by USB, import it with
    `civ intake-local`, and confirm the same hash and scorer bytes are retained.
 4. Restore connectivity only after the local receipt and authoritative selection have been checked.
