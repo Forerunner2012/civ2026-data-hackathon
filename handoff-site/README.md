@@ -78,9 +78,12 @@ unavailable, serve or open `/session-fallback.html`; it is static, script-free, 
 participant-safe.
 
 `SUBMISSION_FORM_URL` is participant-visible by design. It must be HTTPS and must not contain
-credentials. Configure the external form to collect participant identity, the SHA-256 printed by
-`civ report`, and the unchanged `submission.zip`, and to show a confirmation containing its server
-receipt timestamp. Organizer credentials and response exports remain outside this site.
+credentials. On event day it is the public Tally form URL (`https://tally.so/r/<form-id>`); the form
+collects participant identity, the SHA-256 printed by `civ report`, and the unchanged
+`submission.zip`, and shows a confirmation containing its server receipt timestamp. Provider
+configuration and the export-to-envelope mapping are in
+[`docs/phase1/intake-acceptance.md`](../docs/phase1/intake-acceptance.md). Organizer credentials and
+response exports remain outside this site.
 
 ## Verification
 

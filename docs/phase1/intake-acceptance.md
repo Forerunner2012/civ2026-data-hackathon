@@ -17,7 +17,41 @@ The online form must collect these public fields:
 
 The form provider owns the server receipt timestamp and unique response identifier. Its confirmation
 must display the receipt timestamp to the participant. Organizer credentials, response exports, and
-Drive internals are not embedded in the attendee site.
+provider internals are not embedded in the attendee site.
+
+## Form provider
+
+The selected provider is **Tally** (`tally.so`), chosen because attendees upload a file without an
+account or organizational-domain sign-in. Google Forms and Microsoft Forms both gate file-upload
+questions behind a signed-in respondent and are therefore unusable for a BYOD cohort.
+
+One form, three questions plus the upload, mapped to the organizer envelope:
+
+| Contract field | Tally element | Envelope key |
+|---|---|---|
+| participant or team identity | short answer, required | `identity` |
+| pasted SHA-256 | short answer, required, 64-character validation if offered | `sha256` |
+| the unchanged bundle | file upload, single `.zip` | `bundle` |
+| unique response identifier | `Submission ID` export column | `delivery_id` |
+| server receipt timestamp | `Submitted at` export column | `received_at` |
+
+Configuration that the contract depends on:
+
+- Leave every respondent-limiting option off. Unlimited resubmission is contractual, and any
+  one-response-per-person setting implies sign-in.
+- The per-file upload cap must be at least the published 12 MiB transport limit. If the active plan
+  caps lower, either raise the plan or lower the published limit — a rejected in-limit bundle breaks
+  the participant contract.
+- The thank-you page must show the submission time and the response identifier. Verify this in the
+  builder before the day; if the provider cannot inject the server time, the fallback is a
+  respondent confirmation email carrying it, and this document must be amended to say so.
+- `SUBMISSION_FORM_URL` is the public form URL (`https://tally.so/r/<form-id>`), set at site build
+  time. It is participant-visible by design and carries no credentials.
+
+**Timezone hazard.** `civ intake-form` rejects a timestamp without an offset, and the 12:30:00
+Asia/Tokyo cutoff is enforced to the second. Establish which zone the export column is in and copy
+it across unchanged — write a UTC export as `Z` or `+00:00`. Never append `+09:00` to a UTC value:
+that shifts every receipt nine hours earlier and can turn a late submission into an on-time one.
 
 ## Organizer adapters
 
@@ -90,6 +124,7 @@ form URL, and response identifier in the issue after completing both paths:
    `civ intake-local`, and confirm the same hash and scorer bytes are retained.
 4. Restore connectivity only after the local receipt and authoritative selection have been checked.
 
-Current status: **pending a real configured form URL and operator-owned public-Internet rehearsal**.
+Current status: **provider selected (Tally); pending the built form URL and the operator-owned
+public-Internet rehearsal**.
 This is tracked as an external owner task and does not block publishing the code-complete intake
 implementation; issue #9 remains open until the operator evidence is attached.
