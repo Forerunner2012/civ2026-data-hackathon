@@ -145,7 +145,7 @@ export function LiveSession({
             <p role="status">The online form is not configured. Use the USB fallback now.</p>
           )}
           <p>
-            Keep the form confirmation with its receipt timestamp. You may submit again; the last
+            Keep the form confirmation with its submission reference. You may submit again; the last
             valid response received by 12:30 JST is authoritative.
           </p>
           <p>

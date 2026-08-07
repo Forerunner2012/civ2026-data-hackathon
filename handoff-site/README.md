@@ -53,13 +53,16 @@ The live page and coach API exist in local development and internal acceptance b
 and `/api/live`. The current beats and guidance are representative Phase 1 copy for testing every
 transition; final teaching-unit authoring remains later-phase work.
 
-Set a private coach token before starting the local server:
+Copy `.env.example` to `.env` — it carries the configured `SUBMISSION_FORM_URL`, and Wrangler loads
+it into the dev worker. Add a private coach token to the same file, then start the local server:
 
 ```powershell
-$env:LIVE_COACH_TOKEN = "replace-with-a-long-random-value"
-$env:SUBMISSION_FORM_URL = "https://your-configured-form.example/response"
+Copy-Item .env.example .env
+Add-Content .env 'LIVE_COACH_TOKEN=replace-with-a-long-random-value'
 npm run dev
 ```
+
+`.env` is git-ignored and is where secrets belong; `.env.example` holds only the public form URL.
 
 Participants open `/live`; the facilitator opens `/live/coach` and enters the same token. The page
 advances from the Tokyo schedule automatically. The coach can only advance it one state early;
@@ -78,9 +81,9 @@ unavailable, serve or open `/session-fallback.html`; it is static, script-free, 
 participant-safe.
 
 `SUBMISSION_FORM_URL` is participant-visible by design. It must be HTTPS and must not contain
-credentials. On event day it is the public Tally form URL (`https://tally.so/r/<form-id>`); the form
-collects participant identity, the SHA-256 printed by `civ report`, and the unchanged
-`submission.zip`, and shows a confirmation containing its server receipt timestamp. Provider
+credentials. On event day it is the public Tally form URL, currently `https://tally.so/r/81Yy1x`; the
+form collects participant identity, the SHA-256 printed by `civ report`, and the unchanged
+`submission.zip`, and shows a confirmation containing its unique submission reference. Provider
 configuration and the export-to-envelope mapping are in
 [`docs/phase1/intake-acceptance.md`](../docs/phase1/intake-acceptance.md). Organizer credentials and
 response exports remain outside this site.

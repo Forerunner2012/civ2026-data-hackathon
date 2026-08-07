@@ -75,7 +75,7 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
     assert.doesNotMatch(b1, /forms\.example\.test/);
     assert.match(b1, /online form is not configured.*USB fallback/i);
   }
-  assert.match(b1, /confirmation.*receipt timestamp/i);
+  assert.match(b1, /confirmation.*submission reference/i);
 });
 
 test("authorized coach advance is next-only, idempotent, and survives refresh", async () => {

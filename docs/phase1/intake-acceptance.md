@@ -16,7 +16,8 @@ The online form must collect these public fields:
 3. the unchanged `submission.zip` upload.
 
 The form provider owns the server receipt timestamp and unique response identifier. Its confirmation
-must display the receipt timestamp to the participant. Organizer credentials, response exports, and
+must display the unique response identifier to the participant, so any dispute resolves against the
+organizer-held receipt time for that identifier. Organizer credentials, response exports, and
 provider internals are not embedded in the attendee site.
 
 ## Form provider
@@ -42,11 +43,15 @@ Configuration that the contract depends on:
 - The per-file upload cap must be at least the published 12 MiB transport limit. If the active plan
   caps lower, either raise the plan or lower the published limit — a rejected in-limit bundle breaks
   the participant contract.
-- The thank-you page must show the submission time and the response identifier. Verify this in the
-  builder before the day; if the provider cannot inject the server time, the fallback is a
-  respondent confirmation email carrying it, and this document must be amended to say so.
-- `SUBMISSION_FORM_URL` is the public form URL (`https://tally.so/r/<form-id>`), set at site build
-  time. It is participant-visible by design and carries no credentials.
+- The thank-you page shows the response identifier. **Tally cannot inject the server receipt time
+  into a thank-you page** — it offers only `Submission ID` and `Respondent ID` mentions — so the
+  built page shows the submission reference and states that the receipt time held against that
+  reference is authoritative. The respondent-confirmation-email fallback is deliberately *not*
+  adopted: it would require an email question, pulling participant personal data into scope, while
+  the identifier already resolves any dispute against the `Submitted at` export column.
+- `SUBMISSION_FORM_URL` is the public form URL, `https://tally.so/r/81Yy1x`, configured in
+  `handoff-site/.env` — copy the committed `handoff-site/.env.example`, which carries this value.
+  It is participant-visible by design and carries no credentials.
 
 **Timezone hazard.** `civ intake-form` rejects a timestamp without an offset, and the 12:30:00
 Asia/Tokyo cutoff is enforced to the second. Establish which zone the export column is in and copy
@@ -117,14 +122,18 @@ This is deliberately not marked complete by local automation. Record the date, o
 form URL, and response identifier in the issue after completing both paths:
 
 1. From a device on public Internet, open `/live`, follow the configured form action, upload a known
-   `submission.zip`, paste its `civ report` hash, submit, and retain the visible server timestamp.
+   `submission.zip`, paste its `civ report` hash, submit, and retain the visible submission
+   reference.
 2. Export that response, import it with `civ intake-form`, and compare the receipt hash/timestamp with
    the known bundle and provider confirmation.
 3. Remove connectivity from the intake laptop, copy the same bundle by USB, import it with
    `civ intake-local`, and confirm the same hash and scorer bytes are retained.
 4. Restore connectivity only after the local receipt and authoritative selection have been checked.
 
-Current status: **provider selected (Tally); pending the built form URL and the operator-owned
-public-Internet rehearsal**.
+Current status: **form built and published at `https://tally.so/r/81Yy1x`; pending the operator-owned
+public-Internet rehearsal**. As built: identity short answer (200-character maximum), SHA-256 short
+answer pinned to exactly 64 characters, single `.zip` upload capped at 20 MB, all three required, no
+respondent limit, no unique-submission key, no password, no partial-response capture, and no
+scheduled close — a post-cutoff submission is still recorded so it can be retained as `late`.
 This is tracked as an external owner task and does not block publishing the code-complete intake
 implementation; issue #9 remains open until the operator evidence is attached.
