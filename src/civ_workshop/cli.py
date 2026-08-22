@@ -15,6 +15,7 @@ from civ_workshop.inspection import inspect_bag, render_inventory
 from civ_workshop.intake import IntakeLedger, import_form_response
 from civ_workshop.reporting import build_report_bundle
 from civ_workshop.scoring import score_submission
+from civ_workshop.tally import import_tally_csv
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,6 +48,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     form_parser.add_argument("response", type=Path)
     form_parser.add_argument("--ledger", type=Path, required=True)
+
+    tally_parser = commands.add_parser(
+        "intake-tally", help="import a manually exported Tally submissions CSV"
+    )
+    tally_parser.add_argument("csv", type=Path, metavar="TALLY_CSV")
+    tally_parser.add_argument("--ledger", type=Path, required=True)
 
     local_parser = commands.add_parser(
         "intake-local", help="record one local or USB submission bundle"
@@ -93,6 +100,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         elif args.command == "intake-form":
             receipt = import_form_response(args.response, args.ledger)
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
+        elif args.command == "intake-tally":
+            summary = import_tally_csv(args.csv, args.ledger)
+            print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
         elif args.command == "intake-local":
             receipt = IntakeLedger(args.ledger).accept_local(
                 identity=args.identity,

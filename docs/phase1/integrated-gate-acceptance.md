@@ -132,13 +132,18 @@ directory silently degrades to the USB-only wording with no error.
 
 1. From a device on public Internet, open `/live`, follow the form action, upload one known
    `submission.zip`, paste the SHA-256 that `civ report` printed, submit, and keep the visible
-   server receipt timestamp and response identifier.
-2. Build the envelope from the export using the mapping in `intake-acceptance.md`, then import it
-   beside the downloaded bundle:
+   response identifier. The server receipt timestamp comes from the subsequent CSV export.
+2. Export the completed Tally responses as CSV. Keep the export and its signed upload URLs on the
+   connected intake laptop, then import the CSV through the row-specific adapter:
 
 ```sh
-civ intake-form "$GATE/form-response.json" --ledger "$LEDGER"
+civ intake-tally "$GATE/tally-submissions.csv" --ledger "$LEDGER"
 ```
+
+The adapter treats Tally's timezone-naive `Submitted at` value as UTC, downloads each row's own
+upload URL, and records one terminal outcome per CSV row. Do not use Tally's aggregate batch-download
+ZIP as the row-to-upload mapping. If a CSV export is unavailable, use the provider-neutral
+`civ intake-form` envelope as the documented recovery path.
 
 3. Remove connectivity from the intake laptop. Copy the identical bundle by USB and import it:
 

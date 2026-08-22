@@ -53,15 +53,34 @@ Configuration that the contract depends on:
   `handoff-site/.env` — copy the committed `handoff-site/.env.example`, which carries this value.
   It is participant-visible by design and carries no credentials.
 
-**Timezone hazard.** `civ intake-form` rejects a timestamp without an offset, and the 12:30:00
-Asia/Tokyo cutoff is enforced to the second. Establish which zone the export column is in and copy
-it across unchanged — write a UTC export as `Z` or `+00:00`. Never append `+09:00` to a UTC value:
-that shifts every receipt nine hours earlier and can turn a late submission into an on-time one.
+**Timezone hazard.** `civ intake-tally` treats Tally's timezone-naive `Submitted at` value as UTC,
+while `civ intake-form` rejects a timestamp without an offset. The 12:30:00 Asia/Tokyo cutoff is
+enforced to the second. Never append `+09:00` to a UTC value: that shifts every receipt nine hours
+earlier and can turn a late submission into an on-time one.
 
 ## Organizer adapters
 
-Download one form response and its uploaded bundle to the same directory, then create a small JSON
-envelope using the provider's response identifier and original server timestamp:
+The normal Tally path is a manually exported submissions CSV. `civ intake-tally` reads the exact
+UTF-8 CSV export, treats its timezone-naive `Submitted at` value as UTC, downloads each row's own
+signed upload URL, verifies the participant-provided SHA-256 and unchanged `submission.zip`, and
+passes the bytes through the same online intake ledger. Tally's aggregate batch-download ZIP is
+retained only as operator backup; its renamed member order is not an authoritative row-to-upload
+association.
+
+```powershell
+civ intake-tally tally-submissions.csv --ledger D:\civ-intake
+```
+
+The adapter requires these export columns exactly: `Submission ID`, `Respondent ID`, `Submitted at`,
+`Participant or team identity`, `SHA-256 printed by civ report`, and `Your submission.zip`. It emits
+a deterministic `civ.tally-import-summary/v1alpha1` JSON summary with one terminal outcome per row.
+Rows that fail validation, download, hash verification or bundle validation do not stop later rows;
+rerunning an identical delivery reports `already_imported`, while a conflicting duplicate delivery
+identifier is terminal `invalid`. The manually supplied export is bounded to 5 MiB and 1,000 rows,
+well above the 30-participant event scope.
+
+If a CSV export is unavailable or a provider-specific recovery is needed, download one form response
+and its uploaded bundle to the same directory, then create a small provider-neutral JSON envelope:
 
 ```json
 {
@@ -73,11 +92,14 @@ envelope using the provider's response identifier and original server timestamp:
 }
 ```
 
-Import it without changing the bundle:
+Import the recovery envelope without changing the bundle:
 
 ```powershell
 civ intake-form form-response.json --ledger D:\civ-intake
 ```
+
+`intake-form` is deliberately provider-neutral/manual recovery; it is not the normal Tally import
+path. `intake-local` remains the disconnected USB fallback:
 
 For a local or USB receipt, use the identical bundle and record the operator receipt time:
 
@@ -90,7 +112,8 @@ civ intake-local submission.zip `
   --delivery-id usb-receipt-id
 ```
 
-Both commands return the same `civ.intake-receipt/v1alpha1` confirmation. The ledger retains the
+All adapters return the same `civ.intake-receipt/v1alpha1` confirmation (the CSV adapter wraps its
+row receipts in a versioned summary). The ledger retains the
 original timestamp and its UTC normalization, stores bundles by content hash, and exposes the last
 valid on-time bundle per identity as scorer input. A receipt exactly at 12:30:00 Asia/Tokyo is
 on-time; anything later is retained with `status: late` and cannot replace the authoritative entry.
@@ -101,8 +124,11 @@ byte-compares it with a canonical rebuild so unpacked or repacked archives are r
 
 ## Automated evidence
 
-- `tests/test_intake.py` passes the same bundle through both adapters and proves identical content
-  hash and scorer bytes.
+- `tests/test_intake.py` passes the same bundle through the online and USB adapters and proves
+  identical content hash and scorer bytes.
+- `tests/test_tally.py` exercises the BOM CSV export, row-specific signed uploads, UTC normalization,
+  row isolation, repeated identical bundles, idempotent reruns, conflicting delivery identifiers,
+  hash/download failures and redaction of signed URLs from diagnostics.
 - It proves unlimited resubmission, the inclusive exact cutoff, late quarantine, timestamp
   normalization, mismatched hash rejection, malformed-bundle rejection, duplicate delivery
   diagnostics, and preservation of the earlier authoritative receipt. Additional cases reject
@@ -116,7 +142,7 @@ byte-compares it with a canonical rebuild so unpacked or repacked archives are r
 - `handoff-site/tests/rendered-html.test.mjs` continues to prove the production artifact contains no
   live route, coach control, hidden guidance, or organizer-only content.
 
-## Operator check — required before closing issue #9
+## Operator check — completed for issue #9
 
 This is deliberately not marked complete by local automation. Record the date, operator, configured
 form URL, and response identifier in the issue after completing both paths:
@@ -124,17 +150,15 @@ form URL, and response identifier in the issue after completing both paths:
 1. From a device on public Internet, open `/live`, follow the configured form action, upload a known
    `submission.zip`, paste its `civ report` hash, submit, and retain the visible submission
    reference.
-2. Export that response and import it with `civ intake-form`. Confirm the receipt hash matches the
-   known bundle, `received_at` matches the `Submitted at` export column with its zone unchanged, and
-   `delivery_id` matches the submission reference the confirmation displayed.
+2. Export the submissions CSV and import it with `civ intake-tally`. Confirm the row receipt hash
+   matches the known bundle, the normalized `received_at` reflects the UTC `Submitted at` export
+   value, and `delivery_id` matches the submission reference the confirmation displayed. If the CSV
+   path is unavailable, use the provider-neutral `civ intake-form` recovery envelope.
 3. Remove connectivity from the intake laptop, copy the same bundle by USB, import it with
    `civ intake-local`, and confirm the same hash and scorer bytes are retained.
 4. Restore connectivity only after the local receipt and authoritative selection have been checked.
 
-Current status: **form built and published at `https://tally.so/r/81Yy1x`; pending the operator-owned
-public-Internet rehearsal**. As built: identity short answer (200-character maximum), SHA-256 short
-answer pinned to exactly 64 characters, single `.zip` upload capped at 20 MB, all three required, no
-respondent limit, no unique-submission key, no password, no partial-response capture, and no
-scheduled close — a post-cutoff submission is still recorded so it can be retained as `late`.
-This is tracked as an external owner task and does not block publishing the code-complete intake
-implementation; issue #9 remains open until the operator evidence is attached.
+Current status: **completed on 2026-08-22 and recorded in issue #9**. The online receipt
+`kbvZNW6` and disconnected USB receipt `issue9-usb-corrected-001` both retained bundle SHA-256
+`31f4eb3ad1cc3c003e0dc5474dad52d7a08ece183a095b3ef0a50c1e5588ca9c`; the USB rehearsal also
+confirmed byte-identical scorer input. The form remains published at `https://tally.so/r/81Yy1x`.
