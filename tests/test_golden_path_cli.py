@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from base64 import b64decode
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as distribution_version
 from pathlib import Path
@@ -166,6 +167,81 @@ def test_sample_preserves_explicit_ros2idl_unsupported_warning(tmp_path: Path) -
         "field discovery unsupported for ros2idl on topic /tier4/mode; "
         "dynamic IDL decoding remains unsupported"
     ) in result.stderr
+
+
+def test_inspect_warns_when_golden_path_schema_hash_mismatches(tmp_path: Path) -> None:
+    bag = tmp_path / "mismatched-steering.mcap"
+    write_raw_schema_bag(
+        bag,
+        schema_encoding="ros2msg",
+        message_encoding="cdr",
+        schema_data=b"int32 vcu_chassis_steer_angle_fb\n",
+        schema_name="pix_hooke_driver_msgs/msg/V2aSteerStaFb",
+        topic="/pix_hooke/v2a_steerstafb",
+    )
+
+    result = run_civ(tmp_path, ["inspect", str(bag), "--json"])
+
+    assert result.returncode == 0, result.stderr
+    warnings = json.loads(result.stdout)["warnings"]
+    assert len(warnings) == 1
+    assert "embedded schema hash mismatch" in warnings[0]
+    assert (
+        "expected 4c3724cf5ee83ef9cbd127585519e80c7828341fcd626d4d588d22d406918eea"
+        in warnings[0]
+    )
+
+
+def test_inspect_accepts_exact_embedded_golden_path_schema_fixture(tmp_path: Path) -> None:
+    bag = tmp_path / "pinned-imu.mcap"
+    fixture = Path(__file__).parent / "fixtures" / "schemas" / "french-imu.ros2msg.b64"
+    schema_data = b64decode(fixture.read_text(encoding="ascii"))
+    write_raw_schema_bag(
+        bag,
+        schema_encoding="ros2msg",
+        message_encoding="cdr",
+        schema_data=schema_data,
+        schema_name="sensor_msgs/msg/Imu",
+        topic="/zed/zed_node/imu/data",
+    )
+
+    result = run_civ(tmp_path, ["inspect", str(bag), "--json"])
+
+    assert result.returncode == 0, result.stderr
+    inventory = json.loads(result.stdout)
+    assert inventory["warnings"] == []
+    assert inventory["topics"][0]["schema_sha256"] == (
+        "244d9e9566de33e36bf560d79a41a17d1a1b44c49bdaf2bd809aa7efb1389334"
+    )
+    assert "angular_velocity.z" in inventory["topics"][0]["fields"]
+
+
+def test_sample_rejects_unknown_schema_on_pinned_golden_path_topic(tmp_path: Path) -> None:
+    bag = tmp_path / "unknown-steering.mcap"
+    write_raw_schema_bag(
+        bag,
+        schema_encoding="ros2msg",
+        message_encoding="cdr",
+        schema_data=b"int32 angle\n",
+        schema_name="other_msgs/msg/Steering",
+        topic="/pix_hooke/v2a_steerstafb",
+    )
+
+    result = run_civ(
+        tmp_path,
+        [
+            "sample",
+            str(bag),
+            "--topic",
+            "/pix_hooke/v2a_steerstafb",
+            "--field",
+            "angle",
+        ],
+    )
+
+    assert result.returncode == 2
+    assert "unknown golden-path schema other_msgs/msg/Steering (ros2msg)" in result.stderr
+    assert "use the pinned golden-path bag/schema source" in result.stderr
 
 
 def _doctor_fixture(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, str]]:

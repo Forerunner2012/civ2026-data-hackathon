@@ -305,18 +305,20 @@ def write_raw_schema_bag(
     schema_encoding: str,
     message_encoding: str,
     schema_data: bytes = b"",
+    schema_name: str = "tier4_msgs/msg/Mode",
+    topic: str = "/tier4/mode",
 ) -> None:
     with path.open("wb") as stream:
         writer = Writer(stream, compression=CompressionType.NONE)
         writer.start(profile="ros2", library="civ-test-fixture")
         schema_id = writer.register_schema(
-            name="tier4_msgs/msg/Mode",
+            name=schema_name,
             encoding=schema_encoding,
             data=schema_data,
         )
         channel_id = writer.register_channel(
             schema_id=schema_id,
-            topic="/tier4/mode",
+            topic=topic,
             message_encoding=message_encoding,
         )
         writer.add_message(

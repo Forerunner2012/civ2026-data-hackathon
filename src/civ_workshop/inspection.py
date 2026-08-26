@@ -15,6 +15,7 @@ from mcap_ros2.decoder import DecoderFactory, McapROS2DecodeError
 
 from civ_workshop.artifacts import require_mapping
 from civ_workshop.errors import CivError
+from civ_workshop.schema_pins import golden_schema_diagnostic
 
 
 @dataclass(frozen=True)
@@ -198,6 +199,9 @@ def inspect_bag(path: Path) -> dict[str, Any]:
                 if schema is None:
                     warnings.add(f"{channel.topic}: no embedded schema")
                 else:
+                    pin_diagnostic = golden_schema_diagnostic(channel.topic, schema)
+                    if pin_diagnostic is not None:
+                        warnings.add(pin_diagnostic)
                     schema_id = schema.id
                     schema_name = schema.name
                     schema_encoding = schema.encoding
@@ -309,6 +313,11 @@ def sample_bag(
                     if schema is None:
                         raise CivError(
                             f"topic {topic} has no embedded schema; choose a discoverable topic"
+                        )
+                    pin_diagnostic = golden_schema_diagnostic(topic, schema)
+                    if pin_diagnostic is not None:
+                        raise CivError(
+                            f"{pin_diagnostic}; use the pinned golden-path bag/schema source"
                         )
                     if schema.encoding == "jsonschema":
                         try:
