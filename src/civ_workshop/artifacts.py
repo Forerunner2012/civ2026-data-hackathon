@@ -5,6 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from civ_workshop.contracts import require_closed_fields
 from civ_workshop.errors import CivError
 from civ_workshop.models import EventRecord, Interval
 
@@ -80,8 +81,15 @@ def read_events(path: Path) -> list[EventRecord]:
             trigger_values = require_mapping(
                 event.get("trigger_values"), f"{context} trigger_values"
             )
+            # A candidate record carries no contract; the caller resolves it against the
+            # manifest so the enclosing provenance picks the diagnostic. Only a record that
+            # claims the stable contract is held to the closed stable field set.
+            raw_contract = event.get("contract")
+            if raw_contract == "civ.event/v1":
+                require_closed_fields(event, kind="event", expected="civ.event/v1")
             events.append(
                 EventRecord(
+                    contract=raw_contract.strip() if isinstance(raw_contract, str) else "",
                     event_id=require_string(event.get("event_id"), f"{context} event_id"),
                     bag_sha256=require_string(event.get("bag_sha256"), f"{context} bag_sha256"),
                     spec_sha256=require_string(event.get("spec_sha256"), f"{context} spec_sha256"),

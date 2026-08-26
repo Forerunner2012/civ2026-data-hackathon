@@ -26,6 +26,7 @@ def _write_scoring_inputs(
     events = [
         {
             "bag_sha256": source_sha256,
+            "contract": "civ.event/v1",
             "end_ns": prediction["end_ns"],
             "event_id": prediction["event_id"],
             "spec_sha256": "2" * 64,
@@ -45,7 +46,7 @@ def _write_scoring_inputs(
     (working / "run-manifest.json").write_text(
         json.dumps(
             {
-                "contract": "civ.run-manifest/v1alpha1",
+                "contract": "civ.run-manifest/v1",
                 "source": {"name": f"{case['dataset']}.mcap", "sha256": source_sha256},
             },
             sort_keys=True,
@@ -97,7 +98,7 @@ def test_score_matches_temporal_iou_threshold_golden_cases(
             "precision": case["expected"]["precision"],
             "recall": case["expected"]["recall"],
         },
-        "contract": "civ.metrics/v1alpha1",
+        "contract": "civ.metrics/v1",
         "datasets": [
             {
                 "counts": case["expected"]["counts"],

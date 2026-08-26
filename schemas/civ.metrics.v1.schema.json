@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.metrics.v1.schema.json",
+  "title": "CIV metrics v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "aggregate", "datasets", "label_pack_sha256", "matching"],
+  "properties": {
+    "contract": {"const": "civ.metrics/v1"},
+    "aggregate": {"type": "object"},
+    "datasets": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "label_pack_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "matching": {"type": "object"}
+  }
+}

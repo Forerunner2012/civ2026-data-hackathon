@@ -7,6 +7,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from civ_workshop.artifacts import require_mapping, require_string
+from civ_workshop.contracts import require_closed_fields, require_stable_contract
 from civ_workshop.errors import CivError
 from civ_workshop.models import ResourceBinding
 
@@ -75,11 +76,17 @@ def load_point_resources(
                 "inside the EventSpec directory"
             ) from error
         document, resource_hash = _read_resource(path, binding.name, binding.path)
-        contract = require_string(document.get("contract"), f"resource '{binding.name}' contract")
+        contract = require_stable_contract(
+            document.get("contract"),
+            kind="point resource",
+            expected="civ.point-resource/v1",
+            candidate="civ.point-resource/v1alpha1",
+        )
         if contract != binding.contract:
             raise CivError(
                 f"resource '{binding.name}' has unsupported contract '{contract}'"
             )
+        require_closed_fields(document, kind="point resource", expected="civ.point-resource/v1")
         if document.get("coordinate_reference") != "EPSG:4326":
             raise CivError(
                 f"resource '{binding.name}' coordinate_reference must be EPSG:4326"

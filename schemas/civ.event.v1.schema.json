@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.event.v1.schema.json",
+  "title": "CIV normalized event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "event_id", "bag_sha256", "spec_sha256", "start_ns", "end_ns", "trigger_values"],
+  "properties": {
+    "contract": {"const": "civ.event/v1"},
+    "event_id": {"$ref": "#/$defs/sha256"},
+    "bag_sha256": {"$ref": "#/$defs/sha256"},
+    "spec_sha256": {"$ref": "#/$defs/sha256"},
+    "start_ns": {"type": "integer", "minimum": 0},
+    "end_ns": {"type": "integer", "minimum": 1},
+    "trigger_values": {"type": "object"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

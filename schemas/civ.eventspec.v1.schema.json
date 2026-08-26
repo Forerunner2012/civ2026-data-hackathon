@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.eventspec.v1.schema.json",
+  "title": "CIV EventSpec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec", "name", "signals", "condition", "timing", "evidence"],
+  "properties": {
+    "spec": {"const": "civ.eventspec/v1"},
+    "name": {"type": "string", "minLength": 1},
+    "signals": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/signal"}},
+    "resources": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/resource"}},
+    "derive": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/derive"}},
+    "condition": {"type": "string", "minLength": 1},
+    "timing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["min_duration", "merge_gap", "max_duration"],
+      "properties": {"min_duration": {"$ref": "#/$defs/duration"}, "merge_gap": {"$ref": "#/$defs/duration"}, "max_duration": {"$ref": "#/$defs/duration"}}
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["before", "after", "topics"],
+      "properties": {"before": {"$ref": "#/$defs/duration"}, "after": {"$ref": "#/$defs/duration"}, "topics": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}}
+    }
+  },
+  "$defs": {
+    "duration": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s)$"},
+    "signal": {"type": "object", "additionalProperties": false, "required": ["topic", "field"], "properties": {"topic": {"type": "string", "minLength": 1}, "field": {"type": "string", "minLength": 1}}},
+    "resource": {"type": "object", "additionalProperties": false, "required": ["path", "contract"], "properties": {"path": {"type": "string", "minLength": 1}, "contract": {"const": "civ.point-resource/v1"}}},
+    "derive": {
+      "type": "object", "additionalProperties": false, "required": ["op", "from"],
+      "properties": {"op": {"enum": ["ewma", "magnitude", "min_distance_to"]}, "from": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}]}, "alpha": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "resource": {"type": "string", "minLength": 1}}
+    }
+  }
+}

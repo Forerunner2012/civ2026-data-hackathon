@@ -1,11 +1,11 @@
 # EventSpec local point resources
 
-Status: **candidate contract for issue #17; stable promotion remains deferred to #20**
+Status: **stable contract promoted by issue #20**
 
 EventSpec may join a small, participant-visible local point set to live latitude/longitude signals
 without a network lookup, organizer state, or executable detector extension. The module accepts one
-resource contract: `civ.point-resource/v1alpha1`. Its machine-readable schema is
-`schemas/civ.point-resource.v1alpha1.schema.json`.
+resource contract: `civ.point-resource/v1`. Its machine-readable schema is
+`schemas/civ.point-resource.v1.schema.json`.
 
 ## Binding
 
@@ -15,7 +15,7 @@ An EventSpec binds a resource by a portable path relative to its own directory:
 resources:
   caves:
     path: cave-zones.json
-    contract: civ.point-resource/v1alpha1
+    contract: civ.point-resource/v1
 ```
 
 Paths use POSIX `/` separators, must remain inside the EventSpec directory, and cannot be absolute,
@@ -23,13 +23,13 @@ parent-relative, or URLs. Detection reads the bytes locally and verifies that th
 matches the binding. No network primitive is used.
 
 `detector:` is reserved for a later extension. Any present `detector:` field is rejected with a
-correction; this candidate contract does not execute Python or another custom detector.
+correction; this stable contract does not execute Python or another custom detector.
 
 ## Point resource
 
 ```json
 {
-  "contract": "civ.point-resource/v1alpha1",
+  "contract": "civ.point-resource/v1",
   "coordinate_reference": "EPSG:4326",
   "points": [
     {"id": "cave-a", "latitude": 49.2583, "longitude": 4.0317}
@@ -48,7 +48,7 @@ Rejected examples include:
 - `EPSG:3857`: convert the resource to `EPSG:4326`;
 - latitude `91`: provide a value between -90 and 90;
 - duplicate point IDs: keep each ID once; and
-- an unknown contract: provide `civ.point-resource/v1alpha1`.
+- an unknown contract: provide `civ.point-resource/v1`.
 
 Each failure names the resource and invalid field. An invalid live latitude or longitude similarly
 names the `min_distance_to` derivation and required range.
@@ -80,7 +80,7 @@ The run manifest records resources sorted by EventSpec binding name:
 {
   "resources": [
     {
-      "contract": "civ.point-resource/v1alpha1",
+      "contract": "civ.point-resource/v1",
       "name": "caves",
       "path": "cave-zones.json",
       "sha256": "...64 lowercase hexadecimal characters..."
@@ -96,4 +96,5 @@ restored beside the source EventSpec. The checked-in Reims example uses illustra
 organizer coordinates and encounter intervals remain external.
 
 Sorted resource hashes also participate in event identity when resources are present. Resource-free
-EventSpecs retain their existing candidate event identities and output bytes.
+EventSpecs retain the same identity inputs; promotion changes serialized contract bytes but not the
+event-identity algorithm.

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.reproduction.v1.schema.json",
+  "title": "CIV reproduction declaration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "name", "sha256"],
+  "properties": {
+    "contract": {"const": "civ.reproduction/v1"},
+    "name": {"enum": ["reproduce.ps1", "reproduce.sh"]},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

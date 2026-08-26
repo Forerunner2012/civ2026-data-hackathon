@@ -14,6 +14,7 @@ from civ_workshop.artifacts import (
     require_mapping,
     require_string,
 )
+from civ_workshop.contracts import require_run_contracts
 from civ_workshop.errors import CivError
 from civ_workshop.models import Interval
 
@@ -102,6 +103,7 @@ def clip_events(events_path: Path, bag_path: Path) -> dict[str, object]:
     events = read_events(events_path)
     manifest_path = working / "run-manifest.json"
     manifest = read_json_file(manifest_path, "run manifest")
+    require_run_contracts(manifest, [event.contract for event in events])
 
     source = require_mapping(manifest.get("source"), "run manifest source")
     expected_bag_hash = require_string(source.get("sha256"), "run manifest source sha256")

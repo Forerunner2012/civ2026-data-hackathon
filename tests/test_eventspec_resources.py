@@ -13,7 +13,7 @@ from mcap.writer import CompressionType, Writer
 from tests.helpers import create_micro_case, prepare_scored_submission, run_civ
 
 EARTH_MEAN_RADIUS_M = 6_371_008.8
-RESOURCE_CONTRACT = "civ.point-resource/v1alpha1"
+RESOURCE_CONTRACT = "civ.point-resource/v1"
 
 
 def _write_location_bag(
@@ -53,7 +53,7 @@ def _resource_document(points: list[dict[str, object]]) -> dict[str, object]:
 
 def _write_resource_spec(path: Path, *, resource_path: str = "caves.json") -> None:
     path.write_text(
-        "spec: civ.eventspec/v1alpha1\n"
+        "spec: civ.eventspec/v1\n"
         "name: reims-cave-encounter\n"
         "signals:\n"
         "  latitude: {topic: /location, field: latitude}\n"
@@ -218,7 +218,8 @@ def test_min_distance_to_rejects_invalid_live_coordinates(tmp_path: Path) -> Non
                 "coordinate_reference": "EPSG:4326",
                 "points": [],
             },
-            "resource 'caves' has unsupported contract 'civ.point-resource/v2'",
+            "unsupported point resource contract 'civ.point-resource/v2'; "
+            "this civ-workshop supports 'civ.point-resource/v1'",
         ),
         (
             _resource_document([]),
@@ -325,7 +326,7 @@ def test_resource_bytes_stay_out_of_the_metadata_bundle(tmp_path: Path) -> None:
             "  latitude: {topic: /micro/signal, field: value}\n"
             "  longitude: {topic: /micro/signal, field: value}\n"
             "resources:\n"
-            "  caves: {path: caves.json, contract: civ.point-resource/v1alpha1}\n"
+            "  caves: {path: caves.json, contract: civ.point-resource/v1}\n"
             "derive:\n"
             "  cave_distance_m: {op: min_distance_to, resource: caves, "
             "from: [latitude, longitude]}\n",
@@ -359,7 +360,7 @@ def test_report_rejects_invalid_resource_provenance_hash(tmp_path: Path) -> None
             "  latitude: {topic: /micro/signal, field: value}\n"
             "  longitude: {topic: /micro/signal, field: value}\n"
             "resources:\n"
-            "  caves: {path: caves.json, contract: civ.point-resource/v1alpha1}\n"
+            "  caves: {path: caves.json, contract: civ.point-resource/v1}\n"
             "derive:\n"
             "  cave_distance_m: {op: min_distance_to, resource: caves, "
             "from: [latitude, longitude]}\n",

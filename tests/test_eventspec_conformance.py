@@ -58,7 +58,7 @@ def test_human_authored_cel_conformance_through_public_detect(
         f"  {name}: {{topic: /conformance, field: {name}}}" for name in signal_names
     )
     spec.write_text(
-        "spec: civ.eventspec/v1alpha1\n"
+        "spec: civ.eventspec/v1\n"
         f"name: {case['name']}\n"
         "signals:\n"
         f"{bindings}\n"
@@ -87,7 +87,7 @@ def test_cel_rejects_null_signal_values_with_a_stable_correction(tmp_path: Path)
     _write_conformance_bag(bag, [{"optional": None}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: null-input
 signals:
   optional: {topic: /conformance, field: optional}
@@ -112,7 +112,7 @@ def test_cel_rejects_implicit_integer_double_coercion(tmp_path: Path) -> None:
     _write_conformance_bag(bag, [{"count": 2}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: mixed-numeric
 signals:
   count: {topic: /conformance, field: count}
@@ -138,7 +138,7 @@ def test_cel_rejects_missing_names_with_a_stable_correction(tmp_path: Path) -> N
     _write_conformance_bag(bag, [{"present": 1}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: missing-name
 signals:
   present: {topic: /conformance, field: present}
@@ -164,7 +164,7 @@ def test_cel_condition_must_return_boolean(tmp_path: Path) -> None:
     _write_conformance_bag(bag, [{"count": 2}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: non-boolean
 signals:
   count: {topic: /conformance, field: count}
@@ -189,7 +189,7 @@ def test_cel_rejects_boolean_integer_equality_runtime_divergence(tmp_path: Path)
     _write_conformance_bag(bag, [{"count": 1}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: mixed-equality
 signals:
   count: {topic: /conformance, field: count}
@@ -217,7 +217,7 @@ def test_cel_rejects_division_outside_the_frozen_operator_subset(
     _write_conformance_bag(bag, [{"count": 2}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: divide-zero
 signals:
   count: {topic: /conformance, field: count}
@@ -242,7 +242,7 @@ def test_cel_parse_error_has_deterministic_location_and_correction(tmp_path: Pat
     _write_conformance_bag(bag, [{"signal": 2.0}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: parse-error
 signals:
   signal: {topic: /conformance, field: signal}
@@ -267,7 +267,7 @@ def test_cel_rejects_values_outside_the_frozen_scalar_types(tmp_path: Path) -> N
     _write_conformance_bag(bag, [{"label": "turn"}])
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: string-input
 signals:
   label: {topic: /conformance, field: label}
@@ -315,7 +315,7 @@ def test_cel_rejects_operators_and_functions_outside_the_frozen_subset(
     spec = tmp_path / "unsupported.yaml"
     _write_conformance_bag(bag, [{"count": 2}])
     spec.write_text(
-        "spec: civ.eventspec/v1alpha1\n"
+        "spec: civ.eventspec/v1\n"
         "name: unsupported-cel\n"
         "signals:\n"
         "  count: {topic: /conformance, field: count}\n"

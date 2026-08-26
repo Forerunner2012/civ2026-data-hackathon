@@ -16,10 +16,12 @@ class EventRecord:
     spec_sha256: str
     interval: Interval
     trigger_values: dict[str, object]
+    contract: str = "civ.event/v1"
 
     def as_dict(self) -> dict[str, object]:
         return {
             "bag_sha256": self.bag_sha256,
+            "contract": self.contract,
             "end_ns": self.interval.end_ns,
             "event_id": self.event_id,
             "spec_sha256": self.spec_sha256,

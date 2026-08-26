@@ -15,7 +15,7 @@ from mcap_ros2.writer import Writer as Ros2Writer
 NANOSECONDS = 1_000_000_000
 
 MICRO_SPEC = """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: micro-high-signal
 signals:
   signal:

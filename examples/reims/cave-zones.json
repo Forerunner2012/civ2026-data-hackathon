@@ -1,5 +1,5 @@
 {
-  "contract": "civ.point-resource/v1alpha1",
+  "contract": "civ.point-resource/v1",
   "coordinate_reference": "EPSG:4326",
   "points": [
     {

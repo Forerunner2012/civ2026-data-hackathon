@@ -27,7 +27,7 @@ BATCH_BUDGET_SECONDS = 45 * 60
 SLOW_ENTRY_COUNT = 5
 SCORER_VERSIONS = {
     "batch_contract": "civ.batch-result/v1alpha1",
-    "metrics_contract": "civ.metrics/v1alpha1",
+    "metrics_contract": "civ.metrics/v1",
     "temporal_iou_threshold": TEMPORAL_IOU_THRESHOLD,
     "tool_version": __version__,
 }

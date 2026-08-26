@@ -11,6 +11,7 @@ from civ_workshop.artifacts import (
     require_mapping,
     require_string,
 )
+from civ_workshop.contracts import require_run_contracts
 from civ_workshop.errors import CivError
 from civ_workshop.models import Interval
 
@@ -35,8 +36,7 @@ def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
         raise CivError(f"submission working directory does not exist: {working}")
     events = read_events(working / "events.jsonl")
     manifest = read_json_file(working / "run-manifest.json", "run manifest")
-    if manifest.get("contract") != "civ.run-manifest/v1alpha1":
-        raise CivError("unsupported run manifest contract")
+    require_run_contracts(manifest, [event.contract for event in events])
     source = require_mapping(manifest.get("source"), "run manifest source")
     submission_source_sha256 = require_string(
         source.get("sha256"), "run manifest source sha256"
@@ -119,7 +119,7 @@ def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
     }
     metrics: dict[str, object] = {
         "aggregate": aggregate,
-        "contract": "civ.metrics/v1alpha1",
+        "contract": "civ.metrics/v1",
         "datasets": [
             {
                 **aggregate,

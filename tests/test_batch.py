@@ -259,7 +259,7 @@ def test_every_result_records_full_provenance_in_deterministic_order(cohort: Coh
     assert record["received_at_original"] == RESUBMITTED
     assert record["received_at_utc"] == "2026-09-03T03:29:59+00:00"
     assert record["delivery_id"] == "team-01-primary"
-    assert record["scorer"]["metrics_contract"] == "civ.metrics/v1alpha1"
+    assert record["scorer"]["metrics_contract"] == "civ.metrics/v1"
     assert record["scorer"]["temporal_iou_threshold"] == 0.5
     assert record["scorer"]["tool_version"]
     assert record["validation"] == "passed"

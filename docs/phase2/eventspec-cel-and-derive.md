@@ -2,7 +2,7 @@
 
 Status: **completed behavior for issue #16; stable identifiers remain deferred to #20**
 
-The participant EventSpec continues to use `civ.eventspec/v1alpha1` until the atomic stable-contract
+The participant EventSpec uses the stable `civ.eventspec/v1` contract after the atomic stable-contract
 promotion. This document fixes the expression and derivation behavior that the promotion must
 preserve. The executable conformance source is
 `tests/fixtures/cel/conformance.yaml`, pinned to `cel-python==0.5.0`.

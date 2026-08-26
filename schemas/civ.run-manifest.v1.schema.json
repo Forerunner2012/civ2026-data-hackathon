@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.run-manifest.v1.schema.json",
+  "title": "CIV run manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "source", "spec", "events", "evidence"],
+  "properties": {
+    "contract": {"const": "civ.run-manifest/v1"},
+    "source": {"$ref": "#/$defs/namedHash"},
+    "spec": {"type": "object", "additionalProperties": false, "required": ["contract", "name", "sha256"], "properties": {"contract": {"const": "civ.eventspec/v1"}, "name": {"type": "string"}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "events": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "count"], "properties": {"name": {"const": "events.jsonl"}, "sha256": {"$ref": "#/$defs/sha256"}, "count": {"type": "integer", "minimum": 0}}},
+    "evidence": {"type": "object"},
+    "resources": {"type": "array", "items": {"type": "object"}},
+    "clips": {"type": "array", "items": {"type": "object"}},
+    "metrics": {"$ref": "#/$defs/namedHash"},
+    "submission": {"$ref": "civ.submission-bundle.v1.schema.json"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "namedHash": {"type": "object", "additionalProperties": false, "required": ["name", "sha256"], "properties": {"name": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}}
+  }
+}

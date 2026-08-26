@@ -1,4 +1,4 @@
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: reims-illustrative-cave-encounter
 signals:
   latitude: {topic: /fix, field: latitude}
@@ -6,7 +6,7 @@ signals:
 resources:
   caves:
     path: cave-zones.json
-    contract: civ.point-resource/v1alpha1
+    contract: civ.point-resource/v1
 derive:
   cave_distance_m:
     op: min_distance_to

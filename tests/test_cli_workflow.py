@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+from collections.abc import Callable
 from hashlib import sha256
 from pathlib import Path
 
@@ -147,6 +148,7 @@ def test_detect_emits_one_normalized_interval_and_manifest(
     event = json.loads((output / "events.jsonl").read_text(encoding="utf-8"))
     assert event == {
         "bag_sha256": sha256(micro_case.bag.read_bytes()).hexdigest(),
+        "contract": "civ.event/v1",
         "end_ns": 2_000_000_000,
         "event_id": event["event_id"],
         "spec_sha256": sha256(micro_case.spec.read_bytes()).hexdigest(),
@@ -156,13 +158,13 @@ def test_detect_emits_one_normalized_interval_and_manifest(
     assert len(event["event_id"]) == 64
 
     manifest = json.loads((output / "run-manifest.json").read_text(encoding="utf-8"))
-    assert manifest["contract"] == "civ.run-manifest/v1alpha1"
+    assert manifest["contract"] == "civ.run-manifest/v1"
     assert manifest["source"] == {
         "name": "micro.mcap",
         "sha256": sha256(micro_case.bag.read_bytes()).hexdigest(),
     }
     assert manifest["spec"] == {
-        "contract": "civ.eventspec/v1alpha1",
+        "contract": "civ.eventspec/v1",
         "name": "micro-high-signal",
         "sha256": sha256(micro_case.spec.read_bytes()).hexdigest(),
     }
@@ -207,7 +209,7 @@ def test_detect_evaluates_embedded_ros2_cdr_messages(tmp_path: Path) -> None:
     write_ros2_bool_bag(bag, (False, True, True, False))
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: ros2-enabled
 signals:
   enabled:
@@ -257,6 +259,31 @@ def test_kashiwa_example_detects_long_and_context_free_turns(tmp_path: Path) -> 
         (30_000_000_000, 35_000_000_000),
     ]
     assert all(event["trigger_values"] == {"steering_angle": 15} for event in events)
+
+
+@pytest.mark.parametrize(
+    ("example", "write_bag"),
+    [
+        ("kashiwa/right_turn.yaml", write_ros2_steering_bag),
+        ("french/left_turn.yaml", write_ros2_french_turn_bag),
+    ],
+)
+def test_repeated_example_detection_is_byte_identical(
+    tmp_path: Path, example: str, write_bag: Callable[[Path], None]
+) -> None:
+    bag = tmp_path / "transfer.mcap"
+    spec = Path(__file__).parents[1] / "examples" / example
+    write_bag(bag)
+
+    outputs = []
+    for name in ("first", "second"):
+        output = tmp_path / name
+        result = run_civ(tmp_path, ["detect", str(spec), str(bag), "--output", str(output)])
+        assert result.returncode == 0, result.stderr
+        outputs.append(output)
+
+    for artifact in ("events.jsonl", "run-manifest.json"):
+        assert (outputs[0] / artifact).read_bytes() == (outputs[1] / artifact).read_bytes()
 
 
 def test_french_example_selects_left_turn_over_right_and_lane_shift(tmp_path: Path) -> None:
@@ -466,7 +493,7 @@ def test_detect_reports_topic_for_invalid_embedded_ros2_schema(
     write_raw_ros2_bag(bag, schema_data)
     spec.write_text(
         """\
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: invalid-schema
 signals:
   signal:
@@ -594,7 +621,7 @@ def test_score_writes_deterministic_metrics_from_separate_labels(
             "precision": 1.0,
             "recall": 1.0,
         },
-        "contract": "civ.metrics/v1alpha1",
+        "contract": "civ.metrics/v1",
         "datasets": [
             {
                 "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
@@ -630,6 +657,15 @@ def test_report_assembles_stable_metadata_only_bundle(
     assert json.loads(first.stdout) == {
         "bundle": "submission.zip",
         "sha256": sha256(first_bundle).hexdigest(),
+    }
+    manifest = json.loads((working / "run-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["submission"] == {
+        "contract": "civ.submission-bundle/v1",
+        "reproduction": {
+            "contract": "civ.reproduction/v1",
+            "name": "reproduce.ps1",
+            "sha256": sha256((working / "reproduce.ps1").read_bytes()).hexdigest(),
+        },
     }
     with zipfile.ZipFile(bundle) as archive:
         assert archive.namelist() == [

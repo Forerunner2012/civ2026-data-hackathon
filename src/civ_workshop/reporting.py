@@ -5,11 +5,17 @@ import zipfile
 from pathlib import Path
 
 from civ_workshop.artifacts import (
+    canonical_json,
     file_sha256,
     read_events,
     read_json_file,
     require_mapping,
     require_string,
+)
+from civ_workshop.contracts import (
+    require_closed_fields,
+    require_run_contracts,
+    require_stable_contract,
 )
 from civ_workshop.errors import CivError
 from civ_workshop.event_spec import load_event_spec
@@ -92,8 +98,12 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
 
 def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence: bool) -> None:
     manifest = read_json_file(working / "run-manifest.json", "run manifest")
-    if manifest.get("contract") != "civ.run-manifest/v1alpha1":
-        raise CivError("unsupported run manifest contract")
+    require_stable_contract(
+        manifest.get("contract"),
+        kind="run manifest",
+        expected="civ.run-manifest/v1",
+        candidate="civ.run-manifest/v1alpha1",
+    )
     source = require_mapping(manifest.get("source"), "run manifest source")
     source_hash = require_string(source.get("sha256"), "run manifest source sha256")
     spec = require_mapping(manifest.get("spec"), "run manifest spec")
@@ -136,6 +146,7 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
     ):
         raise CivError("events.jsonl hash does not match the run manifest")
     events = read_events(events_path)
+    require_run_contracts(manifest, [event.contract for event in events])
     if events_metadata.get("count") != len(events):
         raise CivError("event count does not match the run manifest")
     if events != sorted(events, key=lambda item: (item.interval, item.event_id)):
@@ -151,8 +162,45 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
     ):
         raise CivError("metrics.json hash does not match the run manifest")
     metrics = read_json_file(metrics_path, "metrics")
-    if metrics.get("contract") != "civ.metrics/v1alpha1":
-        raise CivError("unsupported metrics contract")
+    require_stable_contract(
+        metrics.get("contract"),
+        kind="metrics",
+        expected="civ.metrics/v1",
+        candidate="civ.metrics/v1alpha1",
+    )
+    require_closed_fields(metrics, kind="metrics", expected="civ.metrics/v1")
+
+    if "submission" in manifest:
+        submission = require_mapping(manifest.get("submission"), "run manifest submission")
+        require_stable_contract(
+            submission.get("contract"),
+            kind="submission bundle",
+            expected="civ.submission-bundle/v1",
+            candidate="civ.submission-bundle/v1alpha1",
+        )
+        require_closed_fields(
+            submission, kind="submission bundle", expected="civ.submission-bundle/v1"
+        )
+        reproduction = require_mapping(
+            submission.get("reproduction"), "run manifest submission reproduction"
+        )
+        require_stable_contract(
+            reproduction.get("contract"),
+            kind="reproduction",
+            expected="civ.reproduction/v1",
+            candidate="civ.reproduction/v1alpha1",
+        )
+        require_closed_fields(reproduction, kind="reproduction", expected="civ.reproduction/v1")
+        reproduction_name = require_string(
+            reproduction.get("name"), "run manifest submission reproduction name"
+        )
+        reproduction_path = working / reproduction_name
+        if reproduction_name not in {"reproduce.ps1", "reproduce.sh"}:
+            raise CivError("run manifest submission reproduction name is invalid")
+        if file_sha256(reproduction_path) != require_string(
+            reproduction.get("sha256"), "run manifest submission reproduction sha256"
+        ):
+            raise CivError("reproduction hash does not match the run manifest")
 
     raw_clips = manifest.get("clips")
     if not isinstance(raw_clips, list):
@@ -259,6 +307,20 @@ def write_canonical_submission_bundle(
 def build_report_bundle(working: Path) -> dict[str, str]:
     working = working.resolve()
     entries = validate_submission_directory(working)
+    reproduction_path = next(
+        path for path in entries if path.name in {"reproduce.ps1", "reproduce.sh"}
+    )
+    manifest_path = working / "run-manifest.json"
+    manifest = read_json_file(manifest_path, "run manifest")
+    manifest["submission"] = {
+        "contract": "civ.submission-bundle/v1",
+        "reproduction": {
+            "contract": "civ.reproduction/v1",
+            "name": reproduction_path.name,
+            "sha256": file_sha256(reproduction_path),
+        },
+    }
+    manifest_path.write_text(f"{canonical_json(manifest)}\n", encoding="utf-8", newline="\n")
     bundle_path = working / "submission.zip"
     write_canonical_submission_bundle(bundle_path, working, entries)
     return {"bundle": bundle_path.name, "sha256": file_sha256(bundle_path)}

@@ -342,7 +342,7 @@ def detect_events(
     events_path = output / "events.jsonl"
     events_path.write_text(events_text, encoding="utf-8", newline="\n")
     manifest: dict[str, object] = {
-        "contract": "civ.run-manifest/v1alpha1",
+        "contract": "civ.run-manifest/v1",
         "events": {
             "count": len(events),
             "name": "events.jsonl",

@@ -1,4 +1,4 @@
-spec: civ.eventspec/v1alpha1
+spec: civ.eventspec/v1
 name: french-left-turn-transfer-baseline
 signals:
   yaw_rate:

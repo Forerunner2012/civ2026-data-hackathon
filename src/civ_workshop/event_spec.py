@@ -8,6 +8,7 @@ from yaml import YAMLError
 from yaml.nodes import MappingNode, Node, ScalarNode
 
 from civ_workshop.artifacts import require_mapping, require_string
+from civ_workshop.contracts import require_closed_fields, require_stable_contract
 from civ_workshop.errors import CivError
 from civ_workshop.models import Derivation, EventSpec, ResourceBinding, SignalBinding
 
@@ -87,9 +88,12 @@ def _resource_bindings(root: dict[str, Any]) -> tuple[ResourceBinding, ...]:
             raise CivError(
                 f"{context}.path must be a relative POSIX path inside the EventSpec directory"
             )
-        contract = require_string(binding.get("contract"), f"{context}.contract")
-        if contract != "civ.point-resource/v1alpha1":
-            raise CivError(f"{context}.contract is unsupported: {contract}")
+        contract = require_stable_contract(
+            binding.get("contract"),
+            kind="point resource",
+            expected="civ.point-resource/v1",
+            candidate="civ.point-resource/v1alpha1",
+        )
         bindings.append(ResourceBinding(name=name, path=path_text, contract=contract))
     return tuple(bindings)
 
@@ -212,13 +216,17 @@ def load_event_spec(path: Path) -> EventSpec:
         )
 
     root = require_mapping(raw, "EventSpec")
-    contract = require_string(root.get("spec"), "EventSpec spec")
-    if contract != "civ.eventspec/v1alpha1":
-        raise CivError(f"unsupported EventSpec contract: {contract}")
+    contract = require_stable_contract(
+        root.get("spec"),
+        kind="EventSpec",
+        expected="civ.eventspec/v1",
+        candidate="civ.eventspec/v1alpha1",
+    )
     if "detector" in root:
         raise CivError(
             "EventSpec detector is reserved; remove detector and use signals, derive, and resources"
         )
+    require_closed_fields(root, kind="EventSpec", expected="civ.eventspec/v1")
     timing = require_mapping(root.get("timing"), "EventSpec timing")
     min_duration_ns = _duration_ns(timing.get("min_duration"), "timing.min_duration")
     max_duration_ns = _duration_ns(timing.get("max_duration"), "timing.max_duration")

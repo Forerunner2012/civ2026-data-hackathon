@@ -1,11 +1,11 @@
 # Stable participant contracts and compatibility policy
 
-Status: **decision for issue #15; identifiers are reserved, not yet emitted**
+Status: **decision for issue #15; enforced by issue #20**
 
-This document fixes the participant-facing contract seam for Phase 2. Issue #20 publishes the
-schemas and changes producers and consumers atomically after issues #16, #17, and #19 have fixed the
-remaining EventSpec language and schema inputs. Until then, the implementation continues to emit
-the candidate `v1alpha1` artifacts.
+This document fixes the participant-facing contract seam for Phase 2. Issue #20 published the
+schemas under `schemas/` and moved producers and consumers to the stable identifiers atomically.
+The participant path now emits and accepts only the `v1` contracts below; the candidate `v1alpha1`
+identifiers survive only as rejection cases and in historical Phase 1 records.
 
 ## Decision
 
@@ -50,7 +50,7 @@ interface rather than being reimplemented by each caller.
 “Owner” below names who controls the bytes, not who owns the repository. Canonical JSON means
 UTF-8, sorted keys, compact separators, and one trailing LF. Hashes are SHA-256 of exact file bytes.
 
-| Participant artifact | Owner | Producer | Consumers | Determinism and integrity rule | Current identifier |
+| Participant artifact | Owner | Producer | Consumers | Determinism and integrity rule | Identifier before #20 |
 | --- | --- | --- | --- | --- | --- |
 | EventSpec YAML | Participant authors the file; `civ` owns validation | participant, examples, reference kit | `civ detect`; `civ report` revalidates the bundled copy | Input bytes are not rewritten; `detect` copies them byte-for-byte and hashes the exact bytes. Semantics, units, expression evaluation, sorted evidence topics, and reserved extension behavior are schema-controlled. | `civ.eventspec/v1alpha1` in `spec` |
 | Point resource JSON | Participant or reference kit authors the file; `civ` owns validation | participant, examples, reference kit | `civ detect`; `civ report` verifies manifest provenance | Canonical resource semantics are EPSG:4326 points with unique IDs and finite latitude/longitude bounds. Exact external bytes are hashed into sorted manifest provenance and resource-aware event identity, but are neither copied into the working directory nor bundled. | `civ.point-resource/v1alpha1` in `contract` |
