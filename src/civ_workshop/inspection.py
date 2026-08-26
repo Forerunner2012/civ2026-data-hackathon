@@ -3,25 +3,102 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
 from mcap.exceptions import McapError
 from mcap.reader import make_reader
+from mcap_ros2.decoder import DecoderFactory, McapROS2DecodeError
 
 from civ_workshop.artifacts import require_mapping
 from civ_workshop.errors import CivError
+
+
+@dataclass(frozen=True)
+class SampleValue:
+    timestamp_ns: int
+    value: object
+
+
+class MessageDecoder:
+    """Decode the message encodings supported by the participant workflow."""
+
+    def __init__(self) -> None:
+        self._ros2_factory = DecoderFactory()
+        self._ros2_decoders: dict[int, Callable[[bytes], object]] = {}
+
+    def decode(self, schema: Any, channel: Any, data: bytes) -> object:
+        if channel.message_encoding == "json":
+            try:
+                return json.loads(data)
+            except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                raise CivError(f"topic {channel.topic} contains invalid JSON") from error
+        if channel.message_encoding != "cdr":
+            raise CivError(
+                f"topic {channel.topic} uses unsupported message encoding: "
+                f"{channel.message_encoding}"
+            )
+
+        decoder = self._ros2_decoders.get(channel.id)
+        if decoder is None:
+            try:
+                decoder = self._ros2_factory.decoder_for(channel.message_encoding, schema)
+            except Exception as error:
+                # The third-party parser raises public, built-in, and private
+                # vendored exceptions for malformed schemas.
+                raise CivError(
+                    f"topic {channel.topic} has invalid ROS 2 schema; "
+                    f"provide a valid embedded ros2msg definition: {error}"
+                ) from error
+            if decoder is None:
+                schema_encoding = schema.encoding if schema is not None else "missing"
+                raise CivError(
+                    f"topic {channel.topic} uses unsupported CDR schema encoding: "
+                    f"{schema_encoding}"
+                )
+            self._ros2_decoders[channel.id] = decoder
+        try:
+            return decoder(data)
+        except McapROS2DecodeError as error:
+            raise CivError(
+                f"topic {channel.topic} contains invalid ROS 2 CDR data: {error}"
+            ) from error
+
+
+def extract_field(message: object, field: str, subject: str) -> object:
+    value = message
+    for part in field.split("."):
+        if isinstance(value, dict) and part in value:
+            value = value[part]
+        elif hasattr(value, part):
+            value = getattr(value, part)
+        else:
+            raise CivError(f"{subject} field not found in decoded message: {field}")
+    return value
 
 
 def _schema_fields(schema_data: bytes) -> list[str]:
     document = json.loads(schema_data)
     if not isinstance(document, dict):
         return []
-    properties = document.get("properties", {})
-    if not isinstance(properties, dict):
-        return []
-    return sorted(str(name) for name in properties)
+
+    def leaf_paths(schema: object, prefix: str) -> list[str]:
+        if not isinstance(schema, dict):
+            return [prefix] if prefix else []
+        properties = schema.get("properties")
+        if not isinstance(properties, dict) or not properties:
+            return [prefix] if prefix else []
+        fields: list[str] = []
+        for raw_name, child_schema in properties.items():
+            name = str(raw_name)
+            path = f"{prefix}.{name}" if prefix else name
+            fields.extend(leaf_paths(child_schema, path))
+        return fields
+
+    return sorted(leaf_paths(document, ""))
 
 
 ROS_PRIMITIVES = {
@@ -196,4 +273,121 @@ def render_inventory(path: Path, inventory: dict[str, Any]) -> str:
         )
     for warning in inventory["warnings"]:
         lines.append(f"Warning: {warning}")
+    return "\n".join(lines) + "\n"
+
+
+def sample_bag(
+    path: Path,
+    topic: str,
+    field: str,
+    *,
+    start_ns: int | None = None,
+    end_ns: int | None = None,
+    limit: int = 20,
+) -> dict[str, Any]:
+    if limit <= 0:
+        raise CivError("sample limit must be greater than zero")
+    if start_ns is not None and start_ns < 0:
+        raise CivError("sample start must be zero or greater")
+    if end_ns is not None and end_ns < 0:
+        raise CivError("sample end must be zero or greater")
+    if start_ns is not None and end_ns is not None and start_ns > end_ns:
+        raise CivError("sample start must be less than or equal to end")
+    if not path.is_file():
+        raise CivError(f"bag does not exist: {path}")
+
+    decoder = MessageDecoder()
+    values: list[SampleValue] = []
+    saw_topic = False
+    field_checked = False
+    try:
+        with path.open("rb") as stream:
+            reader = make_reader(stream, validate_crcs=True)
+            for schema, channel, message in reader.iter_messages(topics=[topic]):
+                saw_topic = True
+                if not field_checked:
+                    if schema is None:
+                        raise CivError(
+                            f"topic {topic} has no embedded schema; choose a discoverable topic"
+                        )
+                    if schema.encoding == "jsonschema":
+                        try:
+                            fields = _schema_fields(schema.data)
+                        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                            raise CivError(f"topic {topic} has an invalid JSON schema") from error
+                    elif schema.encoding == "ros2msg":
+                        try:
+                            fields = _ros2msg_fields(schema.name, schema.data)
+                        except UnicodeDecodeError as error:
+                            raise CivError(
+                                f"topic {topic} has an invalid ros2msg schema"
+                            ) from error
+                    else:
+                        encoding = schema.encoding or "unknown"
+                        warning = ""
+                        if encoding == "ros2idl":
+                            warning = "; dynamic IDL decoding remains unsupported"
+                        raise CivError(
+                            f"field discovery unsupported for {encoding} on topic {topic}{warning}"
+                        )
+                    if field not in fields:
+                        raise CivError(
+                            f"field not found on topic {topic}: {field}; run civ inspect"
+                        )
+                    field_checked = True
+
+                if start_ns is not None and message.log_time < start_ns:
+                    continue
+                if end_ns is not None and message.log_time > end_ns:
+                    continue
+                payload = decoder.decode(schema, channel, message.data)
+                values.append(
+                    SampleValue(
+                        timestamp_ns=message.log_time,
+                        value=extract_field(payload, field, f"topic {topic}"),
+                    )
+                )
+                if len(values) == limit:
+                    break
+    except (OSError, McapError) as error:
+        raise CivError(f"cannot sample bag {path}: {error}") from error
+
+    if not saw_topic:
+        raise CivError(f"topic not found in bag: {topic}")
+    if not values:
+        raise CivError(f"sample window contains no messages for topic {topic}")
+    return {
+        "bag": path.name,
+        "field": field,
+        "samples": [
+            {"timestamp_ns": sample.timestamp_ns, "value": sample.value}
+            for sample in values
+        ],
+        "topic": topic,
+        "window": {"end_ns": end_ns, "limit": limit, "start_ns": start_ns},
+    }
+
+
+def render_samples(result: dict[str, Any]) -> str:
+    window = require_mapping(result["window"], "sample window")
+    start_ns = window["start_ns"]
+    end_ns = window["end_ns"]
+    if start_ns is None and end_ns is None:
+        bounds = "all timestamps"
+    elif start_ns is None:
+        bounds = f"through {end_ns} ns"
+    elif end_ns is None:
+        bounds = f"from {start_ns} ns"
+    else:
+        bounds = f"{start_ns}..{end_ns} ns"
+    lines = [
+        f"Bag: {result['bag']}",
+        f"Signal: {result['topic']}.{result['field']}",
+        f"Window: {bounds}, first {window['limit']} samples",
+        "Samples:",
+    ]
+    for raw_sample in result["samples"]:
+        sample = require_mapping(raw_sample, "sample")
+        value = json.dumps(sample["value"], sort_keys=True, separators=(",", ":"))
+        lines.append(f"  {sample['timestamp_ns']} ns  {value}")
     return "\n".join(lines) + "\n"

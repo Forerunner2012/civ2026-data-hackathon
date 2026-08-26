@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -261,6 +262,72 @@ def write_raw_ros2_bag(path: Path, schema_data: bytes) -> None:
         writer.finish()
 
 
+def write_nested_json_bag(path: Path) -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "pose": {
+                "type": "object",
+                "properties": {
+                    "position": {
+                        "type": "object",
+                        "properties": {"x": {"type": "number"}},
+                    }
+                },
+            }
+        },
+    }
+    with path.open("wb") as stream:
+        writer = Writer(stream, compression=CompressionType.NONE)
+        writer.start(profile="civ.micro", library="civ-test-fixture")
+        schema_id = writer.register_schema(
+            name="civ.micro.Pose",
+            encoding="jsonschema",
+            data=json.dumps(schema, sort_keys=True).encode(),
+        )
+        channel_id = writer.register_channel(
+            schema_id=schema_id,
+            topic="/micro/pose",
+            message_encoding="json",
+        )
+        writer.add_message(
+            channel_id=channel_id,
+            log_time=2_000_000_000,
+            publish_time=2_000_000_000,
+            data=b'{"pose":{"position":{"x":4.5}}}',
+        )
+        writer.finish()
+
+
+def write_raw_schema_bag(
+    path: Path,
+    *,
+    schema_encoding: str,
+    message_encoding: str,
+    schema_data: bytes = b"",
+) -> None:
+    with path.open("wb") as stream:
+        writer = Writer(stream, compression=CompressionType.NONE)
+        writer.start(profile="ros2", library="civ-test-fixture")
+        schema_id = writer.register_schema(
+            name="tier4_msgs/msg/Mode",
+            encoding=schema_encoding,
+            data=schema_data,
+        )
+        channel_id = writer.register_channel(
+            schema_id=schema_id,
+            topic="/tier4/mode",
+            message_encoding=message_encoding,
+        )
+        writer.add_message(
+            channel_id=channel_id,
+            log_time=1_000_000_000,
+            publish_time=1_000_000_000,
+            data=b"\x00",
+        )
+        writer.finish()
+
+
 def create_micro_case(root: Path, values: Sequence[float] = MICRO_SIGNAL_VALUES) -> MicroCase:
     root.mkdir(parents=True, exist_ok=True)
     bag = root / "micro.mcap"
@@ -273,10 +340,19 @@ def create_micro_case(root: Path, values: Sequence[float] = MICRO_SIGNAL_VALUES)
     return MicroCase(root=root, bag=bag, spec=spec, labels=labels)
 
 
-def run_civ(cwd: Path, arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
+def run_civ(
+    cwd: Path,
+    arguments: Sequence[str],
+    *,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    process_env = os.environ.copy()
+    if env is not None:
+        process_env.update(env)
     return subprocess.run(
         [sys.executable, "-m", "civ_workshop", *arguments],
         cwd=cwd,
+        env=process_env,
         text=True,
         capture_output=True,
         check=False,

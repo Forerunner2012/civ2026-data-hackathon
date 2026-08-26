@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 import math
 import re
 import shutil
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -15,11 +13,11 @@ from celpy import CELEvalError, CELParseError, Environment, celtypes
 from celpy.adapter import json_to_cel
 from mcap.exceptions import McapError
 from mcap.reader import make_reader
-from mcap_ros2.decoder import DecoderFactory, McapROS2DecodeError
 
 from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.event_spec import load_event_spec
+from civ_workshop.inspection import MessageDecoder, extract_field
 from civ_workshop.models import EventRecord, EventSpec, Interval, SignalBinding
 from civ_workshop.resources import PointResource, load_point_resources, minimum_distance_m
 
@@ -116,18 +114,6 @@ def _validate_cel_expression(expression: Any) -> None:
                 )
 
 
-def _extract_field(message: object, field: str, signal_name: str) -> object:
-    value = message
-    for part in field.split("."):
-        if isinstance(value, dict) and part in value:
-            value = value[part]
-        elif hasattr(value, part):
-            value = getattr(value, part)
-        else:
-            raise CivError(f"signal {signal_name} field not found in decoded message: {field}")
-    return value
-
-
 def _event_segments(hits: list[SignalHit], spec: EventSpec) -> list[DetectedInterval]:
     if not hits:
         return []
@@ -174,8 +160,7 @@ def _evaluate_hits(
     derived: dict[str, float] = {}
     seen_topics: set[str] = set()
     hits: list[SignalHit] = []
-    ros2_factory = DecoderFactory()
-    ros2_decoders: dict[int, Callable[[bytes], object]] = {}
+    decoder = MessageDecoder()
     try:
         with bag_path.open("rb") as stream:
             reader = make_reader(stream, validate_crcs=True)
@@ -183,46 +168,12 @@ def _evaluate_hits(
                 topics=sorted(bindings_by_topic)
             ):
                 seen_topics.add(channel.topic)
-                if channel.message_encoding == "json":
-                    try:
-                        payload = json.loads(message.data)
-                    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-                        raise CivError(f"topic {channel.topic} contains invalid JSON") from error
-                elif channel.message_encoding == "cdr":
-                    decoder = ros2_decoders.get(channel.id)
-                    if decoder is None:
-                        try:
-                            decoder = ros2_factory.decoder_for(
-                                channel.message_encoding, schema
-                            )
-                        except Exception as error:
-                            # The third-party parser raises public, built-in, and
-                            # private vendored exceptions for malformed schemas.
-                            raise CivError(
-                                f"topic {channel.topic} has invalid ROS 2 schema; "
-                                f"provide a valid embedded ros2msg definition: {error}"
-                            ) from error
-                        if decoder is None:
-                            schema_encoding = schema.encoding if schema is not None else "missing"
-                            raise CivError(
-                                f"topic {channel.topic} uses unsupported CDR schema encoding: "
-                                f"{schema_encoding}"
-                            )
-                        ros2_decoders[channel.id] = decoder
-                    try:
-                        payload = decoder(message.data)
-                    except McapROS2DecodeError as error:
-                        raise CivError(
-                            f"topic {channel.topic} contains invalid ROS 2 CDR data: {error}"
-                        ) from error
-                else:
-                    raise CivError(
-                        f"topic {channel.topic} uses unsupported message encoding: "
-                        f"{channel.message_encoding}"
-                    )
+                payload = decoder.decode(schema, channel, message.data)
                 changed: set[str] = set()
                 for signal_name, binding in bindings_by_topic[channel.topic]:
-                    latest[signal_name] = _extract_field(payload, binding.field, signal_name)
+                    latest[signal_name] = extract_field(
+                        payload, binding.field, f"signal {signal_name}"
+                    )
                     changed.add(signal_name)
                 if len(latest) != len(spec.signals):
                     continue
