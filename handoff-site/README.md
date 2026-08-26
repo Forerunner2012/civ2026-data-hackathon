@@ -72,9 +72,13 @@ refreshes but resets when the server restarts.
 For rehearsals only, enable a controlled clock and append an ISO-8601 `now` query:
 
 ```powershell
-$env:LIVE_ALLOW_CONTROLLED_CLOCK = "true"
+Add-Content .env 'LIVE_ALLOW_CONTROLLED_CLOCK=true'
 # http://localhost:3000/live?now=2026-09-03T10:40:00%2B09:00
 ```
+
+The accepted Vinext worker loads these values from `.env`; setting them only in the parent
+PowerShell process does not configure the worker routes. Remove the controlled-clock line after the
+rehearsal and keep the coach token private.
 
 Leave `LIVE_ALLOW_CONTROLLED_CLOCK` unset on event day. If the local server or network is
 unavailable, serve or open `/session-fallback.html`; it is static, script-free, and

@@ -101,8 +101,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             receipt = import_form_response(args.response, args.ledger)
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
         elif args.command == "intake-tally":
-            summary = import_tally_csv(args.csv, args.ledger)
-            print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
+            tally_summary = import_tally_csv(args.csv, args.ledger)
+            print(json.dumps(tally_summary, sort_keys=True, separators=(",", ":")))
         elif args.command == "intake-local":
             receipt = IntakeLedger(args.ledger).accept_local(
                 identity=args.identity,
@@ -113,8 +113,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
         elif args.command == "score-batch":
-            summary = run_batch(args.ledger, args.labels, args.output)
-            print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
+            batch_summary = run_batch(args.ledger, args.labels, args.output)
+            print(json.dumps(batch_summary, sort_keys=True, separators=(",", ":")))
     except CivError as error:
         print(f"civ: {error}", file=sys.stderr)
         raise SystemExit(2) from None

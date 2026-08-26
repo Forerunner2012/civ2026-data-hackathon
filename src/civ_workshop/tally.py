@@ -11,11 +11,11 @@ import os
 import re
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, Literal, TypedDict
 from urllib.error import URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -48,6 +48,38 @@ _DOWNLOAD_CHUNK_BYTES = 64 * 1024
 _SENSITIVE_URL = re.compile(r"https?://[^\s\"']+", re.IGNORECASE)
 
 DownloadTallyUpload = Callable[[str, Path], None]
+
+
+class TallyReceiptPayload(TypedDict):
+    contract: str
+    delivery_id: str
+    identity: str
+    source: Literal["online", "local"]
+    received_at_original: str
+    received_at_utc: str
+    bundle_sha256: str
+    status: Literal["on_time", "late"]
+
+
+class TallyOutcome(TypedDict, total=False):
+    row: int
+    delivery_id: str | None
+    outcome: Literal["already_imported", "imported", "invalid"]
+    receipt: TallyReceiptPayload
+    diagnostic: str
+
+
+class TallyImportCounts(TypedDict):
+    already_imported: int
+    imported: int
+    invalid: int
+
+
+class TallyImportSummary(TypedDict):
+    contract: str
+    rows: int
+    counts: TallyImportCounts
+    outcomes: list[TallyOutcome]
 
 
 class _TallyDownloadFailure(Exception):
@@ -204,7 +236,20 @@ def _receipt_for_delivery(ledger: IntakeLedger, delivery_id: str) -> IntakeRecei
     )
 
 
-def _outcome_base(row_number: int, delivery_id: str | None) -> dict[str, object]:
+def _receipt_payload(receipt: IntakeReceipt) -> TallyReceiptPayload:
+    return {
+        "contract": receipt.contract,
+        "delivery_id": receipt.delivery_id,
+        "identity": receipt.identity,
+        "source": receipt.source,
+        "received_at_original": receipt.received_at_original,
+        "received_at_utc": receipt.received_at_utc,
+        "bundle_sha256": receipt.bundle_sha256,
+        "status": receipt.status,
+    }
+
+
+def _outcome_base(row_number: int, delivery_id: str | None) -> TallyOutcome:
     return {"row": row_number, "delivery_id": delivery_id}
 
 
@@ -213,7 +258,7 @@ def _process_tally_row(
     raw_row: Mapping[str | None, str | None],
     ledger: IntakeLedger,
     downloader: DownloadTallyUpload,
-) -> dict[str, object]:
+) -> TallyOutcome:
     delivery_value = raw_row.get("Submission ID")
     delivery_id = delivery_value.strip() if delivery_value else None
     base = _outcome_base(row_number, delivery_id)
@@ -231,7 +276,7 @@ def _process_tally_row(
                     **base,
                     "delivery_id": row.delivery_id,
                     "outcome": "already_imported",
-                    "receipt": asdict(existing),
+                    "receipt": _receipt_payload(existing),
                 }
             return {
                 **base,
@@ -264,7 +309,7 @@ def _process_tally_row(
             **base,
             "delivery_id": row.delivery_id,
             "outcome": "imported",
-            "receipt": asdict(receipt),
+            "receipt": _receipt_payload(receipt),
         }
     except _TallyDownloadFailure as error:
         return {**base, "outcome": "invalid", "diagnostic": _redact_diagnostic(str(error))}
@@ -306,12 +351,12 @@ def import_tally_csv(
     ledger_root: Path,
     *,
     downloader: DownloadTallyUpload | None = None,
-) -> dict[str, object]:
+) -> TallyImportSummary:
     """Import a manually exported Tally CSV into the shared online intake ledger."""
 
     ledger = IntakeLedger(ledger_root)
     download = downloader or _download_tally_upload
-    outcomes: list[dict[str, object]] = []
+    outcomes: list[TallyOutcome] = []
     with _open_tally_csv(csv_path.resolve()) as reader:
         if tuple(reader.fieldnames or ()) != TALLY_HEADERS:
             raise CivError("Tally CSV headers do not match the expected export")
@@ -323,7 +368,7 @@ def import_tally_csv(
             raise CivError("Tally CSV exceeds the 1000-row import limit")
         for row_number, row in enumerate(rows, start=1):
             outcomes.append(_process_tally_row(row_number, row, ledger, download))
-    counts = {
+    counts: TallyImportCounts = {
         "already_imported": sum(outcome["outcome"] == "already_imported" for outcome in outcomes),
         "imported": sum(outcome["outcome"] == "imported" for outcome in outcomes),
         "invalid": sum(outcome["outcome"] == "invalid" for outcome in outcomes),
