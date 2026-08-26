@@ -1,0 +1,73 @@
+runtime: cel-python==0.5.0
+cases:
+  - name: reference_numeric_comparison_and_boolean_and
+    condition: yaw_rate >= 0.08 && speed >= 4.0
+    messages:
+      - {yaw_rate: 0.00, speed: 5.0}
+      - {yaw_rate: 0.08, speed: 4.0}
+      - {yaw_rate: 0.10, speed: 5.0}
+      - {yaw_rate: -0.10, speed: 5.0}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: reference_vector_arithmetic
+    condition: (x * x + y * y + z * z) >= 16.0
+    messages:
+      - {x: 3.0, y: 0.0, z: 0.0}
+      - {x: 4.0, y: 0.0, z: 0.0}
+      - {x: 3.0, y: 4.0, z: 0.0}
+      - {x: 0.0, y: 0.0, z: 0.0}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: integer_comparison_has_no_implicit_double_coercion
+    condition: count >= 2
+    messages:
+      - {count: 1}
+      - {count: 2}
+      - {count: 3}
+      - {count: 0}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: explicit_integer_to_double_conversion
+    condition: double(count) >= 2.0
+    messages:
+      - {count: 1}
+      - {count: 2}
+      - {count: 3}
+      - {count: 0}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: unary_negative_preserves_handedness_in_spec_data
+    condition: yaw_rate <= -0.08
+    messages:
+      - {yaw_rate: 0.10}
+      - {yaw_rate: -0.08}
+      - {yaw_rate: -0.10}
+      - {yaw_rate: 0.00}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: boolean_equality_and_not
+    condition: enabled == true && !blocked
+    messages:
+      - {enabled: false, blocked: false}
+      - {enabled: true, blocked: false}
+      - {enabled: true, blocked: false}
+      - {enabled: true, blocked: true}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: boolean_or
+    condition: primary || fallback
+    messages:
+      - {primary: false, fallback: false}
+      - {primary: true, fallback: false}
+      - {primary: false, fallback: true}
+      - {primary: false, fallback: false}
+    expected_interval_ns: [1000000000, 2000000000]
+
+  - name: planned_resource_distance_boundary
+    condition: distance_m <= 40.0
+    messages:
+      - {distance_m: 40.1}
+      - {distance_m: 40.0}
+      - {distance_m: 12.5}
+      - {distance_m: 40.1}
+    expected_interval_ns: [1000000000, 2000000000]

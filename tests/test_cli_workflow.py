@@ -174,6 +174,32 @@ def test_detect_emits_one_normalized_interval_and_manifest(
     }
 
 
+def test_detect_applies_ordered_ewma_derivation_through_the_public_cli(
+    tmp_path: Path,
+) -> None:
+    case = create_micro_case(tmp_path / "case", values=(0.0, 4.0, 4.0, 0.0, 0.0))
+    case.spec.write_text(
+        MICRO_SPEC.replace(
+            "condition: signal > 1.0",
+            """\
+derive:
+  signal_smooth: {from: signal, op: ewma, alpha: 0.5}
+condition: signal_smooth > 1.0""",
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "working"
+
+    result = run_civ(tmp_path, ["detect", str(case.spec), str(case.bag), "--output", str(output)])
+
+    assert result.returncode == 0, result.stderr
+    events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
+    assert [(event["start_ns"], event["end_ns"]) for event in events] == [
+        (1_000_000_000, 3_000_000_000)
+    ]
+    assert events[0]["trigger_values"] == {"signal": 4.0, "signal_smooth": 2.0}
+
+
 def test_detect_evaluates_embedded_ros2_cdr_messages(tmp_path: Path) -> None:
     bag = tmp_path / "ros2.mcap"
     spec = tmp_path / "detector.yaml"
@@ -255,6 +281,173 @@ def test_french_example_selects_left_turn_over_right_and_lane_shift(tmp_path: Pa
         "velocity_z": 0.0,
         "yaw_rate": 0.1,
     }
+
+
+def test_french_path_can_derive_vector_magnitude_without_kashiwa_bindings(
+    tmp_path: Path,
+) -> None:
+    bag = tmp_path / "french-turns.mcap"
+    spec = tmp_path / "french-with-magnitude.yaml"
+    output = tmp_path / "working"
+    write_ros2_french_turn_bag(bag)
+    reference = (
+        Path(__file__).parents[1] / "examples" / "french" / "left_turn.yaml"
+    ).read_text(encoding="utf-8")
+    spec.write_text(
+        reference.replace(
+            "condition: >-\n  yaw_rate >= 0.08 &&\n"
+            "  (velocity_x * velocity_x + velocity_y * velocity_y + velocity_z * velocity_z) "
+            ">= 16.0",
+            "derive:\n"
+            "  speed: {from: [velocity_x, velocity_y, velocity_z], op: magnitude}\n"
+            "condition: yaw_rate >= 0.08 && speed >= 4.0",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_civ(tmp_path, ["detect", str(spec), str(bag), "--output", str(output)])
+
+    assert result.returncode == 0, result.stderr
+    events = [json.loads(line) for line in (output / "events.jsonl").read_text().splitlines()]
+    assert [(event["start_ns"], event["end_ns"]) for event in events] == [
+        (1_000_000_000, 1_750_000_000)
+    ]
+    assert events[0]["trigger_values"] == {
+        "speed": 4.0,
+        "velocity_x": 4.0,
+        "velocity_y": 0.0,
+        "velocity_z": 0.0,
+        "yaw_rate": 0.1,
+    }
+
+
+def test_detect_orders_derive_dependencies_independently_of_yaml_order(tmp_path: Path) -> None:
+    bag = tmp_path / "french-turns.mcap"
+    spec = tmp_path / "ordered-derive.yaml"
+    output = tmp_path / "working"
+    write_ros2_french_turn_bag(bag)
+    reference = (
+        Path(__file__).parents[1] / "examples" / "french" / "left_turn.yaml"
+    ).read_text(encoding="utf-8")
+    spec.write_text(
+        reference.replace(
+            "condition: >-\n  yaw_rate >= 0.08 &&\n"
+            "  (velocity_x * velocity_x + velocity_y * velocity_y + velocity_z * velocity_z) "
+            ">= 16.0",
+            "derive:\n"
+            "  speed_smooth: {from: speed, op: ewma, alpha: 0.5}\n"
+            "  speed: {from: [velocity_x, velocity_y, velocity_z], op: magnitude}\n"
+            "condition: yaw_rate >= 0.08 && speed_smooth >= 4.0",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_civ(tmp_path, ["detect", str(spec), str(bag), "--output", str(output)])
+
+    assert result.returncode == 0, result.stderr
+    event = json.loads((output / "events.jsonl").read_text(encoding="utf-8"))
+    assert (event["start_ns"], event["end_ns"]) == (1_000_000_000, 1_750_000_000)
+    assert event["trigger_values"]["speed"] == 4.0
+    assert event["trigger_values"]["speed_smooth"] == 4.0
+
+
+def test_detect_rejects_duplicate_derive_names_with_a_correction(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "case")
+    case.spec.write_text(
+        MICRO_SPEC.replace(
+            "condition: signal > 1.0",
+            """\
+derive:
+  filtered: {from: signal, op: ewma, alpha: 0.5}
+  filtered: {from: signal, op: ewma, alpha: 0.25}
+condition: filtered > 1.0""",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_civ(tmp_path, ["detect", str(case.spec), str(case.bag)])
+
+    assert result.returncode == 2
+    assert result.stderr == (
+        "civ: derive name 'filtered' is duplicated; keep each derive name once\n"
+    )
+
+
+def test_detect_rejects_non_finite_derive_results_with_a_correction(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "case", values=(1e308, 1e308, 1e308))
+    case.spec.write_text(
+        MICRO_SPEC.replace(
+            "condition: signal > 1.0",
+            """\
+derive:
+  signal_magnitude: {from: [signal, signal], op: magnitude}
+condition: signal_magnitude > 1.0""",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_civ(tmp_path, ["detect", str(case.spec), str(case.bag)])
+
+    assert result.returncode == 2
+    assert result.stderr == (
+        "civ: derive.signal_magnitude produced a non-finite result; "
+        "check its inputs and parameters\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("derive", "condition", "diagnostic"),
+    [
+        (
+            "  filtered: {from: signal, op: median}\n",
+            "filtered > 1.0",
+            "derive.filtered.op has unknown operation 'median'; use one of: ewma, magnitude",
+        ),
+        (
+            "  filtered: {from: absent, op: ewma, alpha: 0.5}\n",
+            "filtered > 1.0",
+            "derive.filtered.from references unknown input 'absent'; "
+            "bind it under signals or define it under derive",
+        ),
+        (
+            "  first: {from: second, op: ewma, alpha: 0.5}\n"
+            "  second: {from: first, op: ewma, alpha: 0.5}\n",
+            "first > 1.0",
+            "derive dependency cycle contains: first, second; remove the cycle",
+        ),
+        (
+            "  filtered: {from: signal, op: ewma, alpha: fast}\n",
+            "filtered > 1.0",
+            "derive.filtered.alpha must be a number greater than 0 and at most 1",
+        ),
+        (
+            "  signal: {from: signal, op: ewma, alpha: 0.5}\n",
+            "signal > 1.0",
+            "derive.signal duplicates a signal name; choose a unique derived name",
+        ),
+        (
+            "  magnitude: {from: [signal], op: magnitude}\n",
+            "magnitude > 1.0",
+            "derive.magnitude.from must list at least two numeric inputs",
+        ),
+    ],
+)
+def test_detect_rejects_invalid_derive_definitions_actionably(
+    derive: str, condition: str, diagnostic: str, tmp_path: Path
+) -> None:
+    case = create_micro_case(tmp_path / "case")
+    case.spec.write_text(
+        MICRO_SPEC.replace(
+            "condition: signal > 1.0",
+            f"derive:\n{derive}condition: {condition}",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_civ(tmp_path, ["detect", str(case.spec), str(case.bag)])
+
+    assert result.returncode == 2
+    assert result.stderr == f"civ: {diagnostic}\n"
 
 
 @pytest.mark.parametrize(

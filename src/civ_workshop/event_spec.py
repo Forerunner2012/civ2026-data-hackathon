@@ -5,10 +5,32 @@ from typing import Any
 
 import yaml
 from yaml import YAMLError
+from yaml.nodes import MappingNode, Node, ScalarNode
 
 from civ_workshop.artifacts import require_mapping, require_string
 from civ_workshop.errors import CivError
-from civ_workshop.models import EventSpec, SignalBinding
+from civ_workshop.models import Derivation, EventSpec, SignalBinding
+
+
+def _duplicate_derive_name(document: Node | None) -> str | None:
+    if not isinstance(document, MappingNode):
+        return None
+    derive_node: Node | None = None
+    for key, value in document.value:
+        if isinstance(key, ScalarNode) and key.value == "derive":
+            derive_node = value
+            break
+    if not isinstance(derive_node, MappingNode):
+        return None
+    seen: set[str] = set()
+    for key, _ in derive_node.value:
+        if not isinstance(key, ScalarNode):
+            continue
+        name = str(key.value)
+        if name in seen:
+            return name
+        seen.add(name)
+    return None
 
 
 def _duration_ns(value: object, context: str) -> int:
@@ -41,13 +63,94 @@ def _signal_bindings(root: dict[str, Any]) -> dict[str, SignalBinding]:
     return signals
 
 
+def _derivations(root: dict[str, Any], signals: dict[str, SignalBinding]) -> tuple[Derivation, ...]:
+    raw_derive = root.get("derive")
+    if raw_derive is None:
+        return ()
+    derive = require_mapping(raw_derive, "EventSpec derive")
+    derivations: list[Derivation] = []
+    for name, raw_derivation in derive.items():
+        context = f"derive.{name}"
+        derivation_config = require_mapping(raw_derivation, context)
+        operation = require_string(derivation_config.get("op"), f"{context}.op")
+        if operation not in {"ewma", "magnitude"}:
+            raise CivError(
+                f"{context}.op has unknown operation '{operation}'; "
+                "use one of: ewma, magnitude"
+            )
+        raw_sources = derivation_config.get("from")
+        sources: tuple[str, ...]
+        if operation == "ewma":
+            sources = (require_string(raw_sources, f"{context}.from"),)
+            raw_alpha = derivation_config.get("alpha")
+            if isinstance(raw_alpha, bool) or not isinstance(raw_alpha, (int, float)):
+                raise CivError(f"{context}.alpha must be a number greater than 0 and at most 1")
+            alpha = float(raw_alpha)
+            if not 0 < alpha <= 1:
+                raise CivError(f"{context}.alpha must be greater than 0 and at most 1")
+        else:
+            if not isinstance(raw_sources, list) or len(raw_sources) < 2:
+                raise CivError(f"{context}.from must list at least two numeric inputs")
+            sources = tuple(
+                require_string(source, f"{context}.from input") for source in raw_sources
+            )
+            alpha = None
+        derivations.append(
+            Derivation(name=name, operation=operation, sources=sources, alpha=alpha)
+        )
+    derived_names = {derivation.name for derivation in derivations}
+    for derivation in derivations:
+        if derivation.name in signals:
+            raise CivError(
+                f"derive.{derivation.name} duplicates a signal name; choose a unique derived name"
+            )
+        unknown_sources = [
+            source
+            for source in derivation.sources
+            if source not in signals and source not in derived_names
+        ]
+        if unknown_sources:
+            raise CivError(
+                f"derive.{derivation.name}.from references unknown input '{unknown_sources[0]}'; "
+                "bind it under signals or define it under derive"
+            )
+
+    ordered: list[Derivation] = []
+    available = set(signals)
+    pending = list(derivations)
+    while pending:
+        ready = next(
+            (
+                derivation
+                for derivation in pending
+                if all(source in available for source in derivation.sources)
+            ),
+            None,
+        )
+        if ready is None:
+            cycle = ", ".join(sorted(derivation.name for derivation in pending))
+            raise CivError(f"derive dependency cycle contains: {cycle}; remove the cycle")
+        ordered.append(ready)
+        available.add(ready.name)
+        pending.remove(ready)
+    return tuple(ordered)
+
+
 def load_event_spec(path: Path) -> EventSpec:
     if not path.is_file():
         raise CivError(f"EventSpec does not exist: {path}")
     try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        text = path.read_text(encoding="utf-8")
+        document = yaml.compose(text)
+        raw = yaml.safe_load(text)
     except (OSError, UnicodeDecodeError, YAMLError) as error:
         raise CivError(f"cannot read EventSpec {path}: {error}") from error
+
+    duplicate_derive_name = _duplicate_derive_name(document)
+    if duplicate_derive_name is not None:
+        raise CivError(
+            f"derive name '{duplicate_derive_name}' is duplicated; keep each derive name once"
+        )
 
     root = require_mapping(raw, "EventSpec")
     contract = require_string(root.get("spec"), "EventSpec spec")
@@ -63,10 +166,12 @@ def load_event_spec(path: Path) -> EventSpec:
     if not isinstance(raw_topics, list) or not raw_topics:
         raise CivError("evidence.topics must be a non-empty list")
 
+    signals = _signal_bindings(root)
     return EventSpec(
         contract=contract,
         name=require_string(root.get("name"), "EventSpec name"),
-        signals=_signal_bindings(root),
+        signals=signals,
+        derivations=_derivations(root, signals),
         condition=require_string(root.get("condition"), "EventSpec condition"),
         min_duration_ns=min_duration_ns,
         merge_gap_ns=_duration_ns(timing.get("merge_gap"), "timing.merge_gap"),

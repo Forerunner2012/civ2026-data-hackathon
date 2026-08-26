@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import json
+import math
+import re
 import shutil
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+from typing import Any
 
-from celpy import CELEvalError, CELParseError, Environment
+from celpy import CELEvalError, CELParseError, Environment, celtypes
+from celpy.adapter import json_to_cel
 from mcap.exceptions import McapError
 from mcap.reader import make_reader
 from mcap_ros2.decoder import DecoderFactory, McapROS2DecodeError
@@ -29,6 +33,86 @@ class SignalHit:
 class DetectedInterval:
     interval: Interval
     trigger_values: dict[str, object]
+
+
+def _cel_evaluation_diagnostic(error: CELEvalError, timestamp_ns: int) -> str:
+    detail = str(error)
+    missing = re.search(r"undeclared reference to '([^']+)'", detail)
+    if missing:
+        return (
+            f"CEL condition references unknown name '{missing.group(1)}' at {timestamp_ns} ns; "
+            "bind it under signals or derive"
+        )
+    if "modulus or divide by zero" in detail:
+        return (
+            f"CEL arithmetic error at {timestamp_ns} ns: division or modulus by zero; "
+            "change the divisor"
+        )
+    if (
+        "no such overload" in detail
+        and "celtypes.IntType" in detail
+        and "celtypes.DoubleType" in detail
+    ):
+        return (
+            f"CEL type error at {timestamp_ns} ns: int and double are not implicitly coerced; "
+            "use int(...) or double(...) explicitly"
+        )
+    return f"CEL evaluation failed at {timestamp_ns} ns"
+
+
+def _validate_boolean_literal_comparisons(
+    condition: str, values: dict[str, object], timestamp_ns: int
+) -> None:
+    comparisons = re.findall(
+        r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(?:==|!=)\s*(true|false)\b",
+        condition,
+    )
+    comparisons.extend(
+        (name, literal)
+        for literal, name in re.findall(
+            r"\b(true|false)\s*(?:==|!=)\s*([A-Za-z_][A-Za-z0-9_]*)\b",
+            condition,
+        )
+    )
+    for name, literal in comparisons:
+        if name in values and not isinstance(values[name], bool):
+            raise CivError(
+                f"CEL type error at {timestamp_ns} ns: '{name}' must be bool when compared "
+                f"with {literal}; use an explicit numeric comparison"
+            )
+
+
+def _validate_cel_expression(expression: Any) -> None:
+    unsupported_operators = {
+        "multiplication_div": "/",
+        "multiplication_mod": "%",
+        "relation_in": "in",
+    }
+    for node in expression.iter_subtrees():
+        node_type = str(node.data)
+        operator = unsupported_operators.get(node_type)
+        if operator is not None:
+            if operator == "in":
+                raise CivError(
+                    "CEL operator 'in' is not supported; "
+                    "use logical and scalar comparison operators"
+                )
+            raise CivError(
+                f"CEL operator '{operator}' is not supported; "
+                "use +, -, *, comparisons, or derive"
+            )
+        if node_type == "expr" and len(node.children) == 3:
+            raise CivError(
+                "CEL operator '?:' is not supported; "
+                "express the decision with &&, ||, and !"
+            )
+        if node_type == "ident_arg":
+            function_name = str(node.children[0])
+            if function_name not in {"int", "double"}:
+                raise CivError(
+                    f"CEL function '{function_name}' is not supported; "
+                    "use only int(...) or double(...) conversions"
+                )
 
 
 def _extract_field(message: object, field: str, signal_name: str) -> object:
@@ -71,14 +155,20 @@ def _event_segments(hits: list[SignalHit], spec: EventSpec) -> list[DetectedInte
 def _evaluate_hits(spec: EventSpec, bag_path: Path) -> list[SignalHit]:
     try:
         environment = Environment()
-        program = environment.program(environment.compile(spec.condition))
+        expression = environment.compile(spec.condition)
+        _validate_cel_expression(expression)
+        program = environment.program(expression)
     except CELParseError as error:
-        raise CivError(f"invalid CEL condition: {error}") from error
+        raise CivError(
+            f"invalid CEL condition at line {error.line}, column {error.column}; "
+            "correct the expression syntax"
+        ) from error
 
     bindings_by_topic: dict[str, list[tuple[str, SignalBinding]]] = defaultdict(list)
     for name, binding in spec.signals.items():
         bindings_by_topic[binding.topic].append((name, binding))
     latest: dict[str, object] = {}
+    derived: dict[str, float] = {}
     seen_topics: set[str] = set()
     hits: list[SignalHit] = []
     ros2_factory = DecoderFactory()
@@ -127,18 +217,90 @@ def _evaluate_hits(spec: EventSpec, bag_path: Path) -> list[SignalHit]:
                         f"topic {channel.topic} uses unsupported message encoding: "
                         f"{channel.message_encoding}"
                     )
+                changed: set[str] = set()
                 for signal_name, binding in bindings_by_topic[channel.topic]:
                     latest[signal_name] = _extract_field(payload, binding.field, signal_name)
+                    changed.add(signal_name)
                 if len(latest) != len(spec.signals):
                     continue
-                try:
-                    matches = bool(program.evaluate(dict(latest)))
-                except CELEvalError as error:
+                for derivation in spec.derivations:
+                    if not any(source in changed for source in derivation.sources):
+                        continue
+                    available_values = {**latest, **derived}
+                    numeric_values: list[float] = []
+                    for source in derivation.sources:
+                        source_value = available_values[source]
+                        if isinstance(source_value, bool) or not isinstance(
+                            source_value, (int, float)
+                        ):
+                            raise CivError(
+                                f"derive.{derivation.name}.from '{source}' must produce "
+                                "a finite number"
+                            )
+                        numeric_value = float(source_value)
+                        if not math.isfinite(numeric_value):
+                            raise CivError(
+                                f"derive.{derivation.name}.from '{source}' must produce "
+                                "a finite number"
+                            )
+                        numeric_values.append(numeric_value)
+                    if derivation.operation == "ewma":
+                        previous = derived.get(derivation.name)
+                        alpha = derivation.alpha
+                        if alpha is None:
+                            raise CivError(f"derive.{derivation.name}.alpha is required for ewma")
+                        derived[derivation.name] = (
+                            numeric_values[0]
+                            if previous is None
+                            else alpha * numeric_values[0] + (1 - alpha) * previous
+                        )
+                    else:
+                        derived[derivation.name] = math.sqrt(
+                            sum(value * value for value in numeric_values)
+                        )
+                    if not math.isfinite(derived[derivation.name]):
+                        raise CivError(
+                            f"derive.{derivation.name} produced a non-finite result; "
+                            "check its inputs and parameters"
+                        )
+                    changed.add(derivation.name)
+                if len(derived) != len(spec.derivations):
+                    continue
+                values = {**latest, **derived}
+                null_inputs = sorted(name for name, value in values.items() if value is None)
+                if null_inputs:
                     raise CivError(
-                        f"CEL evaluation failed at {message.log_time}: {error}"
-                    ) from error
+                        f"CEL input '{null_inputs[0]}' is null at {message.log_time} ns; "
+                        "bind a non-null field or derive a fallback"
+                    )
+                for name, value in sorted(values.items()):
+                    supported = (
+                        isinstance(value, (bool, int))
+                        or (isinstance(value, float) and math.isfinite(value))
+                    )
+                    if not supported:
+                        value_type = "string" if isinstance(value, str) else type(value).__name__
+                        if isinstance(value, float):
+                            value_type = "non-finite double"
+                        raise CivError(
+                            f"CEL input '{name}' has unsupported type {value_type} at "
+                            f"{message.log_time} ns; bind a bool, int, or finite double"
+                        )
+                _validate_boolean_literal_comparisons(spec.condition, values, message.log_time)
+                try:
+                    activation = {name: json_to_cel(value) for name, value in values.items()}
+                    condition_result = program.evaluate(activation)
+                except CELEvalError as error:
+                    raise CivError(_cel_evaluation_diagnostic(error, message.log_time)) from error
+                if not isinstance(condition_result, celtypes.BoolType):
+                    result_type = type(condition_result).__name__.removesuffix("Type").lower()
+                    raise CivError(
+                        f"CEL condition returned {result_type} at {message.log_time} ns; "
+                        "make the condition return bool"
+                    )
+                matches = bool(condition_result)
                 if matches:
-                    hits.append(SignalHit(message.log_time, dict(latest)))
+                    hits.append(SignalHit(message.log_time, values))
     except (OSError, McapError) as error:
         raise CivError(f"cannot detect events in {bag_path}: {error}") from error
 

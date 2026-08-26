@@ -35,10 +35,19 @@ class SignalBinding:
 
 
 @dataclass(frozen=True)
+class Derivation:
+    name: str
+    operation: str
+    sources: tuple[str, ...]
+    alpha: float | None = None
+
+
+@dataclass(frozen=True)
 class EventSpec:
     contract: str
     name: str
     signals: dict[str, SignalBinding]
+    derivations: tuple[Derivation, ...]
     condition: str
     min_duration_ns: int
     merge_gap_ns: int
