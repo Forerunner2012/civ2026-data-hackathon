@@ -35,11 +35,19 @@ class SignalBinding:
 
 
 @dataclass(frozen=True)
+class ResourceBinding:
+    name: str
+    path: str
+    contract: str
+
+
+@dataclass(frozen=True)
 class Derivation:
     name: str
     operation: str
     sources: tuple[str, ...]
     alpha: float | None = None
+    resource: str | None = None
 
 
 @dataclass(frozen=True)
@@ -47,6 +55,7 @@ class EventSpec:
     contract: str
     name: str
     signals: dict[str, SignalBinding]
+    resources: tuple[ResourceBinding, ...]
     derivations: tuple[Derivation, ...]
     condition: str
     min_duration_ns: int

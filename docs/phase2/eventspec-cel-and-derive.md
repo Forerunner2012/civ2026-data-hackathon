@@ -70,6 +70,10 @@ Boolean, non-numeric, and non-finite inputs are invalid for both operations. A n
 also rejected. Derivations update deterministically when one of their sources changes, and CEL is
 not evaluated until every signal and derivation has an initial value.
 
+Issue #17 extends this vocabulary with the local-resource `min_distance_to` operation documented in
+`docs/phase2/eventspec-resources.md`. It produces a finite distance scalar for the same CEL
+activation; resource parsing and geometry do not enlarge the CEL value-type subset.
+
 ## Timing and evidence
 
 Derivations change only the values presented to the existing interval detector. `min_duration`,

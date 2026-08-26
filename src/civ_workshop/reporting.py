@@ -100,6 +100,34 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
     spec_hash = require_string(spec.get("sha256"), "run manifest spec sha256")
     if file_sha256(spec_path) != spec_hash:
         raise CivError("EventSpec hash does not match the run manifest")
+    event_spec = load_event_spec(spec_path)
+    raw_resources = manifest.get("resources", [])
+    if not isinstance(raw_resources, list):
+        raise CivError("run manifest resources must be a list")
+    expected_resources = {
+        binding.name: binding for binding in event_spec.resources
+    }
+    if len(raw_resources) != len(expected_resources):
+        raise CivError("run manifest resources do not match the EventSpec bindings")
+    seen_resources: set[str] = set()
+    for index, raw_resource in enumerate(raw_resources):
+        resource = require_mapping(raw_resource, f"run manifest resource {index}")
+        name = require_string(resource.get("name"), f"run manifest resource {index} name")
+        binding = expected_resources.get(name)
+        if binding is None or name in seen_resources:
+            raise CivError("run manifest resources do not match the EventSpec bindings")
+        seen_resources.add(name)
+        contract = require_string(
+            resource.get("contract"), f"run manifest resource {index} contract"
+        )
+        path = require_string(resource.get("path"), f"run manifest resource {index} path")
+        resource_hash = require_string(
+            resource.get("sha256"), f"run manifest resource {index} sha256"
+        )
+        if contract != binding.contract or path != binding.path:
+            raise CivError("run manifest resources do not match the EventSpec bindings")
+        if re.fullmatch(r"[0-9a-f]{64}", resource_hash) is None:
+            raise CivError(f"run manifest resource '{name}' sha256 is invalid")
 
     events_path = working / "events.jsonl"
     events_metadata = require_mapping(manifest.get("events"), "run manifest events")

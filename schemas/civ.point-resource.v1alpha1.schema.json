@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.point-resource.v1alpha1.schema.json",
+  "title": "CIV point resource candidate contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "coordinate_reference", "points"],
+  "properties": {
+    "contract": {"const": "civ.point-resource/v1alpha1"},
+    "coordinate_reference": {"const": "EPSG:4326"},
+    "points": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "latitude", "longitude"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+          "longitude": {"type": "number", "minimum": -180, "maximum": 180}
+        }
+      }
+    }
+  }
+}

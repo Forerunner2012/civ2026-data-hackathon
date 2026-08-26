@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
@@ -9,7 +9,7 @@ from yaml.nodes import MappingNode, Node, ScalarNode
 
 from civ_workshop.artifacts import require_mapping, require_string
 from civ_workshop.errors import CivError
-from civ_workshop.models import Derivation, EventSpec, SignalBinding
+from civ_workshop.models import Derivation, EventSpec, ResourceBinding, SignalBinding
 
 
 def _duplicate_derive_name(document: Node | None) -> str | None:
@@ -63,7 +63,42 @@ def _signal_bindings(root: dict[str, Any]) -> dict[str, SignalBinding]:
     return signals
 
 
-def _derivations(root: dict[str, Any], signals: dict[str, SignalBinding]) -> tuple[Derivation, ...]:
+def _resource_bindings(root: dict[str, Any]) -> tuple[ResourceBinding, ...]:
+    raw_resources = root.get("resources")
+    if raw_resources is None:
+        return ()
+    resources = require_mapping(raw_resources, "EventSpec resources")
+    if not resources:
+        raise CivError("EventSpec resources must not be empty")
+    bindings: list[ResourceBinding] = []
+    for name, raw_binding in sorted(resources.items()):
+        context = f"resources.{name}"
+        binding = require_mapping(raw_binding, context)
+        path_text = require_string(binding.get("path"), f"{context}.path")
+        resource_path = PurePosixPath(path_text)
+        invalid_path = (
+            "\\" in path_text
+            or resource_path.is_absolute()
+            or not resource_path.parts
+            or any(part in {"", ".", ".."} for part in resource_path.parts)
+            or ":" in resource_path.parts[0]
+        )
+        if invalid_path:
+            raise CivError(
+                f"{context}.path must be a relative POSIX path inside the EventSpec directory"
+            )
+        contract = require_string(binding.get("contract"), f"{context}.contract")
+        if contract != "civ.point-resource/v1alpha1":
+            raise CivError(f"{context}.contract is unsupported: {contract}")
+        bindings.append(ResourceBinding(name=name, path=path_text, contract=contract))
+    return tuple(bindings)
+
+
+def _derivations(
+    root: dict[str, Any],
+    signals: dict[str, SignalBinding],
+    resources: tuple[ResourceBinding, ...],
+) -> tuple[Derivation, ...]:
     raw_derive = root.get("derive")
     if raw_derive is None:
         return ()
@@ -73,10 +108,10 @@ def _derivations(root: dict[str, Any], signals: dict[str, SignalBinding]) -> tup
         context = f"derive.{name}"
         derivation_config = require_mapping(raw_derivation, context)
         operation = require_string(derivation_config.get("op"), f"{context}.op")
-        if operation not in {"ewma", "magnitude"}:
+        if operation not in {"ewma", "magnitude", "min_distance_to"}:
             raise CivError(
                 f"{context}.op has unknown operation '{operation}'; "
-                "use one of: ewma, magnitude"
+                "use one of: ewma, magnitude, min_distance_to"
             )
         raw_sources = derivation_config.get("from")
         sources: tuple[str, ...]
@@ -88,15 +123,39 @@ def _derivations(root: dict[str, Any], signals: dict[str, SignalBinding]) -> tup
             alpha = float(raw_alpha)
             if not 0 < alpha <= 1:
                 raise CivError(f"{context}.alpha must be greater than 0 and at most 1")
+            resource = None
         else:
-            if not isinstance(raw_sources, list) or len(raw_sources) < 2:
+            minimum_sources = 2
+            if not isinstance(raw_sources, list) or len(raw_sources) < minimum_sources:
                 raise CivError(f"{context}.from must list at least two numeric inputs")
+            if operation == "min_distance_to" and len(raw_sources) != 2:
+                raise CivError(
+                    f"{context}.from must list latitude and longitude exactly once"
+                )
             sources = tuple(
                 require_string(source, f"{context}.from input") for source in raw_sources
             )
             alpha = None
+            if operation == "min_distance_to":
+                resource = require_string(
+                    derivation_config.get("resource"), f"{context}.resource"
+                )
+                resource_names = {binding.name for binding in resources}
+                if resource not in resource_names:
+                    raise CivError(
+                        f"{context}.resource references unknown resource '{resource}'; "
+                        "define it under resources"
+                    )
+            else:
+                resource = None
         derivations.append(
-            Derivation(name=name, operation=operation, sources=sources, alpha=alpha)
+            Derivation(
+                name=name,
+                operation=operation,
+                sources=sources,
+                alpha=alpha,
+                resource=resource,
+            )
         )
     derived_names = {derivation.name for derivation in derivations}
     for derivation in derivations:
@@ -156,6 +215,10 @@ def load_event_spec(path: Path) -> EventSpec:
     contract = require_string(root.get("spec"), "EventSpec spec")
     if contract != "civ.eventspec/v1alpha1":
         raise CivError(f"unsupported EventSpec contract: {contract}")
+    if "detector" in root:
+        raise CivError(
+            "EventSpec detector is reserved; remove detector and use signals, derive, and resources"
+        )
     timing = require_mapping(root.get("timing"), "EventSpec timing")
     min_duration_ns = _duration_ns(timing.get("min_duration"), "timing.min_duration")
     max_duration_ns = _duration_ns(timing.get("max_duration"), "timing.max_duration")
@@ -167,11 +230,13 @@ def load_event_spec(path: Path) -> EventSpec:
         raise CivError("evidence.topics must be a non-empty list")
 
     signals = _signal_bindings(root)
+    resources = _resource_bindings(root)
     return EventSpec(
         contract=contract,
         name=require_string(root.get("name"), "EventSpec name"),
         signals=signals,
-        derivations=_derivations(root, signals),
+        resources=resources,
+        derivations=_derivations(root, signals, resources),
         condition=require_string(root.get("condition"), "EventSpec condition"),
         min_duration_ns=min_duration_ns,
         merge_gap_ns=_duration_ns(timing.get("merge_gap"), "timing.merge_gap"),

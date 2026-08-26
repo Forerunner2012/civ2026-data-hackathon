@@ -401,7 +401,8 @@ condition: signal_magnitude > 1.0""",
         (
             "  filtered: {from: signal, op: median}\n",
             "filtered > 1.0",
-            "derive.filtered.op has unknown operation 'median'; use one of: ewma, magnitude",
+            "derive.filtered.op has unknown operation 'median'; "
+            "use one of: ewma, magnitude, min_distance_to",
         ),
         (
             "  filtered: {from: absent, op: ewma, alpha: 0.5}\n",

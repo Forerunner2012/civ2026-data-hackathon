@@ -1,0 +1,16 @@
+{
+  "contract": "civ.point-resource/v1alpha1",
+  "coordinate_reference": "EPSG:4326",
+  "points": [
+    {
+      "id": "illustrative-cave-zone-a",
+      "latitude": 49.2583,
+      "longitude": 4.0317
+    },
+    {
+      "id": "illustrative-cave-zone-b",
+      "latitude": 49.257,
+      "longitude": 4.033
+    }
+  ]
+}

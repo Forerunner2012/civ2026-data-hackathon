@@ -21,6 +21,7 @@ from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.event_spec import load_event_spec
 from civ_workshop.models import EventRecord, EventSpec, Interval, SignalBinding
+from civ_workshop.resources import PointResource, load_point_resources, minimum_distance_m
 
 
 @dataclass(frozen=True)
@@ -152,7 +153,9 @@ def _event_segments(hits: list[SignalHit], spec: EventSpec) -> list[DetectedInte
     ]
 
 
-def _evaluate_hits(spec: EventSpec, bag_path: Path) -> list[SignalHit]:
+def _evaluate_hits(
+    spec: EventSpec, bag_path: Path, resources: dict[str, PointResource]
+) -> list[SignalHit]:
     try:
         environment = Environment()
         expression = environment.compile(spec.condition)
@@ -254,9 +257,22 @@ def _evaluate_hits(spec: EventSpec, bag_path: Path) -> list[SignalHit]:
                             if previous is None
                             else alpha * numeric_values[0] + (1 - alpha) * previous
                         )
-                    else:
+                    elif derivation.operation == "magnitude":
                         derived[derivation.name] = math.sqrt(
                             sum(value * value for value in numeric_values)
+                        )
+                    else:
+                        resource_name = derivation.resource
+                        if resource_name is None:
+                            raise CivError(
+                                f"derive.{derivation.name}.resource is required for "
+                                "min_distance_to"
+                            )
+                        derived[derivation.name] = minimum_distance_m(
+                            resources[resource_name],
+                            numeric_values[0],
+                            numeric_values[1],
+                            derivation.name,
                         )
                     if not math.isfinite(derived[derivation.name]):
                         raise CivError(
@@ -311,13 +327,23 @@ def _evaluate_hits(spec: EventSpec, bag_path: Path) -> list[SignalHit]:
 
 
 def _event_records(
-    spec: EventSpec, spec_hash: str, bag_hash: str, hits: list[SignalHit]
+    spec: EventSpec,
+    spec_hash: str,
+    bag_hash: str,
+    hits: list[SignalHit],
+    resources: dict[str, PointResource],
 ) -> list[EventRecord]:
     records: list[EventRecord] = []
+    provenance = f"{bag_hash}:{spec_hash}"
+    if resources:
+        resource_hashes = ":".join(
+            resource.sha256 for _, resource in sorted(resources.items())
+        )
+        provenance = f"{provenance}:{resource_hashes}"
     for detected in _event_segments(hits, spec):
         interval = detected.interval
         identity = sha256(
-            f"{bag_hash}:{spec_hash}:{interval.start_ns}:{interval.end_ns}".encode()
+            f"{provenance}:{interval.start_ns}:{interval.end_ns}".encode()
         ).hexdigest()
         records.append(
             EventRecord(
@@ -335,11 +361,18 @@ def detect_events(
     spec_path: Path, bag_path: Path, output: Path, *, dry_run: bool = False
 ) -> dict[str, object]:
     spec = load_event_spec(spec_path)
+    resources = load_point_resources(spec_path, spec.resources)
     if not bag_path.is_file():
         raise CivError(f"bag does not exist: {bag_path}")
     bag_hash = file_sha256(bag_path)
     spec_hash = file_sha256(spec_path)
-    events = _event_records(spec, spec_hash, bag_hash, _evaluate_hits(spec, bag_path))
+    events = _event_records(
+        spec,
+        spec_hash,
+        bag_hash,
+        _evaluate_hits(spec, bag_path, resources),
+        resources,
+    )
     plan: dict[str, object] = {"dry_run": dry_run, "event_count": len(events)}
     if dry_run:
         return plan
@@ -357,7 +390,7 @@ def detect_events(
     events_text = "".join(f"{canonical_json(event.as_dict())}\n" for event in events)
     events_path = output / "events.jsonl"
     events_path.write_text(events_text, encoding="utf-8", newline="\n")
-    manifest = {
+    manifest: dict[str, object] = {
         "contract": "civ.run-manifest/v1alpha1",
         "events": {
             "count": len(events),
@@ -372,6 +405,10 @@ def detect_events(
         "source": {"name": bag_path.name, "sha256": bag_hash},
         "spec": {"contract": spec.contract, "name": spec.name, "sha256": spec_hash},
     }
+    if resources:
+        manifest["resources"] = [
+            resource.provenance() for _, resource in sorted(resources.items())
+        ]
     (output / "run-manifest.json").write_text(
         f"{canonical_json(manifest)}\n", encoding="utf-8", newline="\n"
     )
