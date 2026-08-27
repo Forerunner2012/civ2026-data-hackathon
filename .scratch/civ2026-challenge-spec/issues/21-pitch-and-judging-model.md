@@ -96,12 +96,12 @@ as a booby prize.
 
 ### Detection split — confirmed after ticket 24
 
-**15 Kashiwa / 10 French.**
+**15 Kashiwa / 10 Reims.**
 
-Ticket 24 found enough French left turns for a stable sealed set, but that does not make the
+Ticket 24 found enough Reims left turns for a stable sealed set, but that does not make the
 transfer recording the event's primary dataset. Kashiwa carries the full learning arc:
 investigation, detector construction, tuning, evidence extraction, visualization and failure
-analysis. French is the shorter sealed generalisation test. Giving it 15 of the 25 Detection
+analysis. Reims is the shorter sealed generalisation test. Giving it 15 of the 25 Detection
 points would confuse "harder test" with "hero dataset."
 
 Ten points still makes transfer consequential: it is 40% of Detection, and the report separately

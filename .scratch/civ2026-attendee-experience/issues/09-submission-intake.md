@@ -71,7 +71,7 @@ unlimited and actively encouraged; intake validates structure only and returns a
 
 [03](03-cadence.md) resolved with two beats that are lies if the first submission is final:
 
-- **B4, 11:00:** *submit what you have, take the Kashiwa solution, open the French data.*
+- **B4, 11:00:** *submit what you have, take the Kashiwa solution, open the Reims data.*
 - **B7, 12:10:** *submit an incomplete one now. You can submit again.*
 
 Those two lines are how the transfer cliff and the deadline are survived. So: **unlimited
@@ -130,8 +130,8 @@ Intake returns a **content hash and a timestamp**, displayed and printable. Thre
 
 **A generous hard cap — order 2 GB per submission — published in advance and enforced.**
 
-Realistic submissions are far below it: signals-only French is ~350 MB for 38 minutes
-([ticket 24](../../civ2026-challenge-spec/issues/24-survey-french-bag.md)), and a set of few-second
+Realistic submissions are far below it: signals-only Reims is ~350 MB for 38 minutes
+([ticket 24](../../civ2026-challenge-spec/issues/24-survey-reims-bag.md)), and a set of few-second
 evidence clips over a handful of topics is a fraction of that. Anything approaching 2 GB has
 misunderstood *compact evidence* so completely that a clear rejection is more useful than silent
 acceptance.

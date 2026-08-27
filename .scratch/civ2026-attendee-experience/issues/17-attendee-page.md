@@ -66,7 +66,7 @@ keeping (drafted in
 [01](01-pace-car.md) set the rule; this ticket implements it and finds where it breaks.
 
 - A stage's solution unlocks **only once that stage's points are effectively settled** — Kashiwa's
-  at the transfer boundary. It does not rescue a Kashiwa score; it unblocks the French attempt.
+  at the transfer boundary. It does not rescue a Kashiwa score; it unblocks the Reims attempt.
 - Solutions are **reconstructable, not copy-pasteable**: the approach, the signals, the shape of the
   timing block — not a runnable spec.
 - **Handedness is never solved.** It is now the only genuinely unaided thing in the day.
@@ -225,7 +225,7 @@ can produce Kashiwa events in roughly ten minutes, and 90 minutes remain.
 That is **intended** — [ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)
 calls the Kashiwa core a warm-up and
 [ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the difficulty
-to transfer. Discrimination lives in French Detection (10), Evidence (15), Reproducibility (15) and
+to transfer. Discrimination lives in Reims Detection (10), Evidence (15), Reproducibility (15) and
 the 45 jury points.
 
 **Hand this to the internal evaluator run as a prior**, not as a request: map one already licensed
@@ -272,7 +272,7 @@ It also removes the awkwardness of a scored event whose answers were published m
 ### What it costs, and what replaces it
 
 [03](03-cadence.md)'s **B4 at 11:00** was built on *stop improving it, submit what you have, **take
-the solution**, open the French data.* The solution was what made abandoning psychologically
+the solution**, open the Reims data.* The solution was what made abandoning psychologically
 possible — you were not asked to walk away with nothing.
 
 That prop is gone. What carries the cliff instead:
@@ -307,7 +307,7 @@ solution shows the approach and leaves the sign convention to the reader.
 ### Consequences
 
 - [03](03-cadence.md)'s beat table: **B4 loses its solution unlock**, and B7/12:30 no longer
-  releases a French solution. The page's post-12:30 unlock is the extension section only.
+  releases a Reims solution. The page's post-12:30 unlock is the extension section only.
 - The prototype's `▸ SOLUTION — Kashiwa` block becomes **post-event material**; what appears at 11:00
   is its tip layer. Noted at the top of
   [`prototypes/17-transfer-stage-section.md`](../prototypes/17-transfer-stage-section.md).

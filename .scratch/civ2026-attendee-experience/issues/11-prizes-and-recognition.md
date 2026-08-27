@@ -82,7 +82,7 @@ never instead of it. Get the number if it exists; do not block on it.
 | | What it rewards | Why it exists |
 |---|---|---|
 | **1st, 2nd, 3rd overall** | the leaderboard, all 100 points plus bonus | Ordinary and expected; the field would feel unfinished without it |
-| **Best transfer** | report heading 3 and French Detection | [Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the event's whole point onto the second dataset. A single overall leaderboard buries it under 100 points of everything else |
+| **Best transfer** | report heading 3 and Reims Detection | [Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the event's whole point onto the second dataset. A single overall leaderboard buries it under 100 points of everything else |
 | **Most instructive failure** | an honest dead end, well analysed | §2 makes failure a deliverable. [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) warns it reads as a booby prize unless framed — **an award is the framing.** A walkthrough slot alone is not |
 
 **Five recognitions, no more.** A 30-minute results block cannot hold more, and each additional

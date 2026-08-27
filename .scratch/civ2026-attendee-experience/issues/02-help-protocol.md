@@ -54,7 +54,7 @@ returns through the back door.
 mechanism that lets a coach see a quiet stall without asking. Decide it **here** rather than as
 tempo, so it is built as a *radar* and not as a scoreboard.
 
-The distinction is not cosmetic. A board reading *11 of 22 workstreams have a first French event* is
+The distinction is not cosmetic. A board reading *11 of 22 workstreams have a first Reims event* is
 tempo. A board that names or ranks workstreams is a live leaderboard, and a live leaderboard in a
 room of competitive practitioners changes behaviour in ways nobody has designed for — and
 [ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) deliberately put the

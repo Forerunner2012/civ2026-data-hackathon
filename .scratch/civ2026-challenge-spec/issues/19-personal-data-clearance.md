@@ -36,7 +36,7 @@ opponent-vehicle driver; whether any anonymisation was applied; written confirma
 commercial sponsor; and whether future recordings will carry the same licence.
 
 Then: whether Heex is controller or processor for the redistributed subset under GDPR Art. 3(1),
-via its French establishment. That is a question for counsel once A and B land.
+via its Reims establishment. That is a question for counsel once A and B land.
 
 ## Why it matters
 

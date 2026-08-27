@@ -19,8 +19,8 @@ from tests.helpers import (
     run_complete_workflow,
     write_raw_ros2_bag,
     write_ros2_bool_bag,
-    write_ros2_french_turn_bag,
     write_ros2_nested_bag,
+    write_ros2_reims_turn_bag,
     write_ros2_steering_bag,
 )
 
@@ -265,7 +265,7 @@ def test_kashiwa_example_detects_long_and_context_free_turns(tmp_path: Path) -> 
     ("example", "write_bag"),
     [
         ("kashiwa/right_turn.yaml", write_ros2_steering_bag),
-        ("french/left_turn.yaml", write_ros2_french_turn_bag),
+        ("reims/left_turn.yaml", write_ros2_reims_turn_bag),
     ],
 )
 def test_repeated_example_detection_is_byte_identical(
@@ -286,11 +286,11 @@ def test_repeated_example_detection_is_byte_identical(
         assert (outputs[0] / artifact).read_bytes() == (outputs[1] / artifact).read_bytes()
 
 
-def test_french_example_selects_left_turn_over_right_and_lane_shift(tmp_path: Path) -> None:
-    bag = tmp_path / "french-turns.mcap"
+def test_reims_example_selects_left_turn_over_right_and_lane_shift(tmp_path: Path) -> None:
+    bag = tmp_path / "reims-turns.mcap"
     output = tmp_path / "working"
-    spec = Path(__file__).parents[1] / "examples" / "french" / "left_turn.yaml"
-    write_ros2_french_turn_bag(bag)
+    spec = Path(__file__).parents[1] / "examples" / "reims" / "left_turn.yaml"
+    write_ros2_reims_turn_bag(bag)
 
     result = run_civ(tmp_path, ["detect", str(spec), str(bag), "--output", str(output)])
 
@@ -310,15 +310,15 @@ def test_french_example_selects_left_turn_over_right_and_lane_shift(tmp_path: Pa
     }
 
 
-def test_french_path_can_derive_vector_magnitude_without_kashiwa_bindings(
+def test_reims_path_can_derive_vector_magnitude_without_kashiwa_bindings(
     tmp_path: Path,
 ) -> None:
-    bag = tmp_path / "french-turns.mcap"
-    spec = tmp_path / "french-with-magnitude.yaml"
+    bag = tmp_path / "reims-turns.mcap"
+    spec = tmp_path / "reims-with-magnitude.yaml"
     output = tmp_path / "working"
-    write_ros2_french_turn_bag(bag)
+    write_ros2_reims_turn_bag(bag)
     reference = (
-        Path(__file__).parents[1] / "examples" / "french" / "left_turn.yaml"
+        Path(__file__).parents[1] / "examples" / "reims" / "left_turn.yaml"
     ).read_text(encoding="utf-8")
     spec.write_text(
         reference.replace(
@@ -349,12 +349,12 @@ def test_french_path_can_derive_vector_magnitude_without_kashiwa_bindings(
 
 
 def test_detect_orders_derive_dependencies_independently_of_yaml_order(tmp_path: Path) -> None:
-    bag = tmp_path / "french-turns.mcap"
+    bag = tmp_path / "reims-turns.mcap"
     spec = tmp_path / "ordered-derive.yaml"
     output = tmp_path / "working"
-    write_ros2_french_turn_bag(bag)
+    write_ros2_reims_turn_bag(bag)
     reference = (
-        Path(__file__).parents[1] / "examples" / "french" / "left_turn.yaml"
+        Path(__file__).parents[1] / "examples" / "reims" / "left_turn.yaml"
     ).read_text(encoding="utf-8")
     spec.write_text(
         reference.replace(

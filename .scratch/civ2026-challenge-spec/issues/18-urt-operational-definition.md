@@ -115,7 +115,7 @@ property of the country, not of the detector:
 | Dataset | Traffic | Labelled manoeuvre |
 |---|---|---|
 | URT-Kashiwa (Japan) | left-hand | **right** turns |
-| French city | right-hand | **left** turns |
+| Reims city | right-hand | **left** turns |
 
 The sealed labels still mark the *manoeuvre interval* in both - "unprotected" remains scenario
 context the brief supplies rather than something the detector proves, exactly as decided above.

@@ -1,4 +1,4 @@
-# Does the French recording contain enough of the target manoeuvre?
+# Does the Reims recording contain enough of the target manoeuvre?
 
 Type: task
 Status: resolved
@@ -6,7 +6,7 @@ Status: resolved
 ## Question
 
 Tickets 14 and 18 now depend on labelling **left turns** — the manoeuvre that crosses oncoming
-traffic in right-hand traffic — in the French-city recording, and **scoring** teams against that
+traffic in right-hand traffic — in the Reims recording, and **scoring** teams against that
 sealed set.
 
 Nobody has confirmed the recording contains enough of them.
@@ -22,7 +22,7 @@ Establish:
   crossed rather than a quiet turn or a roundabout exit.
 - Their distribution across the drive — clustered or spread.
 - Whether the count supports a development/sealed split at all, or whether the whole session must
-  be the sealed set with no French development data for teams to iterate against.
+  be the sealed set with no Reims development data for teams to iterate against.
 - Whether `obj_det/objects` carries anything usable for judging conflict, or whether "unprotected"
   stays scenario context here too, as ticket 18 decided for Kashiwa.
 - Whether the second, small MCAP in that folder is a fragment or a separate session.
@@ -73,7 +73,7 @@ Established so far:
 The `mcap` CLI can inspect and size `ros2msg` channels, but `mcap cat --json` cannot decode them.
 The survey therefore used `uv run --no-project` with `mcap` 1.4.0 and
 `mcap-ros2-support` 0.5.7. The reproducible streaming helper is
-`../research/survey_french_bag.py`; no project environment or intermediate message dump is
+`../research/survey_reims_bag.py`; no project environment or intermediate message dump is
 required.
 
 Decoded counts across the nine chunks:
@@ -108,14 +108,14 @@ boundary is also the pedagogically useful split:
 | Sealed | `_5`–`_8` | ~16m09s | 9 |
 
 Participants receive the first five signals-only chunks. The final four stay with the organizers.
-This supports the scored transfer task without leaking its labels and resolves ticket 17's French
+This supports the scored transfer task without leaking its labels and resolves ticket 17's Reims
 distribution dependency.
 
 These are planning-grade counts, not sealed ground truth. The labelling pass must still set the
 full intervals and review edge cases; internal evaluation may refine labels without changing the
 five-chunk/four-chunk split.
 
-The confirmed Detection split is **15 Kashiwa / 10 French**, provisional until ticket 16's
+The confirmed Detection split is **15 Kashiwa / 10 Reims**, provisional until ticket 16's
 internal evaluator run shows how both sealed sets affect ranking.
 
 ### Objects help evidence, not the definition

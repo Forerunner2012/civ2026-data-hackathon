@@ -1,14 +1,14 @@
 # Quickstart: unpacked kit to first evidence clip
 
 Five offline commands, run from the unpacked kit. Swap `data/route.mcap` for your dataset and
-`examples/kashiwa/right_turn.yaml` for your path's reference detector (on the French data, use
-`examples/french/left_turn.yaml` with `layouts/french-left-turn.xml`). Outputs are from a short demo
+`examples/kashiwa/right_turn.yaml` for your path's reference detector (on the Reims data, use
+`examples/reims/left_turn.yaml` with `layouts/reims-left-turn.pj4.xml`). Outputs are from a short demo
 bag; your counts and hashes will differ.
 
 ## 1. Check the environment
 
 ```text
-civ doctor --workspace work --bag data/route.mcap --layout layouts/kashiwa-right-turn.xml
+civ doctor --workspace work --bag data/route.mcap --layout layouts/kashiwa-right-turn.pj4.xml
 ```
 
 ```text
@@ -53,7 +53,7 @@ Samples:
 ```
 
 Copy the topic and field exactly from step 2; nested fields use dotted paths. `--limit` defaults to
-20; `--start-ns` / `--end-ns` bound the window. Open `layouts/kashiwa-right-turn.xml` in PlotJuggler
+20; `--start-ns` / `--end-ns` bound the window. Open `layouts/kashiwa-right-turn.pj4.xml` in PlotJuggler
 to see the same signal against its evidence context.
 
 ## 4. Detect intervals

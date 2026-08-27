@@ -18,7 +18,7 @@ The facts that make it a real question:
 - The cohort is **30 practitioners** at an international conference
   ([ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)); the mix of
   local and international attendees is not recorded anywhere.
-- The hero dataset is Japanese (Kashiwa); the transfer dataset is French (Reims). The domain
+- The hero dataset is Japanese (Kashiwa); the transfer dataset is Reims (Reims). The domain
   vocabulary is English by default and the toolchain is entirely English.
 
 This is small, cheap to settle now, and expensive to discover in Phase 4 when every artifact has

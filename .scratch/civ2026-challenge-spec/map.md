@@ -37,13 +37,13 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 > **Status: reopened, destination extended.** The map closed at 19 tickets, then two answers
 > widened it. Phase 0's gate turned out to carry three items the original §8 queue never listed
 > (cohort, skill floor, licensing — ticket 20), and the high skill floor forced the reversal of
-> ticket 14: the French-city dataset is back in the main track as a **scored** generalisation
+> ticket 14: the Reims dataset is back in the main track as a **scored** generalisation
 > test. Tickets 21–25 have now closed; **all 25 tickets are resolved and the destination is reached**.
 
 ## Decisions so far
 
 - [Which dataset carries the event?](issues/01-dataset-choice.md) — URT-Kashiwa is the hero
-  dataset and the freeze depends only on it. (The French-city bags were additive-only here; ticket
+  dataset and the freeze depends only on it. (The Reims bags were additive-only here; ticket
   14 later brought them into the main track as a scored transfer test.)
 - [Which scenario anchors the challenge?](issues/02-scenario-anchor.md) — Unprotected right
   turns (URT). Creativity is expected in *how* teams express and capture the scenario with the
@@ -109,12 +109,12 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   Judged qualitatively, not against a sealed cave list. Unifies with ticket 09's deferred rung 3:
   one extends the inputs, the other the computation. Ticket 24 confirms Reims and two clear 40 m
   zone encounters (Martel and Pommery), so this is viable as a small extension exercise.
-- **MEASURED** — `mcap du` on the French recording shows detection signals are **1.2% of the
+- **MEASURED** — `mcap du` on the Reims recording shows detection signals are **1.2% of the
   bytes**: point cloud 71.5%, compressed RGB 27.3%, everything a detector reads (IMU, objects, tf,
   fix, fix_velocity) under 40 MB per 3.2 GB chunk. Signals-only for the whole 38-minute session is
-  **~350 MB**. Ticket 17's 15 GB target was solving a problem that does not exist; the French
+  **~350 MB**. Ticket 17's 15 GB target was solving a problem that does not exist; the Reims
   dev/sealed split rests on pedagogy alone. **Kashiwa is still unmeasured.**
-- [Does the French recording contain enough of the target manoeuvre?](issues/24-survey-french-bag.md)
+- [Does the Reims recording contain enough of the target manoeuvre?](issues/24-survey-reims-bag.md)
   — **yes: 16 clear junction-left manoeuvres plus 2 development-side borderline cases.** Chunks
   `_0`–`_4` become development (~21m49s, 7 clear events); `_5`–`_8` stay sealed (~16m09s, 9 clear
   events). Objects support evidence but cannot establish right-of-way. The 13.3 km route is in
@@ -126,7 +126,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   evidence, reproducibility), 45 jury-scored from the report, bonus 20 with the jury. `report.md`
   gains a fixed structure with a "what transferred and what did not" heading, which is what makes
   the transfer insight scoreable. Solo and duos rank together. Detection splits **15 Kashiwa / 10
-  French**, provisional until the internal evaluator run shows how both sealed sets affect ranking.
+  Reims**, provisional until the internal evaluator run shows how both sealed sets affect ranking.
 - [Cohort, skill floor and "open source"](issues/20-cohort-skill-floor-licensing.md) — **30
   participants, solo or in duos**, all experienced with robotic/vehicular data. Kit ships
   permissively (MIT/Apache-2.0 code, CC BY 4.0 content) with credit suggested; workshop content
@@ -141,7 +141,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   source availability; pin custom schemas by commit plus MCAP schema hash; and generate the SBOM,
   third-party notices and copyleft source/relinking paths from the built image. CIV code remains
   MIT/Apache and data/content remain CC BY 4.0, but the aggregate image has no single licence.
-- [What do the bespoke French-city bags add?](issues/14-bespoke-collection-scope.md) —
+- [What do the bespoke Reims bags add?](issues/14-bespoke-collection-scope.md) —
   **REVERSED. In the main track, scored as a sealed generalisation test.** With 30 practitioners
   the Kashiwa core is a warm-up, so the difficulty moves to transfer: manual analysis, then `civ`
   as facilitator, then the same reasoning applied to a structurally different dataset.
@@ -169,7 +169,7 @@ Fog — in scope, not yet sharp enough to ticket. Graduates as the frontier adva
   inter-annotator agreement. Definition and tolerance are closed; tool, ownership and agreement
   targets are execution details for Phase 3.
 - **Minute-level cadence inside the three hours** — the handoff now carries a rehearsal baseline:
-  Kashiwa through 01:30, French transfer through 02:45, then submit. Internal evaluation may move
+  Kashiwa through 01:30, Reims transfer through 02:45, then submit. Internal evaluation may move
   checkpoint minutes without reopening the two-dataset order or the 12:30 deadline.
 - **Warm-up design and the non-ROS fallback pack contents** — load-bearing because of the BYOD
   decision in 04. Waits on 09 (what a detector looks like) and 17 (what data a team holds).

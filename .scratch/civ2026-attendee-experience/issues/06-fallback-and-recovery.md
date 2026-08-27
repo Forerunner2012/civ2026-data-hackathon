@@ -25,7 +25,7 @@ is:
 | Category | Points | Reachable on tables and clips alone? |
 |---|---:|---|
 | Detection — Kashiwa | 15 | No — needs `events.jsonl` from a run |
-| Detection — French | 10 | No |
+| Detection — Reims | 10 | No |
 | Evidence and extraction | 15 | No — machine-checks clip validity and volume reduction |
 | Reproducibility | 15 | No — one command, pinned inputs, stable rerun |
 | Investigation, Quality, Visualization | 45 | Partly — the report can still be written |

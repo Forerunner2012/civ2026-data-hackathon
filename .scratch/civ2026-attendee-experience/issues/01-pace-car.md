@@ -73,7 +73,7 @@ and the artifact you should be holding by now.
 *Against:* highest interruption cost, and it punishes exactly the deep work the event wants.
 
 **4. Telemetry.** `civ` reports milestones to a room leaderboard; the room's own progress becomes
-the tempo — *11 of 22 workstreams have their first French event.*
+the tempo — *11 of 22 workstreams have their first Reims event.*
 *For:* the only candidate that also solves **sensing**, and the tempo it broadcasts is real rather
 than planned. *Against:* build work in `civ` that nobody has scoped, needs a room LAN, and it edges
 against local-first (defensible — a LAN is not SaaS, and [ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
@@ -98,7 +98,7 @@ sensing does not get built as a scoreboard.
   [08](08-room-requirements.md) cannot state what the venue must provide until this ticket says what
   it needs, and the design must survive a venue with one screen.
 - The **spoiler boundary**: exactly what the rabbit may show, given eight sealed Kashiwa routes and
-  four sealed French chunks. If the rabbit is one lap ahead on the warm-up route, what does it do
+  four sealed Reims chunks. If the rabbit is one lap ahead on the warm-up route, what does it do
   for the remaining 150 minutes?
 - What the pace car does when **the room is broadly ahead of it, or broadly behind it**. A pace car
   that is wrong for 20 workstreams is worse than none.
@@ -165,7 +165,7 @@ same ladder on a projected screen, narrating, on the **published warm-up route**
 This is the part that makes a rabbit viable at all, and it took the prototype to find.
 
 A rabbit that demonstrates the real event is impossible: showing a working Kashiwa turn spec hands
-over 15 points, and showing the French remap hands over the comprehension test. But a rabbit that is
+over 15 points, and showing the Reims remap hands over the comprehension test. But a rabbit that is
 *coy* — "I have a condition here, never mind what it is" — is unwatchable, and an unwatchable rabbit
 is a wasted organizer for three hours.
 
@@ -178,7 +178,7 @@ The rule, stated so a driver can apply it live:
 | The rabbit may | The rabbit may never |
 |---|---|
 | Show any `civ` command, any EventSpec section, any PlotJuggler operation, any failure iteration | Target a turn, of any handedness |
-| Work the published warm-up route and French development chunks `_0`–`_4` | Touch a sealed route or chunk |
+| Work the published warm-up route and Reims development chunks `_0`–`_4` | Touch a sealed route or chunk |
 | Narrate its own false positives and dead ends | **Discuss handedness** |
 
 **Handedness is the line.** [Ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md)
@@ -190,7 +190,7 @@ left in France — and that is the one thing the rabbit must never illuminate.
 It walks the **whole** ladder on the decoy, including the transfer. But its lead inverts:
 
 - **Kashiwa half: ~12 minutes ahead.** Spoiler risk is lowest and acceleration is worth most.
-- **From the transfer beat: ~10 minutes behind.** It arrives at the French stack *after* most of the
+- **From the transfer beat: ~10 minutes behind.** It arrives at the Reims stack *after* most of the
   room. Anyone moving has already passed it; anyone stuck on grunt work finds a demonstration
   waiting.
 
@@ -205,7 +205,7 @@ scored. Removing grunt work while leaving the comprehension test intact aims the
 thing worth testing.
 
 **Flagged as the sharpest judgement call in this resolution.** If it is rejected, the cheap fallback
-is: the rabbit stops at the transfer beat and the French half is board-only. That costs the stuck
+is: the rabbit stops at the transfer beat and the Reims half is board-only. That costs the stuck
 participants and costs nothing else.
 
 ### Telemetry is rejected as tempo
@@ -354,7 +354,7 @@ runs** — and it is also what compresses the scoring.
 The rule this ticket sets, for [17](17-attendee-page.md) to implement:
 
 - **A stage's solution unlocks only once that stage's points are effectively settled.** Kashiwa's
-  unlocks at the transfer boundary. It does not rescue a Kashiwa score; it unblocks the French
+  unlocks at the transfer boundary. It does not rescue a Kashiwa score; it unblocks the Reims
   attempt, which is where the difficulty was deliberately moved
   ([ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
 - **Solutions are reconstructable, not copy-pasteable.** The approach, the signals, the shape of the

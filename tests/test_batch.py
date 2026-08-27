@@ -27,10 +27,10 @@ from tests.helpers import (
 )
 
 # Runtime-generated stand-ins for the two accepted dataset families. The real Kashiwa and
-# French recordings stay outside the repository; only their contracts are exercised here.
+# Reims recordings stay outside the repository; only their contracts are exercised here.
 DATASETS = {
     "kashiwa": ((0.0, 2.0, 2.0, 0.0, 0.0), 1 * NANOSECONDS, 2 * NANOSECONDS),
-    "french": ((0.0, 0.0, 2.0, 2.0, 0.0), 2 * NANOSECONDS, 3 * NANOSECONDS),
+    "reims": ((0.0, 0.0, 2.0, 2.0, 0.0), 2 * NANOSECONDS, 3 * NANOSECONDS),
     "unscored": ((0.0, 2.0, 2.0, 2.0, 0.0), 1 * NANOSECONDS, 3 * NANOSECONDS),
 }
 PROFILES = ("competent", "low_quality", "duplicate_heavy", "incomplete", "missed")
@@ -134,14 +134,14 @@ def _plan() -> list[tuple[str, str, str, str]]:
 
     entries: list[tuple[str, str, str, str]] = []
     for index in range(20):
-        dataset = "kashiwa" if index % 2 == 0 else "french"
+        dataset = "kashiwa" if index % 2 == 0 else "reims"
         entries.append((f"team-{index + 1:02d}", dataset, PROFILES[index % 5], "scored"))
     for index in range(20, 23):
         entries.append((f"team-{index + 1:02d}", "unscored", "competent", "failed"))
     for index in range(23, 26):
         entries.append((f"team-{index + 1:02d}", "kashiwa", "competent", "invalid"))
     for index in range(26, 30):
-        entries.append((f"team-{index + 1:02d}", "french", "competent", "quarantined"))
+        entries.append((f"team-{index + 1:02d}", "reims", "competent", "quarantined"))
     return entries
 
 
@@ -245,7 +245,7 @@ def test_summary_accounts_for_every_cohort_entry_exactly_once(cohort: Cohort) ->
     assert len(results) == 30
     assert sum(summary["counts"].values()) == 30
     assert summary["counts"] == {"failed": 3, "invalid": 3, "quarantined": 4, "scored": 20}
-    assert summary["datasets"] == {"french": 10, "kashiwa": 10}
+    assert summary["datasets"] == {"reims": 10, "kashiwa": 10}
     assert summary["receipts"] == {"late": 5, "on_time": 27, "total": 32}
     assert {identity: record["status"] for identity, record in results.items()} == cohort.status
 
@@ -333,7 +333,7 @@ def test_organizer_labels_never_leak_into_the_batch_output(cohort: Cohort) -> No
     )
 
     assert "kashiwa-turn-1" not in emitted
-    assert "french-turn-1" not in emitted
+    assert "reims-turn-1" not in emitted
     assert "organizer-labels" not in emitted
     assert str(cohort.labels) not in emitted
     assert "label_pack_sha256" not in emitted

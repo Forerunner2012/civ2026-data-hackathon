@@ -93,23 +93,23 @@ MCAPs with checksums**, since the published Drive folder can change at any time 
 
 ## Update - a second dataset now has to be distributed
 
-Ticket 14's reversal puts the French-city recording in participants' hands. That adds to this
+Ticket 14's reversal puts the Reims recording in participants' hands. That adds to this
 ticket rather than changing what is above:
 
-- A **French subset** must be cut and distributed alongside the Kashiwa one. Source is ~18 GB for
+- A **Reims subset** must be cut and distributed alongside the Kashiwa one. Source is ~18 GB for
   a single 38-minute session, so the same levers apply: drop the ZED point cloud
   (`/zed/zed_node/point_cloud/cloud_registered`), keep IMU, GNSS, fix velocity and object topics
   at full rate, keep `rgb/image_rect_color/compressed` - already compressed, so cheaper than
   Kashiwa's raw camera.
-- Ticket 24 resolves the **French development/sealed split** at a natural file boundary:
+- Ticket 24 resolves the **Reims development/sealed split** at a natural file boundary:
   chunks `_0`–`_4` are development (~21m49s, 7 clear left turns plus 2 borderline teaching
   cases); chunks `_5`–`_8` stay sealed (~16m09s, 9 clear left turns).
-- The French stack shares **no topics** with Kashiwa, so it needs its own topic inventory and its
+- The Reims stack shares **no topics** with Kashiwa, so it needs its own topic inventory and its
   own viewer layout. That is real preparation work, not a copy.
 
 ## Update - MEASURED. The size problem was an illusion.
 
-Measured with the `mcap` CLI (`C:\Program Files\MCAP\mcap.exe`, on PATH) against French chunk 0
+Measured with the `mcap` CLI (`C:\Program Files\MCAP\mcap.exe`, on PATH) against Reims chunk 0
 (3.22 GB, 4m21s, 127 102 messages, uncompressed chunks):
 
 | Topic | Bytes | Share |
@@ -151,6 +151,6 @@ Measured with the `mcap` CLI (`C:\Program Files\MCAP\mcap.exe`, on PATH) against
 
 ### Still unmeasured
 
-**Kashiwa has not been measured** - this ratio is from French data. Kashiwa carries *uncompressed*
+**Kashiwa has not been measured** - this ratio is from Reims data. Kashiwa carries *uncompressed*
 `image_raw` plus clustering point clouds, so its signal fraction is likely even smaller, but that
 is inference. Run `mcap du` on one Kashiwa route before fixing the numbers.

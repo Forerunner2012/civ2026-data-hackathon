@@ -194,7 +194,7 @@ def test_inspect_warns_when_golden_path_schema_hash_mismatches(tmp_path: Path) -
 
 def test_inspect_accepts_exact_embedded_golden_path_schema_fixture(tmp_path: Path) -> None:
     bag = tmp_path / "pinned-imu.mcap"
-    fixture = Path(__file__).parent / "fixtures" / "schemas" / "french-imu.ros2msg.b64"
+    fixture = Path(__file__).parent / "fixtures" / "schemas" / "reims-imu.ros2msg.b64"
     schema_data = b64decode(fixture.read_text(encoding="ascii"))
     write_raw_schema_bag(
         bag,

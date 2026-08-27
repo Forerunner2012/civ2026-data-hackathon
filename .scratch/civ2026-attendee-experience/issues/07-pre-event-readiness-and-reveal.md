@@ -47,7 +47,7 @@ That creates a live tension nobody has resolved:
 - Both datasets have to ship **pre-event** for offline safety
   ([04](../../civ2026-challenge-spec/issues/04-target-machine.md),
   [17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)). So a curious
-  participant holds the French bag before the transfer is revealed.
+  participant holds the Reims bag before the transfer is revealed.
 - The transfer is the event's difficulty ([ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
   Its force depends on the participant meeting it as a **comprehension test**, not on the bytes being
   secret.
@@ -63,7 +63,7 @@ Decide:
   and only the *doing* is staged? This is a genuine design choice and it changes the shape of
   [03](03-cadence.md)'s middle hour.
 - **Whether pre-exposure is a fairness problem at all.** Recommendation to test: no. A participant
-  who explores the French bag early has done exactly the investigation the event rewards, and
+  who explores the Reims bag early has done exactly the investigation the event rewards, and
   penalising curiosity in a room of practitioners would be perverse. But say so, rather than leaving
   people to guess whether they are allowed to look.
 
@@ -109,7 +109,7 @@ Chasing non-responders is worth doing once and not worth doing three times.
 
 ### Part 2 — the reveal boundary, which [01](01-pace-car.md) has already decided
 
-The question was whether the French task is revealed at 09:30 or held to the transfer boundary.
+The question was whether the Reims task is revealed at 09:30 or held to the transfer boundary.
 **It cannot be held**, and the reason is structural rather than pedagogical:
 
 [01](01-pace-car.md) and [03](03-cadence.md) put the whole timetable in front of the room — a page
@@ -152,7 +152,7 @@ rather than remembered, and this table is documentation of it rather than the co
 
 ### Exploring the data beforehand is allowed, and say so
 
-A participant who opens the French bag in August has done exactly the investigation the event
+A participant who opens the Reims bag in August has done exactly the investigation the event
 rewards. Penalising that in a room of practitioners would be perverse, it is unenforceable, and it
 converts otherwise dead pre-event time into preparation — which helps §3.4's *80% complete both
 dataset runs* more than any other cheap lever available.
@@ -194,7 +194,7 @@ Load each SSD with, in order of value:
 2. **Both datasets**, signals-only, with checksums.
 3. **The optional image context pack** — 2 TB makes this free to carry, where a download would not be
    ([ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
-   measured signals+images at ~8 GB for the French session).
+   measured signals+images at ~8 GB for the Reims session).
 4. **The static export of [the attendee page](17-attendee-page.md)**, which
    [08](08-room-requirements.md) mandates as the internet-down path.
 5. **[06](06-fallback-and-recovery.md)'s fallback pack.**

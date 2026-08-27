@@ -85,5 +85,5 @@ the event trigger values; they do not introduce dataset-specific decoders or evi
 
 Human-authored CEL cases cover the numeric, boolean, conversion, handedness, and planned resource
 distance expressions used by the two reference paths. Public `civ detect` tests cover EWMA,
-magnitude, dependency ordering, the French binding/handedness boundary, invalid definitions,
+magnitude, dependency ordering, the Reims binding/handedness boundary, invalid definitions,
 cycles, duplicate names, and non-finite behavior.

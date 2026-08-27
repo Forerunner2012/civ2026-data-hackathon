@@ -391,7 +391,7 @@ def test_stable_workflow_artifacts_carry_exactly_their_published_fields(tmp_path
     ("relative", "contract"),
     [
         ("kashiwa/right_turn.yaml", "civ.eventspec/v1"),
-        ("french/left_turn.yaml", "civ.eventspec/v1"),
+        ("reims/left_turn.yaml", "civ.eventspec/v1"),
         ("reims/cave-encounter.yaml", "civ.eventspec/v1"),
         ("reims/cave-zones.json", "civ.point-resource/v1"),
     ],

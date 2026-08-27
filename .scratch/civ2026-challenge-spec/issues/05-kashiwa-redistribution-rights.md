@@ -65,7 +65,7 @@ hackathon, so the data relationship is a direct collaboration with the publishin
 camera topic is cleared. Attribution remains the one live obligation.
 
 Two corrections to this ticket's framing, both verified: the event is in **Miyazaki, Japan**, not
-France (GDPR reaches Heex via its French establishment, not the venue); and the dataset's
+France (GDPR reaches Heex via its Reims establishment, not the venue); and the dataset's
 corresponding author, Manabu Tsukada, is on the CIV 2026 organizing committee — every remaining
 unknown is one email away.
 

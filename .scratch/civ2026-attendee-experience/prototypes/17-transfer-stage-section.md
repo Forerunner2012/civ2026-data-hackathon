@@ -13,7 +13,7 @@ Throwaway artifact for [ticket 17](../issues/17-attendee-page.md). The question 
 **does "reconstructable, not copy-pasteable" survive contact with concrete words?**
 
 The Transfer stage is the hardest case in the day. It spans [03](../issues/03-cadence.md)'s **B4
-(11:00)**, where the Kashiwa solution unlocks, and **B5 (11:25)**, where the French hints do. If the
+(11:00)**, where the Kashiwa solution unlocks, and **B5 (11:25)**, where the Reims hints do. If the
 escalation holds here it holds everywhere.
 
 Placeholders are marked `‹…›` — every number below is derived from data nobody on this map has, and
@@ -33,7 +33,7 @@ must be filled by whoever authors the real page.
 
   IF YOU DON'T
   →  stop improving it anyway. Submit what you have, take the
-     solution below, and open the French data. Ten points are
+     solution below, and open the Reims data. Ten points are
      over there and none of them are here.
 
   ── just unlocked ─────────────────────────────────────────────
@@ -82,7 +82,7 @@ must be filled by whoever authors the real page.
 
 ### ▸ Transfer: what you are looking for
 
-> The French recording is a different vehicle, a different sensor stack, and a different country.
+> The Reims recording is a different vehicle, a different sensor stack, and a different country.
 >
 > There is **no Autoware stack and no vehicle bus** — no `/localization/*`, no `/vehicle/status/*`,
 > no `/perception/object_recognition/*`. What there is: a ZED stereo rig and GNSS.
@@ -107,19 +107,19 @@ must be filled by whoever authors the real page.
   11:25                             submissions close in 65 min
 
   BY NOW YOU SHOULD HAVE
-  →  the French signals identified, and a condition that fires
+  →  the Reims signals identified, and a condition that fires
 
   IF YOU DON'T
   →  the signal equivalents are in the hints below. The
      manoeuvre is yours.
 
   ── just unlocked ─────────────────────────────────────────────
-  ▸ HINT — where the French equivalents live                [open]
+  ▸ HINT — where the Reims equivalents live                [open]
   ▸ TIP — deriving what the stack does not publish           [open]
 ────────────────────────────────────────────────────────────────
 ```
 
-### ▸ HINT — where the French equivalents live
+### ▸ HINT — where the Reims equivalents live
 
 > You are looking for two things and the bag has both, under different names.
 >
@@ -128,7 +128,7 @@ must be filled by whoever authors the real page.
 > - **Forward speed.** There is no wheel encoder and no vehicle bus. There is GNSS, and GNSS gives
 >   you more than position.
 >
-> `civ inspect` on any French development chunk lists every topic and its type. Start there rather
+> `civ inspect` on any Reims development chunk lists every topic and its type. Start there rather
 > than guessing.
 
 ### ▸ TIP — deriving what the stack does not publish

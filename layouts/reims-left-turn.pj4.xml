@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  PlotJuggler layout for the French left-turn reference path.
+  PlotJuggler layout for the Reims left-turn reference path.
   Series names follow the ROS 2 convention <topic>/<field>, matching the topics and
-  fields named by examples/french/left_turn.yaml and docs/quickstart.md.
+  fields named by examples/reims/left_turn.yaml and docs/quickstart.md.
   Load the bag first, then File > Layout > Load Layout.
 -->
 <root>
   <tabbed_widget name="Main Window" parent="main_window">
-    <Tab tab_name="French left turn" containers="1">
+    <Tab tab_name="Reims left turn" containers="1">
       <Container>
         <DockSplitter count="2" orientation="-" sizes="0.6;0.4">
           <DockArea name="Yaw rate (detector signal)">

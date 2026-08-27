@@ -1,11 +1,11 @@
-# What do the bespoke French-city bags add, and when is their drop-dead date?
+# What do the bespoke Reims bags add, and when is their drop-dead date?
 
 Type: grilling
 Status: resolved
 
 ## Question
 
-Ticket 01 made the French-city bags additive-only. This ticket makes "additive" concrete before
+Ticket 01 made the Reims bags additive-only. This ticket makes "additive" concrete before
 effort goes into them.
 
 The rig can collect event-based situations to order: localization, signal behaviour, state
@@ -39,11 +39,11 @@ opposite directions:
 **Against including them in the scored challenge:**
 
 - **The handedness problem is confirmed by the publisher**, who describe URT as "equivalent to
-  unprotected left turns in Europe". France is right-hand traffic, so the French bags hold the
+  unprotected left turns in Europe". France is right-hand traffic, so the Reims bags hold the
   *mirror* manoeuvre. A URT detector written against Kashiwa will not transfer unchanged, and
   neither will the layouts. That breaks the "same detector, more bags" story.
 - **Different personal-data posture.** Kashiwa is a controlled campus with staged actors and a
-  participating publisher (ticket 19). French-city bags are open public roads — uninvolved
+  participating publisher (ticket 19). Reims bags are open public roads — uninvolved
   pedestrians, real plates, real addresses — governed by whatever Heex arranges for its own rig,
   with no CC BY 4.0 umbrella. Solvable, but it is separate work with a different owner.
 
@@ -104,7 +104,7 @@ occurs often enough, a labelling pass, and its own layout and topic inventory.
 
 ## Update - REVERSED after tickets 20, 18 and the transfer grill
 
-**The French-city bags are in the main track, scored as a sealed generalisation test.** This
+**The Reims bags are in the main track, scored as a sealed generalisation test.** This
 overturns the resolution above, which put them out of scope.
 
 **Why.** Ticket 20 established a cohort of 30 experienced practitioners. Ticket 18 deliberately
@@ -125,8 +125,8 @@ threshold fails; one who understood the event adapts. See ticket 18.
 
 **What this costs, all now in scope:**
 
-- A labelling pass on French data. Ticket 24 confirms enough events and fixes the split:
+- A labelling pass on Reims data. Ticket 24 confirms enough events and fixes the split:
   chunks `_0`–`_4` development, `_5`–`_8` sealed with 9 clear left turns.
 - A second evaluator calibration on a different sensor stack - ticket 16.
-- Distribution of a French subset - ticket 17.
+- Distribution of a Reims subset - ticket 17.
 - A topic inventory and viewer layout for the ZED/GNSS stack, which shares nothing with Autoware.

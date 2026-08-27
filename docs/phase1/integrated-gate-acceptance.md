@@ -15,8 +15,8 @@ generated submissions, ledgers, caches or runtime state; only this record enters
   `sha256:122a787d0eb7e1b2c18370e35ef394332db5c11d242bea6f05f2b2911e26b04d`, managed CPython
   3.12.11, dependency volume prepared and mounted read-only.
 - Both authorized sources mounted read-only: the Kashiwa bag from
-  [`kashiwa-acceptance.md`](kashiwa-acceptance.md) and the French chunk from
-  [`french-acceptance.md`](french-acceptance.md).
+  [`kashiwa-acceptance.md`](kashiwa-acceptance.md) and the Reims chunk from
+  [`reims-acceptance.md`](reims-acceptance.md).
 - The two sealed organizer label packs in one read-only directory, one `.json` per dataset. Their
   `source_sha256` values must be distinct and must match the two bags, or `civ score-batch` refuses
   the run before scoring anything.
@@ -33,7 +33,7 @@ Shell variables used below:
 ```sh
 GATE=/out/gate            # the single writable output directory
 KASHIWA=/data/kashiwa.mcap
-FRENCH=/data/french.mcap
+REIMS=/data/reims.mcap
 LABELS=/labels            # read-only organizer packs
 LEDGER=$GATE/intake
 ```
@@ -46,7 +46,7 @@ head -2 /etc/os-release
 python -V
 python -c "import civ_workshop; print(civ_workshop.__version__)"
 python -c "from importlib.metadata import distributions; print('\n'.join(sorted(f'{d.metadata[\"Name\"]}=={d.version}' for d in distributions() if d.metadata[\"Name\"])))"
-sha256sum "$KASHIWA" "$FRENCH" "$LABELS"/*.json
+sha256sum "$KASHIWA" "$REIMS" "$LABELS"/*.json
 ```
 
 | Item | Recorded value |
@@ -59,13 +59,13 @@ sha256sum "$KASHIWA" "$FRENCH" "$LABELS"/*.json
 | `civ-workshop` | 0.1.0 |
 | `mcap` / `mcap-ros2-support` / `PyYAML` / `cel-python` | 1.4.0 / 0.5.7 / 6.0.3 / 0.5.0 |
 | Kashiwa bag bytes and SHA-256 | 7,875,976,476; `b9066692c358bb7aac7bfaa4038dc2f54dc63a02eeb245a014af732a5cc59712` |
-| French chunk bytes and SHA-256 | 3,221,880,955; `0a0817b3afc85796182c77c8dd8d9e5b84b0ee12f28b3b3fa881d3166e3035ca` |
+| Reims chunk bytes and SHA-256 | 3,221,880,955; `0a0817b3afc85796182c77c8dd8d9e5b84b0ee12f28b3b3fa881d3166e3035ca` |
 | Kashiwa label pack SHA-256 | `1ee742010744686c07b552aed2c6192622613f5ff9734ec3160d5286db94f201` |
-| French label pack SHA-256 | `fd745fad80d4d9a143f262077d34bfec4489b169f045d3e56d382f3ff1bcc9b5` |
+| Reims label pack SHA-256 | `fd745fad80d4d9a143f262077d34bfec4489b169f045d3e56d382f3ff1bcc9b5` |
 
 ## Step 2 — Both datasets through the offline command path, twice
 
-Run this for `kashiwa` and again for `french`, with `pass` 1 and 2. Copy the authored `report.md`,
+Run this for `kashiwa` and again for `reims`, with `pass` 1 and 2. Copy the authored `report.md`,
 figure and reproduction entry into `$out` after `civ score` and before `civ report`.
 
 ```sh
@@ -86,27 +86,27 @@ Per command, per dataset, from the `time -v` output:
 | Kashiwa | `civ clip` | 1:29.49 | 87,708 KB | 24,191,533 | 0 | 0 / 0 |
 | Kashiwa | `civ score` | 0:00.99 | 40,592 KB | 270 | 0 | 0 / 0 |
 | Kashiwa | `civ report` | 0:01.80 | 41,252 KB | 156,736 | 0 | 0 / 0 |
-| French | `civ inspect` | 0:26.77 | 47,372 KB | 6,290,048 | 0 | 0 / 0 |
-| French | `civ detect` | 1:05.59 | 49,120 KB | 12,582,788 | 0 | 0 / 0 |
-| French | `civ clip` | 0:24.49 | 66,844 KB | 6,577,773 | 0 | 0 / 0 |
-| French | `civ score` | 0:00.80 | 40,868 KB | 261 | 0 | 0 / 0 |
-| French | `civ report` | 0:00.90 | 41,284 KB | 50,266 | 0 | 0 / 0 |
+| Reims | `civ inspect` | 0:26.77 | 47,372 KB | 6,290,048 | 0 | 0 / 0 |
+| Reims | `civ detect` | 1:05.59 | 49,120 KB | 12,582,788 | 0 | 0 / 0 |
+| Reims | `civ clip` | 0:24.49 | 66,844 KB | 6,577,773 | 0 | 0 / 0 |
+| Reims | `civ score` | 0:00.80 | 40,868 KB | 261 | 0 | 0 / 0 |
+| Reims | `civ report` | 0:00.90 | 41,284 KB | 50,266 | 0 | 0 / 0 |
 
 Every socket cell must read zero. Expected results to confirm against the sealed records: Kashiwa
-TP 2, FP 3, FN 1, F1 0.5, mean IoU 0.644663772045; French TP 1, FP 0, FN 0, F1 1.0, mean IoU
+TP 2, FP 3, FN 1, F1 0.5, mean IoU 0.644663772045; Reims TP 1, FP 0, FN 0, F1 1.0, mean IoU
 0.800631349.
 
 ```sh
 sha256sum "$GATE"/kashiwa-[12]/events.jsonl "$GATE"/kashiwa-[12]/metrics.json "$GATE"/kashiwa-[12]/submission.zip
-sha256sum "$GATE"/french-[12]/events.jsonl "$GATE"/french-[12]/metrics.json "$GATE"/french-[12]/submission.zip
-du -sb "$GATE"/kashiwa-1 "$GATE"/french-1
+sha256sum "$GATE"/reims-[12]/events.jsonl "$GATE"/reims-[12]/metrics.json "$GATE"/reims-[12]/submission.zip
+du -sb "$GATE"/kashiwa-1 "$GATE"/reims-1
 find "$GATE"/kashiwa-1 -type f | wc -l
 ```
 
 | Dataset | `events.jsonl` | `metrics.json` | `submission.zip` | Pass 1 vs pass 2 | Working-dir bytes / files | Bundle bytes |
 |---|---|---|---|---|---|---|
 | Kashiwa | `798d05a6ebc46536d0aa32b0f03911f47e2b72ffd41bb11224a61c895e3490a9` | `846411d0b811930083076f1167b0e573f40074dad84aa6954ff10327364aa22b` | `9fa94542b1c7b6414e233c9775e72d399baa88a7816e6022be750d05a315ac90` | byte-identical | 80,176,612 / 24 | 10,580 |
-| French | `c6d9279151eb46aaed42d71ef835606b8d95e7287379ad2e3a1b16b4cf86f69d` | `8313a56024091c8aa31a48019867b8888dc858ea2478eb6cab14e7372055b0b2` | `c88e13a109d3dcf5fdfc5487e52ccf47a93b24a147e6a28b21824f384825f43b` | byte-identical | 25,607,643 / 20 | 6,032 |
+| Reims | `c6d9279151eb46aaed42d71ef835606b8d95e7287379ad2e3a1b16b4cf86f69d` | `8313a56024091c8aa31a48019867b8888dc858ea2478eb6cab14e7372055b0b2` | `c88e13a109d3dcf5fdfc5487e52ccf47a93b24a147e6a28b21824f384825f43b` | byte-identical | 25,607,643 / 20 | 6,032 |
 
 ## Step 3 — Attendee page traversal
 
@@ -194,7 +194,7 @@ for i in $(seq 1 15); do
 done
 ```
 
-Repeat for `french-1` with `gate-french-%02d`, using `seq 1 14`; the exact-cutoff identity below is
+Repeat for `reims-1` with `gate-reims-%02d`, using `seq 1 14`; the exact-cutoff identity below is
 the thirtieth scoreable identity. Then add the boundary cases, each with a distinct delivery id and
 a fresh bundle built the same way:
 
@@ -217,7 +217,7 @@ cat "$GATE/results/performance.json"
 | Item | Recorded value |
 |---|---|
 | `entries` / `counts` | 32 terminal entries; 30 scored, 2 quarantined, 0 invalid, 0 failed |
-| Scored per dataset | Kashiwa 15; French-Reims 15 |
+| Scored per dataset | Kashiwa 15; Reims 15 |
 | `receipts` totals | 33 total; 31 on-time including the resubmission; 2 late |
 | Wall time and peak RSS from `time -v` | 3.43 s; 42,808 KB |
 | Socket messages sent / received | 0 / 0 |
@@ -276,7 +276,7 @@ claim that nothing went wrong; leave it empty only if that is true.
 |---|---|---|---|
 | 1 | Host, container identity, dependency versions, input provenance recorded | PASS | Step 1 |
 | 2 | Kashiwa completes the offline command path | PASS | Step 2 |
-| 3 | French completes the unchanged path with permitted differences only | PASS | Step 2 |
+| 3 | Reims completes the unchanged path with permitted differences only | PASS | Step 2 |
 | 4 | Repeats are byte-identical with stable submission hashes | PASS | Step 2 |
 | 5 | Both runs record time, memory, I/O, disk use and bundle size | PASS | Step 2 |
 | 6 | Page traverses every state, accepts a coach advance, exposes no relock or solution | PASS | Step 3 |

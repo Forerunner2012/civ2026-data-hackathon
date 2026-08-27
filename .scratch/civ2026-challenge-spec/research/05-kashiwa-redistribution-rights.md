@@ -361,7 +361,7 @@ Two relevant data points, both context rather than commitment:
   licensing. No licence is stated for it.
 
 Separately, and cross-referencing [ticket 14](../issues/14-bespoke-collection-scope.md): the
-**French-city bespoke bags are not UTokyo material at all**. They carry no relationship to CC BY
+**Reims bespoke bags are not UTokyo material at all**. They carry no relationship to CC BY
 4.0 and are governed by whatever Heex agrees with its own rig, sites and any filmed third
 parties. Those bags are collected on **open public roads in France**, which is a materially
 worse personal-data posture than a controlled campus — uninvolved pedestrians, real plates, real
@@ -378,7 +378,7 @@ collected under completely different conditions.
 | 4 | Whether Heex is controller or processor for the redistributed subset, and what GDPR Art. 3(1) requires of it | **Heex counsel / DPO** | Medium. Waits on 3. |
 | 5 | Written confirmation of CC BY 4.0 covering the camera imagery specifically, and comfort with an event supported by a commercial sponsor | **T-Lab** | Medium. Cheap insurance against the `NOASSERTION`/template-placeholder sloppiness and the "research community" wording. |
 | 6 | Whether future ROS 2 / PX4 data from T-Lab will carry the same licence | **T-Lab** | Low for the freeze — ticket 01 already made Kashiwa the only dependency. |
-| 7 | Licensing and personal-data posture of the French-city bespoke bags | **Heex, internally** | Per ticket 14's drop-dead date. |
+| 7 | Licensing and personal-data posture of the Reims bespoke bags | **Heex, internally** | Per ticket 14's drop-dead date. |
 
 Items 1, 2, 5 and 6 are a single email to the dataset's corresponding author, **who is also the
 CIV 2026 local host**. Send it before the frame inspection so the two run in parallel.

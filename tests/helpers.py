@@ -179,7 +179,7 @@ def write_ros2_steering_bag(path: Path) -> None:
         writer.finish()
 
 
-def write_ros2_french_turn_bag(path: Path) -> None:
+def write_ros2_reims_turn_bag(path: Path) -> None:
     imu_schema_text = """\
 geometry_msgs/Vector3 angular_velocity
 ================================================================================

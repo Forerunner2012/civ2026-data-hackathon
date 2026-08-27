@@ -116,13 +116,13 @@ calibration data to lean on, so the internal mini-hackathon is where they get co
 Ticket 14's reversal means the evaluator scores transfer as well as detection.
 
 The matching semantics above are unchanged and apply to both datasets: temporal IoU, one-to-one
-best match, F1. What does not carry over is the **calibration**. The French recording comes from a
+best match, F1. What does not carry over is the **calibration**. The Reims recording comes from a
 ZED IMU rather than Autoware localization, at different rates and with different noise
 characteristics, on a continuous urban drive rather than staged campus routes. A tolerance tuned
 on Kashiwa should not be assumed to hold - run the four-detector ranking check separately on each
 set.
 
-**Open sub-question this raises:** how the 100 points divide between Kashiwa detection and French
+**Open sub-question this raises:** how the 100 points divide between Kashiwa detection and Reims
 transfer. If transfer is where the difficulty now lives (ticket 20), the current 25-point
 Detection category understates it, but loading too much onto transfer punishes anyone who stalls
 on the second dataset. Belongs with the rubric rework in ticket 21.

@@ -5,7 +5,7 @@ Status: resolved
 
 ## Question
 
-Proposed extra track on the French-city recording, using **localisation rather than kinematics**:
+Proposed extra track on the Reims recording, using **localisation rather than kinematics**:
 detect every occurrence of the vehicle passing in front of a champagne cave.
 
 The chain:
@@ -140,7 +140,7 @@ came from. That is also precisely what ticket 12 asks an agent trace to demonstr
 
 ## Update - measured GNSS characteristics
 
-From `mcap info` on the French recording:
+From `mcap info` on the Reims recording:
 
 - **`/fix` (NavSatFix) is 4 Hz**, and `/fix_velocity` likewise. At 50 km/h that is ~3.5 m of travel
   between fixes; at 30 km/h, ~2 m.

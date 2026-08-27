@@ -239,8 +239,8 @@ That pairs a logistics question with a design question, and they are the same qu
 a participant hold before the day, and what is revealed on the day?*
 
 Note the live tension worth naming in the ticket: both datasets have to ship pre-event for offline
-safety (tickets 04, 17), which means a curious participant holds the French bag before the transfer
-is revealed. Signals-only French is ~350 MB, so in-room distribution is *technically* possible over
+safety (tickets 04, 17), which means a curious participant holds the Reims bag before the transfer
+is revealed. Signals-only Reims is ~350 MB, so in-room distribution is *technically* possible over
 LAN — but that trades the offline guarantee for a surprise, and the surprise is weak anyway, since
 the bytes do not carry the framing.
 
@@ -274,7 +274,7 @@ LAN, seating that lets coaches circulate, and where the organizer runner machine
 ### Q12. Is the language of the room a question nobody has asked?
 
 Yes, and I think it is a real gap. CIV 2026 is in **Miyazaki**; T-Lab participates; the cohort is 30
-international practitioners; the dataset is Japanese and the transfer dataset is French. Map one
+international practitioners; the dataset is Japanese and the transfer dataset is Reims. Map one
 settled cohort and skill floor (ticket 20) and never touched language.
 
 This is not cosmetic at this cohort size. It decides: the language of the brief and the cheat sheet,

@@ -30,7 +30,7 @@ enter the submission.** So placement and scoring are one decision, not two.
 
 | | Placement | For | Against |
 |---|---|---|---|
-| **A** | Inside 09:30–12:30, optional branch after the French detector works | Stays scorable under the existing bonus, no new mechanism | The ladder has six stages and no slack. A 45-minute optional module inside 180 minutes is a schedule fantasy for all but one or two duos — and it becomes a **trap** for anyone chasing bonus who then misses 12:30. Also forces [03](03-cadence.md) to plan for two populations |
+| **A** | Inside 09:30–12:30, optional branch after the Reims detector works | Stays scorable under the existing bonus, no new mechanism | The ladder has six stages and no slack. A 45-minute optional module inside 180 minutes is a schedule fantasy for all but one or two duos — and it becomes a **trap** for anyone chasing bonus who then misses 12:30. Also forces [03](03-cadence.md) to plan for two populations |
 | **B** | In the two-hour lunch, organizer-led hands-on clinic | Costs nothing that is at risk; fixes a real gap — ticket 21 solved the *jury's* two hours and left the *participant's* as dead time; and it finally gives ticket 09 the **organizer demo** it always assumed existed, with the audience already in the room | Unscored, because submissions are closed. Asking people to work through lunch at a conference; attendance is uncertain; some will leave the venue |
 | **C** | A separate slot in the conference week | Cleanest | Does not exist in the published programme, and creating one is not this map's gift |
 | **D** | Pre-event, self-serve | Zero session cost | Leaks the `resources:` seam and half the toolchain before the day, and a self-serve tutorial is exactly the thing nobody does |

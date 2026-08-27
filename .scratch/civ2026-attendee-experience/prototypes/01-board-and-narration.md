@@ -77,7 +77,7 @@ The hardest board of the day.
 │                                                              │
 │   IF YOU DON'T                                               │
 │   →  stop improving it anyway. Submit what you have,         │
-│      then open the French data. Ten points are over there.   │
+│      then open the Reims data. Ten points are over there.   │
 │                                                              │
 │   RABBIT IS AT   still on Kashiwa — one failure to look at   │
 └──────────────────────────────────────────────────────────────┘

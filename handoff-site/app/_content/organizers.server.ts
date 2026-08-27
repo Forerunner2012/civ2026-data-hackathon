@@ -24,12 +24,12 @@ export const planning = {
   },
   tactics: {
     eyebrow: "How the challenge creates learning",
-    title: "One ladder: Kashiwa warm-up → French transfer → optional extension.",
+    title: "One ladder: Kashiwa warm-up → Reims transfer → optional extension.",
     summary:
       "Kashiwa teaches the prepared path. France reveals whether participants understood the event rather than copied a threshold.",
     steps: [
       ["01", "Shape the challenge", "Start with an incomplete incident report; require detector, evidence, limits, transfer and operational response."],
-      ["02", "Set the cadence", "Observe, formalize and scale Kashiwa; transfer to French IMU/GNSS; challenge a failure; submit by 12:30."],
+      ["02", "Set the cadence", "Observe, formalize and scale Kashiwa; transfer to Reims IMU/GNSS; challenge a failure; submit by 12:30."],
       ["03", "Make proof the contract", "Machine-score 55 points; jury-score 45 from a capped report; never grade prompt style."],
       ["04", "Extend through seams", "External resources plug in through resources:; custom computation stays behind the reserved detector: seam."],
     ],
@@ -41,7 +41,7 @@ export const planning = {
       "Build only what carries an attendee from both datasets to a scored evidence package and a one-page argument.",
     steps: [
       ["P0", "Contract", "Scenario, rights, cohort, skill floor, publication, judging and licence posture approved."],
-      ["P1", "Vertical slice", "Kashiwa and French each complete inspect → detector → batch → clip → score offline."],
+      ["P1", "Vertical slice", "Kashiwa and Reims each complete inspect → detector → batch → clip → score offline."],
       ["P2", "Golden path", "EventSpec seams, CLI, exact schemas, runtime candidates and quickstart frozen."],
       ["P3", "Data + score", "Both dev/sealed splits labelled and the 15/10 rank test passed."],
       ["P4", "Experience", "Public participant site, two-stack fallback, report/jury pack and layouts packaged."],
@@ -78,7 +78,7 @@ export const phases: { id: string; title: string; work: string; gate: string }[]
   {
     id: "P1",
     title: "Prove the organizer vertical slice",
-    work: "Run Kashiwa and one French chunk through inspect → PlotJuggler → EventSpec → batch → events.jsonl → evidence clip → score → report. Measure time, RAM, disk and offline behaviour.",
+    work: "Run Kashiwa and one Reims chunk through inspect → PlotJuggler → EventSpec → batch → events.jsonl → evidence clip → score → report. Measure time, RAM, disk and offline behaviour.",
     gate: "Both sensor stacks complete on the minimum machine without Internet.",
   },
   {
@@ -90,7 +90,7 @@ export const phases: { id: string; title: string; work: string; gate: string }[]
   {
     id: "P3",
     title: "Build data and evaluation",
-    work: "Cut Kashiwa 1+7+8 and French five-chunk/four-chunk splits, finish labels, apply temporal IoU matching, rank deliberate detectors on both sets and test 30-entry scoring.",
+    work: "Cut Kashiwa 1+7+8 and Reims five-chunk/four-chunk splits, finish labels, apply temporal IoU matching, rank deliberate detectors on both sets and test 30-entry scoring.",
     gate: "Scoring separates plausible solutions without one magic threshold or manual repair.",
   },
   {
@@ -108,7 +108,7 @@ export const phases: { id: string; title: string; work: string; gate: string }[]
 ];
 
 export const readiness: { name: string; status: string; detail: string }[] = [
-  { name: "Data", status: "SUBSET + LABEL", detail: "Kashiwa 1+7+8 and French five/four splits are decided. Measure Kashiwa bytes, cut packages and turn planning intervals into reviewed labels." },
+  { name: "Data", status: "SUBSET + LABEL", detail: "Kashiwa 1+7+8 and Reims five/four splits are decided. Measure Kashiwa bytes, cut packages and turn planning intervals into reviewed labels." },
   { name: "Contracts", status: "DRAFT → FREEZE", detail: "EventSpec + CEL, timing, evidence, derive, resources, min_distance_to, event JSONL and run manifest." },
   { name: "Runner", status: "BUILD", detail: "doctor, inspect, sample, detect, clip, score and report; two stacks, dry-run and actionable errors." },
   { name: "Views", status: "PIN + AUDIT", detail: "PlotJuggler 3.999.3 beta2 required; Lichtblick ships only if its exact artifact passes audit." },
@@ -121,9 +121,9 @@ export const readiness: { name: string; status: string; detail: string }[] = [
 /** Evaluation mechanics that must stay out of participant-facing material. */
 export const evaluationDesign = [
   "Sealed ground truth stays out of every distributed artifact",
-  "Kashiwa scores 15 Detection points and French 10, provisional until the two-set rank test",
+  "Kashiwa scores 15 Detection points and Reims 10, provisional until the two-set rank test",
   "Temporal IoU ≥ 0.5, one-to-one best match and F1; extra overlaps are false positives",
-  "French sealed labels cover nine clear junction-left manoeuvres in chunks _5–_8",
+  "Reims sealed labels cover nine clear junction-left manoeuvres in chunks _5–_8",
   "Development output validates format and basic metrics — never the sealed result",
   "At 12:30, 55 points run unattended; the jury assigns 45 from capped reports over lunch",
   "Roughly four walkthroughs include the most instructive failure and do not alter ranking",
@@ -154,13 +154,13 @@ export type Decision = { ticket: string; group: string; title: string; answer: s
 
 /** All 25 wayfinder tickets, resolved 30 July 2026. */
 export const decisionsMade: Decision[] = [
-  { ticket: "01", group: "Challenge", title: "Dataset", answer: "URT-Kashiwa is the hero dataset; the French recording is the scored transfer test." },
+  { ticket: "01", group: "Challenge", title: "Dataset", answer: "URT-Kashiwa is the hero dataset; the Reims recording is the scored transfer test." },
   { ticket: "02", group: "Challenge", title: "Scenario", answer: "Unprotected right turns anchor Kashiwa; creativity lies in executable capture and transfer." },
   { ticket: "18", group: "Challenge", title: "Event definition", answer: "Sealed labels mark the right-turn manoeuvre interval in Kashiwa and the left-turn interval in France.", caveat: "Unprotected is context, not something the detector proves." },
   { ticket: "03", group: "Challenge", title: "Scoring basis", answer: "Sealed labels score the target turn; other event types remain a qualitative bonus." },
   { ticket: "08", group: "Challenge", title: "Programme", answer: "Thu 3 Sep, 09:30–12:30; results 14:30–15:00 after lunch." },
   { ticket: "20", group: "Challenge", title: "Cohort and publication", answer: "Thirty experienced practitioners work solo or in duos; CLI, content and public site ship permissively." },
-  { ticket: "21", group: "Challenge", title: "Judging", answer: "At 12:30, 55 points auto-score; jury reads one-page reports for 45 over lunch; results reveal plus about four walkthroughs.", caveat: "Detection starts 15 Kashiwa / 10 French and may move only after internal rank testing." },
+  { ticket: "21", group: "Challenge", title: "Judging", answer: "At 12:30, 55 points auto-score; jury reads one-page reports for 45 over lunch; results reveal plus about four walkthroughs.", caveat: "Detection starts 15 Kashiwa / 10 Reims and may move only after internal rank testing." },
 
   { ticket: "09", group: "Toolchain", title: "Detector surface", answer: "CEL + timing + evidence is the pass mark; derive is the reach; detector: reserves Python/conflict geometry." },
   { ticket: "13", group: "Toolchain", title: "CLI name", answer: "civ." },
@@ -174,12 +174,12 @@ export const decisionsMade: Decision[] = [
   { ticket: "05", group: "Data & evaluation", title: "Kashiwa rights", answer: "CC BY 4.0 permits subsets and permanent offline copies; attribution is required." },
   { ticket: "19", group: "Data & evaluation", title: "Camera imagery", answer: "Cleared through T-Lab participation." },
   { ticket: "17", group: "Data & evaluation", title: "Kashiwa distribution", answer: "One warm-up + seven dev + eight sealed; drop point clouds/map, retain full-rate detector signals and tested camera evidence.", caveat: "Kashiwa per-topic bytes remain to measure." },
-  { ticket: "24", group: "Data & evaluation", title: "French survey", answer: "Sixteen clear left turns; chunks _0–_4 dev and _5–_8 sealed. Full-session detector signals are about 350 MB.", caveat: "Reims GNSS supports two 40 m cave encounters." },
+  { ticket: "24", group: "Data & evaluation", title: "Reims survey", answer: "Sixteen clear left turns; chunks _0–_4 dev and _5–_8 sealed. Full-session detector signals are about 350 MB.", caveat: "Reims GNSS supports two 40 m cave encounters." },
   { ticket: "16", group: "Data & evaluation", title: "Evaluator", answer: "Temporal IoU ≥ 0.5, one-to-one best match and F1; extra overlapping predictions are false positives." },
 
   { ticket: "07", group: "Process", title: "Clean-room boundary", answer: "Independent functional reimplementation around the prior stack and vocabulary, not the domain logic." },
   { ticket: "15", group: "Process", title: "AI build gates", answer: "Gate by failure visibility × cost; human-authored Tier A assertions; cut anything missing its gate." },
-  { ticket: "14", group: "Process", title: "French-city bags", answer: "Reversed into the main track as the scored generalisation test across sensor stacks and handedness." },
+  { ticket: "14", group: "Process", title: "Reims bags", answer: "Reversed into the main track as the scored generalisation test across sensor stacks and handedness." },
   { ticket: "06", group: "Process", title: "Previous solution", answer: "Logic and workflow extracted; the historical stack and terminology left behind." },
   { ticket: "22", group: "Process", title: "Public organizer gate", answer: "Production builds contain only the participant app; /organizers and its content exist only in local development." },
 ];
@@ -194,9 +194,9 @@ export const eventFacts = {
 };
 
 export const blockers = [
-  { title: "Mirror and cut the datasets", detail: "Mirror 16 Kashiwa MCAPs, measure its per-topic bytes, then cut Kashiwa 1+7+8 and French five/four packages with manifests." },
-  { title: "Prove the two-stack vertical slice", detail: "Run inspect → EventSpec → detect → clip → score → report offline on the minimum machine for Kashiwa and French." },
-  { title: "Finish labels and rank testing", detail: "Review Kashiwa and French sealed intervals, rank deliberate detectors across both sets and tune 15/10 only if evidence requires it." },
+  { title: "Mirror and cut the datasets", detail: "Mirror 16 Kashiwa MCAPs, measure its per-topic bytes, then cut Kashiwa 1+7+8 and Reims five/four packages with manifests." },
+  { title: "Prove the two-stack vertical slice", detail: "Run inspect → EventSpec → detect → clip → score → report offline on the minimum machine for Kashiwa and Reims." },
+  { title: "Finish labels and rank testing", detail: "Review Kashiwa and Reims sealed intervals, rank deliberate detectors across both sets and tune 15/10 only if evidence requires it." },
   { title: "Freeze exact artifacts", detail: "Pin Humble base digest, viewer assets, MCAP/Polars/CEL hashes and schema-matching custom-message commits." },
   { title: "Prove judging throughput", detail: "Accept and auto-score 15–30 submissions, split the capped reports, and rehearse the reveal plus four walkthroughs." },
   { title: "Pass the release-compliance gate", detail: "Generate built-image SBOM/notices, archive exact MPL source and review unknown, GPL/LGPL and relinking/source findings." },
@@ -208,5 +208,5 @@ export const sources = [
   "exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md — rule ladder and proof contract",
   ".scratch/civ2026-challenge-spec/map.md — complete 25-ticket decision map",
   ".scratch/civ2026-challenge-spec/research/23-tool-licence-audit.md — primary-source licence and release audit",
-  ".scratch/civ2026-challenge-spec/research/survey_french_bag.py + ticket 24 — measured French manoeuvre, GNSS and zone evidence",
+  ".scratch/civ2026-challenge-spec/research/survey_reims_bag.py + ticket 24 — measured Reims manoeuvre, GNSS and zone evidence",
 ];

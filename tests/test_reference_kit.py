@@ -12,8 +12,8 @@ QUICKSTART = REPOSITORY / "docs" / "quickstart.md"
 PARTICIPANT_COMMANDS = {"doctor", "inspect", "sample", "detect", "clip", "score", "report"}
 ORGANIZER_COMMANDS = ("intake-form", "intake-tally", "intake-local", "score-batch")
 REFERENCE_PATHS = [
-    ("layouts/kashiwa-right-turn.xml", "examples/kashiwa/right_turn.yaml"),
-    ("layouts/french-left-turn.xml", "examples/french/left_turn.yaml"),
+    ("layouts/kashiwa-right-turn.pj4.xml", "examples/kashiwa/right_turn.yaml"),
+    ("layouts/reims-left-turn.pj4.xml", "examples/reims/left_turn.yaml"),
 ]
 
 
@@ -25,7 +25,7 @@ def _curves(layout: Path) -> list[str]:
 def _spec_topics(spec_path: Path) -> tuple[dict[str, set[str]], set[str]]:
     """Return the fields bound per signal topic and every topic the spec names.
 
-    A topic can carry several bindings: the French path reads three components off
+    A topic can carry several bindings: the Reims path reads three components off
     /fix_velocity.
     """
 

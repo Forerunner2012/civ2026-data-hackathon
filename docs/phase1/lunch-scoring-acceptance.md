@@ -12,7 +12,7 @@ civ score-batch --ledger D:\civ-intake --labels D:\civ-labels --output D:\civ-re
 The batch reads only the authoritative last-on-time bundle per identity, exactly as the intake
 contract selects it. Late responses stay quarantined and cannot enter ranking, and a superseded
 on-time bundle is never scored. Organizer label packs are supplied separately through `--labels`;
-each pack is matched to a submission by its `source_sha256`, so Kashiwa and French entries are
+each pack is matched to a submission by its `source_sha256`, so Kashiwa and Reims entries are
 scored through the same evaluator interface and the same temporal-matching semantics proven by the
 earlier slices. Two packs declaring the same source, an unreadable pack or an empty label directory
 abort the run before any entry is scored, which keeps organizer paths out of per-entry diagnostics.
@@ -70,7 +70,7 @@ Windows proof host (Microsoft Windows 11 Pro, 10.0.26200, CPython 3.12): the 30-
 validated and scored in 0.86 s total, 0.067 s for the slowest entry, 1,145,294 bytes peak traced
 memory, 86,868 bytes of input bundles and 23,075 bytes of results. Real metadata bundles are the
 same order of magnitude as the generated ones — 10,596 bytes for Kashiwa and 6,055 bytes for
-French — so the 45-minute lunch budget has roughly three orders of magnitude of headroom. Scoring is
+Reims — so the 45-minute lunch budget has roughly three orders of magnitude of headroom. Scoring is
 sequential on purpose; there is no parallelism to tune until a measurement demands it.
 
 ## Routed follow-up

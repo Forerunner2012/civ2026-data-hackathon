@@ -8,7 +8,7 @@ Blocked by: 03, 05, 07, 15
 
 Phase 4 of `HACKATHON-HANDOFF.md` lists the attendee kit as a shopping list:
 
-> prepare Kashiwa and French layouts, warm-up, brief, cheat sheet, submission template and fixed
+> prepare Kashiwa and Reims layouts, warm-up, brief, cheat sheet, submission template and fixed
 > one-page report template
 
 A list of nouns is not something an owner can build. This ticket turns it into an inventory where

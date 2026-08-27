@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-r"""Stream the French MCAP recording and reproduce ticket 24's measurements.
+r"""Stream the Reims MCAP recording and reproduce ticket 24's measurements.
 
 Run without creating a project environment:
 
     uv run --no-project --with mcap==1.4.0 --with mcap-ros2-support==0.5.7 -- \
-      python .scratch/civ2026-challenge-spec/research/survey_french_bag.py \
+      python .scratch/civ2026-challenge-spec/research/survey_reims_bag.py \
       "D:\Bags\Data Hackathon\2025-07-30 Recording sessions" \
-      --output "$env:TEMP\civ2026-french-bag-survey.json"
+      --output "$env:TEMP\civ2026-reims-bag-survey.json"
 """
 
 from __future__ import annotations

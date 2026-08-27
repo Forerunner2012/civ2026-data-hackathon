@@ -141,6 +141,6 @@ representative of a native Linux disk.
   positives and the broad third prediction demonstrate why interval boundaries remain a scored
   participant decision. They do not invalidate the public workflow proof.
 - GitHub issue #12 records the completed ROS 2 Lyrical/Ubuntu 26.04 rehearsal and deterministic
-  minimum-version floors that gate French transfer and attendee release.
+  minimum-version floors that gate Reims transfer and attendee release.
 - GitHub issue #13 owns the later Tier IV `ros2idl` investigation with the organizer's external,
   pinned-source setup notes.

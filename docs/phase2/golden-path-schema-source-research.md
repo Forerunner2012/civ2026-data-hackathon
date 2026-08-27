@@ -8,7 +8,7 @@ Recorded: 2026-08-26
 
 The Kashiwa detector's `pix_hooke_driver_msgs/msg/V2aSteerStaFb` is a custom Pixmoving
 interface with a supportable upstream repository, immutable organizer pin, and Apache-2.0
-licence. The French detector's `sensor_msgs/msg/Imu` and
+licence. The Reims detector's `sensor_msgs/msg/Imu` and
 `geometry_msgs/msg/TwistWithCovarianceStamped` are standard ROS 2 interfaces from
 `ros2/common_interfaces`; they are not ZED-owned custom messages and need no separate ZED
 schema pin.
@@ -17,15 +17,15 @@ schema pin.
 
 The exact recording identities come from the authorized sources already sealed in the
 [Kashiwa](../phase1/kashiwa-acceptance.md) and
-[French](../phase1/french-acceptance.md) acceptance records. On 2026-08-26, an index-only MCAP
+[Reims](../phase1/reims-acceptance.md) acceptance records. On 2026-08-26, an index-only MCAP
 summary read mapped each selected channel to its embedded schema and hashed the schema bytes
 without iterating message payloads. `civ inspect` uses the same byte hash and field discovery.
 
 | Dataset and topic | Embedded schema identity and SHA-256 | Discoverable fields | Source and licence | Verification |
 |---|---|---|---|---|
 | Kashiwa `/pix_hooke/v2a_steerstafb` | `pix_hooke_driver_msgs/msg/V2aSteerStaFb`, `ros2msg`, `4c3724cf5ee83ef9cbd127585519e80c7828341fcd626d4d588d22d406918eea` | `header.frame_id`, `header.stamp.{nanosec,sec}`, `vcu_chassis_steer_en_sta`, `vcu_chassis_steer_slopover`, `vcu_chassis_steer_work_mode`, `vcu_chassis_steer_mode_fb`, `vcu_chassis_steer_angle_fb`, `vcu_chassis_steer_angle_rear_fb`, `vcu_chassis_steer_angle_speed_fb`; the detector selects `vcu_chassis_steer_angle_fb` | `pixmoving-moveit/pix_driver@9feb55bd14f7bdf9c2e84acd05e0aced79e11df1`, Apache-2.0 | Exact embedded bytes are enforced by topic/name/encoding/hash; root declaration and units agree with the pinned source |
-| French `/zed/zed_node/imu/data` | `sensor_msgs/msg/Imu`, `ros2msg`, `244d9e9566de33e36bf560d79a41a17d1a1b44c49bdaf2bd809aa7efb1389334` | `header.frame_id`, `header.stamp.{nanosec,sec}`, `orientation_covariance`, `angular_velocity.{x,y,z}`, `angular_velocity_covariance`, `linear_acceleration.{x,y,z}`, `linear_acceleration_covariance`; the detector selects `angular_velocity.z` | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639`, Apache-2.0 | Exact concatenated embedded bytes are enforced; a checked-in base64 fixture proves the accepted public-inspection path |
-| French `/fix_velocity` | `geometry_msgs/msg/TwistWithCovarianceStamped`, `ros2msg`, `d2905f17c4de4e92d693447c2d64ce2b70f916cee14318bce69c1969f71121fd` | `header.frame_id`, `header.stamp.{nanosec,sec}`, `twist.covariance`, `twist.twist.angular.{x,y,z}`, `twist.twist.linear.{x,y,z}`; the detector selects all three linear components | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639`, Apache-2.0 | Exact embedded bytes are enforced; root and transitive standard definitions agree with the canonical source |
+| Reims `/zed/zed_node/imu/data` | `sensor_msgs/msg/Imu`, `ros2msg`, `244d9e9566de33e36bf560d79a41a17d1a1b44c49bdaf2bd809aa7efb1389334` | `header.frame_id`, `header.stamp.{nanosec,sec}`, `orientation_covariance`, `angular_velocity.{x,y,z}`, `angular_velocity_covariance`, `linear_acceleration.{x,y,z}`, `linear_acceleration_covariance`; the detector selects `angular_velocity.z` | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639`, Apache-2.0 | Exact concatenated embedded bytes are enforced; a checked-in base64 fixture proves the accepted public-inspection path |
+| Reims `/fix_velocity` | `geometry_msgs/msg/TwistWithCovarianceStamped`, `ros2msg`, `d2905f17c4de4e92d693447c2d64ce2b70f916cee14318bce69c1969f71121fd` | `header.frame_id`, `header.stamp.{nanosec,sec}`, `twist.covariance`, `twist.twist.angular.{x,y,z}`, `twist.twist.linear.{x,y,z}`; the detector selects all three linear components | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639`, Apache-2.0 | Exact embedded bytes are enforced; root and transitive standard definitions agree with the canonical source |
 
 These are the only schemas needed to discover and decode the reference detector signals.
 Evidence-only topics remain copied as opaque MCAP records by `civ clip`; they do not add decoder or
@@ -64,7 +64,7 @@ This provenance establishes an exact, licensed upstream source for the accepted 
 not establish that commit `9feb55b...` was checked out on the Kashiwa recorder; the embedded
 schema bytes and their recorded SHA-256 remain authoritative for that claim.
 
-## French transfer: standard ROS interfaces
+## Reims transfer: standard ROS interfaces
 
 Both detector inputs are owned by the canonical ROS 2
 [`ros2/common_interfaces`](https://github.com/ros2/common_interfaces) repository:
@@ -77,7 +77,7 @@ Both detector inputs are owned by the canonical ROS 2
 
 Commit
 [`0ecd0f70791fe200f057b12bfc626beb21bad639`](https://github.com/ros2/common_interfaces/commit/0ecd0f70791fe200f057b12bfc626beb21bad639)
-is tag `4.9.0`, a reproducible Humble-era source revision from before the 2025-07-31 French
+is tag `4.9.0`, a reproducible Humble-era source revision from before the 2025-07-31 Reims
 recording. The official ROS release repository also has package-specific Humble release tags for
 [`sensor_msgs 4.9.0-1`](https://github.com/ros2-gbp/common_interfaces-release/tree/release/humble/sensor_msgs/4.9.0-1)
 and
@@ -99,7 +99,7 @@ lists `common_interfaces`, including `geometry_msgs` and `sensor_msgs`, from the
 branch. A kit registry may therefore describe these as standard ROS sources rather than custom
 ZED assets.
 
-There is no evidence in the repository that either French type has a custom schema fork or that
+There is no evidence in the repository that either Reims type has a custom schema fork or that
 the recording used a particular ZED wrapper commit. In particular, `/fix_velocity` is the GNSS
 velocity input in the acceptance record, not a ZED-owned type. A ZED wrapper pin would add
 unsupported provenance and should not be placed in the schema registry unless external recording
@@ -115,8 +115,8 @@ byte-equivalent to the concatenated schema payload embedded in MCAP.
 | Dataset | Type | Repository pin | Licence | Confidence boundary |
 |---|---|---|---|---|
 | Kashiwa | `pix_hooke_driver_msgs/msg/V2aSteerStaFb` | `pixmoving-moveit/pix_driver@9feb55bd14f7bdf9c2e84acd05e0aced79e11df1`; last schema change `54c987b238bb1bdc53ff45d832eeef5267ff9095` | Apache-2.0 | Exact upstream schema and organizer pin; producer checkout unproven |
-| French | `sensor_msgs/msg/Imu` | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639` (`4.9.0`) | Apache-2.0 | Canonical pre-recording Humble source; producer package version unproven |
-| French | `geometry_msgs/msg/TwistWithCovarianceStamped` | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639` (`4.9.0`) | Apache-2.0 | Canonical pre-recording Humble source; producer package version unproven |
+| Reims | `sensor_msgs/msg/Imu` | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639` (`4.9.0`) | Apache-2.0 | Canonical pre-recording Humble source; producer package version unproven |
+| Reims | `geometry_msgs/msg/TwistWithCovarianceStamped` | `ros2/common_interfaces@0ecd0f70791fe200f057b12bfc626beb21bad639` (`4.9.0`) | Apache-2.0 | Canonical pre-recording Humble source; producer package version unproven |
 
 The registry should separately record the embedded schema SHA-256 observed in each authorized
 MCAP. That hash answers whether kit bytes match the recording; the repository pin answers where

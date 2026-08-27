@@ -139,7 +139,7 @@ Nobody should learn they are the failure exhibit in a corridor at 14:20.
 *What the scores showed* is the interesting half of the reveal and had no owner. It is prepared
 between ~13:30 and 14:30 by the organizer, from data the machine scorer must be **built to produce**:
 
-- distribution of Kashiwa vs French Detection — expected to be a near-ceiling category against a
+- distribution of Kashiwa vs Reims Detection — expected to be a near-ceiling category against a
   spread one, per [17](17-attendee-page.md);
 - which signals and fields entries chose, and how many converged on the same ones;
 - how much the transfer moved the ranking relative to Kashiwa alone;

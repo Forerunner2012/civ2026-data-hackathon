@@ -1,4 +1,4 @@
-# French Phase 1 transfer acceptance record
+# Reims Phase 1 transfer acceptance record
 
 Status: **complete — the unchanged Phase 1 contracts transfer to the representative Reims chunk**
 
@@ -18,7 +18,7 @@ Recorded: 2026-08-06
 
 The source, descriptor, diagnostic frames, organizer label, evidence clip, submission bundle, and
 all runtime output remained outside the repository. Final outputs were written to
-`%LOCALAPPDATA%\Temp\civ-phase1-french-lyrical-final-v2`.
+`%LOCALAPPDATA%\Temp\civ-phase1-reims-lyrical-final-v2`.
 
 ## Inspection and signal choice
 
@@ -33,9 +33,9 @@ contract used for Kashiwa. Every schema is embedded `ros2msg`; inspection report
 | `/zed/zed_node/obj_det/objects` | `zed_msgs/msg/ObjectsStamped` | 5,008 | 19.141404 Hz | object evidence |
 | `/zed/zed_node/rgb/image_rect_color/compressed` | `sensor_msgs/msg/CompressedImage` | 5,009 | 19.145227 Hz | visual evidence |
 
-The transfer EventSpec is [`examples/french/left_turn.yaml`](../../examples/french/left_turn.yaml).
+The transfer EventSpec is [`examples/reims/left_turn.yaml`](../../examples/reims/left_turn.yaml).
 It binds only real fields and expresses speed as the squared GNSS velocity-vector magnitude in the
-existing CEL condition. It introduces no French-specific runner, decoder, command, interval, or
+existing CEL condition. It introduces no Reims-specific runner, decoder, command, interval, or
 artifact adapter.
 
 ## Handedness and representative event
@@ -62,7 +62,7 @@ detector's threshold timestamps. Its label-pack SHA-256 is
 
 ## Clip, score, and report results
 
-- The evidence clip reopens as valid MCAP and contains exactly the five declared French evidence
+- The evidence clip reopens as valid MCAP and contains exactly the five declared Reims evidence
   topics.
 - Clip size: 25,587,790 bytes; SHA-256:
   `f7906be7ecda84429c76344c94f82e904337e5b1b7666d3bc2fce4bae7e0e3ed`.
@@ -111,7 +111,7 @@ bytes. GNU `time` block counters remain in the table as host-I/O diagnostics, no
 
 ## Side-by-side contract differences
 
-| Concern | Kashiwa | French transfer | External contract |
+| Concern | Kashiwa | Reims transfer | External contract |
 |---|---|---|---|
 | Traffic target | right turn | left turn crossing opposing traffic | unchanged EventSpec candidate |
 | Detector source | Pix Hooke steering angle | ZED yaw rate plus GNSS velocity vector | declarative bindings and CEL |
@@ -122,6 +122,6 @@ bytes. GNU `time` block counters remain in the table as host-I/O diagnostics, no
 | Runner and outputs | `inspect/detect/clip/score/report`, interval, manifest, metrics, bundle | identical | unchanged |
 
 No Phase 1 external contract change was required. Any future multi-chunk dataset abstraction or
-Tier IV `ros2idl` support remains later-phase work rather than a hidden French-only seam. GitHub issue
+Tier IV `ros2idl` support remains later-phase work rather than a hidden Reims-only seam. GitHub issue
 #7 is complete; the pinned Lyrical environment and both accepted datasets now feed the integrated
 Phase 1 gate in issue #11.

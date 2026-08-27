@@ -183,7 +183,7 @@ stable artifact beside a candidate participant artifact.
 - `src/civ_workshop/batch.py`: consume only intake-validated stable bundles without promoting label
   or batch contracts.
 - `src/civ_workshop/cli.py`: use the shared diagnostics and preserve exit status `2`/no traceback.
-- `examples/kashiwa/right_turn.yaml` and `examples/french/left_turn.yaml`: move atomically to the
+- `examples/kashiwa/right_turn.yaml` and `examples/reims/left_turn.yaml`: move atomically to the
   final stable EventSpec shape decided by #16/#17.
 - `examples/reims/cave-encounter.yaml`, `examples/reims/cave-zones.json`, and the point-resource
   schema: move atomically to the stable EventSpec/resource identifiers.
@@ -211,7 +211,7 @@ stable artifact beside a candidate participant artifact.
   `performance.json`, and label non-leakage assertions.
 - Validate both checked-in EventSpecs and the final derive/resource examples against their stable
   schema, then exercise them through `civ detect` rather than schema-only tests.
-- Preserve the Phase 1 limit, canonical-ZIP, offline, Kashiwa/French transfer, and exact-byte
+- Preserve the Phase 1 limit, canonical-ZIP, offline, Kashiwa/Reims transfer, and exact-byte
   assertions. Historical `docs/phase1/*-acceptance.md` records continue to describe the proven
   candidate run and must not be rewritten as if they had emitted stable identifiers.
 

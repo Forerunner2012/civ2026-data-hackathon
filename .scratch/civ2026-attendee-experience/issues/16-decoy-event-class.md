@@ -78,7 +78,7 @@ both in one trip.
 small:
 
 1. **The pre-event download size has to be true.** [07](07-pre-event-readiness-and-reveal.md) tells
-   participants signals-only downloads in seconds. That is measured for French (~350 MB for 38
+   participants signals-only downloads in seconds. That is measured for Reims (~350 MB for 38
    minutes) and *inferred* for Kashiwa, which carries **uncompressed** `image_raw` plus clustering
    point clouds. The inference is almost certainly right; it is still an inference in a document
    participants will act on.
@@ -107,7 +107,7 @@ nice-to-have on the trip, not a gate.
 
 This map holds no bag data, and the paths in map-one
 [tickets 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md) and
-[24](../../civ2026-challenge-spec/issues/24-survey-french-bag.md) (`D:\Bags`, `C:\Program
+[24](../../civ2026-challenge-spec/issues/24-survey-reims-bag.md) (`D:\Bags`, `C:\Program
 Files\MCAP`) are **provenance from another machine**, not dependencies.
 
 **This is the only ticket on the map that cannot be resolved from the repository.** Hand it to

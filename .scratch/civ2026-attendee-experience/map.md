@@ -87,14 +87,14 @@ what remains is execution, and wayfinder tickets resolve decisions rather than s
 third map would produce a project plan wearing a wayfinder costume.
 
 **Spec the Phase 1 vertical slice first**, not the whole kit: `inspect → detect → clip → score →
-report` on one Kashiwa bag then one French chunk, offline. It is already the shape `/to-tickets`
+report` on one Kashiwa bag then one Reims chunk, offline. It is already the shape `/to-tickets`
 wants, it de-risks everything downstream, and specifying the rest afterwards means doing it with real
 knowledge. The four requirements the organizer named — *does `civ` run on both stacks, does the page
 advance on schedule, does the form accept a submission, can 15–30 entries be scored inside the lunch
 window* — become archived requirements there rather than notes scattered across these tickets.
 
 **Only one thing would justify a third map:** the vertical slice going badly. Then *what do we cut*
-becomes real fog — drop the French dataset, drop `derive`, one dataset and a deeper report — and
+becomes real fog — drop the Reims dataset, drop `derive`, one dataset and a deeper report — and
 those questions cannot be phrased sharply until the size of the slip is known.
 
 ## The fixed frame
@@ -105,7 +105,7 @@ Design inputs, all settled upstream. Listed once so no ticket re-derives them.
 |---|---|
 | When | Thu 3 Sep 2026, Miyazaki. Session **09:30–12:30**. Results **14:30–15:00**. Two-hour lunch between. |
 | Who | **30 participants, solo or in duos** — 15–30 independent workstreams, all experienced with robotic/vehicular data. |
-| What | Kashiwa (right turns) as warm-up, then Reims/French (**left** turns) as the scored transfer. The event is *the turn that crosses oncoming traffic*. |
+| What | Kashiwa (right turns) as warm-up, then Reims (**left** turns) as the scored transfer. The event is *the turn that crosses oncoming traffic*. |
 | How | `civ` CLI, container-first BYOD, CPU-only, no recovery laptops, no model shipped. |
 | Ladder | Rung 1 (CEL + `timing` + `evidence`) is the pass mark; rung 2 (`derive`) is the reach; rung 3 is the deferred extension. |
 | Scoring | 55 machine at 12:30 / 45 jury from a capped one-page report over lunch / 20 bonus. |

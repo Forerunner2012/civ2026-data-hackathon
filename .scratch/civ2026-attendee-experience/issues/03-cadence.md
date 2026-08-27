@@ -14,7 +14,7 @@ a **rehearsal baseline, not an immutable minute plan**:
 | 00:00–00:30 | Observe — inspect one Kashiwa development route manually |
 | 00:30–01:00 | Formalize — write and run a first EventSpec |
 | 01:00–01:30 | Scale — batch the Kashiwa detector, inspect one failure |
-| 01:30–02:15 | Transfer — map the event onto French IMU, GNSS velocity and object topics |
+| 01:30–02:15 | Transfer — map the event onto Reims IMU, GNSS velocity and object topics |
 | 02:15–02:45 | Challenge — compare both datasets, resolve ambiguity, prepare the report |
 | 02:45–03:00 | Submit |
 
@@ -111,7 +111,7 @@ harder terrain with nothing.
 [01](01-pace-car.md)'s rule — *a stage's solution unlocks once its points are settled* — lands the
 Kashiwa solution at **exactly this beat**. So 11:00 is not an instruction to abandon. It is:
 
-> Stop improving it. Submit what you have. **Here is the Kashiwa solution.** Open the French data.
+> Stop improving it. Submit what you have. **Here is the Kashiwa solution.** Open the Reims data.
 
 The solution is what makes abandoning psychologically possible, and it converts the day's most
 dangerous moment into its most useful one. Nothing else in the design does this.
@@ -130,11 +130,11 @@ Beats begin once people are working alone.
 | **10:00** | **B1** | Formalize | a first `civ detect` on the warm-up route | run the shipped example spec unchanged and look at its output | Formalize expectation + hints |
 | **10:20** | **B2** | Formalize | a condition that fires at all — even a bad one | loosen the threshold until it fires, then tighten | Formalize tips |
 | **10:40** | **B3** | Scale | events across more than one route, and one failure you can name | run one route and move on — batch is not the lesson. **Write headings 1 and 2 now** | Scale hints + tips |
-| **11:00** | **B4** | Transfer | a Kashiwa detector you are willing to stop improving, submitted once | stop improving it anyway. Submit what you have, take the solution, open the French data | **Kashiwa solution** + Transfer expectation |
-| **11:25** | **B5** | Transfer | the French signals identified, and a condition that fires | the yaw and speed equivalents are in the hints. The manoeuvre is yours | Transfer hints |
-| **11:45** | **B6** | Challenge | French events, however imperfect | take what you have. **Write headings 3 and 4 now**, while the transfer is fresh | Transfer tips |
+| **11:00** | **B4** | Transfer | a Kashiwa detector you are willing to stop improving, submitted once | stop improving it anyway. Submit what you have, take the solution, open the Reims data | **Kashiwa solution** + Transfer expectation |
+| **11:25** | **B5** | Transfer | the Reims signals identified, and a condition that fires | the yaw and speed equivalents are in the hints. The manoeuvre is yours | Transfer hints |
+| **11:45** | **B6** | Challenge | Reims events, however imperfect | take what you have. **Write headings 3 and 4 now**, while the transfer is fresh | Transfer tips |
 | **12:10** | **B7** | Submit | a submission already accepted — and be improving it | submit an incomplete one now. You can submit again. **Write heading 5** | — |
-| 12:30 | | Close | — | — | French solution + extension section |
+| 12:30 | | Close | — | — | Reims solution + extension section |
 
 Seven beats, roughly every 20–25 minutes. Stage **order** and the **12:30 deadline** are unchanged;
 §4.2's boundaries move by minutes only.
@@ -180,8 +180,8 @@ the table above change, and the finding this ticket opened with is **partly with
 
 | Beat | Was | Now |
 |---|---|---|
-| **B4, 11:00** | *…take the solution, open the French data* → unlocks **Kashiwa solution** | *stop improving it anyway. Submit what you have and open the French data — **the transfer hints are open now**, and a coach will work through it with you.* → unlocks **Transfer expectation + hints** (pulled forward from B5) |
-| **12:30 close** | French solution + extension section | **Extension section only.** Solutions publish after the event |
+| **B4, 11:00** | *…take the solution, open the Reims data* → unlocks **Kashiwa solution** | *stop improving it anyway. Submit what you have and open the Reims data — **the transfer hints are open now**, and a coach will work through it with you.* → unlocks **Transfer expectation + hints** (pulled forward from B5) |
+| **12:30 close** | Reims solution + extension section | **Extension section only.** Solutions publish after the event |
 
 Everything else — the seven beats, the minutes, the three report instalments — is unchanged.
 
