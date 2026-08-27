@@ -222,6 +222,7 @@ volumes/
 tmp/
 temp/
 scratch/
+work/
 *.log
 *.pid
 *.pid.lock
