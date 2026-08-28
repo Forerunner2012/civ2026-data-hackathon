@@ -11,9 +11,12 @@ bag; your counts and hashes will differ.
 civ doctor --workspace work --bag data/route.mcap --layout layouts/kashiwa-right-turn.pj4.xml
 ```
 
+This defaults to pure-MCAP readiness; use `--profile release-target` for Ubuntu 26.04 / ROS Lyrical.
+See the [Phase 3 policy](phase3/doctor-readiness-policy.md) for requirements and the Lichtblick path.
+
 ```text
 Doctor: READY
-[PASS] python: CPython 3.12.7 (required >=3.10,<3.13)
+Profile: pure-mcap
 ...
 ```
 

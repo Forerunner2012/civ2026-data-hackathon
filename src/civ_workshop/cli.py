@@ -28,6 +28,12 @@ def build_parser() -> argparse.ArgumentParser:
     doctor_parser.add_argument("--bag", type=Path)
     doctor_parser.add_argument("--layout", type=Path)
     doctor_parser.add_argument("--offline-kit", type=Path, default=Path.cwd())
+    doctor_parser.add_argument(
+        "--profile",
+        choices=("pure-mcap", "release-target"),
+        default="pure-mcap",
+        help="readiness policy to enforce (default: pure-mcap)",
+    )
     doctor_parser.add_argument("--json", action="store_true", dest="as_json")
 
     inspect_parser = commands.add_parser("inspect", help="inspect an MCAP bag")
@@ -100,6 +106,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 bag=args.bag,
                 layout=args.layout,
                 offline_kit=args.offline_kit,
+                profile=args.profile,
             )
             if args.as_json:
                 print(json.dumps(doctor_report, sort_keys=True, separators=(",", ":")))

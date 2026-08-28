@@ -14,6 +14,7 @@ from tests.helpers import (
     MicroCase,
     create_micro_case,
     run_civ,
+    write_micro_bag,
     write_nested_json_bag,
     write_raw_schema_bag,
     write_ros2_nested_bag,
@@ -248,7 +249,7 @@ def _doctor_fixture(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, str]]:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     bag = tmp_path / "sample.mcap"
-    bag.write_bytes(b"fixture")
+    write_micro_bag(bag)
     layout = tmp_path / "signals.xml"
     layout.write_text("<root />\n", encoding="utf-8")
     bin_dir = tmp_path / "bin"
@@ -263,7 +264,211 @@ def _doctor_fixture(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, str]]:
     return workspace, bag, layout, env
 
 
-def test_doctor_passes_required_checks_and_keeps_optional_viewer_nonblocking(
+def test_doctor_pure_mcap_profile_passes_without_ros_layout_or_viewer(
+    tmp_path: Path,
+) -> None:
+    workspace, bag, _, _ = _doctor_fixture(tmp_path)
+    empty_path = tmp_path / "empty-bin"
+    empty_path.mkdir()
+    repo = Path(__file__).parents[1]
+
+    result = run_civ(
+        tmp_path,
+        [
+            "doctor",
+            "--workspace",
+            str(workspace),
+            "--bag",
+            str(bag),
+            "--offline-kit",
+            str(repo),
+            "--json",
+        ],
+        env={"PATH": str(empty_path), "ROS_DISTRO": ""},
+    )
+
+    assert result.returncode == 0, result.stdout
+    report = json.loads(result.stdout)
+    assert report["profile"] == "pure-mcap"
+    assert report["ok"] is True
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["ros"]["required"] is False
+    assert checks["ros"]["status"] == "warn"
+    assert checks["visualization"]["required"] is False
+    assert checks["visualization"]["status"] == "warn"
+
+
+def test_doctor_release_target_rejects_wrong_platform_ros_and_visualization(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace, bag, _, _ = _doctor_fixture(tmp_path)
+    repo = Path(__file__).parents[1]
+    monkeypatch.setattr("civ_workshop.doctor.platform.system", lambda: "Windows")
+    monkeypatch.setattr("civ_workshop.doctor.platform.release", lambda: "11")
+    monkeypatch.setattr("civ_workshop.doctor.platform.machine", lambda: "AMD64")
+    monkeypatch.setattr("civ_workshop.doctor.shutil.which", lambda _command: None)
+    monkeypatch.delenv("ROS_DISTRO", raising=False)
+
+    with pytest.raises(SystemExit) as exit_info:
+        main(
+            [
+                "doctor",
+                "--profile",
+                "release-target",
+                "--workspace",
+                str(workspace),
+                "--bag",
+                str(bag),
+                "--offline-kit",
+                str(repo),
+                "--json",
+            ]
+        )
+
+    assert exit_info.value.code == 2
+    report = json.loads(capsys.readouterr().out)
+    failed = {
+        check["name"]: check
+        for check in report["checks"]
+        if check["required"] and check["status"] == "fail"
+    }
+    assert set(failed) == {"ros", "platform", "visualization"}
+    assert all(check["action"] for check in failed.values())
+
+
+def test_doctor_release_target_accepts_lichtblick_without_plotjuggler_layout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace, bag, _, _ = _doctor_fixture(tmp_path)
+    repo = Path(__file__).parents[1]
+    monkeypatch.setattr("civ_workshop.doctor.platform.system", lambda: "Linux")
+    monkeypatch.setattr("civ_workshop.doctor.platform.release", lambda: "6.17")
+    monkeypatch.setattr("civ_workshop.doctor.platform.machine", lambda: "x86_64")
+    monkeypatch.setattr(
+        "civ_workshop.doctor.platform.freedesktop_os_release",
+        lambda: {"ID": "ubuntu", "VERSION_ID": "26.04"},
+    )
+    monkeypatch.setattr(
+        "civ_workshop.doctor.shutil.which",
+        lambda command: "/opt/lichtblick/lichtblick" if command == "lichtblick" else None,
+    )
+    monkeypatch.setenv("ROS_DISTRO", "lyrical")
+
+    main(
+        [
+            "doctor",
+            "--profile",
+            "release-target",
+            "--workspace",
+            str(workspace),
+            "--bag",
+            str(bag),
+            "--offline-kit",
+            str(repo),
+            "--json",
+        ]
+    )
+
+    report = json.loads(capsys.readouterr().out)
+    assert report["ok"] is True
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["platform"]["required"] is True
+    assert checks["visualization"] == {
+        "action": None,
+        "detail": "Lichtblick at /opt/lichtblick/lichtblick",
+        "name": "visualization",
+        "required": True,
+        "status": "pass",
+    }
+
+
+def test_doctor_windows_pure_mcap_keeps_platform_nonblocking(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace, bag, _, _ = _doctor_fixture(tmp_path)
+    repo = Path(__file__).parents[1]
+    monkeypatch.setattr("civ_workshop.doctor.platform.system", lambda: "Windows")
+    monkeypatch.setattr("civ_workshop.doctor.platform.release", lambda: "11")
+    monkeypatch.setattr("civ_workshop.doctor.platform.machine", lambda: "AMD64")
+    monkeypatch.setattr("civ_workshop.doctor.shutil.which", lambda _command: None)
+    monkeypatch.delenv("ROS_DISTRO", raising=False)
+
+    main(
+        [
+            "doctor",
+            "--workspace",
+            str(workspace),
+            "--bag",
+            str(bag),
+            "--offline-kit",
+            str(repo),
+            "--json",
+        ]
+    )
+
+    report = json.loads(capsys.readouterr().out)
+    assert report["ok"] is True
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["platform"]["required"] is False
+    assert checks["platform"]["status"] == "pass"
+    assert checks["platform"]["detail"].startswith("Windows 11 AMD64;")
+
+
+def test_doctor_rejects_unsupported_python_through_public_cli(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace, bag, _, _ = _doctor_fixture(tmp_path)
+    repo = Path(__file__).parents[1]
+    monkeypatch.setattr("civ_workshop.doctor.sys.version_info", (3, 13, 0))
+    monkeypatch.setattr("civ_workshop.doctor.platform.python_version", lambda: "3.13.0")
+
+    with pytest.raises(SystemExit) as exit_info:
+        main(
+            [
+                "doctor",
+                "--workspace",
+                str(workspace),
+                "--bag",
+                str(bag),
+                "--offline-kit",
+                str(repo),
+            ]
+        )
+
+    assert exit_info.value.code == 2
+    output = capsys.readouterr().out
+    assert "[FAIL] python: CPython 3.13.0" in output
+    assert "install and run civ with CPython 3.10, 3.11, or 3.12" in output
+
+
+def test_doctor_rejects_structurally_invalid_mcap_through_public_cli(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace, bag, _, _ = _doctor_fixture(tmp_path)
+    bag.write_bytes(b"not an mcap")
+    repo = Path(__file__).parents[1]
+    monkeypatch.setattr("civ_workshop.doctor.shutil.which", lambda _command: None)
+
+    with pytest.raises(SystemExit) as exit_info:
+        main(
+            [
+                "doctor",
+                "--workspace",
+                str(workspace),
+                "--bag",
+                str(bag),
+                "--offline-kit",
+                str(repo),
+            ]
+        )
+
+    assert exit_info.value.code == 2
+    output = capsys.readouterr().out
+    assert "[FAIL] bag: invalid MCAP opening or closing magic" in output
+    assert "pass a structurally valid MCAP file with --bag" in output
+
+
+def test_doctor_pure_mcap_passes_with_plotjuggler_visualization_route(
     tmp_path: Path,
 ) -> None:
     workspace, bag, layout, env = _doctor_fixture(tmp_path)
@@ -295,18 +500,17 @@ def test_doctor_passes_required_checks_and_keeps_optional_viewer_nonblocking(
         "ros",
         "workspace",
         "bag",
-        "layout",
         "offline-kit",
-        "plotjuggler",
         "platform",
-        "lichtblick",
+        "visualization",
     ]
     assert all(
         check["status"] == "pass" for check in report["checks"] if check["required"]
     )
-    lichtblick = report["checks"][-1]
-    assert lichtblick["required"] is False
-    assert lichtblick["status"] in {"pass", "warn"}
+    visualization = report["checks"][-1]
+    assert visualization["required"] is False
+    assert visualization["status"] == "pass"
+    assert "PlotJuggler with" in visualization["detail"]
 
 
 def test_doctor_fails_required_checks_with_corrective_actions(tmp_path: Path) -> None:
@@ -331,19 +535,17 @@ def test_doctor_fails_required_checks_with_corrective_actions(tmp_path: Path) ->
 
     assert result.returncode == 2
     assert "Doctor: FAILED" in result.stdout
-    assert "[FAIL] ros:" in result.stdout
-    assert "source the ROS 2 Lyrical environment" in result.stdout
+    assert "Profile: pure-mcap" in result.stdout
+    assert "[WARN] ros:" in result.stdout
+    assert "source ROS 2 Lyrical when checking the release target" in result.stdout
     assert "[FAIL] workspace:" in result.stdout
     assert "create the workspace directory" in result.stdout
     assert "[FAIL] bag:" in result.stdout
     assert "pass an existing MCAP file with --bag" in result.stdout
-    assert "[FAIL] layout:" in result.stdout
-    assert "pass an existing PlotJuggler layout with --layout" in result.stdout
     assert "[FAIL] offline-kit:" in result.stdout
     assert "run from the unpacked offline kit or pass --offline-kit" in result.stdout
-    assert "[FAIL] plotjuggler:" in result.stdout
-    assert "install PlotJuggler into the offline kit and add it to PATH" in result.stdout
-    assert "[WARN] lichtblick:" in result.stdout
+    assert "[WARN] visualization:" in result.stdout
+    assert "install Lichtblick, or install PlotJuggler and pass its layout" in result.stdout
 
 
 def test_doctor_rejects_missing_dependency_through_public_cli(

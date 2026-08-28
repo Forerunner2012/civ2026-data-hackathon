@@ -5,6 +5,7 @@ import platform
 import re
 import shutil
 import sys
+from contextlib import suppress
 from dataclasses import asdict, dataclass
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -27,6 +28,7 @@ REQUIRED_DEPENDENCIES = (
     ("mcap-ros2-support", (0, 5, 7), (0, 6, 0), ">=0.5.7,<0.6"),
     ("PyYAML", (6, 0, 2), (7, 0, 0), ">=6.0.2,<7"),
 )
+MCAP_MAGIC = b"\x89MCAP0\r\n"
 
 
 def _version_tuple(raw_version: str) -> tuple[int, ...]:
@@ -96,13 +98,79 @@ def _path_check(
     )
 
 
+def _bag_check(path: Path | None) -> DoctorCheck:
+    existing = _path_check(
+        "bag",
+        path,
+        kind="file",
+        missing_action="pass an existing MCAP file with --bag",
+    )
+    if existing.status == "fail" or path is None:
+        return existing
+    try:
+        with path.open("rb") as stream:
+            opening_magic = stream.read(len(MCAP_MAGIC))
+            stream.seek(-len(MCAP_MAGIC), os.SEEK_END)
+            closing_magic = stream.read(len(MCAP_MAGIC))
+    except (OSError, ValueError) as error:
+        return DoctorCheck(
+            name="bag",
+            status="fail",
+            required=True,
+            detail=f"cannot read MCAP structure: {error}",
+            action="pass a readable, structurally valid MCAP file with --bag",
+        )
+    if opening_magic != MCAP_MAGIC or closing_magic != MCAP_MAGIC:
+        return DoctorCheck(
+            name="bag",
+            status="fail",
+            required=True,
+            detail="invalid MCAP opening or closing magic",
+            action="pass a structurally valid MCAP file with --bag",
+        )
+    return existing
+
+
+def _platform_check(*, release_target: bool) -> DoctorCheck:
+    system = platform.system()
+    machine = platform.machine()
+    os_release: dict[str, str] = {}
+    if system == "Linux":
+        with suppress(OSError):
+            os_release = platform.freedesktop_os_release()
+    distro = os_release.get("ID", "unknown")
+    distro_version = os_release.get("VERSION_ID", "unknown")
+    target_ok = (
+        system == "Linux"
+        and machine.casefold() in {"amd64", "x86_64"}
+        and distro.casefold() == "ubuntu"
+        and distro_version == "26.04"
+    )
+    host = f"{system} {platform.release()} {machine}"
+    if system == "Linux":
+        host = f"{host}; distro={distro} {distro_version}"
+    return DoctorCheck(
+        name="platform",
+        status="pass" if target_ok or not release_target else "fail",
+        required=release_target,
+        detail=f"{host}; release target is Ubuntu 26.04 linux-amd64",
+        action=(
+            None
+            if target_ok or not release_target
+            else "run the release-target check on Ubuntu 26.04 linux-amd64"
+        ),
+    )
+
+
 def run_doctor(
     *,
     workspace: Path,
     bag: Path | None,
     layout: Path | None,
     offline_kit: Path,
+    profile: str = "pure-mcap",
 ) -> dict[str, Any]:
+    release_target = profile == "release-target"
     checks = [_python_check(), _dependency_check()]
 
     ros_distro = os.environ.get("ROS_DISTRO")
@@ -110,10 +178,17 @@ def run_doctor(
     checks.append(
         DoctorCheck(
             name="ros",
-            status="pass" if ros_ok else "fail",
-            required=True,
-            detail=f"ROS_DISTRO={ros_distro or 'unset'} (required lyrical)",
-            action=None if ros_ok else "source the ROS 2 Lyrical environment",
+            status="pass" if ros_ok else ("fail" if release_target else "warn"),
+            required=release_target,
+            detail=(
+                f"ROS_DISTRO={ros_distro or 'unset'}; "
+                "ROS 2 Lyrical is required for the release target"
+            ),
+            action=(
+                None
+                if ros_ok
+                else "source ROS 2 Lyrical when checking the release target"
+            ),
         )
     )
 
@@ -132,23 +207,7 @@ def run_doctor(
             action="choose a writable directory and pass it with --workspace",
         )
     checks.append(workspace_check)
-    checks.append(
-        _path_check(
-            "bag",
-            bag,
-            kind="file",
-            missing_action="pass an existing MCAP file with --bag",
-        )
-    )
-    checks.append(
-        _path_check(
-            "layout",
-            layout,
-            kind="file",
-            missing_action="pass an existing PlotJuggler layout with --layout",
-        )
-    )
-
+    checks.append(_bag_check(bag))
     kit_required = ("pyproject.toml", "uv.lock", "examples", "schemas")
     missing_kit_entries = [name for name in kit_required if not (offline_kit / name).exists()]
     checks.append(
@@ -169,48 +228,45 @@ def run_doctor(
         )
     )
 
+    checks.append(_platform_check(release_target=release_target))
     plotjuggler = shutil.which("plotjuggler") or shutil.which("PlotJuggler")
+    lichtblick = shutil.which("lichtblick") or shutil.which("Lichtblick")
+    layout_ok = layout is not None and layout.is_file()
+    visualization_ok = bool(lichtblick or (plotjuggler and layout_ok))
+    routes: list[str] = []
+    if plotjuggler and layout is not None and layout.is_file():
+        routes.append(f"PlotJuggler with {layout.resolve()}")
+    if lichtblick:
+        routes.append(f"Lichtblick at {lichtblick}")
     checks.append(
         DoctorCheck(
-            name="plotjuggler",
-            status="pass" if plotjuggler else "fail",
-            required=True,
-            detail=plotjuggler or "not found on PATH",
+            name="visualization",
+            status=(
+                "pass" if visualization_ok else ("fail" if release_target else "warn")
+            ),
+            required=release_target,
+            detail=(
+                "; ".join(routes)
+                if routes
+                else "no usable route; use Lichtblick or PlotJuggler with --layout"
+            ),
             action=(
                 None
-                if plotjuggler
-                else "install PlotJuggler into the offline kit and add it to PATH"
+                if visualization_ok
+                else "install Lichtblick, or install PlotJuggler and pass its layout"
             ),
-        )
-    )
-    checks.append(
-        DoctorCheck(
-            name="platform",
-            status="pass",
-            required=False,
-            detail=(
-                f"{platform.system()} {platform.release()} {platform.machine()}; "
-                "release target is Ubuntu 26.04 linux-amd64"
-            ),
-        )
-    )
-    lichtblick = shutil.which("lichtblick") or shutil.which("Lichtblick")
-    checks.append(
-        DoctorCheck(
-            name="lichtblick",
-            status="pass" if lichtblick else "warn",
-            required=False,
-            detail=lichtblick or "not found; optional viewer",
-            action=None if lichtblick else "use PlotJuggler; Lichtblick is optional",
         )
     )
 
     ok = all(check.status == "pass" for check in checks if check.required)
-    return {"checks": [asdict(check) for check in checks], "ok": ok}
+    return {"checks": [asdict(check) for check in checks], "ok": ok, "profile": profile}
 
 
 def render_doctor(report: dict[str, Any]) -> str:
-    lines = [f"Doctor: {'READY' if report['ok'] else 'FAILED'}"]
+    lines = [
+        f"Doctor: {'READY' if report['ok'] else 'FAILED'}",
+        f"Profile: {report['profile']}",
+    ]
     for raw_check in report["checks"]:
         check = dict(raw_check)
         lines.append(f"[{str(check['status']).upper()}] {check['name']}: {check['detail']}")
