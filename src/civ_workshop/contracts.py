@@ -42,6 +42,28 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
     ),
     "civ.submission-bundle/v1": frozenset({"contract", "reproduction"}),
     "civ.reproduction/v1": frozenset({"contract", "name", "sha256"}),
+    "civ.data-product-recipe/v1": frozenset(
+        {
+            "contract",
+            "recipe_id",
+            "version",
+            "product_name",
+            "source",
+            "dataset",
+            "split",
+            "topics",
+            "license",
+            "attribution",
+            "rights_scope",
+            "modifications",
+        }
+    ),
+    "civ.data-product-manifest/v1": frozenset(
+        {"contract", "product", "parent", "recipe", "provenance", "required_disk_bytes"}
+    ),
+    "civ.data-product-set/v1": frozenset(
+        {"contract", "release_id", "products", "required_disk_bytes"}
+    ),
 }
 
 
