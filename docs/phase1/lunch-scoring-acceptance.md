@@ -1,5 +1,8 @@
 # Phase 1 lunch scoring acceptance
 
+> Phase 3 supersedes the one-bundle-per-identity selector recorded below. Current authority and
+> aggregate result behavior are defined in [two-dataset authority](../phase3/two-dataset-authority.md).
+
 ## Contract
 
 One unattended command turns the intake ledger into the ranked machine results used at the 13:15

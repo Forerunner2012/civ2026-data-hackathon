@@ -1,5 +1,8 @@
 # Phase 1 submission intake acceptance
 
+> Phase 3 preserves these adapters and bundle bytes but selects authority per identity and derived
+> dataset. See [two-dataset authority](../phase3/two-dataset-authority.md).
+
 ## Contract
 
 Participants submit the unchanged metadata-only `submission.zip` emitted by `civ report`, together

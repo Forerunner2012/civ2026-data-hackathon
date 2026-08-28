@@ -18,6 +18,7 @@ from civ_workshop.errors import CivError
 from civ_workshop.intake import (
     TOKYO_CUTOFF,
     IntakeLedger,
+    IntakeReceipt,
     latest_receipt,
     open_validated_submission,
 )
@@ -48,6 +49,15 @@ class EntryOutcome:
     diagnostics: list[str]
 
 
+@dataclass(frozen=True)
+class RoutedReceipt:
+    receipt: IntakeReceipt
+    bundle_path: Path
+    pack: LabelPack | None
+    source_sha256: str | None
+    diagnostic: str | None = None
+
+
 def _load_label_packs(labels_root: Path) -> dict[str, LabelPack]:
     if not labels_root.is_dir():
         raise CivError(f"organizer label directory does not exist: {labels_root}")
@@ -66,6 +76,12 @@ def _load_label_packs(labels_root: Path) -> dict[str, LabelPack]:
         )
     if not packs:
         raise CivError(f"no organizer label packs exist in {labels_root}")
+    datasets = {pack.dataset for pack in packs.values()}
+    if datasets != {"kashiwa", "reims"}:
+        raise CivError(
+            "organizer product mapping must contain exactly kashiwa and reims; "
+            f"found: {', '.join(sorted(datasets)) or 'none'}"
+        )
     return packs
 
 
@@ -93,6 +109,158 @@ def _score_bundle(bundle_path: Path, packs: dict[str, LabelPack]) -> EntryOutcom
             return EntryOutcome("scored", "passed", datasets, [])
     except CivError as error:
         return EntryOutcome("invalid", "failed", [], [str(error)])
+
+
+def _route_receipt(
+    ledger: IntakeLedger, receipt: IntakeReceipt, packs: dict[str, LabelPack]
+) -> RoutedReceipt:
+    stored_source = receipt.source_sha256
+    try:
+        bundle_path = ledger.bundle_for(receipt)
+        source_sha256 = stored_source
+        if source_sha256 is None:
+            with open_validated_submission(bundle_path) as working:
+                manifest = read_json_file(working / "run-manifest.json", "run manifest")
+                source_sha256 = require_string(
+                    require_mapping(manifest.get("source"), "run manifest source").get("sha256"),
+                    "run manifest source sha256",
+                )
+        return RoutedReceipt(
+            receipt=receipt,
+            bundle_path=bundle_path,
+            pack=packs.get(source_sha256),
+            source_sha256=source_sha256,
+        )
+    except CivError as error:
+        return RoutedReceipt(
+            receipt=receipt,
+            bundle_path=ledger.bundles_path / f"{receipt.bundle_sha256}.zip",
+            pack=packs.get(stored_source) if stored_source is not None else None,
+            source_sha256=stored_source,
+            diagnostic=str(error),
+        )
+
+
+def _component(
+    dataset: str,
+    routes: list[RoutedReceipt],
+    packs: dict[str, LabelPack],
+) -> tuple[dict[str, object], list[dict[str, object]], int]:
+    on_time = latest_receipt(
+        [route.receipt for route in routes],
+        routes[0].receipt.identity if routes else "",
+        "on_time",
+    )
+    if on_time is None:
+        late = latest_receipt(
+            [route.receipt for route in routes],
+            routes[0].receipt.identity if routes else "",
+            "late",
+        )
+        diagnostic = (
+            f"no submission exists for dataset: {dataset}"
+            if late is None
+            else f"no on-time submission exists for dataset: {dataset}"
+        )
+        return (
+            {
+                "bundle_sha256": None,
+                "dataset": dataset,
+                "datasets": [],
+                "delivery_id": None,
+                "diagnostics": [diagnostic],
+                "received_at_original": None,
+                "received_at_utc": None,
+                "source": None,
+                "source_sha256": None,
+                "status": "missing" if late is None else "late-only",
+                "validation": "skipped",
+            },
+            [],
+            0,
+        )
+    route = next(route for route in routes if route.receipt == on_time)
+    if route.diagnostic is not None:
+        return (
+            {
+                "bundle_sha256": on_time.bundle_sha256,
+                "dataset": dataset,
+                "datasets": [],
+                "delivery_id": on_time.delivery_id,
+                "diagnostics": [route.diagnostic],
+                "received_at_original": on_time.received_at_original,
+                "received_at_utc": on_time.received_at_utc,
+                "source": on_time.source,
+                "source_sha256": route.source_sha256,
+                "status": "malformed",
+                "validation": "failed",
+            },
+            [],
+            0,
+        )
+    outcome = _score_bundle(route.bundle_path, packs)
+    return (
+        {
+            "bundle_sha256": on_time.bundle_sha256,
+            "dataset": dataset,
+            "datasets": outcome.datasets,
+            "delivery_id": on_time.delivery_id,
+            "diagnostics": outcome.diagnostics,
+            "received_at_original": on_time.received_at_original,
+            "received_at_utc": on_time.received_at_utc,
+            "source": on_time.source,
+            "source_sha256": route.source_sha256,
+            "status": outcome.status,
+            "validation": outcome.validation,
+        },
+        outcome.datasets,
+        route.bundle_path.stat().st_size,
+    )
+
+
+def _delivery_records(
+    routes: list[RoutedReceipt], components: list[dict[str, object]]
+) -> list[dict[str, object]]:
+    authorities = {
+        str(component["dataset"]): component
+        for component in components
+        if component["delivery_id"] is not None
+    }
+    deliveries: list[dict[str, object]] = []
+    for route in routes:
+        receipt = route.receipt
+        dataset = route.pack.dataset if route.pack is not None else None
+        authority = authorities.get(dataset or "")
+        if route.diagnostic is not None:
+            state = "malformed"
+        elif dataset is None:
+            state = "cross-dataset"
+        elif authority is not None and receipt.delivery_id == authority["delivery_id"]:
+            state = "authoritative"
+        elif receipt.status == "late":
+            state = "late-only"
+        elif (
+            authority is not None
+            and receipt.source_sha256 == authority["source_sha256"]
+            and receipt.bundle_sha256 == authority["bundle_sha256"]
+        ):
+            state = "duplicate-source"
+        else:
+            state = "superseded"
+        deliveries.append(
+            {
+                "bundle_sha256": receipt.bundle_sha256,
+                "dataset": dataset,
+                "delivery_id": receipt.delivery_id,
+                "received_at_original": receipt.received_at_original,
+                "received_at_utc": receipt.received_at_utc,
+                "source": receipt.source,
+                "source_sha256": route.source_sha256,
+                "state": state,
+                "status": receipt.status,
+            }
+        )
+    return deliveries
 
 
 def _redact(message: str, labels_root: Path) -> str:
@@ -124,53 +292,54 @@ def run_batch(ledger_root: Path, labels_root: Path, output_root: Path) -> dict[s
     input_bytes = 0
     tracemalloc.start()
     started = time.perf_counter()
+    expected_datasets = sorted({pack.dataset for pack in packs.values()})
     for identity in identities:
         entry_started = time.perf_counter()
-        receipt = latest_receipt(receipts, identity, "on_time")
-        if receipt is None:
-            receipt = latest_receipt(receipts, identity, "late")
-            if receipt is None:
-                raise CivError(f"intake ledger lost the receipts for identity: {identity}")
-            outcome = EntryOutcome(
-                "quarantined",
-                "skipped",
-                [],
-                [f"no on-time submission exists for identity: {identity}"],
+        routes = [
+            _route_receipt(ledger, receipt, packs)
+            for receipt in receipts
+            if receipt.identity == identity
+        ]
+        components: list[dict[str, object]] = []
+        scored_datasets: list[dict[str, object]] = []
+        for dataset in expected_datasets:
+            dataset_routes = [
+                route
+                for route in routes
+                if route.pack is not None and route.pack.dataset == dataset
+            ]
+            component, component_datasets, component_bytes = _component(
+                dataset, dataset_routes, packs
             )
-        else:
-            try:
-                bundle_path = ledger.bundle_for(receipt)
-                input_bytes += bundle_path.stat().st_size
-                outcome = _score_bundle(bundle_path, packs)
-            except CivError as error:
-                outcome = EntryOutcome("invalid", "failed", [], [str(error)])
-            except Exception as error:  # one entry must never stop the batch
-                outcome = EntryOutcome(
-                    "failed", "passed", [], [f"unexpected scorer failure: {error}"]
-                )
+            components.append(component)
+            scored_datasets.extend(component_datasets)
+            input_bytes += component_bytes
+        complete = all(component["status"] == "scored" for component in components)
+        deliveries = _delivery_records(routes, components)
+        diagnostics = [
+            f"{component['dataset']}: {diagnostic}"
+            for component in components
+            for diagnostic in cast(list[str], component["diagnostics"])
+        ]
         entries.append(
             {
-                "bundle_sha256": receipt.bundle_sha256,
+                "components": components,
                 "contract": "civ.batch-result/v1alpha1",
-                "datasets": outcome.datasets,
-                "delivery_id": receipt.delivery_id,
+                "datasets": scored_datasets,
+                "deliveries": deliveries,
                 "diagnostics": [
-                    _redact(diagnostic, labels_root) for diagnostic in outcome.diagnostics
+                    _redact(diagnostic, labels_root) for diagnostic in diagnostics
                 ],
                 "identity": identity,
-                "received_at_original": receipt.received_at_original,
-                "received_at_utc": receipt.received_at_utc,
                 "scorer": SCORER_VERSIONS,
-                "source": receipt.source,
-                "status": outcome.status,
-                "validation": outcome.validation,
+                "status": "complete" if complete else "incomplete",
             }
         )
         timings.append(
             {
                 "elapsed_seconds": round(time.perf_counter() - entry_started, 6),
                 "identity": identity,
-                "status": outcome.status,
+                "status": "complete" if complete else "incomplete",
             }
         )
     total_elapsed = time.perf_counter() - started
@@ -179,18 +348,18 @@ def run_batch(ledger_root: Path, labels_root: Path, output_root: Path) -> dict[s
 
     counts = {
         status: sum(1 for entry in entries if entry["status"] == status)
-        for status in ("failed", "invalid", "quarantined", "scored")
+        for status in ("complete", "incomplete")
     }
-    datasets: dict[str, int] = {}
+    dataset_counts: dict[str, int] = {}
     for entry in entries:
-        for dataset in cast(list[dict[str, object]], entry["datasets"]):
-            name = str(dataset["dataset"])
-            datasets[name] = datasets.get(name, 0) + 1
+        for dataset_metrics in cast(list[dict[str, object]], entry["datasets"]):
+            name = str(dataset_metrics["dataset"])
+            dataset_counts[name] = dataset_counts.get(name, 0) + 1
     summary: dict[str, object] = {
         "contract": "civ.batch-summary/v1alpha1",
         "counts": counts,
         "cutoff_utc": TOKYO_CUTOFF.isoformat(),
-        "datasets": dict(sorted(datasets.items())),
+        "datasets": dict(sorted(dataset_counts.items())),
         "entries": len(entries),
         "label_packs": [
             {"dataset": pack.dataset, "sha256": pack.sha256, "source_sha256": source_sha256}

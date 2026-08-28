@@ -46,7 +46,7 @@ class Cohort:
     output: Path
     status: dict[str, str]
     profile: dict[str, str]
-    authoritative: dict[str, str]
+    authoritative: dict[tuple[str, str], str]
 
 
 def _label_pack(case: MicroCase, dataset: str, start_ns: int, end_ns: int) -> None:
@@ -129,19 +129,18 @@ def _build_bundle(
     return working / "submission.zip"
 
 
-def _plan() -> list[tuple[str, str, str, str]]:
-    """Identity, dataset, detector profile and expected terminal status for 30 entries."""
+def _plan() -> list[tuple[str, str, str]]:
+    """Identity, detector profile and expected aggregate status for 30 entries."""
 
-    entries: list[tuple[str, str, str, str]] = []
+    entries: list[tuple[str, str, str]] = []
     for index in range(20):
-        dataset = "kashiwa" if index % 2 == 0 else "reims"
-        entries.append((f"team-{index + 1:02d}", dataset, PROFILES[index % 5], "scored"))
+        entries.append((f"team-{index + 1:02d}", PROFILES[index % 5], "complete"))
     for index in range(20, 23):
-        entries.append((f"team-{index + 1:02d}", "unscored", "competent", "failed"))
+        entries.append((f"team-{index + 1:02d}", "competent", "cross-dataset"))
     for index in range(23, 26):
-        entries.append((f"team-{index + 1:02d}", "kashiwa", "competent", "invalid"))
+        entries.append((f"team-{index + 1:02d}", "competent", "malformed"))
     for index in range(26, 30):
-        entries.append((f"team-{index + 1:02d}", "reims", "competent", "quarantined"))
+        entries.append((f"team-{index + 1:02d}", "competent", "late-only"))
     return entries
 
 
@@ -163,45 +162,67 @@ def cohort(tmp_path_factory: pytest.TempPathFactory) -> Cohort:
     ledger = IntakeLedger(root / "intake")
     status: dict[str, str] = {}
     profile: dict[str, str] = {}
-    authoritative: dict[str, str] = {}
+    authoritative: dict[tuple[str, str], str] = {}
     corrupted: list[str] = []
-    for identity, dataset, profile_name, expected in _plan():
-        case, working, start_ns, end_ns = cases[dataset]
-        status[identity] = expected
+    for identity, profile_name, scenario in _plan():
+        status[identity] = "complete" if scenario == "complete" else "incomplete"
         profile[identity] = profile_name
-        missed = _intervals("missed", start_ns, end_ns)
-        if identity == "team-01":
-            # An earlier on-time bundle that the later resubmission must replace.
-            superseded = _build_bundle(case, working, f"{identity}-first", missed)
-            ledger.accept_online(
-                identity=identity,
-                received_at=ON_TIME,
-                submitted_sha256=file_sha256(superseded),
-                bundle_path=superseded,
-                delivery_id=f"{identity}-superseded",
+
+        def submit(
+            dataset: str,
+            *,
+            received_at: str,
+            delivery_suffix: str,
+            selected_profile: str = profile_name,
+            entry_identity: str = identity,
+        ) -> str:
+            case, working, start_ns, end_ns = cases[dataset]
+            bundle = _build_bundle(
+                case,
+                working,
+                f"{entry_identity}-{delivery_suffix}",
+                _intervals(selected_profile, start_ns, end_ns),
             )
-        bundle = _build_bundle(case, working, identity, _intervals(profile_name, start_ns, end_ns))
-        digest = file_sha256(bundle)
-        accept = ledger.accept_online if int(identity[-2:]) % 2 else ledger.accept_local
-        accept(
-            identity=identity,
-            received_at=LATE if expected == "quarantined" else RESUBMITTED,
-            submitted_sha256=digest,
-            bundle_path=bundle,
-            delivery_id=f"{identity}-primary",
+            digest = file_sha256(bundle)
+            accept = ledger.accept_online if len(ledger.receipts()) % 2 else ledger.accept_local
+            accept(
+                identity=entry_identity,
+                received_at=received_at,
+                submitted_sha256=digest,
+                bundle_path=bundle,
+                delivery_id=f"{entry_identity}-{delivery_suffix}",
+            )
+            return digest
+
+        if identity == "team-01":
+            submit(
+                "kashiwa",
+                received_at=ON_TIME,
+                delivery_suffix="kashiwa-superseded",
+                selected_profile="missed",
+            )
+        authoritative[(identity, "kashiwa")] = submit(
+            "kashiwa", received_at=RESUBMITTED, delivery_suffix="kashiwa-primary"
         )
-        authoritative[identity] = digest
-        if expected == "invalid":
-            corrupted.append(digest)
+        if scenario in {"complete", "malformed"}:
+            reims_digest = submit(
+                "reims", received_at=RESUBMITTED, delivery_suffix="reims-primary"
+            )
+            authoritative[(identity, "reims")] = reims_digest
+            if scenario == "malformed":
+                corrupted.append(reims_digest)
+        elif scenario == "cross-dataset":
+            submit(
+                "unscored", received_at=RESUBMITTED, delivery_suffix="unscored-primary"
+            )
+        else:
+            submit("reims", received_at=LATE, delivery_suffix="reims-late")
         if identity == "team-02":
-            # A late resubmission must never displace the authoritative on-time bundle.
-            ignored = _build_bundle(case, working, f"{identity}-late", missed)
-            ledger.accept_local(
-                identity=identity,
+            submit(
+                "kashiwa",
                 received_at=LATE,
-                submitted_sha256=file_sha256(ignored),
-                bundle_path=ignored,
-                delivery_id=f"{identity}-late",
+                delivery_suffix="kashiwa-late",
+                selected_profile="missed",
             )
 
     for digest in corrupted:
@@ -232,9 +253,154 @@ def _summary(output: Path) -> dict[str, Any]:
     return dict(json.loads((output / "summary.json").read_text(encoding="utf-8")))
 
 
-def _dataset_metrics(record: dict[str, Any]) -> dict[str, Any]:
-    assert len(record["datasets"]) == 1
-    return dict(record["datasets"][0])
+def _dataset_metrics(record: dict[str, Any], dataset: str = "kashiwa") -> dict[str, Any]:
+    return next(
+        dict(metrics)
+        for metrics in record["datasets"]
+        if metrics["dataset"] == dataset
+    )
+
+
+def test_batch_aggregates_authority_independently_for_both_dataset_runs(
+    tmp_path: Path,
+) -> None:
+    labels = tmp_path / "labels"
+    labels.mkdir()
+    ledger = IntakeLedger(tmp_path / "intake")
+    expected_hashes: dict[str, str] = {}
+    for dataset in ("kashiwa", "reims"):
+        values, start_ns, end_ns = DATASETS[dataset]
+        case = create_micro_case(tmp_path / f"case-{dataset}", values)
+        _label_pack(case, dataset, start_ns, end_ns)
+        (labels / f"{dataset}.json").write_bytes(case.labels.read_bytes())
+        working = tmp_path / f"working-{dataset}"
+        prepare_scored_submission(case, working)
+        bundle = _build_bundle(
+            case, working, f"team-paired-{dataset}", _intervals("competent", start_ns, end_ns)
+        )
+        expected_hashes[dataset] = file_sha256(bundle)
+        ledger.accept_local(
+            identity="team-paired",
+            received_at=RESUBMITTED,
+            submitted_sha256=expected_hashes[dataset],
+            bundle_path=bundle,
+            delivery_id=f"team-paired-{dataset}",
+        )
+
+    with pytest.raises(CivError, match="authority is dataset-specific"):
+        ledger.authoritative("team-paired")
+
+    run_batch(ledger.root, labels, tmp_path / "results")
+
+    record = _results(tmp_path / "results")["team-paired"]
+    assert record["status"] == "complete"
+    assert [component["dataset"] for component in record["components"]] == [
+        "kashiwa",
+        "reims",
+    ]
+    assert {
+        component["dataset"]: component["bundle_sha256"]
+        for component in record["components"]
+    } == expected_hashes
+    assert [dataset["dataset"] for dataset in record["datasets"]] == [
+        "kashiwa",
+        "reims",
+    ]
+
+
+def test_malformed_dataset_does_not_erase_the_valid_companion_run(tmp_path: Path) -> None:
+    labels = tmp_path / "labels"
+    labels.mkdir()
+    ledger = IntakeLedger(tmp_path / "intake")
+    hashes: dict[str, str] = {}
+    for dataset in ("kashiwa", "reims"):
+        values, start_ns, end_ns = DATASETS[dataset]
+        case = create_micro_case(tmp_path / f"case-{dataset}", values)
+        _label_pack(case, dataset, start_ns, end_ns)
+        (labels / f"{dataset}.json").write_bytes(case.labels.read_bytes())
+        working = tmp_path / f"working-{dataset}"
+        prepare_scored_submission(case, working)
+        bundle = _build_bundle(
+            case, working, f"team-malformed-{dataset}", _intervals("competent", start_ns, end_ns)
+        )
+        hashes[dataset] = file_sha256(bundle)
+        ledger.accept_local(
+            identity="team-malformed",
+            received_at=RESUBMITTED,
+            submitted_sha256=hashes[dataset],
+            bundle_path=bundle,
+            delivery_id=f"team-malformed-{dataset}",
+        )
+    (ledger.bundles_path / f"{hashes['reims']}.zip").write_bytes(b"corrupt at rest")
+
+    run_batch(ledger.root, labels, tmp_path / "results")
+
+    record = _results(tmp_path / "results")["team-malformed"]
+    assert record["status"] == "incomplete"
+    components = {component["dataset"]: component for component in record["components"]}
+    assert components["kashiwa"]["status"] == "scored"
+    assert components["kashiwa"]["bundle_sha256"] == hashes["kashiwa"]
+    assert components["reims"]["status"] == "malformed"
+    assert components["reims"]["bundle_sha256"] == hashes["reims"]
+
+
+def test_batch_audits_supersession_late_duplicate_and_cross_dataset_deliveries(
+    tmp_path: Path,
+) -> None:
+    labels = tmp_path / "labels"
+    labels.mkdir()
+    ledger = IntakeLedger(tmp_path / "intake")
+    bundles: dict[str, Path] = {}
+    for dataset in ("kashiwa", "reims", "unscored"):
+        values, start_ns, end_ns = DATASETS[dataset]
+        case = create_micro_case(tmp_path / f"case-{dataset}", values)
+        _label_pack(case, dataset, start_ns, end_ns)
+        if dataset != "unscored":
+            (labels / f"{dataset}.json").write_bytes(case.labels.read_bytes())
+        working = tmp_path / f"working-{dataset}"
+        prepare_scored_submission(case, working)
+        bundles[dataset] = _build_bundle(
+            case, working, f"team-audit-{dataset}", _intervals("competent", start_ns, end_ns)
+        )
+
+    kashiwa_hash = file_sha256(bundles["kashiwa"])
+    ledger.accept_online(
+        identity="team-audit",
+        received_at=ON_TIME,
+        submitted_sha256=kashiwa_hash,
+        bundle_path=bundles["kashiwa"],
+        delivery_id="kashiwa-first",
+    )
+    ledger.accept_local(
+        identity="team-audit",
+        received_at=RESUBMITTED,
+        submitted_sha256=kashiwa_hash,
+        bundle_path=bundles["kashiwa"],
+        delivery_id="kashiwa-authoritative",
+    )
+    for dataset, received_at in (("reims", LATE), ("unscored", RESUBMITTED)):
+        digest = file_sha256(bundles[dataset])
+        ledger.accept_local(
+            identity="team-audit",
+            received_at=received_at,
+            submitted_sha256=digest,
+            bundle_path=bundles[dataset],
+            delivery_id=f"{dataset}-delivery",
+        )
+
+    run_batch(ledger.root, labels, tmp_path / "results")
+
+    record = _results(tmp_path / "results")["team-audit"]
+    components = {component["dataset"]: component for component in record["components"]}
+    assert components["kashiwa"]["status"] == "scored"
+    assert components["reims"]["status"] == "late-only"
+    assert {delivery["delivery_id"]: delivery["state"] for delivery in record["deliveries"]} == {
+        "kashiwa-first": "duplicate-source",
+        "kashiwa-authoritative": "authoritative",
+        "reims-delivery": "late-only",
+        "unscored-delivery": "cross-dataset",
+    }
+    assert ledger.bundle_for(ledger.receipts()[0]).read_bytes() == bundles["kashiwa"].read_bytes()
 
 
 def test_summary_accounts_for_every_cohort_entry_exactly_once(cohort: Cohort) -> None:
@@ -244,10 +410,18 @@ def test_summary_accounts_for_every_cohort_entry_exactly_once(cohort: Cohort) ->
     assert summary["entries"] == 30
     assert len(results) == 30
     assert sum(summary["counts"].values()) == 30
-    assert summary["counts"] == {"failed": 3, "invalid": 3, "quarantined": 4, "scored": 20}
-    assert summary["datasets"] == {"reims": 10, "kashiwa": 10}
-    assert summary["receipts"] == {"late": 5, "on_time": 27, "total": 32}
+    assert summary["counts"] == {"complete": 20, "incomplete": 10}
+    assert summary["datasets"] == {"kashiwa": 30, "reims": 20}
+    assert summary["receipts"] == {"late": 5, "on_time": 57, "total": 62}
     assert {identity: record["status"] for identity, record in results.items()} == cohort.status
+    complete = [record for record in results.values() if record["status"] == "complete"]
+    assert len(complete) == 20
+    assert all(
+        [component["dataset"] for component in record["components"]]
+        == ["kashiwa", "reims"]
+        and len(record["datasets"]) == 2
+        for record in complete
+    )
 
 
 def test_every_result_records_full_provenance_in_deterministic_order(cohort: Cohort) -> None:
@@ -255,27 +429,41 @@ def test_every_result_records_full_provenance_in_deterministic_order(cohort: Coh
     record = results["team-01"]
 
     assert list(record) == sorted(record)
-    assert record["bundle_sha256"] == cohort.authoritative["team-01"]
-    assert record["received_at_original"] == RESUBMITTED
-    assert record["received_at_utc"] == "2026-09-03T03:29:59+00:00"
-    assert record["delivery_id"] == "team-01-primary"
+    component = {item["dataset"]: item for item in record["components"]}["kashiwa"]
+    assert component["bundle_sha256"] == cohort.authoritative[("team-01", "kashiwa")]
+    assert component["received_at_original"] == RESUBMITTED
+    assert component["received_at_utc"] == "2026-09-03T03:29:59+00:00"
+    assert component["delivery_id"] == "team-01-kashiwa-primary"
     assert record["scorer"]["metrics_contract"] == "civ.metrics/v1"
     assert record["scorer"]["temporal_iou_threshold"] == 0.5
     assert record["scorer"]["tool_version"]
-    assert record["validation"] == "passed"
+    assert component["validation"] == "passed"
     assert _dataset_metrics(record)["dataset"] == "kashiwa"
+    assert [delivery["state"] for delivery in record["deliveries"]] == [
+        "superseded",
+        "authoritative",
+        "authoritative",
+    ]
 
 
 def test_only_the_authoritative_on_time_bundle_is_scored(cohort: Cohort) -> None:
     results = _results(cohort.output)
 
-    assert results["team-02"]["bundle_sha256"] == cohort.authoritative["team-02"]
-    assert results["team-02"]["status"] == "scored"
+    team_two = results["team-02"]
+    components = {component["dataset"]: component for component in team_two["components"]}
+    assert components["kashiwa"]["bundle_sha256"] == cohort.authoritative[
+        ("team-02", "kashiwa")
+    ]
+    assert team_two["status"] == "complete"
+    assert team_two["deliveries"][-1]["state"] == "late-only"
     quarantined = results["team-27"]
-    assert quarantined["status"] == "quarantined"
-    assert quarantined["validation"] == "skipped"
-    assert quarantined["datasets"] == []
-    assert "no on-time submission" in quarantined["diagnostics"][0]
+    assert quarantined["status"] == "incomplete"
+    quarantined_components = {
+        component["dataset"]: component for component in quarantined["components"]
+    }
+    assert quarantined_components["kashiwa"]["status"] == "scored"
+    assert quarantined_components["reims"]["status"] == "late-only"
+    assert "no on-time submission" in quarantined_components["reims"]["diagnostics"][0]
 
 
 def test_each_profile_is_scored_with_the_proven_evaluator_semantics(cohort: Cohort) -> None:
@@ -283,7 +471,7 @@ def test_each_profile_is_scored_with_the_proven_evaluator_semantics(cohort: Coho
     by_profile = {
         cohort.profile[identity]: _dataset_metrics(record)
         for identity, record in results.items()
-        if record["status"] == "scored"
+        if record["status"] == "complete"
     }
 
     assert by_profile["competent"]["counts"] == {
@@ -316,13 +504,16 @@ def test_failing_entries_reach_terminal_results_without_stopping_the_batch(
     unscored = results["team-21"]
     corrupt = results["team-24"]
 
-    assert unscored["status"] == "failed"
-    assert unscored["validation"] == "passed"
-    assert unscored["datasets"] == []
-    assert "no organizer label pack matches the submission source" in unscored["diagnostics"][0]
-    assert corrupt["status"] == "invalid"
-    assert corrupt["validation"] == "failed"
-    assert "missing or corrupt" in corrupt["diagnostics"][0]
+    assert unscored["status"] == "incomplete"
+    assert _dataset_metrics(unscored)["dataset"] == "kashiwa"
+    assert unscored["deliveries"][-1]["state"] == "cross-dataset"
+    assert corrupt["status"] == "incomplete"
+    corrupt_components = {
+        component["dataset"]: component for component in corrupt["components"]
+    }
+    assert corrupt_components["kashiwa"]["status"] == "scored"
+    assert corrupt_components["reims"]["status"] == "malformed"
+    assert "missing or corrupt" in corrupt_components["reims"]["diagnostics"][0]
     assert all(not results[identity]["diagnostics"] for identity in ("team-01", "team-20"))
 
 
@@ -397,7 +588,7 @@ def test_one_command_scores_the_cohort_and_reports_missing_inputs(
     )
 
     assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout)["counts"]["scored"] == 20
+    assert json.loads(result.stdout)["counts"]["complete"] == 20
 
     empty = run_civ(
         tmp_path,
@@ -424,3 +615,14 @@ def test_batch_rejects_ambiguous_organizer_label_packs(cohort: Cohort, tmp_path:
 
     with pytest.raises(CivError, match="same source"):
         run_batch(cohort.ledger, labels, tmp_path / "ambiguous-output")
+
+
+def test_batch_rejects_incomplete_two_dataset_organizer_mapping(
+    cohort: Cohort, tmp_path: Path
+) -> None:
+    labels = tmp_path / "kashiwa-only"
+    labels.mkdir()
+    (labels / "kashiwa.json").write_bytes((cohort.labels / "kashiwa.json").read_bytes())
+
+    with pytest.raises(CivError, match="exactly kashiwa and reims"):
+        run_batch(cohort.ledger, labels, tmp_path / "incomplete-mapping-output")

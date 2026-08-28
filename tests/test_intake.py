@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
@@ -33,6 +34,51 @@ def _bundle(micro_case: MicroCase, root: Path, suffix: str = "") -> Path:
             report.write(f"\nIteration: {suffix}\n")
     build_report_bundle(working)
     return working / "submission.zip"
+
+
+def test_existing_intake_ledger_adds_nullable_source_provenance_column(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "legacy-intake"
+    root.mkdir()
+    database = root / "intake.sqlite3"
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TABLE receipts (
+                sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                delivery_id TEXT NOT NULL UNIQUE,
+                identity TEXT NOT NULL,
+                source TEXT NOT NULL,
+                received_at_original TEXT NOT NULL,
+                received_at_utc TEXT NOT NULL,
+                bundle_sha256 TEXT NOT NULL,
+                status TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO receipts (
+                delivery_id, identity, source, received_at_original, received_at_utc,
+                bundle_sha256, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "legacy-delivery",
+                "legacy-team",
+                "local",
+                "2026-09-03T12:00:00+09:00",
+                "2026-09-03T03:00:00+00:00",
+                "0" * 64,
+                "on_time",
+            ),
+        )
+
+    receipts = IntakeLedger(root).receipts()
+
+    assert len(receipts) == 1
+    assert receipts[0].source_sha256 is None
 
 
 def test_online_and_usb_adapters_preserve_identical_bundle_and_scorer_input(

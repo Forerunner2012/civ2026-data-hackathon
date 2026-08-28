@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Literal, cast
 
-from civ_workshop.artifacts import file_sha256, read_json_file, require_string
+from civ_workshop.artifacts import file_sha256, read_json_file, require_mapping, require_string
 from civ_workshop.errors import CivError
 from civ_workshop.reporting import (
     MAX_SUBMISSION_ARCHIVE_ENTRIES,
@@ -38,7 +38,14 @@ class IntakeReceipt:
     received_at_original: str
     received_at_utc: str
     bundle_sha256: str
+    source_sha256: str | None
     status: Literal["on_time", "late"]
+
+
+@dataclass(frozen=True)
+class ValidatedSubmission:
+    bundle_sha256: str
+    source_sha256: str
 
 
 def latest_receipt(
@@ -201,9 +208,20 @@ def open_validated_submission(bundle_path: Path) -> Iterator[Path]:
         yield Path(temporary)
 
 
+def validated_submission(bundle_path: Path) -> ValidatedSubmission:
+    with open_validated_submission(bundle_path) as working:
+        manifest = read_json_file(working / "run-manifest.json", "run manifest")
+        source_sha256 = require_string(
+            require_mapping(manifest.get("source"), "run manifest source").get("sha256"),
+            "run manifest source sha256",
+        )
+    return ValidatedSubmission(
+        bundle_sha256=file_sha256(bundle_path), source_sha256=source_sha256
+    )
+
+
 def validate_submission_bundle(bundle_path: Path) -> str:
-    with open_validated_submission(bundle_path):
-        return file_sha256(bundle_path)
+    return validated_submission(bundle_path).bundle_sha256
 
 
 def _receipt_from_row(record: sqlite3.Row) -> IntakeReceipt:
@@ -215,6 +233,7 @@ def _receipt_from_row(record: sqlite3.Row) -> IntakeReceipt:
         received_at_original=cast(str, record["received_at_original"]),
         received_at_utc=cast(str, record["received_at_utc"]),
         bundle_sha256=cast(str, record["bundle_sha256"]),
+        source_sha256=cast(str | None, record["source_sha256"]),
         status=cast(Literal["on_time", "late"], record["status"]),
     )
 
@@ -244,10 +263,17 @@ class IntakeLedger:
                     received_at_original TEXT NOT NULL,
                     received_at_utc TEXT NOT NULL,
                     bundle_sha256 TEXT NOT NULL,
+                    source_sha256 TEXT,
                     status TEXT NOT NULL CHECK (status IN ('on_time', 'late'))
                 )
                 """
             )
+            columns = {
+                cast(str, row["name"])
+                for row in connection.execute("PRAGMA table_info(receipts)").fetchall()
+            }
+            if "source_sha256" not in columns:
+                connection.execute("ALTER TABLE receipts ADD COLUMN source_sha256 TEXT")
             yield connection
         except OSError as error:
             raise CivError(f"cannot create intake ledger directory: {error}") from error
@@ -262,7 +288,7 @@ class IntakeLedger:
             rows = connection.execute(
                 """
                 SELECT delivery_id, identity, source, received_at_original, received_at_utc,
-                       bundle_sha256, status
+                       bundle_sha256, source_sha256, status
                 FROM receipts
                 ORDER BY sequence
                 """
@@ -270,7 +296,20 @@ class IntakeLedger:
         return [_receipt_from_row(row) for row in rows]
 
     def authoritative(self, identity: str) -> IntakeReceipt:
-        receipt = latest_receipt(self.receipts(), identity, "on_time")
+        receipts = self.receipts()
+        on_time_sources = {
+            receipt.source_sha256
+            for receipt in receipts
+            if receipt.identity == identity
+            and receipt.status == "on_time"
+            and receipt.source_sha256 is not None
+        }
+        if len(on_time_sources) > 1:
+            raise CivError(
+                "authority is dataset-specific for this identity; use score-batch with the "
+                "organizer product mapping"
+            )
+        receipt = latest_receipt(receipts, identity, "on_time")
         if receipt is None:
             raise CivError(f"no on-time submission exists for identity: {identity}")
         return receipt
@@ -393,7 +432,8 @@ class IntakeLedger:
 
         original_timestamp, received_utc = _parse_received_at(received_at)
         with self._snapshot_bundle(bundle_path) as snapshot:
-            bundle_sha256 = validate_submission_bundle(snapshot)
+            validated = validated_submission(snapshot)
+            bundle_sha256 = validated.bundle_sha256
             if _require_sha256(submitted_sha256) != bundle_sha256:
                 raise CivError(
                     f"pasted sha256 does not match the bundle: expected {bundle_sha256}"
@@ -407,6 +447,7 @@ class IntakeLedger:
                 received_at_original=original_timestamp,
                 received_at_utc=received_utc.isoformat(),
                 bundle_sha256=bundle_sha256,
+                source_sha256=validated.source_sha256,
                 status="on_time" if received_utc <= TOKYO_CUTOFF else "late",
             )
             try:
@@ -415,8 +456,8 @@ class IntakeLedger:
                         """
                         INSERT INTO receipts (
                             delivery_id, identity, source, received_at_original, received_at_utc,
-                            bundle_sha256, status
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                            bundle_sha256, source_sha256, status
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             receipt.delivery_id,
@@ -425,6 +466,7 @@ class IntakeLedger:
                             receipt.received_at_original,
                             receipt.received_at_utc,
                             receipt.bundle_sha256,
+                            receipt.source_sha256,
                             receipt.status,
                         ),
                     )
