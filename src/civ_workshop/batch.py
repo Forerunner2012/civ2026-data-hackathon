@@ -22,7 +22,8 @@ from civ_workshop.intake import (
     latest_receipt,
     open_validated_submission,
 )
-from civ_workshop.scoring import TEMPORAL_IOU_THRESHOLD, score_submission
+from civ_workshop.label_packs import TEMPORAL_IOU_THRESHOLD, load_label_pack
+from civ_workshop.scoring import score_submission
 
 BATCH_BUDGET_SECONDS = 45 * 60
 SLOW_ENTRY_COUNT = 5
@@ -63,15 +64,16 @@ def _load_label_packs(labels_root: Path) -> dict[str, LabelPack]:
         raise CivError(f"organizer label directory does not exist: {labels_root}")
     packs: dict[str, LabelPack] = {}
     for path in sorted(labels_root.glob("*.json")):
-        pack = read_json_file(path, "label pack")
-        if pack.get("contract") != "civ.label-pack/v1alpha1":
-            raise CivError(f"unsupported label pack contract: {path.name}")
-        source_sha256 = require_string(pack.get("source_sha256"), "label pack source_sha256")
+        try:
+            pack = load_label_pack(path)
+        except CivError as error:
+            raise CivError(f"invalid organizer label pack {path.name}: {error}") from error
+        source_sha256 = str(pack["source_sha256"])
         if source_sha256 in packs:
             raise CivError(f"two organizer label packs declare the same source: {source_sha256}")
         packs[source_sha256] = LabelPack(
             path=path,
-            dataset=require_string(pack.get("dataset"), "label pack dataset"),
+            dataset=str(pack["dataset"]),
             sha256=file_sha256(path),
         )
     if not packs:
