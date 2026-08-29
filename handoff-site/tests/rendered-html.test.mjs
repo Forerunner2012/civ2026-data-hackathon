@@ -128,6 +128,25 @@ test("participant view states the contract", async () => {
   assert.match(body, /pairing up on the day is normal/i);
 });
 
+test("optional extension is offered, scored, and never scheduled", async () => {
+  const body = await html("/participants");
+  assert.match(body, /knowledge that was never in the bag/i);
+  assert.match(body, /open and scored before 12:30.*receives no time in the run of show/i);
+  assert.match(body, /stays on this page after the event/i);
+  assert.match(body, /civ\.point-resource\/v1/);
+  assert.match(body, /min_distance_to/);
+  assert.match(body, /examples\/reims\/cave-encounter\.yaml/);
+  assert.match(body, /30.{0,3}45 minutes/i);
+  // Method is unconstrained and nothing on the required path needs a model or the network.
+  assert.match(body, /No model is required/i);
+  assert.match(body, /no answer key here and nothing is diffed against a held-back list/i);
+  // The zone coordinates are the exercise. Publishing any of them would hand over the answer.
+  assert.doesNotMatch(body, /49\.2[0-9]{3}|4\.0[0-9]{3}/);
+  assert.doesNotMatch(body, /martel|pommery|ruinart|taittinger|clicquot/i);
+  // No chunk is named, so the page cannot say where the encounters are.
+  assert.doesNotMatch(body, /RMS-CHUNK-[24]/);
+});
+
 test("participant view contains no organizer material", async () => {
   const body = await html("/participants");
   for (const pattern of ORGANIZER_ONLY) {

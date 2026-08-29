@@ -231,6 +231,37 @@ export const submissionOutcomes = [
   { state: "Late", action: "The receipt is retained as late and cannot replace your last valid on-time bundle." },
 ];
 
+/**
+ * The optional extension branch. Scored under the existing bonus, never scheduled, and
+ * deliberately carries no zone coordinates — sourcing them is the exercise.
+ */
+export const extensionTrack = {
+  lesson:
+    "The system used knowledge that was never in the bag to find events it could not otherwise have found.",
+  placement: [
+    "This branch is open and scored before 12:30, and it receives no time in the run of show. Nothing in the three hours is planned around it.",
+    "If your core submission is not accepted yet, do the core. Bonus points cannot rescue a result that does not reproduce.",
+    "It stays on this page after the event, and it runs on the same products you keep. Do it at lunch, on the plane, or in six months.",
+  ],
+  steps: [
+    "Choose a class of places the recording never knew about. The worked case is the champagne cellars along the Reims route.",
+    "Write a `civ.point-resource/v1` file: an id, a latitude and a longitude per point. That is the entire contract.",
+    "Reference it from an EventSpec under `resources:`, derive `min_distance_to` from your GNSS latitude and longitude signals, and put that distance in the condition. The shipped `examples/reims/cave-encounter.yaml` is a complete worked spec with illustrative points — the shape is real, the coordinates are not.",
+    "Run it across the Reims development products with the same `civ detect` you already use. Nothing new is installed and no contract changes.",
+    "Put the resource file and a note on where it came from in `extension/`.",
+  ],
+  provenance: [
+    "How you source the points is deliberately unconstrained: a chat assistant, an OpenStreetMap query, a published directory, or twenty minutes with a map and a spreadsheet are all legitimate.",
+    "No model is required, and nothing on the required path needs network access — only your own sourcing step might.",
+    "There is no answer key here and nothing is diffed against a held-back list. What is judged is whether the zones are plausible, the predicate is sound, the evidence shows what you claim, and you can say where the knowledge came from.",
+    "A 40 m radius is a sensible starting point on this route, and `timing.min_duration` is what suppresses a glancing hit. Expect a handful of encounters at most: this is a small exercise, not a hunt.",
+  ],
+  budget:
+    "Budget 30–45 minutes, and expect almost all of it to be sourcing. The detection itself is seconds — one spec across all five Reims development products finishes in under ten seconds on the target machine.",
+  scoredAs:
+    "It scores under the existing bonus row for an external-resource method, and supports the agent-trace row if you used one and can show the trace.",
+};
+
 export const comeReady = [
   "A laptop you can install software on, with room to spare: a container plus recordings needs disk and memory, not a GPU.",
   "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container.",

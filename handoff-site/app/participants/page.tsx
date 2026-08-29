@@ -8,6 +8,7 @@ import {
   commands,
   deliverables,
   deskMaterials,
+  extensionTrack,
   journey,
   notYourJob,
   pipeline,
@@ -381,6 +382,41 @@ export default function Participants() {
             already reproduces. It earns up to 20 bonus points and has no reserved beat or timebox.
           </p>
         </div>
+      </section>
+
+      <section className="extension-section" id="extension">
+        <div className="section-heading compact">
+          <div>
+            <span>06 / OPTIONAL EXTENSION</span>
+            <h2>Bring knowledge the recording never had.</h2>
+          </div>
+          <p>{extensionTrack.lesson}</p>
+        </div>
+        <ul className="rule-list">
+          {extensionTrack.placement.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <div className="extension-grid">
+          <div>
+            <h3>The exercise</h3>
+            <ol>
+              {extensionTrack.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
+          <div>
+            <h3>What counts as doing it well</h3>
+            <ul>
+              {extensionTrack.provenance.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <p className="extension-budget">{extensionTrack.budget}</p>
+        <p className="extension-budget">{extensionTrack.scoredAs}</p>
       </section>
 
       <section className="next-section" id="ready">
