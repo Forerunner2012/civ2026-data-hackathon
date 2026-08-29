@@ -23,8 +23,8 @@ The same inventory records:
 - `civ-workshop` version, source commit, and `uv.lock` hash;
 - the accepted Lyrical/Linux-amd64 container candidate image identity;
 - only supplied PlotJuggler assets that match the Phase 4 accepted names, sizes, and hashes;
-- every public quickstart, reference layout, example, and participant schema by tracked relative
-  path, exact hash, and byte size;
+- every public quickstart, reference layout, example, participant schema, and fixed submission
+  template by tracked relative path, exact hash, and byte size;
 - the deterministic directory layout and sorted `SHA256SUMS` procedure; and
 - the two-recovered-recording caveat, without a corrupt-parent location.
 
@@ -52,8 +52,8 @@ uv run -m civ_workshop.kit_inventory audit EXTERNAL_KIT_ROOT/participant-kit.jso
 
 Populate only the inventory's relative targets. Copy the generated checksum manifest to
 `checksums/SHA256SUMS`, verify hashes after every copy, and reject extra or changed bytes. The
-proposed top-level directories are `checksums`, `container`, `data`, `docs`, `examples`, `layouts`,
-and the two platform-specific viewer directories. Phase 5 still owns container export, clean-host
+proposed directories are `checksums`, `container`, `data`, `docs`, `examples`, `layouts`,
+`templates/submission`, and the two platform-specific viewer directories. Phase 5 still owns container export, clean-host
 installation, final SSD byte verification, SBOM/notices/source archive, event-hardware rehearsal,
 and release sign-off.
 

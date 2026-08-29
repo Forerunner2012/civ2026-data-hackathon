@@ -62,7 +62,25 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("schema", "schemas/civ.data-product-manifest.v1.schema.json"),
     ("schema", "schemas/civ.data-product-set.v1.schema.json"),
     ("schema", "schemas/civ.participant-kit-inventory.v1.schema.json"),
+    ("submission-template", "templates/submission/README.md"),
+    ("submission-template", "templates/submission/detector.yaml"),
+    ("submission-template", "templates/submission/figure.svg"),
+    ("submission-template", "templates/submission/report.md"),
+    ("submission-template", "templates/submission/reproduce.ps1"),
+    ("submission-template", "templates/submission/reproduce.sh"),
 )
+
+TRACKED_ASSET_SOURCES = {
+    f"templates/submission/{name}": f"src/civ_workshop/_templates/submission/{name}"
+    for name in (
+        "README.md",
+        "detector.yaml",
+        "figure.svg",
+        "report.md",
+        "reproduce.ps1",
+        "reproduce.sh",
+    )
+}
 
 VIEWER_ASSETS: dict[str, dict[str, object]] = {
     "PlotJuggler-3.999.3-Windows-x64.exe": {
@@ -121,7 +139,8 @@ def _write_text(path: Path, text: str, context: str) -> None:
 def _tracked_assets(repository: Path) -> list[dict[str, object]]:
     assets: list[dict[str, object]] = []
     for role, relative in TRACKED_ASSETS:
-        path = repository / Path(relative)
+        source = TRACKED_ASSET_SOURCES.get(relative, relative)
+        path = repository / Path(source)
         if not path.is_file():
             raise CivError(f"tracked kit asset does not exist: {relative}")
         assets.append(
@@ -328,6 +347,7 @@ def build_kit_inventory(
                 "docs",
                 "examples",
                 "layouts",
+                "templates/submission",
                 "viewer/linux-amd64",
                 "viewer/windows-amd64",
             ],
@@ -577,6 +597,7 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
             "docs",
             "examples",
             "layouts",
+            "templates/submission",
             "viewer/linux-amd64",
             "viewer/windows-amd64",
         ],

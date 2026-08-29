@@ -96,7 +96,9 @@ work/evidence/<event_id>.mcap   the extracted clips — reopen these in PlotJugg
 work/run-manifest.json          hashes, counts, evidence window, clip facts
 ```
 
-`civ report` writes `work/submission.zip` with exactly seven **metadata** entries: the EventSpec,
+For your own run, start once with `civ submission-init working --shell powershell` (use `posix` on Linux); it never overwrites, and its README explains every template prompt and normalized events.
+
+`civ report` writes `working/submission.zip` with exactly seven **metadata** entries: the EventSpec,
 `events.jsonl`, one figure, `metrics.json`, `report.md`, your `reproduce.ps1` or `reproduce.sh`, and
 `run-manifest.json`. No bag and no clip is ever bundled — the manifest carries the clip hashes, so
 the run stays checkable without shipping the bytes.

@@ -1,0 +1,16 @@
+spec: civ.eventspec/v1
+name: participant-detector
+signals:
+  observed_signal:
+    topic: CIV_TEMPLATE_REPLACE_ME_TOPIC
+    field: CIV_TEMPLATE_REPLACE_ME_FIELD
+condition: observed_signal > CIV_TEMPLATE_REPLACE_ME_VALUE
+timing:
+  min_duration: 0s
+  merge_gap: 0s
+  max_duration: 10s
+evidence:
+  before: 0.5s
+  after: 0.5s
+  topics:
+    - CIV_TEMPLATE_REPLACE_ME_EVIDENCE_TOPIC

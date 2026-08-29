@@ -143,6 +143,19 @@ def test_inventory_checksum_manifest_covers_products_manifests_and_tracked_asset
         assert f"{product['manifest_sha256']}  {product['manifest']}" in lines
     for asset in document["tracked_assets"]:
         assert f"{asset['sha256']}  {asset['path']}" in lines
+    template_targets = {
+        asset["path"]
+        for asset in document["tracked_assets"]
+        if asset["role"] == "submission-template"
+    }
+    assert template_targets == {
+        "templates/submission/README.md",
+        "templates/submission/detector.yaml",
+        "templates/submission/figure.svg",
+        "templates/submission/report.md",
+        "templates/submission/reproduce.ps1",
+        "templates/submission/reproduce.sh",
+    }
 
 
 def test_inventory_rejects_context_without_separate_human_approval(

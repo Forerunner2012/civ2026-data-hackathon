@@ -84,6 +84,9 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
     assert.match(b1, /online form is not configured.*USB fallback/i);
   }
   assert.match(b1, /confirmation.*submission reference/i);
+  assert.match(b1, /server receipt time tied.*authoritative/i);
+  assert.match(b1, /latest valid response for.*dataset.*12:30 JST is authoritative/i);
+  assert.match(b1, /organizer records the same hash-and-time receipt/i);
 });
 
 test("approved post-event solutions require a separate release flag", async () => {
@@ -175,5 +178,7 @@ test("static fallback is readable, script-free, and exposes no coach control", a
   assert.match(fallback, /Session fallback/);
   assert.match(fallback, /BY NOW YOU SHOULD HAVE/);
   assert.match(fallback, /IF YOU (?:DON.T|DON&#x27;T|DON&apos;T)/);
+  assert.match(fallback, /latest valid on-time bundle for that dataset is authoritative/i);
+  assert.match(fallback, /incomplete or invalid.*hash does not match.*repeated reference.*late receipt/is);
   assert.doesNotMatch(fallback, /<script|coach|advance|solution|Kashiwa/i);
 });

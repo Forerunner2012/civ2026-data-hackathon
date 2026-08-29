@@ -16,6 +16,7 @@ from civ_workshop.inspection import inspect_bag, render_inventory, render_sample
 from civ_workshop.intake import IntakeLedger, import_form_response
 from civ_workshop.reporting import build_report_bundle
 from civ_workshop.scoring import score_submission
+from civ_workshop.submission import scaffold_submission
 from civ_workshop.tally import import_tally_csv
 
 
@@ -65,6 +66,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     report_parser = commands.add_parser("report", help="validate and bundle a submission")
     report_parser.add_argument("submission", type=Path)
+
+    submission_parser = commands.add_parser(
+        "submission-init", help="create a deliberately incomplete submission workspace"
+    )
+    submission_parser.add_argument("workspace", type=Path)
+    submission_parser.add_argument(
+        "--shell", choices=("powershell", "posix"), required=True
+    )
 
     form_parser = commands.add_parser(
         "intake-form", help="import one exported online form response"
@@ -147,6 +156,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         elif args.command == "report":
             report_result = build_report_bundle(args.submission)
             print(json.dumps(report_result, sort_keys=True, separators=(",", ":")))
+        elif args.command == "submission-init":
+            submission_result = scaffold_submission(args.workspace, args.shell)
+            print(json.dumps(submission_result, sort_keys=True, separators=(",", ":")))
         elif args.command == "intake-form":
             receipt = import_form_response(args.response, args.ledger)
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))

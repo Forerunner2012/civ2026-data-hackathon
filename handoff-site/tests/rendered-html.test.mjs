@@ -98,6 +98,14 @@ test("participant view states the contract", async () => {
   assert.match(body, /55 points are machine-scored/i);
   assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
   assert.match(body, /one-page report/i);
+  assert.match(body, /civ submission-init working --shell powershell/i);
+  assert.match(body, /same participant or team identity/i);
+  assert.match(body, /server receipt time is authoritative/i);
+  assert.match(body, /later valid on-time bundle for the same dataset is authoritative/i);
+  assert.match(body, /Incomplete or invalid/);
+  assert.match(body, /Hash mismatch/);
+  assert.match(body, /Duplicate reference/);
+  assert.match(body, /Late/);
   assert.match(body, /KSH-64ac27cd029b-signals\.mcap/);
   assert.match(body, /RMS-CHUNK-0-0a0817b3afc8-signals\.mcap/);
   assert.match(body, /layouts\/kashiwa-right-turn\.pj4\.xml/);
@@ -106,7 +114,8 @@ test("participant view states the contract", async () => {
   assert.match(body, /\/desk\/warmup-trace\.html/);
   assert.match(body, /\/desk\/help-card\.html/);
   assert.match(body, /\/desk\/brief\.html/);
-  const commandOffsets = ["civ doctor", "civ inspect", "civ sample", "civ detect", "civ clip", "civ score", "civ report"].map((command) => body.indexOf(command));
+  const commandList = body.match(/<div class="command-list">([\s\S]+?)<\/div>/)?.[1] ?? "";
+  const commandOffsets = ["civ doctor", "civ inspect", "civ sample", "civ detect", "civ clip", "civ score", "civ report"].map((command) => commandList.indexOf(command));
   assert.ok(commandOffsets.every((offset) => offset >= 0));
   assert.deepEqual(commandOffsets, [...commandOffsets].sort((a, b) => a - b));
   // The ranking rule is published to participants even though the answer key is not.
@@ -115,6 +124,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /Submit as often as you like/i);
   assert.match(body, /scored by AI agents/i);
   assert.match(body, /your clips stay on your machine/i);
+  assert.doesNotMatch(body, /tally\.so|SUBMISSION_FORM_URL|intake-local/i);
   assert.match(body, /pairing up on the day is normal/i);
 });
 

@@ -9,7 +9,16 @@ import yaml
 
 REPOSITORY = Path(__file__).parents[1]
 QUICKSTART = REPOSITORY / "docs" / "quickstart.md"
-PARTICIPANT_COMMANDS = {"doctor", "inspect", "sample", "detect", "clip", "score", "report"}
+PARTICIPANT_COMMANDS = {
+    "clip",
+    "detect",
+    "doctor",
+    "inspect",
+    "report",
+    "sample",
+    "score",
+    "submission-init",
+}
 ORGANIZER_COMMANDS = ("intake-form", "intake-tally", "intake-local", "score-batch")
 REFERENCE_PATHS = [
     ("layouts/kashiwa-right-turn.pj4.xml", "examples/kashiwa/right_turn.yaml"),

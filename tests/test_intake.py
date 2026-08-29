@@ -149,6 +149,40 @@ def test_last_valid_on_time_submission_wins_and_late_receipts_are_quarantined(
     assert ledger.scorer_input("team-1").read_bytes() == final_bundle.read_bytes()
 
 
+def test_authority_is_scoped_per_dataset_rather_than_per_identity(
+    micro_case: MicroCase, tmp_path: Path
+) -> None:
+    second_case = create_micro_case(tmp_path / "second-dataset", (0.0, 3.0, 3.0, 0.0, 0.0))
+    first_bundle = _bundle(micro_case, tmp_path, "first-dataset")
+    second_bundle = _bundle(second_case, tmp_path, "second-dataset")
+    ledger = IntakeLedger(tmp_path / "intake")
+
+    first = ledger.accept_online(
+        identity="team-1",
+        received_at="2026-09-03T12:00:00+09:00",
+        submitted_sha256=sha256(first_bundle.read_bytes()).hexdigest(),
+        bundle_path=first_bundle,
+        delivery_id="form-first-dataset",
+    )
+    second = ledger.accept_local(
+        identity="team-1",
+        received_at="2026-09-03T12:20:00+09:00",
+        submitted_sha256=sha256(second_bundle.read_bytes()).hexdigest(),
+        bundle_path=second_bundle,
+        delivery_id="usb-second-dataset",
+    )
+
+    assert first.source_sha256 != second.source_sha256
+    assert [first.status, second.status] == ["on_time", "on_time"]
+    # The later bundle must not silently replace a different dataset's entry.
+    for lookup in (ledger.authoritative, ledger.scorer_input):
+        with pytest.raises(CivError, match="authority is dataset-specific"):
+            lookup("team-1")
+    assert ledger.receipts() == [first, second]
+    assert ledger.bundle_for(first).read_bytes() == first_bundle.read_bytes()
+    assert ledger.bundle_for(second).read_bytes() == second_bundle.read_bytes()
+
+
 def test_invalid_and_duplicate_deliveries_do_not_replace_an_earlier_valid_submission(
     micro_case: MicroCase, tmp_path: Path
 ) -> None:

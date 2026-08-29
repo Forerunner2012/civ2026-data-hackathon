@@ -32,6 +32,7 @@ MAX_SUBMISSION_BUNDLE_BYTES = 12 * 1024 * 1024
 MAX_SUBMISSION_ENTRY_BYTES = 8 * 1024 * 1024
 MAX_SUBMISSION_UNCOMPRESSED_BYTES = 10 * 1024 * 1024
 MAX_SUBMISSION_ARCHIVE_ENTRIES = 16
+TEMPLATE_MARKER = "CIV_TEMPLATE_REPLACE_ME"
 
 
 def _detector_spec(working: Path) -> Path:
@@ -58,6 +59,8 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
         report = report_path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as error:
         raise CivError(f"cannot read report.md: {error}") from error
+    if TEMPLATE_MARKER in report:
+        raise CivError("report still contains CIV_TEMPLATE_REPLACE_ME prompts")
     headings = [line.lstrip("#").strip() for line in report.splitlines() if line.startswith("#")]
     missing_headings = [heading for heading in REPORT_HEADINGS if heading not in headings]
     if missing_headings:
@@ -75,6 +78,11 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
         raise CivError(f"report figure does not exist: {figures[0]}")
     if figure_path.parent != working.resolve() or figure_path.suffix.lower() not in FIGURE_SUFFIXES:
         raise CivError("report figure must be a top-level supported image file")
+    try:
+        if TEMPLATE_MARKER.encode() in figure_path.read_bytes():
+            raise CivError("report figure is still the CIV_TEMPLATE_REPLACE_ME placeholder")
+    except OSError as error:
+        raise CivError(f"cannot read report figure: {error}") from error
 
     reproduction = [
         working / name for name in ("reproduce.ps1", "reproduce.sh") if (working / name).is_file()

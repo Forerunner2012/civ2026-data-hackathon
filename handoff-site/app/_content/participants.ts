@@ -214,6 +214,23 @@ export const submissionTree = `working/                       handed in?
 ├── reproduce.ps1|sh           yes   one-command entry point
 └── evidence/                  no    your clips stay on your machine`;
 
+export const submissionSteps = [
+  "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
+  "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
+  "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
+  "Submit the unchanged ZIP, printed hash, and the same participant or team identity. Keep the confirmation reference; its server receipt time is authoritative.",
+  "If the form is unavailable, hand over those same three items by USB. Never unpack, rename, recompress, or add recordings or clips.",
+];
+
+export const submissionOutcomes = [
+  { state: "Accepted", action: "Keep the reference, hash, and receipt time. You may continue working." },
+  { state: "Replaced", action: "A later valid on-time bundle for the same dataset is authoritative; keep both receipts." },
+  { state: "Incomplete or invalid", action: "Read the `civ report` diagnostic, fix the named artifact, rebuild, and submit again." },
+  { state: "Hash mismatch", action: "Upload the unchanged ZIP and paste the exact hash printed by the same report run." },
+  { state: "Duplicate reference", action: "The existing receipt stands. Use a new form response only for a newly built bundle." },
+  { state: "Late", action: "The receipt is retained as late and cannot replace your last valid on-time bundle." },
+];
+
 export const comeReady = [
   "A laptop you can install software on, with room to spare: a container plus recordings needs disk and memory, not a GPU.",
   "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container.",

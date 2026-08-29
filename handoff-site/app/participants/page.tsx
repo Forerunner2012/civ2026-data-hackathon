@@ -17,6 +17,8 @@ import {
   scoringRules,
   theDayPage,
   submissionTree,
+  submissionOutcomes,
+  submissionSteps,
   youOwn,
   youReceive,
 } from "../_content/participants";
@@ -240,6 +242,22 @@ export default function Participants() {
           ))}
         </div>
         <pre className="tree-block">{submissionTree}</pre>
+        <div className="submission-guide">
+          <div>
+            <h3>Build and hand in the same bundle on every path</h3>
+            <ol>
+              {submissionSteps.map((step) => <li key={step}>{step}</li>)}
+            </ol>
+          </div>
+          <div>
+            <h3>What each outcome means</h3>
+            <dl>
+              {submissionOutcomes.map(({ state, action }) => (
+                <div key={state}><dt>{state}</dt><dd>{action}</dd></div>
+              ))}
+            </dl>
+          </div>
+        </div>
       </section>
 
       <section className="scoring-section" id="scoring">

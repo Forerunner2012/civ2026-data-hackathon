@@ -284,6 +284,15 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 .deliver-grid span { color:var(--lime); font:700 10px/1.5 ui-monospace,Consolas,monospace; }
 .deliver-grid p { margin:0; font-size:14px; line-height:1.5; color:#c5cec9; }
 .tree-block { margin:46px 0 0; padding:26px 28px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.16); color:#b8c2bd; font:12px/1.75 ui-monospace,Consolas,monospace; overflow-x:auto; }
+.submission-guide { display:grid; grid-template-columns:1fr 1fr; gap:1px; margin-top:34px; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.16); }
+.submission-guide > div { padding:28px; background:var(--night); }
+.submission-guide h3 { margin:0 0 20px; font-size:20px; }
+.submission-guide ol { margin:0; padding-left:20px; display:grid; gap:12px; }
+.submission-guide li, .submission-guide dd { color:#c5cec9; font-size:13px; line-height:1.55; }
+.submission-guide dl { margin:0; display:grid; }
+.submission-guide dl div { display:grid; grid-template-columns:130px 1fr; gap:14px; padding:10px 0; border-top:1px solid rgba(255,255,255,.15); }
+.submission-guide dt { color:var(--lime); font:700 10px/1.5 ui-monospace,Consolas,monospace; text-transform:uppercase; }
+.submission-guide dd { margin:0; }
 
 .scoring-section { padding:100px 7vw; }
 .score-table { width:100%; border-collapse:collapse; }
@@ -376,6 +385,7 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 @media (max-width: 1050px) {
   .door-grid { grid-template-columns:1fr; }
   .deliver-grid { grid-template-columns:1fr; gap:0; }
+  .submission-guide { grid-template-columns:1fr; }
   .criteria-grid { grid-template-columns:1fr; }
   .criteria-column { border-right:0; border-bottom:1px solid var(--line); }
   .forces-grid { grid-template-columns:repeat(2,1fr); }
