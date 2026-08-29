@@ -8,6 +8,7 @@ audience views so organizer material is never shown to participants.
 | `/` | either | Entry door. Links to both views, carries no audience content of its own. |
 | `/participants` | attendees | Brief, the three-hour ladder, ownership boundary, deliverables, the published rubric, toolkit and CLI, submission layout, what to come ready with. |
 | `/organizers` | **internal** | Strategy/tactics/operations, success criteria and non-goals, the six preparation phases and gates, readiness workstreams, evaluation internals, facilitation mechanics, the seven driving forces, the open decision queue, source precedence. |
+| `/organizers/pack` | organizers and jury, **internal** | Day-of coach, recovery, scoring, feedback, and results runbook; absent from the public production artifact. |
 | `/live` | attendees, **local only** | Current session beat, cumulative unlocked guidance, countdown, and static fallback. |
 | `/live/coach` | coach, **local only** | One authorized, next-only advance action. |
 | `/solutions` | attendees, **post-event local release only** | Human-approved worked approaches; unavailable by default and absent from the public production artifact. |
@@ -19,6 +20,7 @@ Content lives in `app/_content/`, split by audience:
 - `participants.ts` — safe for attendees, may be bundled anywhere.
 - `organizers.server.ts` — starts with `import "server-only"`. Importing it from a client component
   is a **build error**, so internal material cannot reach a browser bundle by accident.
+- `organizer-pack.server.ts` — private coach, recovery, jury-anchor, score-trace, and results material.
 - `live-content.server.ts` — holds the complete time-embargoed live copy behind the same structural
   server-only boundary. Client components receive only the current stage and cumulative unlocked
   guidance selected by `live-store.server.ts`.

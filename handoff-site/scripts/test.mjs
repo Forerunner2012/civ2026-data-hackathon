@@ -34,12 +34,13 @@ await run(
     "--test",
     "tests/live-state.test.ts",
     "tests/live-rendered.test.mjs",
+    "tests/organizer-pack-rendered.test.mjs",
   ],
   testEnvironment,
 );
 await run(["scripts/build-audience.mjs", "internal"], noFormEnvironment);
 await run(
-  ["--experimental-strip-types", "--test", "tests/live-rendered.test.mjs"],
+  ["--experimental-strip-types", "--test", "tests/live-rendered.test.mjs", "tests/organizer-pack-rendered.test.mjs"],
   noFormEnvironment,
 );
 await run(["scripts/build-audience.mjs", "public"]);

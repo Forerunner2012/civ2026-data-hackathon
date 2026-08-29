@@ -57,6 +57,8 @@ const ORGANIZER_ONLY = [
   /driving force/i,
   /source precedence/i,
   /quality defect/i,
+  /JURY-PACK-INTERNAL/i,
+  /Never average away a disagreement/i,
   // Map two's internal vocabulary. "held-back", "answer key" and "worked
   // example" are deliberately NOT here — participants are told those.
   /pace car/i,
@@ -163,6 +165,13 @@ test("organizer view is absent from the public artifact", async () => {
   }
 });
 
+test("organizer operations and jury pack is absent from the public artifact", async () => {
+  const response = await render("/organizers/pack");
+  assert.equal(response.status, 404);
+  const body = await response.text();
+  assert.doesNotMatch(body, /JURY-PACK-INTERNAL|artifact-verifiable anchors|coachProtocol/i);
+});
+
 /**
  * The live session page carries hints and, eventually, worked solutions. It is
  * served from the organizer's machine on the day — never from the public site.
@@ -223,6 +232,7 @@ test("server bundle contains no organizer route or material", async () => {
   );
 
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/organizers"/);
+  assert.doesNotMatch(serverBundle, /pattern:\s*"\/organizers\/pack"/);
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/live"/);
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/live\/coach"/);
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/api\/live"/);

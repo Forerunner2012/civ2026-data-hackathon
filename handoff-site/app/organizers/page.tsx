@@ -71,6 +71,9 @@ export default function Organizers() {
             not as readiness.
           </p>
           <div className="hero-actions">
+            <a className="primary-button" href="/organizers/pack">
+              Open operations + jury pack <span>→</span>
+            </a>
             <a className="primary-button" href="#decisions">
               Jump to the decision queue <span>→</span>
             </a>
