@@ -24,6 +24,10 @@ REFERENCE_PATHS = [
     ("layouts/kashiwa-right-turn.pj4.xml", "examples/kashiwa/right_turn.yaml"),
     ("layouts/reims-left-turn.pj4.xml", "examples/reims/left_turn.yaml"),
 ]
+OPTIONAL_CONTEXT_TOPICS = {
+    "/sensing/camera/traffic_light/image_raw/compressed",
+    "/zed/zed_node/rgb/image_rect_color/compressed",
+}
 
 
 def _curves(layout: Path) -> list[str]:
@@ -64,6 +68,15 @@ def test_layout_curves_resolve_to_signals_the_reference_spec_names(
             assert field in bound, (
                 f"curve {curve} does not plot a field bound by the EventSpec"
             )
+
+
+@pytest.mark.parametrize(("_layout", "example"), REFERENCE_PATHS)
+def test_reference_specs_clip_only_signals_in_the_default_kit(
+    _layout: str, example: str
+) -> None:
+    _, topics = _spec_topics(REPOSITORY / example)
+
+    assert topics.isdisjoint(OPTIONAL_CONTEXT_TOPICS)
 
 
 @pytest.mark.parametrize(("layout", "example"), REFERENCE_PATHS)

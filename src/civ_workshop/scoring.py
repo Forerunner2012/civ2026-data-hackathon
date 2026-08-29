@@ -13,8 +13,8 @@ from civ_workshop.artifacts import (
 )
 from civ_workshop.contracts import require_run_contracts
 from civ_workshop.errors import CivError
-from civ_workshop.label_packs import TEMPORAL_IOU_THRESHOLD, load_label_pack
 from civ_workshop.models import Interval
+from civ_workshop.score_reference import TEMPORAL_IOU_THRESHOLD, load_score_reference
 
 
 def _temporal_iou(left: Interval, right: Interval) -> float:
@@ -40,7 +40,7 @@ def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
     submission_source_sha256 = require_string(
         source.get("sha256"), "run manifest source sha256"
     )
-    label_pack = load_label_pack(labels_path)
+    label_pack = load_score_reference(labels_path)
     dataset = str(label_pack["dataset"])
     source_sha256 = str(label_pack["source_sha256"])
     if source_sha256 != submission_source_sha256:

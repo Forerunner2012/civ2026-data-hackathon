@@ -102,7 +102,7 @@
       "required": ["name", "image_digest", "platform"],
       "properties": {
         "name": {"type": "string", "minLength": 1},
-        "image_digest": {"const": "sha256:abf90cdd46b446a185f24bc2a7097a49b34b57c415ff227e02ae55c17c7cd423"},
+        "image_digest": {"const": "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"},
         "platform": {"const": "linux-amd64"}
       }
     },

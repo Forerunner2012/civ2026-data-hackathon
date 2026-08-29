@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import math
+import re
 import shutil
 import sys
 from collections.abc import Mapping, Sequence
@@ -55,7 +56,63 @@ FALLBACK_SIGNALS: dict[str, tuple[tuple[str, str], ...]] = {
     ),
 }
 
-TOOL_SOURCE_ROOTS = ("pyproject.toml", "uv.lock", "src/civ_workshop")
+PARTICIPANT_TEXT_SUFFIXES = frozenset(
+    {
+        ".html",
+        ".js",
+        ".json",
+        ".md",
+        ".ps1",
+        ".sh",
+        ".svg",
+        ".ts",
+        ".tsx",
+        ".xml",
+        ".yaml",
+        ".yml",
+    }
+)
+FORBIDDEN_ASSEMBLY_TARGET_PREFIXES = ("tool/source/",)
+PARTICIPANT_RUNTIME_MODULES = (
+    "artifacts.py",
+    "clipping.py",
+    "contracts.py",
+    "detection.py",
+    "doctor.py",
+    "errors.py",
+    "event_spec.py",
+    "inspection.py",
+    "models.py",
+    "participant_cli.py",
+    "reporting.py",
+    "resources.py",
+    "schema_pins.py",
+    "score_reference.py",
+    "scoring.py",
+    "submission.py",
+)
+PRIVATE_RUNTIME_MODULES = frozenset(
+    {
+        "batch.py",
+        "cli.py",
+        "data_products.py",
+        "intake.py",
+        "kit_assembly.py",
+        "kit_inventory.py",
+        "label_packs.py",
+        "tally.py",
+    }
+)
+FORBIDDEN_ASSEMBLY_TEXT = (
+    "/organizers",
+    "civ intake-form",
+    "civ intake-local",
+    "civ intake-tally",
+    "civ score-batch",
+    "jury-pack-internal",
+    "live_coach_token",
+)
+ABSOLUTE_PATH_PATTERN = re.compile(r"(?:[A-Za-z]:\\|/(?:home|Users)/)")
 
 
 def _target(value: str) -> str:
@@ -325,6 +382,55 @@ def _verify_static_site(site_root: Path) -> None:
             raise CivError(f"static participant export contains forbidden term '{term}'")
 
 
+def _verify_participant_assembly(
+    root: Path, records: Sequence[Mapping[str, object]]
+) -> None:
+    for record in records:
+        target = _target(str(record["target"]))
+        if target.startswith(FORBIDDEN_ASSEMBLY_TARGET_PREFIXES):
+            raise CivError(f"attendee kit contains private source target: {target}")
+        if target.startswith("runtime/source/src/civ_workshop/") and Path(target).name in (
+            PRIVATE_RUNTIME_MODULES
+        ):
+            raise CivError(f"attendee kit contains private runtime module: {target}")
+        path = root / Path(target)
+        if path.suffix.casefold() not in PARTICIPANT_TEXT_SUFFIXES:
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        folded = text.casefold()
+        for term in FORBIDDEN_ASSEMBLY_TEXT:
+            if term.casefold() in folded:
+                raise CivError(
+                    f"attendee kit text contains private operation '{term}': {target}"
+                )
+        if ABSOLUTE_PATH_PATTERN.search(text):
+            raise CivError(f"attendee kit text contains an absolute host path: {target}")
+
+
+def _copy_participant_runtime(repository: Path, target: Path) -> None:
+    _copy_file(repository / "kit" / "participant-pyproject.toml", target / "pyproject.toml")
+    _copy_file(repository / "uv.lock", target / "uv.lock")
+    package_source = repository / "src" / "civ_workshop"
+    package_target = target / "src" / "civ_workshop"
+    for name in PARTICIPANT_RUNTIME_MODULES:
+        _copy_file(package_source / name, package_target / name)
+    package_target.mkdir(parents=True, exist_ok=True)
+    (package_target / "__init__.py").write_text(
+        '"""Offline participant tooling for the CIV 2026 data hackathon."""\n',
+        encoding="utf-8",
+        newline="\n",
+    )
+    (package_target / "__main__.py").write_text(
+        "from civ_workshop.participant_cli import main\n\nmain()\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    _copy_tree(
+        package_source / "_templates" / "submission",
+        package_target / "_templates" / "submission",
+    )
+
+
 def assemble_kit(
     inventory_path: Path,
     repository: Path,
@@ -392,14 +498,15 @@ def assemble_kit(
     _copy_tree(site_root, output / "site")
     _copy_tree(fallback_root, output / "fallback")
     _copy_tree(cache_root, output / "offline" / "uv-cache")
-    _copy_file(container_archive, output / "container" / "civ-phase1-lyrical-resolute.tar")
-    for item in TOOL_SOURCE_ROOTS:
-        source = repository / item
-        target = output / "tool" / "source" / item
-        _copy_tree(source, target) if source.is_dir() else _copy_file(source, target)
+    _copy_file(
+        container_archive,
+        output / "container" / "civ-phase4-attendee-candidate-558e85c.tar",
+    )
+    _copy_participant_runtime(repository, output / "runtime" / "source")
     records = _file_records(
         output, excluded={"attendee-kit-assembly.json", "checksums/ASSEMBLY-SHA256SUMS"}
     )
+    _verify_participant_assembly(output, records)
     components: dict[str, int] = {}
     for record in records:
         component = str(record["target"]).split("/", 1)[0]
@@ -458,6 +565,7 @@ def audit_assembly(manifest_path: Path) -> dict[str, object]:
         raise CivError("attendee kit assembly byte total does not match")
     if total > TWO_TIB:
         raise CivError("attendee kit does not fit one carried SSD")
+    _verify_participant_assembly(root, files)
     checksum_path = root / "checksums" / "ASSEMBLY-SHA256SUMS"
     expected_records = _file_records(root, excluded={"checksums/ASSEMBLY-SHA256SUMS"})
     expected = "".join(f"{item['sha256']}  {item['target']}\n" for item in expected_records)

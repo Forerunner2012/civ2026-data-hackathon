@@ -208,8 +208,17 @@ def run_doctor(
         )
     checks.append(workspace_check)
     checks.append(_bag_check(bag))
-    kit_required = ("pyproject.toml", "uv.lock", "examples", "schemas")
-    missing_kit_entries = [name for name in kit_required if not (offline_kit / name).exists()]
+    source_checkout = ("pyproject.toml", "uv.lock", "examples", "schemas")
+    attendee_kit = ("participant-kit.json", "container", "data", "examples", "schemas")
+    missing_source_entries = [
+        name for name in source_checkout if not (offline_kit / name).exists()
+    ]
+    missing_attendee_entries = [
+        name for name in attendee_kit if not (offline_kit / name).exists()
+    ]
+    missing_kit_entries = min(
+        (missing_source_entries, missing_attendee_entries), key=len
+    )
     checks.append(
         DoctorCheck(
             name="offline-kit",

@@ -31,6 +31,19 @@ separate participant-owned directory. The two recovered Kashiwa recordings retai
 `participant-kit.json`: structural recovery made them readable but cannot prove no records were
 lost to truncation.
 
-For an offline source install, run `uv sync --frozen --offline` from `tool/source` with
-`UV_CACHE_DIR` set to `offline/uv-cache`. Phase 5 will freeze the final event-hardware launch
-commands and physical SSD copies.
+The kit contains a participant-only runtime source at `runtime/source`. It exposes `doctor`,
+`inspect`, `sample`, `detect`, `clip`, `score`, `report`, and `submission-init`; private intake,
+cohort scoring, product construction, and held-back-data preparation modules are absent. From that
+directory, set `UV_CACHE_DIR` to `../../offline/uv-cache` and run
+`uv sync --frozen --offline --no-dev`.
+
+The pinned Linux path is self-contained:
+
+```text
+docker load --input container/civ-phase4-attendee-candidate-558e85c.tar
+docker run --rm --read-only --network none --mount type=bind,src=KIT_ROOT,dst=/kit,readonly --mount type=bind,src=WORK_ROOT,dst=/work civ-phase4:attendee-candidate-558e85c doctor --workspace /work --bag /kit/data/KSH-64ac27cd029b-signals.mcap --offline-kit /kit
+```
+
+Replace `KIT_ROOT` and `WORK_ROOT` with absolute host directories; only `WORK_ROOT` is writable.
+Docker exposes no GPU unless one is explicitly requested, and this command requests none. Phase 5
+will freeze event-hardware wrappers and physical SSD copies around these exact inputs.

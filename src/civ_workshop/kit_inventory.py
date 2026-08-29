@@ -24,11 +24,12 @@ ACCEPTED_MESSAGE_COUNT = 1_102_147
 ACCEPTED_ROLES = Counter(
     {("kashiwa", "development"): 7, ("kashiwa", "warmup"): 1, ("reims", "development"): 5}
 )
-CONTAINER_IMAGE_DIGEST = "sha256:abf90cdd46b446a185f24bc2a7097a49b34b57c415ff227e02ae55c17c7cd423"
+CONTAINER_IMAGE_DIGEST = "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"
+CONTAINER_IMAGE_NAME = "civ-phase4:attendee-candidate-558e85c"
 RECOVERY_NOTICE = (
     "Two Kashiwa products derive from recovered recordings. Structural recovery made the "
     "recordings readable but does not prove that truncation lost no records. The caveat must "
-    "remain with every distribution; corrupt-parent locations are organizer-only."
+    "remain with every distribution; corrupt-parent locations are intentionally omitted."
 )
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
@@ -359,7 +360,7 @@ def build_kit_inventory(
     inventory: dict[str, object] = {
         "container_candidate": {
             "image_digest": CONTAINER_IMAGE_DIGEST,
-            "name": "civ-phase1:lyrical-resolute",
+            "name": CONTAINER_IMAGE_NAME,
             "platform": "linux-amd64",
         },
         "content_profile": "signals-only",
@@ -539,7 +540,7 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
     container = _mapping(document.get("container_candidate"), "container candidate")
     if container != {
         "image_digest": CONTAINER_IMAGE_DIGEST,
-        "name": "civ-phase1:lyrical-resolute",
+        "name": CONTAINER_IMAGE_NAME,
         "platform": "linux-amd64",
     }:
         raise CivError("participant-kit inventory has the wrong container candidate")

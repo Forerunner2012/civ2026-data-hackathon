@@ -22,7 +22,8 @@ The same inventory records:
 
 - `civ-workshop` version, source commit, and `uv.lock` hash;
 - the accepted Lyrical/Linux-amd64 container candidate image identity;
-- only supplied PlotJuggler assets that match the Phase 4 accepted names, sizes, and hashes;
+- supplied PlotJuggler and Lichtblick assets that match the Phase 4 accepted names, sizes, and
+  hashes, with neither viewer allowed to ship alone;
 - every public quickstart, reference layout, example, participant schema, and fixed submission
   template by tracked relative path, exact hash, and byte size;
 - the deterministic directory layout and sorted `SHA256SUMS` procedure; and
@@ -62,8 +63,9 @@ and release sign-off.
 The real accepted Phase 3 participant directory was reopened and audited before inventory
 generation. All 13 MCAPs and public manifests passed their exact hash, schema/topic, role, message,
 disk-size, and leakage checks. Two independent inventory builds produced byte-identical JSON and
-checksum manifests. The Windows viewer input matched its accepted 117,766,332-byte SHA-256 pin;
-the Linux AppImage remains a Phase 5 physical-payload check.
+checksum manifests. The Windows PlotJuggler and Lichtblick inputs matched their accepted
+117,766,332-byte and 266,309,046-byte SHA-256 pins. Linux viewer assets remain a Phase 5
+physical-payload check.
 
 The generated inventory contained no absolute path, label-pack or interval data, truth marker,
 sealed identity, viewer state, container state, secret, camera/context entry, or untracked payload.

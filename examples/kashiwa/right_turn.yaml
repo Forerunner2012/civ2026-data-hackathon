@@ -18,4 +18,3 @@ evidence:
     - /pix_hooke/v2a_steerstafb
     - /pix_hooke/v2a_vehiclestafb
     - /perception/object_recognition/is_object_detected
-    - /sensing/camera/traffic_light/image_raw/compressed

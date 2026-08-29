@@ -52,6 +52,7 @@ await run(["scripts/export-public-static.mjs", "tmp/participant-static"]);
 await run([
   "--test",
   "tests/rendered-html.test.mjs",
+  "tests/accessibility.test.mjs",
   "tests/print-materials.test.mjs",
   "tests/static-export.test.mjs",
 ]);

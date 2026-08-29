@@ -108,7 +108,7 @@ export default function Participants() {
       </section>
 
       <section className="brief-section" id="brief">
-        <div className="section-label">YOUR BRIEF</div>
+        <h2 className="section-label">YOUR BRIEF</h2>
         <div className="brief-card">
           <p>{brief}</p>
         </div>

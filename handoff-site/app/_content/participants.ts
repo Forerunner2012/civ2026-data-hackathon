@@ -174,7 +174,7 @@ export const commands = [
   { command: "civ sample BAG --topic ...", note: "pull signals into a table" },
   { command: "civ detect SPEC DATASET", note: "run your detector, --dry-run first" },
   { command: "civ clip EVENTS DATASET", note: "cut compact evidence" },
-  { command: "civ score SUBMISSION", note: "development score" },
+  { command: "civ score SUBMISSION --labels DEVELOPMENT_LABELS", note: "development score" },
   { command: "civ report SUBMISSION", note: "package the one-page argument" },
 ];
 

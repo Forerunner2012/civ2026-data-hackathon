@@ -131,7 +131,7 @@ h1 em { font-family: Georgia, "Times New Roman", serif; font-weight: 400; color:
 .system-footer span { border-top: 1px solid rgba(255,255,255,.18); padding-top: 11px; color: #a9b3ae; font: 9px/1.2 ui-monospace, Consolas, monospace; text-transform: uppercase; }
 
 .shift-section { padding: 0 7vw 90px; }
-.section-label { padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.section-label { margin: 0; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .shift-grid { display: grid; grid-template-columns: repeat(4,1fr); }
 .shift-grid article { padding: 26px 28px 20px 0; border-right: 1px solid var(--line); }
 .shift-grid article + article { padding-left: 28px; }

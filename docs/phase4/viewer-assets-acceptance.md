@@ -11,7 +11,7 @@ Phase 5.
 
 ## Selected PlotJuggler release
 
-The required viewer is the official **PlotJuggler 4 beta2** release, tag `3.999.3`, commit
+The first pinned viewer is the official **PlotJuggler 4 beta2** release, tag `3.999.3`, commit
 `4dc16a13439010e9d101923886b21571e8c85d97`. The tag resolves directly to that immutable commit.
 The release and binaries are published by the upstream PlotJuggler repository:
 
@@ -93,21 +93,26 @@ scanned for organizer paths, truth and label-pack markers, sealed intervals, ans
 routes, and organizer commands. No participant-surface leak was found. The runtime products and
 logs remain ignored and are not distribution inputs.
 
-## Lichtblick decision
+## Lichtblick packaging amendment
 
-**Do not ship Lichtblick in the Phase 4 attendee kit.** No exact local Lichtblick artifact was
-available for a hash-and-offline smoke test, and PlotJuggler beta2 already covers the required
-participant signal workflow. Adding another viewer would enlarge the kit and its support and
-licensing surface without a demonstrated attendee benefit. Exclusion is the issue's accepted
-default and requires no human expansion approval.
+Ticket #45 superseded the earlier exclusion after exact Lichtblick inputs became available. The
+assembled kit now carries both PlotJuggler and **Lichtblick 1.28.0**; the inventory refuses a
+one-viewer-only payload. The staged Windows Lichtblick artifact is exactly 266,309,046 bytes with
+SHA-256 `94420a37b3f9520091501842ee491966665090cfd23f40115f36f7ecf58ea2ec`.
 
-This does not change the stable `civ doctor` policy that can recognize Lichtblick as an alternative
-visualization adapter on an organizer-prepared machine. It only fixes the distributed attendee-kit
-inventory to PlotJuggler for Phase 4.
+The reference layouts are tracked as `layouts/lichtblick-kashiwa-right-turn.json` and
+`layouts/lichtblick-reims-left-turn.json`. The organizer visually inspected each supplied layout
+with one matching participant MCAP and approved both rendered launches. This human evidence closes
+the visual-open question that process responsiveness alone could not answer.
+
+On connected machines, the participant instructions recommend the upstream no-install web app at
+`https://lichtblick-suite.github.io/lichtblick/`. This is the computer-independent and preferred
+security route because it avoids executing a binary carried beside the data. The exact desktop
+artifact remains in the kit for a disconnected room, with checksum verification required first.
 
 ## Remaining Phase 5 checks
 
-Phase 5 must run the clean installer and AppImage on fresh target machines, verify event hardware
-and graphics behaviour, freeze the final copied bytes, archive the exact corresponding source,
-produce SBOM and third-party notices, confirm all bundled licences, and rehearse recovery media.
-Any change to the selected tag or either asset hash reopens this gate.
+Phase 5 must run the Windows installers and Linux viewer assets on fresh target machines, verify
+event hardware and graphics behaviour, freeze the final copied bytes, archive the exact
+corresponding source, produce SBOM and third-party notices, confirm all bundled licences, and
+rehearse recovery media. Any change to a selected version or asset hash reopens this gate.

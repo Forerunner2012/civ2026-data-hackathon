@@ -11,8 +11,27 @@ from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import assemble_kit, audit_assembly, build_fallback_pack
 from civ_workshop.kit_inventory import ACCEPTED_PRODUCT_SET_SHA256
+from civ_workshop.participant_cli import build_parser as build_participant_parser
 
 REPOSITORY = Path(__file__).parents[1]
+
+
+def test_participant_runtime_exposes_only_the_public_command_path() -> None:
+    help_text = build_participant_parser().format_help()
+
+    for command in (
+        "clip",
+        "detect",
+        "doctor",
+        "inspect",
+        "report",
+        "sample",
+        "score",
+        "submission-init",
+    ):
+        assert command in help_text
+    for private_command in ("intake-form", "intake-local", "intake-tally", "score-batch"):
+        assert private_command not in help_text
 
 
 def _write_json_bag(path: Path, dataset: str) -> None:
@@ -190,6 +209,11 @@ def test_assembly_copies_closed_inputs_and_detects_changes(
     assert audit_assembly(tmp_path / "assembled" / "attendee-kit-assembly.json") == result
     assert (tmp_path / "assembled" / "site" / "participants" / "index.html").is_file()
     assert (tmp_path / "assembled" / "offline" / "uv-cache" / ".lock").stat().st_size == 0
+    assert not (tmp_path / "assembled" / "tool").exists()
+    runtime = tmp_path / "assembled" / "runtime" / "source" / "src" / "civ_workshop"
+    assert (runtime / "participant_cli.py").is_file()
+    assert (runtime / "score_reference.py").is_file()
+    assert not any((runtime / name).exists() for name in assembly_module.PRIVATE_RUNTIME_MODULES)
     (tmp_path / "assembled" / "data" / "route.mcap").write_bytes(b"tampered")
     with pytest.raises(CivError, match="does not match"):
         audit_assembly(tmp_path / "assembled" / "attendee-kit-assembly.json")
@@ -204,3 +228,28 @@ def test_static_export_leakage_gate_rejects_private_route(tmp_path: Path) -> Non
 
     with pytest.raises(CivError, match="forbidden term"):
         assembly_module._verify_static_site(site)
+
+
+@pytest.mark.parametrize(
+    ("target", "content", "message"),
+    [
+        ("tool/source/src/civ_workshop/batch.py", "pass\n", "private source target"),
+        (
+            "runtime/source/src/civ_workshop/intake.py",
+            "pass\n",
+            "private runtime module",
+        ),
+        ("docs/private.md", "Run civ score-batch now.\n", "private operation"),
+        ("docs/path.md", "D:\\private\\labels.json\n", "absolute host path"),
+    ],
+)
+def test_assembly_leakage_gate_rejects_private_payload(
+    tmp_path: Path, target: str, content: str, message: str
+) -> None:
+    path = tmp_path / target
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    records = assembly_module._file_records(tmp_path, excluded=set())
+
+    with pytest.raises(CivError, match=message):
+        assembly_module._verify_participant_assembly(tmp_path, records)
