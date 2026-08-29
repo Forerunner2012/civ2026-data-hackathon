@@ -64,6 +64,22 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
     "civ.data-product-set/v1": frozenset(
         {"contract", "release_id", "products", "required_disk_bytes"}
     ),
+    "civ.participant-kit-inventory/v1": frozenset(
+        {
+            "contract",
+            "release_id",
+            "content_profile",
+            "product_set",
+            "tool",
+            "container_candidate",
+            "viewers",
+            "tracked_assets",
+            "recovery_notice",
+            "context_packs",
+            "layout",
+            "required_disk_bytes",
+        }
+    ),
 }
 
 
