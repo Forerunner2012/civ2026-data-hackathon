@@ -111,9 +111,7 @@ def test_detect_dry_run_rejects_unsupported_eventspec_contracts(
 ) -> None:
     case = create_micro_case(tmp_path)
     case.spec.write_text(
-        case.spec.read_text(encoding="utf-8").replace(
-            "civ.eventspec/v1", contract
-        ),
+        case.spec.read_text(encoding="utf-8").replace("civ.eventspec/v1", contract),
         encoding="utf-8",
     )
 
@@ -136,9 +134,7 @@ def test_clip_rejects_mixed_event_and_manifest_versions_before_mutation(
     _write_json(manifest_path, manifest)
     before = manifest_path.read_bytes()
 
-    result = run_civ(
-        tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)]
-    )
+    result = run_civ(tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)])
 
     assert result.returncode == 2
     assert "mixed participant contract versions:" in result.stderr
@@ -152,8 +148,7 @@ def test_clip_rejects_mixed_event_and_manifest_versions_before_mutation(
     [
         (
             "civ.run-manifest/v1.0",
-            "invalid run manifest contract 'civ.run-manifest/v1.0'; expected "
-            "'civ.run-manifest/v1'",
+            "invalid run manifest contract 'civ.run-manifest/v1.0'; expected 'civ.run-manifest/v1'",
         ),
         (
             "civ.metrics/v1",
@@ -176,9 +171,7 @@ def test_clip_rejects_invalid_manifest_contract_before_mutation(
     _write_json(manifest_path, manifest)
     before = manifest_path.read_bytes()
 
-    result = run_civ(
-        tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)]
-    )
+    result = run_civ(tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)])
 
     assert result.returncode == 2
     assert result.stderr == f"civ: {diagnostic}\n"
@@ -191,8 +184,7 @@ def test_clip_rejects_invalid_manifest_contract_before_mutation(
     [
         (
             "civ.event/v2",
-            "unsupported event contract 'civ.event/v2'; this civ-workshop supports "
-            "'civ.event/v1'",
+            "unsupported event contract 'civ.event/v2'; this civ-workshop supports 'civ.event/v1'",
         ),
         (
             "civ.event/v1beta1",
@@ -211,9 +203,7 @@ def test_clip_rejects_events_outside_the_stable_contract_before_mutation(
     case, working = _detected_working(tmp_path)
     _set_event_contract(working, contract)
 
-    result = run_civ(
-        tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)]
-    )
+    result = run_civ(tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)])
 
     assert result.returncode == 2
     assert result.stderr == f"civ: {diagnostic}\n"
@@ -231,14 +221,10 @@ def test_score_rejects_a_candidate_working_directory_without_writing_metrics(
     _write_json(manifest_path, manifest)
     _set_event_contract(working, event_contract)
 
-    result = run_civ(
-        tmp_path, ["score", str(working), "--labels", str(case.labels)]
-    )
+    result = run_civ(tmp_path, ["score", str(working), "--labels", str(case.labels)])
 
     assert result.returncode == 2
-    assert (
-        "unsupported run manifest contract 'civ.run-manifest/v1alpha1'" in result.stderr
-    )
+    assert "unsupported run manifest contract 'civ.run-manifest/v1alpha1'" in result.stderr
     assert "regenerate with the stable civ workflow" in result.stderr
     assert not (working / "metrics.json").exists()
 
@@ -285,9 +271,7 @@ def test_detect_rejects_candidate_point_resource_and_requires_regeneration(
         encoding="utf-8",
     )
 
-    result = run_civ(
-        tmp_path, ["detect", str(case.spec), str(case.bag), "--dry-run"]
-    )
+    result = run_civ(tmp_path, ["detect", str(case.spec), str(case.bag), "--dry-run"])
 
     assert result.returncode == 2
     assert "unsupported point resource contract 'civ.point-resource/v1alpha1'" in result.stderr
@@ -391,6 +375,7 @@ def test_stable_workflow_artifacts_carry_exactly_their_published_fields(tmp_path
     ("relative", "contract"),
     [
         ("kashiwa/right_turn.yaml", "civ.eventspec/v1"),
+        ("kashiwa/deceleration_timing.yaml", "civ.eventspec/v1"),
         ("reims/left_turn.yaml", "civ.eventspec/v1"),
         ("reims/cave-encounter.yaml", "civ.eventspec/v1"),
         ("reims/cave-zones.json", "civ.point-resource/v1"),
