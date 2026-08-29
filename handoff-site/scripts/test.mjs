@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import { rm } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 const testEnvironment = {
   ...process.env,
@@ -44,4 +46,12 @@ await run(
   noFormEnvironment,
 );
 await run(["scripts/build-audience.mjs", "public"]);
-await run(["--test", "tests/rendered-html.test.mjs", "tests/print-materials.test.mjs"]);
+const staticExport = fileURLToPath(new URL("../tmp/participant-static", import.meta.url));
+await rm(staticExport, { recursive: true, force: true });
+await run(["scripts/export-public-static.mjs", "tmp/participant-static"]);
+await run([
+  "--test",
+  "tests/rendered-html.test.mjs",
+  "tests/print-materials.test.mjs",
+  "tests/static-export.test.mjs",
+]);

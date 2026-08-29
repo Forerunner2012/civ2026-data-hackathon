@@ -357,15 +357,24 @@ export default function Participants() {
           <p>These participant-safe paths are the shared baseline for both datasets.</p>
         </div>
         <div className="kit-grid">
-          {participantProducts.map(({ dataset, product, layout, inventory }) => (
-            <article key={dataset}>
-              <span>{dataset}</span>
-              <h3>{product}</h3>
-              <p><b>Layout:</b> <code>{layout}</code></p>
-              <p><b>Visible inventory:</b> {inventory}</p>
-            </article>
-          ))}
+          {participantProducts.map(
+            ({ dataset, product, plotJugglerLayout, lichtblickLayout, inventory }) => (
+              <article key={dataset}>
+                <span>{dataset}</span>
+                <h3>{product}</h3>
+                <p><b>PlotJuggler layout:</b> <code>{plotJugglerLayout}</code></p>
+                <p><b>Lichtblick layout:</b> <code>{lichtblickLayout}</code></p>
+                <p><b>Visible inventory:</b> {inventory}</p>
+              </article>
+            ),
+          )}
         </div>
+        <p>
+          On a connected machine, prefer the official no-install{" "}
+          <a href="https://lichtblick-suite.github.io/lichtblick/">Lichtblick web app</a>. The kit
+          also carries the pinned desktop build for offline use; verify it against the supplied
+          checksums before running it.
+        </p>
         <div className="desk-links" aria-label="Printable desk materials">
           {deskMaterials.map(({ href, title, note }) => (
             <a href={href} key={href}>

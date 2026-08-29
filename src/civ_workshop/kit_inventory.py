@@ -45,8 +45,12 @@ FORBIDDEN_PUBLIC_TERMS = (
 )
 
 TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
+    ("participant-instructions", "README.md"),
+    ("attribution", "ATTRIBUTION.md"),
     ("quickstart", "docs/quickstart.md"),
     ("layout", "layouts/kashiwa-right-turn.pj4.xml"),
+    ("layout", "layouts/lichtblick-kashiwa-right-turn.json"),
+    ("layout", "layouts/lichtblick-reims-left-turn.json"),
     ("layout", "layouts/reims-left-turn.pj4.xml"),
     ("example", "examples/kashiwa/right_turn.yaml"),
     ("example", "examples/reims/cave-encounter.yaml"),
@@ -62,6 +66,8 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("schema", "schemas/civ.data-product-manifest.v1.schema.json"),
     ("schema", "schemas/civ.data-product-set.v1.schema.json"),
     ("schema", "schemas/civ.participant-kit-inventory.v1.schema.json"),
+    ("schema", "schemas/civ.attendee-fallback-pack.v1.schema.json"),
+    ("schema", "schemas/civ.attendee-kit-assembly.v1.schema.json"),
     ("submission-template", "templates/submission/README.md"),
     ("submission-template", "templates/submission/detector.yaml"),
     ("submission-template", "templates/submission/figure.svg"),
@@ -81,6 +87,12 @@ TRACKED_ASSET_SOURCES = {
         "reproduce.sh",
     )
 }
+TRACKED_ASSET_SOURCES.update(
+    {
+        "README.md": "kit/README.md",
+        "ATTRIBUTION.md": "kit/ATTRIBUTION.md",
+    }
+)
 
 VIEWER_ASSETS: dict[str, dict[str, object]] = {
     "PlotJuggler-3.999.3-Windows-x64.exe": {
@@ -92,6 +104,16 @@ VIEWER_ASSETS: dict[str, dict[str, object]] = {
         "byte_size": 134_646_264,
         "platform": "linux-amd64",
         "sha256": "f6aa1a4019e8b7a4f730c4771b9d3b1df58db4e745a93cdda43b425692b626c2",
+    },
+    "lichtblick-1.28.0-win.exe": {
+        "byte_size": 266_309_046,
+        "platform": "windows-amd64",
+        "sha256": "94420a37b3f9520091501842ee491966665090cfd23f40115f36f7ecf58ea2ec",
+    },
+    "lichtblick-1.28.0-linux-x64.tar.gz": {
+        "byte_size": 162_728_473,
+        "platform": "linux-amd64",
+        "sha256": "0cbe3ce585f1aad154ed6340ac2b2f919d395e53ebd5a4b78faf8e7fe7f2be37",
     },
 }
 
@@ -180,7 +202,12 @@ def _viewers(paths: Sequence[Path]) -> list[dict[str, object]]:
                 "target": _target(f"viewer/{platform}/{path.name}"),
             }
         )
-    return sorted(viewers, key=lambda item: str(item["platform"]))
+    names = {str(item["name"]) for item in viewers}
+    has_plotjuggler = any(name.startswith("PlotJuggler-") for name in names)
+    has_lichtblick = any(name.startswith("lichtblick-") for name in names)
+    if has_plotjuggler != has_lichtblick:
+        raise CivError("PlotJuggler and Lichtblick must be staged together")
+    return sorted(viewers, key=lambda item: (str(item["platform"]), str(item["name"])))
 
 
 def _context_packs(values: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
@@ -544,6 +571,11 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
             viewer.get("byte_size"), f"participant-kit viewer {index} byte size"
         )
         checksum_entries.append({"sha256": viewer["sha256"], "target": target})
+
+    has_plotjuggler = any(name.startswith("PlotJuggler-") for name in seen_viewers)
+    has_lichtblick = any(name.startswith("lichtblick-") for name in seen_viewers)
+    if has_plotjuggler != has_lichtblick:
+        raise CivError("participant-kit PlotJuggler and Lichtblick must be staged together")
 
     raw_assets = document.get("tracked_assets")
     if not isinstance(raw_assets, list) or len(raw_assets) != len(TRACKED_ASSETS):

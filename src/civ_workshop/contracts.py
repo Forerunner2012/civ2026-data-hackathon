@@ -80,6 +80,20 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
             "required_disk_bytes",
         }
     ),
+    "civ.attendee-fallback-pack/v1": frozenset(
+        {"contract", "product_set_sha256", "datasets", "files", "required_disk_bytes"}
+    ),
+    "civ.attendee-kit-assembly/v1": frozenset(
+        {
+            "contract",
+            "release_id",
+            "inventory_sha256",
+            "files",
+            "components",
+            "required_disk_bytes",
+            "disk_budget",
+        }
+    ),
 }
 
 

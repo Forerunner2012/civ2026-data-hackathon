@@ -100,7 +100,7 @@ export const youReceive = [
   "A deterministic detector runner and batch iteration",
   "Time synchronization, hashes, provenance and run manifest",
   "Clip extraction and standardized output",
-  "Pre-loaded PlotJuggler layouts for both recordings, and an offline bundle",
+  "Pre-loaded PlotJuggler and Lichtblick layouts for both recordings, and an offline bundle",
   "Practice data, a reference detector and a submission template",
   "The answer key for two or three events, so you can see where an occurrence starts and ends",
   "A page that tells you what you should have by now, and what to do if you do not",
@@ -161,7 +161,7 @@ export const recognition = [
 
 export const pipeline: { title: string; note: string; owner: "you" | "provided" }[] = [
   { title: "MCAP", note: "two recording structures", owner: "provided" },
-  { title: "PlotJuggler", note: "manual exploration", owner: "provided" },
+  { title: "PlotJuggler / Lichtblick", note: "manual exploration", owner: "provided" },
   { title: "Polars", note: "selected signals", owner: "provided" },
   { title: "EventSpec + CEL", note: "your detection logic", owner: "you" },
   { title: "Batch runner", note: "scale + provenance", owner: "provided" },
@@ -182,13 +182,15 @@ export const participantProducts = [
   {
     dataset: "Kashiwa warm-up",
     product: "data/KSH-64ac27cd029b-signals.mcap",
-    layout: "layouts/kashiwa-right-turn.pj4.xml",
+    plotJugglerLayout: "layouts/kashiwa-right-turn.pj4.xml",
+    lichtblickLayout: "layouts/lichtblick-kashiwa-right-turn.json",
     inventory: "steering angle, vehicle speed, vehicle error code, object-detected flag",
   },
   {
     dataset: "Reims development chunk 0",
     product: "data/RMS-CHUNK-0-0a0817b3afc8-signals.mcap",
-    layout: "layouts/reims-left-turn.pj4.xml",
+    plotJugglerLayout: "layouts/reims-left-turn.pj4.xml",
+    lichtblickLayout: "layouts/lichtblick-reims-left-turn.json",
     inventory: "IMU yaw rate and linear velocity x, y, z",
   },
 ];

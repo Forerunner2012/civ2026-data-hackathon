@@ -1,0 +1,177 @@
+{
+  "configById": {
+    "map!1u0zrx2": {
+      "center": {
+        "lat": 49.264838969178456,
+        "lon": 4.047916063929047
+      },
+      "customTileUrl": "",
+      "disabledTopics": [],
+      "followTopic": "/sensing/gnss/fix",
+      "layer": "map",
+      "topicColors": {},
+      "zoomLevel": 13,
+      "maxNativeZoom": 18
+    },
+    "Plot!12s1kgr": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/zed/zed_node/imu/data.linear_acceleration.x",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/zed/zed_node/imu/data.linear_acceleration.y",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/zed/zed_node/imu/data.linear_acceleration.z",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!tx4lro": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/zed/zed_node/imu/data.angular_velocity.x",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/zed/zed_node/imu/data.angular_velocity.y",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/zed/zed_node/imu/data.angular_velocity.z",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Image!3jljrmw": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/zed/zed_node/rgb/image_rect_color/compressed"
+      }
+    },
+    "StateTransitions!2sfywvr": {
+      "paths": [
+        {
+          "value": "/zed/zed_node/obj_det/objects.objects[:]{label==\"VEHICLE\"}.label",
+          "timestampMethod": "receiveTime"
+        },
+        {
+          "value": "/zed/zed_node/obj_det/objects.objects[:]{label==\"PERSON\"}.label",
+          "timestampMethod": "receiveTime"
+        }
+      ],
+      "isSynced": true,
+      "showPoints": true
+    },
+    "RawMessages!3afey2s": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/zed/zed_node/obj_det/objects",
+      "expansion": {
+        "header": "c",
+        "stamp~header": "c",
+        "objects": "e",
+        "bounding_box_2d~0~objects": "c",
+        "bounding_box_3d~0~objects": "c",
+        "head_bounding_box_2d~0~objects": "c",
+        "0~objects": "c",
+        "1~objects": "c",
+        "2~objects": "c",
+        "3~objects": "e"
+      }
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "first": {
+      "first": "map!1u0zrx2",
+      "second": {
+        "first": "Plot!12s1kgr",
+        "second": "Plot!tx4lro",
+        "direction": "row"
+      },
+      "direction": "column",
+      "splitPercentage": 60.76499350402731
+    },
+    "second": {
+      "first": {
+        "first": "Image!3jljrmw",
+        "second": "StateTransitions!2sfywvr",
+        "direction": "column",
+        "splitPercentage": 75.21186440677965
+      },
+      "second": "RawMessages!3afey2s",
+      "direction": "column",
+      "splitPercentage": 73.40843359680628
+    },
+    "direction": "row"
+  }
+}

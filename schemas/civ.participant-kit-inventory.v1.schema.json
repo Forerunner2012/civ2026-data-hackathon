@@ -123,7 +123,7 @@
       "additionalProperties": false,
       "required": ["role", "path", "sha256", "byte_size"],
       "properties": {
-        "role": {"enum": ["quickstart", "layout", "example", "schema"]},
+        "role": {"enum": ["quickstart", "layout", "example", "schema", "submission-template", "participant-instructions", "attribution"]},
         "path": {"$ref": "#/$defs/relativePath"},
         "sha256": {"$ref": "#/$defs/sha256"},
         "byte_size": {"type": "integer", "minimum": 1}

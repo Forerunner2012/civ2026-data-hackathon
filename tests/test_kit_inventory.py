@@ -40,7 +40,9 @@ def _write_recipe(path: Path, source: Path, source_id: str, dataset: str, split:
     path.write_text(json.dumps(recipe) + "\n", encoding="utf-8")
 
 
-def _accepted_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+def _accepted_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Path, list[Path]]:
     products = tmp_path / "products"
     manifests: list[Path] = []
     roles: Counter[tuple[str, str]] = Counter()
@@ -65,8 +67,11 @@ def _accepted_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[
     monkeypatch.setattr(inventory_module, "ACCEPTED_MESSAGE_COUNT", audit["message_count"])
     monkeypatch.setattr(inventory_module, "ACCEPTED_ROLES", roles)
 
-    viewer = tmp_path / "PlotJuggler-test.exe"
-    viewer.write_bytes(b"pinned viewer fixture")
+    plotjuggler = tmp_path / "PlotJuggler-test.exe"
+    plotjuggler.write_bytes(b"pinned PlotJuggler fixture")
+    lichtblick = tmp_path / "lichtblick-test.exe"
+    lichtblick.write_bytes(b"pinned Lichtblick fixture")
+    viewers = [plotjuggler, lichtblick]
     monkeypatch.setattr(
         inventory_module,
         "VIEWER_ASSETS",
@@ -76,9 +81,10 @@ def _accepted_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[
                 "platform": "windows-amd64",
                 "sha256": sha256(viewer.read_bytes()).hexdigest(),
             }
+            for viewer in viewers
         },
     )
-    return set_path, viewer
+    return set_path, viewers
 
 
 def _document(path: Path) -> dict[str, Any]:
@@ -90,13 +96,13 @@ def _document(path: Path) -> dict[str, Any]:
 def test_inventory_is_deterministic_closed_and_does_not_copy_external_inputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    set_path, viewer = _accepted_fixture(tmp_path, monkeypatch)
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
     first_path = tmp_path / "first" / "participant-kit.json"
     second_path = tmp_path / "second" / "participant-kit.json"
     commit = "1" * 40
 
-    first = build_kit_inventory(set_path, REPOSITORY, [viewer], first_path, source_commit=commit)
-    second = build_kit_inventory(set_path, REPOSITORY, [viewer], second_path, source_commit=commit)
+    first = build_kit_inventory(set_path, REPOSITORY, viewers, first_path, source_commit=commit)
+    second = build_kit_inventory(set_path, REPOSITORY, viewers, second_path, source_commit=commit)
 
     assert first_path.read_bytes() == second_path.read_bytes()
     assert (first_path.parent / "checksums" / "SHA256SUMS").read_bytes() == (
@@ -129,15 +135,21 @@ def test_inventory_is_deterministic_closed_and_does_not_copy_external_inputs(
 def test_inventory_checksum_manifest_covers_products_manifests_and_tracked_assets(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    set_path, viewer = _accepted_fixture(tmp_path, monkeypatch)
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
     output = tmp_path / "kit" / "participant-kit.json"
-    build_kit_inventory(set_path, REPOSITORY, [viewer], output, source_commit="2" * 40)
+    build_kit_inventory(set_path, REPOSITORY, viewers, output, source_commit="2" * 40)
 
     document = _document(output)
     checksums = (output.parent / "checksums" / "SHA256SUMS").read_text(encoding="utf-8")
     lines = checksums.splitlines()
     assert lines == sorted(lines, key=lambda line: line.split("  ", 1)[1])
-    assert len(lines) == 13 * 2 + 1 + len(inventory_module.TRACKED_ASSETS) + 3
+    assert len(lines) == (
+        13 * 2
+        + 1
+        + len(inventory_module.TRACKED_ASSETS)
+        + len(viewers)
+        + 2  # lockfile and inventory
+    )
     for product in document["product_set"]["products"]:
         assert f"{product['sha256']}  {product['name']}" in lines
         assert f"{product['manifest_sha256']}  {product['manifest']}" in lines
@@ -161,13 +173,13 @@ def test_inventory_checksum_manifest_covers_products_manifests_and_tracked_asset
 def test_inventory_rejects_context_without_separate_human_approval(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    set_path, viewer = _accepted_fixture(tmp_path, monkeypatch)
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
 
     with pytest.raises(CivError, match="manifest, size, and separate approval"):
         build_kit_inventory(
             set_path,
             REPOSITORY,
-            [viewer],
+            viewers,
             tmp_path / "kit" / "participant-kit.json",
             source_commit="3" * 40,
             context_packs=[
@@ -184,14 +196,14 @@ def test_inventory_rejects_context_without_separate_human_approval(
 def test_inventory_rejects_unpinned_or_changed_viewer(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    set_path, viewer = _accepted_fixture(tmp_path, monkeypatch)
-    viewer.write_bytes(b"changed")
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
+    viewers[0].write_bytes(b"changed")
 
     with pytest.raises(CivError, match="does not match its accepted pin"):
         build_kit_inventory(
             set_path,
             REPOSITORY,
-            [viewer],
+            viewers,
             tmp_path / "kit" / "participant-kit.json",
             source_commit="5" * 40,
         )
@@ -200,11 +212,26 @@ def test_inventory_rejects_unpinned_or_changed_viewer(
 def test_inventory_records_recovery_caveat_without_external_parent_locations(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    set_path, viewer = _accepted_fixture(tmp_path, monkeypatch)
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
     output = tmp_path / "kit" / "participant-kit.json"
-    build_kit_inventory(set_path, REPOSITORY, [viewer], output, source_commit="6" * 40)
+    build_kit_inventory(set_path, REPOSITORY, viewers, output, source_commit="6" * 40)
 
     notice = _document(output)["recovery_notice"]
     assert notice == inventory_module.RECOVERY_NOTICE
     assert "does not prove that truncation lost no records" in notice
     assert ":\\" not in notice and "/bags/" not in notice.lower()
+
+
+def test_inventory_rejects_incomplete_viewer_pair(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
+
+    with pytest.raises(CivError, match="PlotJuggler and Lichtblick must be staged together"):
+        build_kit_inventory(
+            set_path,
+            REPOSITORY,
+            viewers[:1],
+            tmp_path / "kit" / "participant-kit.json",
+            source_commit="7" * 40,
+        )
