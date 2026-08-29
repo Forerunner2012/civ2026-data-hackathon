@@ -10,6 +10,7 @@ audience views so organizer material is never shown to participants.
 | `/organizers` | **internal** | Strategy/tactics/operations, success criteria and non-goals, the six preparation phases and gates, readiness workstreams, evaluation internals, facilitation mechanics, the seven driving forces, the open decision queue, source precedence. |
 | `/live` | attendees, **local only** | Current session beat, cumulative unlocked guidance, countdown, and static fallback. |
 | `/live/coach` | coach, **local only** | One authorized, next-only advance action. |
+| `/solutions` | attendees, **post-event local release only** | Human-approved worked approaches; unavailable by default and absent from the public production artifact. |
 
 ## How the boundary is enforced
 
@@ -50,8 +51,9 @@ Then open `http://localhost:3000`.
 
 The live page and coach API exist in local development and internal acceptance builds only. A normal
 `npm run build` produces the participant-facing public artifact and excludes `/live`, `/live/coach`,
-and `/api/live`. The current beats and guidance are representative Phase 1 copy for testing every
-transition; final teaching-unit authoring remains later-phase work.
+`/api/live`, and `/solutions`. The seven production beats expose only the current expectation,
+hint, and tip; later beats remain server-only. The three printable desk materials live under
+`/desk/` and contain no worked answer.
 
 Copy `.env.example` to `.env` — it carries the configured `SUBMISSION_FORM_URL`, and Wrangler loads
 it into the dev worker. Add a private coach token to the same file, then start the local server:
@@ -83,6 +85,11 @@ rehearsal and keep the coach token private.
 Leave `LIVE_ALLOW_CONTROLLED_CLOCK` unset on event day. If the local server or network is
 unavailable, serve or open `/session-fallback.html`; it is static, script-free, and
 participant-safe.
+
+The post-event solution route is separately controlled. Before approval, organizers may build an
+internal preview with `POST_EVENT_SOLUTIONS_PREVIEW=true`. Release requires both the checked-in
+status to be `approved` and `POST_EVENT_SOLUTIONS_RELEASED=true`; preview and release flags remain
+unset during the session. No release flag can add this route to the public production artifact.
 
 `SUBMISSION_FORM_URL` is participant-visible by design. It must be HTTPS and must not contain
 credentials. On event day it is the public Tally form URL, currently `https://tally.so/r/81Yy1x`; the

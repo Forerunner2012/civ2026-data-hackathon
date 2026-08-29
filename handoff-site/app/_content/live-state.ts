@@ -6,6 +6,9 @@ export type SessionStage = {
   action: string;
   shouldHave: string;
   ifYouDont: string;
+  expectation: string;
+  hint: string;
+  tip: string;
   guidance: readonly string[];
   reportPrompt?: string;
 };

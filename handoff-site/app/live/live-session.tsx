@@ -95,6 +95,21 @@ export function LiveSession({
         </article>
       </section>
 
+      <section className="live-layers" aria-label="Current expectation, hint, and tip">
+        <article data-layer="expectation">
+          <span>EXPECTATION</span>
+          <p>{stage.expectation}</p>
+        </article>
+        <article data-layer="hint">
+          <span>HINT</span>
+          <p>{stage.hint}</p>
+        </article>
+        <article data-layer="tip">
+          <span>TIP</span>
+          <p>{stage.tip}</p>
+        </article>
+      </section>
+
       {stage.reportPrompt ? (
         <section className="live-report-prompt" role="note">
           <span>REPORT PROMPT</span>

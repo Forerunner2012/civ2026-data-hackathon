@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIV 2026 — warm-up signal trace</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #10201b; font-family: Arial, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: end; border-bottom: 2px solid #10201b; padding-bottom: 4mm; }
+    h1 { margin: 0; font-size: 24pt; letter-spacing: -.04em; }
+    header p, footer { margin: 0; font: 9pt/1.4 Consolas, monospace; }
+    .instructions { display: grid; grid-template-columns: 2fr 1fr; gap: 8mm; margin: 6mm 0; }
+    .instructions strong { font-size: 14pt; }
+    .name { border-bottom: 1px solid #10201b; min-height: 7mm; }
+    svg { display: block; width: 100%; height: 112mm; border: 1px solid #7d8883; background: #fbfaf6; }
+    footer { display: flex; justify-content: space-between; margin-top: 4mm; color: #4c5b55; }
+    @media screen { body { max-width: 297mm; margin: 20px auto; padding: 12mm; background: white; box-shadow: 0 4px 20px #bbb; } }
+  </style>
+</head>
+<body data-print-material="signal-trace" data-pages="1">
+  <header>
+    <div><small>DESK MATERIAL 1 / 3 · ANALOGUE WARM-UP</small><h1>Observe before you automate</h1></div>
+    <p>KSH-64ac27cd029b-signals.mcap<br>/localization/acceleration · linear.x</p>
+  </header>
+  <div class="instructions">
+    <strong>Mark every occurrence you can justify. Draw its start and end; do not search for a perfect edge.</strong>
+    <div class="name">Name / team:</div>
+  </div>
+  <svg viewBox="0 0 1170 500" role="img" aria-labelledby="trace-title trace-description">
+    <title id="trace-title">Participant-safe warm-up acceleration trace</title>
+    <desc id="trace-description">A real decimated longitudinal acceleration signal over approximately 88 seconds, without event labels or marked solutions.</desc>
+    <g stroke="#d8d2c4" stroke-width="1">
+      <path d="M50 55H1120 M50 120H1120 M50 185H1120 M50 250H1120 M50 315H1120 M50 380H1120 M50 445H1120"/>
+      <path d="M50 55V445 M184 55V445 M318 55V445 M451 55V445 M585 55V445 M719 55V445 M852 55V445 M986 55V445 M1120 55V445"/>
+    </g>
+    <g fill="#4c5b55" font-family="Consolas,monospace" font-size="13">
+      <text x="14" y="60">+3</text><text x="20" y="255">0</text><text x="14" y="450">−3</text>
+      <text x="48" y="475">0 s</text><text x="1090" y="475">88 s</text>
+      <text x="8" y="22">LONGITUDINAL ACCELERATION (m/s²)</text>
+    </g>
+    <polyline fill="none" stroke="#10201b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="50.0,250.0 64.3,250.0 74.2,250.0 83.8,250.0 93.3,250.0 101.7,250.0 112.3,250.0 120.8,250.0 133.3,185.0 142.5,185.0 151.9,185.0 161.9,185.0 171.7,185.0 181.1,185.0 193.8,250.0 205.7,250.0 215.5,250.0 227.8,250.0 235.8,250.0 246.2,250.0 254.6,250.0 262.8,250.0 272.0,250.0 281.0,250.0 292.5,250.0 306.2,250.0 315.8,250.0 326.5,250.0 335.8,250.0 343.9,250.0 355.0,250.0 363.6,250.0 372.5,250.0 380.2,250.0 388.8,250.0 399.5,250.0 410.3,250.0 420.9,250.0 429.9,250.0 437.7,250.0 448.0,250.0 456.5,250.0 465.6,250.0 476.2,250.0 484.9,250.0 494.4,250.0 504.4,250.0 513.6,250.0 521.6,250.0 532.3,250.0 541.7,250.0 551.7,250.0 560.8,250.0 569.6,250.0 579.7,250.0 589.8,250.0 601.4,250.0 611.0,250.0 621.9,250.0 631.5,250.0 641.3,250.0 650.3,250.0 658.7,250.0 668.5,250.0 676.8,250.0 686.0,250.0 696.5,250.0 706.4,250.0 716.0,250.0 724.7,250.0 733.2,250.0 740.8,250.0 749.1,250.0 757.9,250.0 768.9,250.0 778.6,250.0 786.9,250.0 794.4,250.0 803.9,250.0 812.4,250.0 821.2,250.0 829.9,250.0 838.5,250.0 845.8,250.0 855.6,250.0 864.4,250.0 873.2,250.0 881.1,250.0 889.7,250.0 899.7,250.0 910.9,250.0 918.9,250.0 930.3,250.0 938.9,250.0 948.3,250.0 957.7,250.0 965.8,250.0 975.8,250.0 984.3,250.0 994.3,250.0 1002.3,250.0 1010.2,315.0 1021.0,315.0 1030.7,380.0 1040.4,250.0 1048.5,250.0 1057.9,250.0 1066.4,315.0 1074.8,250.0 1084.1,250.0 1092.6,250.0 1101.1,250.0 1109.8,250.0 1119.7,250.0"/>
+  </svg>
+  <footer><span>Compare your edges with a neighbour. Disagreement is evidence.</span><span>No code · no marked solutions · keep this sheet</span></footer>
+</body>
+</html>

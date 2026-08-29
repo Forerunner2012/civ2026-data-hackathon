@@ -178,6 +178,27 @@ export const commands = [
   { command: "civ report SUBMISSION", note: "package the one-page argument" },
 ];
 
+export const participantProducts = [
+  {
+    dataset: "Kashiwa warm-up",
+    product: "data/KSH-64ac27cd029b-signals.mcap",
+    layout: "layouts/kashiwa-right-turn.pj4.xml",
+    inventory: "steering angle, vehicle speed, vehicle error code, object-detected flag",
+  },
+  {
+    dataset: "Reims development chunk 0",
+    product: "data/RMS-CHUNK-0-0a0817b3afc8-signals.mcap",
+    layout: "layouts/reims-left-turn.pj4.xml",
+    inventory: "IMU yaw rate and linear velocity x, y, z",
+  },
+];
+
+export const deskMaterials = [
+  { href: "/desk/warmup-trace.html", title: "Printed signal trace", note: "One write-on A4 sheet for the analogue warm-up." },
+  { href: "/desk/help-card.html", title: "Two-sided help card", note: "Print double-sided; raise it when you need a coach." },
+  { href: "/desk/brief.html", title: "One-page brief", note: "The session contract, report shape, deadline, and scoring rules." },
+];
+
 /**
  * You keep your evidence. What is handed in is the record of the work, not the
  * recordings behind it — kilobytes, through a form.

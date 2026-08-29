@@ -4,6 +4,7 @@ const testEnvironment = {
   ...process.env,
   LIVE_ALLOW_CONTROLLED_CLOCK: "true",
   LIVE_COACH_TOKEN: "test-coach-token",
+  POST_EVENT_SOLUTIONS_RELEASED: "true",
   SUBMISSION_FORM_URL: "https://forms.example.test/civ-phase1",
 };
 const noFormEnvironment = { ...testEnvironment };
@@ -42,4 +43,4 @@ await run(
   noFormEnvironment,
 );
 await run(["scripts/build-audience.mjs", "public"]);
-await run(["--test", "tests/rendered-html.test.mjs"]);
+await run(["--test", "tests/rendered-html.test.mjs", "tests/print-materials.test.mjs"]);

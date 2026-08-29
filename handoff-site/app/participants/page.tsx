@@ -7,9 +7,11 @@ import {
   comeReady,
   commands,
   deliverables,
+  deskMaterials,
   journey,
   notYourJob,
   pipeline,
+  participantProducts,
   recognition,
   scoring,
   scoringRules,
@@ -30,6 +32,7 @@ const nav = [
   { href: "#deliver", label: "Deliver" },
   { href: "#scoring", label: "Scoring" },
   { href: "#toolkit", label: "Toolkit" },
+  { href: "#kit", label: "Kit" },
 ];
 
 const totalPoints = scoring.reduce((sum, row) => sum + row.points, 0);
@@ -323,6 +326,42 @@ export default function Participants() {
               <small>{note}</small>
             </p>
           ))}
+        </div>
+      </section>
+
+      <section className="kit-section" id="kit">
+        <div className="section-heading compact">
+          <div>
+            <span>05 / EXACT KIT REFERENCES</span>
+            <h2>Open the supplied products, not a guess.</h2>
+          </div>
+          <p>These participant-safe paths are the shared baseline for both datasets.</p>
+        </div>
+        <div className="kit-grid">
+          {participantProducts.map(({ dataset, product, layout, inventory }) => (
+            <article key={dataset}>
+              <span>{dataset}</span>
+              <h3>{product}</h3>
+              <p><b>Layout:</b> <code>{layout}</code></p>
+              <p><b>Visible inventory:</b> {inventory}</p>
+            </article>
+          ))}
+        </div>
+        <div className="desk-links" aria-label="Printable desk materials">
+          {deskMaterials.map(({ href, title, note }) => (
+            <a href={href} key={href}>
+              <span>PRINT MATERIAL</span>
+              <b>{title}</b>
+              <small>{note}</small>
+            </a>
+          ))}
+        </div>
+        <div className="extension-note">
+          <b>Optional extension · scored, but not scheduled</b>
+          <p>
+            The bonus extension is available throughout the session for teams whose core result
+            already reproduces. It earns up to 20 bonus points and has no reserved beat or timebox.
+          </p>
         </div>
       </section>
 

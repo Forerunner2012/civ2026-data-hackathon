@@ -98,6 +98,17 @@ test("participant view states the contract", async () => {
   assert.match(body, /55 points are machine-scored/i);
   assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
   assert.match(body, /one-page report/i);
+  assert.match(body, /KSH-64ac27cd029b-signals\.mcap/);
+  assert.match(body, /RMS-CHUNK-0-0a0817b3afc8-signals\.mcap/);
+  assert.match(body, /layouts\/kashiwa-right-turn\.pj4\.xml/);
+  assert.match(body, /layouts\/reims-left-turn\.pj4\.xml/);
+  assert.match(body, /Optional extension.*scored, but not scheduled/is);
+  assert.match(body, /\/desk\/warmup-trace\.html/);
+  assert.match(body, /\/desk\/help-card\.html/);
+  assert.match(body, /\/desk\/brief\.html/);
+  const commandOffsets = ["civ doctor", "civ inspect", "civ sample", "civ detect", "civ clip", "civ score", "civ report"].map((command) => body.indexOf(command));
+  assert.ok(commandOffsets.every((offset) => offset >= 0));
+  assert.deepEqual(commandOffsets, [...commandOffsets].sort((a, b) => a - b));
   // The ranking rule is published to participants even though the answer key is not.
   assert.match(body, /held-back test set/i);
   // Rules that change behaviour, so they must survive a redesign of the page.
@@ -160,6 +171,13 @@ test("client bundle contains no organizer material", async () => {
   }
 });
 
+test("controlled solutions are absent from the public artifact", async () => {
+  const response = await render("/solutions");
+  assert.equal(response.status, 404);
+  const body = await response.text();
+  assert.doesNotMatch(body, /worked approaches|189 matching samples/i);
+});
+
 test("public artifact retains the participant-safe static fallback", async () => {
   const fallback = await readFile(
     fileURLToPath(new URL("../dist/client/session-fallback.html", import.meta.url)),
@@ -179,6 +197,7 @@ test("server bundle contains no organizer route or material", async () => {
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/live"/);
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/live\/coach"/);
   assert.doesNotMatch(serverBundle, /pattern:\s*"\/api\/live"/);
+  assert.doesNotMatch(serverBundle, /pattern:\s*"\/solutions"/);
   for (const pattern of ORGANIZER_ONLY) {
     assert.doesNotMatch(serverBundle, pattern, `server bundle leaks ${pattern}`);
   }

@@ -52,10 +52,18 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   assert.match(b1, /B1/);
   assert.match(b1, /BY NOW YOU SHOULD HAVE/);
   assert.match(b1, /IF YOU (?:DON.T|DON&#x27;T|DON&apos;T)/);
+  assert.match(b1, /EXPECTATION/);
+  assert.match(b1, /HINT/);
+  assert.match(b1, /TIP/);
   assert.match(b1, /20:00/);
   assert.match(await htmlAt("10:05"), /15:00/);
 
   assert.match(await htmlAt("10:40"), /headings 1 and 2/i);
+  const timing = await htmlAt("10:20");
+  assert.match(timing, /189 matching samples.*14 merged candidates.*4 events/i);
+  assert.match(timing, /zero brake response/i);
+  assert.match(timing, /timing fixes the count, not the meaning/i);
+  assert.doesNotMatch(timing, /headings 1 and 2/i);
   const transfer = await htmlAt("11:00");
   assert.match(transfer, /transfer expectation/i);
   assert.match(transfer, /unlocked so far/i);
@@ -76,6 +84,16 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
     assert.match(b1, /online form is not configured.*USB fallback/i);
   }
   assert.match(b1, /confirmation.*submission reference/i);
+});
+
+test("approved post-event solutions require a separate release flag", async () => {
+  const response = await request("/solutions", { headers: { accept: "text/html" } });
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.match(body, /Post-event · released/i);
+  assert.match(body, /Seven beats, one defensible workflow/i);
+  assert.equal((body.match(/class="phase-id"/g) ?? []).length, 7);
+  assert.doesNotMatch(body, /right turn|left turn|answer interval/i);
 });
 
 test("authorized coach advance is next-only, idempotent, and survives refresh", async () => {
@@ -144,6 +162,7 @@ test("internal browser assets do not reveal future transfer guidance", async () 
   for (const entry of entries.filter((item) => item.isFile() && /\.(?:js|mjs|json)$/.test(item.name))) {
     const source = await readFile(`${entry.parentPath ?? entry.path}/${entry.name}`, "utf8");
     assert.doesNotMatch(source, /Transfer expectation: keep the command/i);
+    assert.doesNotMatch(source, /189 matching samples.*14 merged candidates/i);
     assert.doesNotMatch(source, /SUBMISSION_FORM_URL|LIVE_COACH_TOKEN|intake\.sqlite3/i);
   }
 });
