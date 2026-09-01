@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.release-freeze.v1.schema.json",
+  "title": "CIV Phase 5 release freeze v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "release_id",
+    "source_commit",
+    "assembly",
+    "architecture",
+    "artifacts",
+    "sboms",
+    "legal",
+    "development_authority",
+    "recovery_notice",
+    "required_disk_bytes"
+  ],
+  "properties": {
+    "contract": {"const": "civ.release-freeze/v1"},
+    "release_id": {"const": "civ-2026-phase5-release-freeze-v1"},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "assembly": {"$ref": "#/$defs/assembly"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "sboms": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/sbom"}
+    },
+    "legal": {"$ref": "#/$defs/legal"},
+    "development_authority": {"$ref": "#/$defs/developmentAuthority"},
+    "recovery_notice": {"type": "string", "minLength": 1},
+    "required_disk_bytes": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "document_sha256"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^human-.+$"},
+        "document_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fileIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "sha256", "byte_size"],
+      "properties": {
+        "target": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 0}
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "id", "platform", "archive_sha256", "archive_byte_size"],
+      "properties": {
+        "name": {"const": "civ-phase4:attendee-candidate-558e85c"},
+        "id": {"const": "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"},
+        "platform": {"const": "linux-amd64"},
+        "archive_sha256": {"const": "ff983defaa02671982ee78dbf13026d0d007c5c16082cd898658228875f289db"},
+        "archive_byte_size": {"const": 464562688}
+      }
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release_id",
+        "manifest_sha256",
+        "inventory_sha256",
+        "components",
+        "file_count",
+        "required_disk_bytes",
+        "image"
+      ],
+      "properties": {
+        "release_id": {"const": "civ-2026-phase4-attendee-kit-v1"},
+        "manifest_sha256": {"const": "b661d18791f6d6a640ae35c595fc9b8a5ecccba94a451122977df831c6c2f097"},
+        "inventory_sha256": {"const": "aee496467d4537acca417d3481e8cec81c0e8db4e945fd10b3aac7dfb56c27bf"},
+        "components": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": {"$ref": "#/$defs/participantComponent"}
+        },
+        "file_count": {"type": "integer", "minimum": 1},
+        "required_disk_bytes": {"type": "integer", "minimum": 1},
+        "image": {"$ref": "#/$defs/image"}
+      }
+    },
+    "participantComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role",
+        "platform",
+        "file_count",
+        "required_disk_bytes",
+        "set_sha256",
+        "provenance"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "ATTRIBUTION.md",
+            "README.md",
+            "checksums",
+            "container",
+            "data",
+            "docs",
+            "examples",
+            "fallback",
+            "layouts",
+            "offline",
+            "participant-kit.json",
+            "runtime",
+            "schemas",
+            "site",
+            "templates",
+            "viewer"
+          ]
+        },
+        "role": {"type": "string", "minLength": 1},
+        "platform": {"type": "string", "minLength": 1},
+        "file_count": {"type": "integer", "minimum": 1},
+        "required_disk_bytes": {"type": "integer", "minimum": 0},
+        "set_sha256": {"$ref": "#/$defs/sha256"},
+        "provenance": {"type": "string", "minLength": 1}
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "container_platforms",
+        "viewer_platforms",
+        "advertised_participant_platforms",
+        "decision",
+        "approval"
+      ],
+      "properties": {
+        "container_platforms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "viewer_platforms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "advertised_participant_platforms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "decision": {"type": "string", "minLength": 1},
+        "approval": {"$ref": "#/$defs/approval"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "sha256", "byte_size", "role", "platform", "provenance"],
+      "properties": {
+        "target": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 0},
+        "role": {"type": "string", "minLength": 1},
+        "platform": {"type": "string", "minLength": 1},
+        "provenance": {"type": "string", "minLength": 1}
+      }
+    },
+    "sbom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "target", "sha256", "byte_size", "spdx_version", "package_count"],
+      "properties": {
+        "subject": {"enum": ["container", "public-site"]},
+        "target": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1},
+        "spdx_version": {"const": "SPDX-2.3"},
+        "package_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "legal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_target",
+        "review_sha256",
+        "notice_target",
+        "notice_sha256",
+        "package_count",
+        "review_mode",
+        "unresolved_count",
+        "approval"
+      ],
+      "properties": {
+        "review_target": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+        "review_sha256": {"$ref": "#/$defs/sha256"},
+        "notice_target": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+        "notice_sha256": {"$ref": "#/$defs/sha256"},
+        "package_count": {"type": "integer", "minimum": 1},
+        "review_mode": {"enum": ["package-reviewed", "global-risk-acceptance"]},
+        "unresolved_count": {"type": "integer", "minimum": 0},
+        "approval": {"$ref": "#/$defs/approval"}
+      }
+    },
+    "developmentAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "set_sha256",
+        "record_count",
+        "datasets",
+        "approval",
+        "participant_distribution",
+        "sealed_authority_included"
+      ],
+      "properties": {
+        "set_sha256": {"$ref": "#/$defs/sha256"},
+        "record_count": {"type": "integer", "minimum": 1},
+        "datasets": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["kashiwa", "reims"]}
+        },
+        "approval": {"$ref": "#/$defs/approval"},
+        "participant_distribution": {"const": false},
+        "sealed_authority_included": {"const": false}
+      }
+    }
+  }
+}
