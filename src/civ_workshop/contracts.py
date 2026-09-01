@@ -156,6 +156,34 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
             "required_disk_bytes",
         }
     ),
+    "civ.release-freeze/v2": frozenset(
+        {
+            "contract",
+            "release_id",
+            "source_commit",
+            "assembly",
+            "architecture",
+            "artifacts",
+            "sboms",
+            "legal",
+            "development_authority",
+            "recovery_notice",
+            "required_disk_bytes",
+        }
+    ),
+    "civ.workstation-qualification/v1": frozenset(
+        {
+            "contract",
+            "qualification_id",
+            "release",
+            "machines",
+            "viewer_checks",
+            "web_route",
+            "recovery",
+            "interventions",
+            "status",
+        }
+    ),
 }
 
 

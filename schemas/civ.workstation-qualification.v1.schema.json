@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.workstation-qualification.v1.schema.json",
+  "title": "CIV workstation qualification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "qualification_id",
+    "release",
+    "machines",
+    "viewer_checks",
+    "web_route",
+    "recovery",
+    "interventions",
+    "status"
+  ],
+  "properties": {
+    "contract": {"const": "civ.workstation-qualification/v1"},
+    "qualification_id": {"const": "civ-2026-phase5-workstation-qualification-v1"},
+    "release": {"$ref": "#/$defs/release"},
+    "machines": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/machine"},
+      "allOf": [
+        {"contains": {"properties": {"machine_class": {"const": "windows-amd64-wsl2"}}}},
+        {"contains": {"properties": {"machine_class": {"const": "ubuntu-linux-amd64"}}}}
+      ]
+    },
+    "viewer_checks": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/viewerCheck"}
+    },
+    "web_route": {"$ref": "#/$defs/webRoute"},
+    "recovery": {"$ref": "#/$defs/recovery"},
+    "interventions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/intervention"}
+    },
+    "status": {"const": "accepted"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "humanApproval": {"type": "string", "pattern": "^human-.+"},
+    "positiveInteger": {"type": "integer", "minimum": 1},
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembly_manifest_sha256",
+        "development_set_sha256",
+        "freeze_manifest_sha256",
+        "image_archive_sha256",
+        "image_id",
+        "release_id"
+      ],
+      "properties": {
+        "assembly_manifest_sha256": {
+          "const": "b661d18791f6d6a640ae35c595fc9b8a5ecccba94a451122977df831c6c2f097"
+        },
+        "development_set_sha256": {
+          "const": "08a7bce5b2e3029ad5e8c12da395118443fd62850e99a8f7c4a329b5f3f2da02"
+        },
+        "freeze_manifest_sha256": {
+          "const": "2003cc25fc24d57a56e84a50ff8a3d06ec6a7ab16cd95b78e2933dd27b91bf0f"
+        },
+        "image_archive_sha256": {
+          "const": "ff983defaa02671982ee78dbf13026d0d007c5c16082cd898658228875f289db"
+        },
+        "image_id": {
+          "const": "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"
+        },
+        "release_id": {"const": "civ-2026-phase5-release-freeze-v1"}
+      }
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "environment",
+        "isolation",
+        "machine_class",
+        "machine_id",
+        "prerequisites",
+        "runs"
+      ],
+      "properties": {
+        "environment": {"$ref": "#/$defs/environment"},
+        "isolation": {"$ref": "#/$defs/isolation"},
+        "machine_class": {
+          "enum": ["ubuntu-linux-amd64", "windows-amd64-wsl2"]
+        },
+        "machine_id": {"type": "string", "minLength": 1},
+        "prerequisites": {"$ref": "#/$defs/prerequisites"},
+        "runs": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"$ref": "#/$defs/run"},
+          "allOf": [
+            {"contains": {"properties": {"dataset": {"const": "kashiwa"}}}},
+            {"contains": {"properties": {"dataset": {"const": "reims"}}}}
+          ]
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "architecture",
+        "container_runtime",
+        "cpu_model",
+        "display",
+        "graphics_adapter",
+        "logical_cpu_count",
+        "memory_bytes",
+        "os_name",
+        "os_version",
+        "scaling_percent"
+      ],
+      "properties": {
+        "architecture": {"type": "string", "minLength": 1},
+        "container_runtime": {"type": "string", "minLength": 1},
+        "cpu_model": {"type": "string", "minLength": 1},
+        "display": {"type": "string", "minLength": 1},
+        "graphics_adapter": {"type": "string", "minLength": 1},
+        "logical_cpu_count": {"$ref": "#/$defs/positiveInteger"},
+        "memory_bytes": {"$ref": "#/$defs/positiveInteger"},
+        "os_name": {"type": "string", "minLength": 1},
+        "os_version": {"type": "string", "minLength": 1},
+        "scaling_percent": {"$ref": "#/$defs/positiveInteger"}
+      }
+    },
+    "prerequisites": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "developer_cache_present",
+        "documented_prerequisites_only",
+        "fresh_install",
+        "network_fetch_after_isolation",
+        "release_media_only",
+        "repository_checkout_present",
+        "user_profile_state_reused"
+      ],
+      "properties": {
+        "developer_cache_present": {"const": false},
+        "documented_prerequisites_only": {"const": true},
+        "fresh_install": {"const": true},
+        "network_fetch_after_isolation": {"const": false},
+        "release_media_only": {"const": true},
+        "repository_checkout_present": {"const": false},
+        "user_profile_state_reused": {"const": false}
+      }
+    },
+    "isolation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gpu_requested",
+        "network_disabled",
+        "output_only_writable",
+        "release_inputs_read_only"
+      ],
+      "properties": {
+        "gpu_requested": {"const": false},
+        "network_disabled": {"const": true},
+        "output_only_writable": {"const": true},
+        "release_inputs_read_only": {"const": true}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempts", "dataset", "label_pack_sha256", "source_sha256"],
+      "allOf": [
+        {
+          "if": {"properties": {"dataset": {"const": "kashiwa"}}},
+          "then": {
+            "properties": {
+              "label_pack_sha256": {
+                "const": "5361ba59d734c22493ad5bc2f6d81eae5c17e399d7aa8a1b33753c60332ecb6a"
+              },
+              "source_sha256": {
+                "const": "0188d748c0b49151e5af3f0c644e59e7cd1dda6ad7b41f8f5e64ada21b27056e"
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"dataset": {"const": "reims"}}},
+          "then": {
+            "properties": {
+              "label_pack_sha256": {
+                "const": "ad5d1b5525eeaa7fa35dd1ae4a457f903dc60d50deffe9bcb1f3887a60f8c204"
+              },
+              "source_sha256": {
+                "const": "9e37b7ee7a754707d15154b83ed797f3fa248cc6569f43e509cff5b2b642b110"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "attempts": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"$ref": "#/$defs/attempt"}
+        },
+        "dataset": {"enum": ["kashiwa", "reims"]},
+        "label_pack_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commands",
+        "disk_bytes",
+        "exit_codes",
+        "output_bytes",
+        "output_set_sha256",
+        "peak_rss_bytes",
+        "wall_time_ms"
+      ],
+      "properties": {
+        "commands": {
+          "const": [
+            "doctor",
+            "inspect",
+            "sample",
+            "detect",
+            "clip",
+            "score",
+            "report",
+            "submission-init"
+          ]
+        },
+        "disk_bytes": {"$ref": "#/$defs/positiveInteger"},
+        "exit_codes": {"const": [0, 0, 0, 0, 0, 0, 0, 0]},
+        "output_bytes": {"$ref": "#/$defs/positiveInteger"},
+        "output_set_sha256": {"$ref": "#/$defs/sha256"},
+        "peak_rss_bytes": {"$ref": "#/$defs/positiveInteger"},
+        "wall_time_ms": {"$ref": "#/$defs/positiveInteger"}
+      }
+    },
+    "viewerCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approval_id",
+        "asset_sha256",
+        "checksum_verified",
+        "dataset",
+        "evidence_sha256",
+        "file_association_usable",
+        "fonts_usable",
+        "graphics_usable",
+        "installed",
+        "launched_offline",
+        "layout_sha256",
+        "machine_id",
+        "offline_failure_message_usable",
+        "permissions_usable",
+        "scaling_usable",
+        "viewer"
+      ],
+      "properties": {
+        "approval_id": {"$ref": "#/$defs/humanApproval"},
+        "asset_sha256": {"$ref": "#/$defs/sha256"},
+        "checksum_verified": {"const": true},
+        "dataset": {"enum": ["kashiwa", "reims"]},
+        "evidence_sha256": {"$ref": "#/$defs/sha256"},
+        "file_association_usable": {"const": true},
+        "fonts_usable": {"const": true},
+        "graphics_usable": {"const": true},
+        "installed": {"const": true},
+        "launched_offline": {"const": true},
+        "layout_sha256": {"$ref": "#/$defs/sha256"},
+        "machine_id": {"type": "string", "minLength": 1},
+        "offline_failure_message_usable": {"const": true},
+        "permissions_usable": {"const": true},
+        "scaling_usable": {"const": true},
+        "viewer": {"enum": ["lichtblick", "plotjuggler"]}
+      }
+    },
+    "webRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approval_id", "connected_check_passed", "evidence_sha256", "url"],
+      "properties": {
+        "approval_id": {"$ref": "#/$defs/humanApproval"},
+        "connected_check_passed": {"const": true},
+        "evidence_sha256": {"$ref": "#/$defs/sha256"},
+        "url": {"const": "https://lichtblick-suite.github.io/lichtblick/"}
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approval_id",
+        "documented_path",
+        "evidence_sha256",
+        "machine_id",
+        "profile_isolation_passed",
+        "reinstall_passed",
+        "uninstall_passed",
+        "viewer"
+      ],
+      "properties": {
+        "approval_id": {"$ref": "#/$defs/humanApproval"},
+        "documented_path": {"type": "string", "minLength": 1},
+        "evidence_sha256": {"$ref": "#/$defs/sha256"},
+        "machine_id": {"type": "string", "minLength": 1},
+        "profile_isolation_passed": {"const": true},
+        "reinstall_passed": {"const": true},
+        "uninstall_passed": {"const": true},
+        "viewer": {"enum": ["lichtblick", "plotjuggler"]}
+      }
+    },
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failure", "release_bytes_changed", "resolution", "status", "step"],
+      "properties": {
+        "failure": {"type": "string", "minLength": 1},
+        "release_bytes_changed": {"const": false},
+        "resolution": {"type": "string", "minLength": 1},
+        "status": {"const": "resolved"},
+        "step": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

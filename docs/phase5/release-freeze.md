@@ -253,3 +253,59 @@ change is an explicit, attributable event-owner risk decision.
 
 Issue #48 is ready to close. Downstream issue #49 can be unblocked using the accepted manifest and
 the explicit global-risk and minimum-verification consequences recorded above.
+
+## Camera-context release profile (v2)
+
+The camera-context companion kits (issue tracked separately from #48) add a 27-file, 5,424,077,234-byte
+`context` participant component — 13 camera-context MCAPs, 13 sidecar manifests, and one
+`context/camera-context-products.json` set manifest — to a new attendee-kit assembly,
+`civ-2026-phase5-camera-context-attendee-kit-v1` at source commit
+`4d4983fe0be65473f6a89e8b5bf51263ebdd1cff`. This assembly is not a superset the v1 tooling can
+freeze: `civ.release-freeze/v1` hard-pins the accepted Phase 4 assembly, inventory, source commit,
+and exactly 16 participant components, so it fails closed on any additional component by design.
+
+Rather than relaxing those pins, `release_freeze.py` now selects between two **release profiles**
+by the assembly manifest's own `release_id` — never from a CLI flag or a declaration claim, so an
+unrecognized `release_id` fails closed immediately:
+
+| Profile | Assembly `release_id` | Contract | Components |
+|---|---|---|---|
+| Phase 4 | `civ-2026-phase4-attendee-kit-v1` | `civ.release-freeze/v1` | 16 |
+| Camera-context | `civ-2026-phase5-camera-context-attendee-kit-v1` | `civ.release-freeze/v2` | 17 (adds `context`) |
+
+`civ.release-freeze/v2` (`schemas/civ.release-freeze.v2.schema.json`) has the same top-level shape as
+v1. The only structural addition lives inside `assembly`: a `camera_context` record binding the
+product-set target and hash, the accepted product count and byte total, and a human privacy/rights
+approval:
+
+```json
+"camera_context": {
+  "set_target": "context/camera-context-products.json",
+  "set_sha256": "4250737318af51edec62bb4bd39d4c19444b97152b2885a3b40e0df68c770542",
+  "product_count": 13,
+  "required_disk_bytes": 5424077234,
+  "approval": {"id": "human-...", "document_sha256": "..."}
+}
+```
+
+`build` derives the `context` component's file count, byte total, and canonical set hash the same
+way as every other component, then checks that derived identity against the accepted camera-context
+constants before trusting it — this is what makes a missing, replaced, or extra companion file, or a
+changed product-set manifest, fail closed even if an assembly manifest's own aggregate hash were
+somehow reproduced. The camera_context approval is declared the same way the architecture and
+development-authority approvals are (organizer evidence, structurally validated, and required to
+appear among the frozen artifacts with role `approval`) — it is not hard-coded, since it is a
+per-release human decision rather than a fixed identity. The camera-context provenance string is
+`assembly:civ-2026-phase5-camera-context-attendee-kit-v1:<manifest sha256>`, distinct from the
+Phase 4 profile's `phase4-assembly:<manifest sha256>`, so component provenance never implies the
+wrong assembly. No build-1/build-2/original-bag/organizer filesystem path is ever recorded; `_target`
+and the existing `ABSOLUTE_PATH_PATTERN` check reject any such path exactly as they do for the Phase 4
+profile.
+
+`build freeze-1` and `build freeze-2` should be run independently against `assembly-1` and
+`assembly-2` with the same declaration and evidence root; both are expected to produce byte-identical
+`release-freeze.json`/`SHA256SUMS`, and each is then auditable against its own assembly copy. One
+becomes the accepted freeze; the other remains reproducibility evidence, matching the pattern already
+established for `build-1`/`build-2` and `assembly-1`/`assembly-2`. Acceptance status, real hashes, and
+the failure/intervention log for this profile are recorded once freeze-1/freeze-2 are actually built
+and audited — this section documents the mechanism, not (yet) a completed acceptance.

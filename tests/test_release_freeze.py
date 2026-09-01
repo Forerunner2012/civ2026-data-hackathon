@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -530,6 +532,428 @@ def test_release_freeze_rejects_missing_participant_component(
     _write_json(assembly, document)
 
     with pytest.raises(CivError, match="missing participant component: templates"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "freeze/release-freeze.json"
+        )
+
+
+_CC_ASSEMBLY_SHA256 = "6" * 64
+_CC_INVENTORY_SHA256 = "7" * 64
+_CC_SOURCE_COMMIT = "c" * 40
+
+
+def _camera_context_files() -> tuple[list[dict[str, object]], freeze_module.CameraContextIdentity]:
+    files: list[dict[str, object]] = []
+    for component in freeze_module.CAMERA_CONTEXT_COMPONENT_METADATA:
+        if component == "container":
+            files.append(
+                {
+                    "byte_size": freeze_module.ACCEPTED_IMAGE_ARCHIVE_BYTES,
+                    "sha256": freeze_module.ACCEPTED_IMAGE_ARCHIVE_SHA256,
+                    "target": "container/candidate.tar",
+                }
+            )
+        elif component != "context":
+            target = component if "." in component else f"{component}/fixture"
+            files.append({"byte_size": 1, "sha256": "a" * 64, "target": target})
+
+    context_files = [
+        {
+            "byte_size": 1000,
+            "sha256": f"{index:064x}",
+            "target": f"context/camera-{index:02d}.mcap",
+        }
+        for index in range(26)
+    ]
+    products_entry = {
+        "byte_size": 24,
+        "sha256": "d" * 64,
+        "target": "context/camera-context-products.json",
+    }
+    context_files.append(products_entry)
+    files.extend(context_files)
+
+    identity_bytes = "".join(
+        f"{item['sha256']}  {item['target']}\n"
+        for item in sorted(context_files, key=lambda item: str(item["target"]))
+    ).encode("utf-8")
+    identity = freeze_module.CameraContextIdentity(
+        set_target=str(products_entry["target"]),
+        set_sha256=str(products_entry["sha256"]),
+        product_count=13,
+        required_disk_bytes=sum(int(item["byte_size"]) for item in context_files),
+        component_file_count=len(context_files),
+        component_set_sha256=sha256(identity_bytes).hexdigest(),
+    )
+    return files, identity
+
+
+def _camera_context_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Path, Path, Path]:
+    files, identity = _camera_context_files()
+    assembly = tmp_path / "cc-assembly" / "attendee-kit-assembly.json"
+    _write_json(
+        assembly,
+        {
+            "files": files,
+            "inventory_sha256": _CC_INVENTORY_SHA256,
+            "release_id": freeze_module.CAMERA_CONTEXT_ASSEMBLY_RELEASE_ID,
+        },
+    )
+    monkeypatch.setattr(
+        freeze_module,
+        "audit_assembly",
+        lambda _: {
+            "file_count": len(files),
+            "manifest_sha256": _CC_ASSEMBLY_SHA256,
+            "required_disk_bytes": 2_000_000_000,
+            "valid": True,
+        },
+    )
+    test_profile = replace(
+        freeze_module._CAMERA_CONTEXT_PROFILE,
+        assembly_sha256=_CC_ASSEMBLY_SHA256,
+        inventory_sha256=_CC_INVENTORY_SHA256,
+        source_commit=_CC_SOURCE_COMMIT,
+        camera_context=identity,
+    )
+    monkeypatch.setitem(
+        freeze_module.RELEASE_PROFILES,
+        freeze_module.CAMERA_CONTEXT_ASSEMBLY_RELEASE_ID,
+        test_profile,
+    )
+
+    evidence = tmp_path / "cc-evidence"
+    raw_container = tmp_path / "cc-raw-container.json"
+    raw_site = tmp_path / "cc-raw-site.json"
+    _raw_spdx(
+        raw_container,
+        namespace="https://random.invalid/container",
+        created="2026-08-30T10:00:00Z",
+        packages=[
+            _package(
+                "SPDXRef-Package-container",
+                "container-dependency",
+                "1.0",
+                "MIT",
+                "pkg:generic/container-dependency@1.0",
+            )
+        ],
+    )
+    _raw_spdx(
+        raw_site,
+        namespace="https://random.invalid/site",
+        created="2026-08-30T10:00:00Z",
+        packages=[
+            _package(
+                "SPDXRef-Package-site",
+                "site-dependency",
+                "2.0",
+                "MIT",
+                "pkg:npm/site-dependency@2.0",
+            )
+        ],
+    )
+    container_sbom = evidence / "sbom/container.spdx.json"
+    site_sbom = evidence / "sbom/site.spdx.json"
+    normalize_spdx(
+        raw_container,
+        container_sbom,
+        subject="container",
+        subject_sha256="2" * 64,
+        created="2026-08-30T00:00:00Z",
+    )
+    normalize_spdx(
+        raw_site,
+        site_sbom,
+        subject="public-site",
+        subject_sha256="3" * 64,
+        created="2026-08-30T00:00:00Z",
+    )
+
+    legal_review = evidence / "legal/review.json"
+    notices = evidence / "legal/THIRD-PARTY-NOTICES.md"
+    build_legal_review_template([container_sbom, site_sbom], legal_review, notices)
+    review: dict[str, Any] = json.loads(legal_review.read_text(encoding="utf-8"))
+    source = evidence / "source/container-dependency.tar.gz"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"exact corresponding source")
+    for package in review["packages"]:
+        package["concluded_license"] = package["scanner_license"]
+        package["evidence"] = "human legal review fixture"
+        package["resolution"] = "approved"
+        package["source_target"] = None
+    review["approval_id"] = "human-legal-fixture"
+    review["review_mode"] = freeze_module.PACKAGE_REVIEW_MODE
+    review["source_archives"] = ["source/container-dependency.tar.gz"]
+    review["unresolved_count"] = 0
+    _write_json(legal_review, review)
+    render_legal_notices(legal_review, notices)
+
+    static_files = {
+        "approvals/architecture.json": b"architecture approval",
+        "approvals/development.json": b"development approval",
+        "legal/LICENSE.txt": b"licence text",
+        "legal/SOURCE-OFFER.md": b"written source offer",
+        "approvals/camera-context.json": b"camera context privacy approval",
+    }
+    for relative, content in static_files.items():
+        path = evidence / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+    architecture_hash = file_sha256(evidence / "approvals/architecture.json")
+    development_hash = file_sha256(evidence / "approvals/development.json")
+    camera_context_hash = file_sha256(evidence / "approvals/camera-context.json")
+    legal_approval = evidence / "approvals/legal.json"
+    _write_json(
+        legal_approval,
+        {
+            "accepted_unresolved_count": 0,
+            "approved_on": "2026-08-30",
+            "authority": "fixture reviewer",
+            "contract": freeze_module.LEGAL_APPROVAL_CONTRACT,
+            "decision": "approved",
+            "id": "human-legal-fixture",
+            "licence_artifacts": [
+                {
+                    "sha256": file_sha256(evidence / "legal/LICENSE.txt"),
+                    "target": "legal/LICENSE.txt",
+                }
+            ],
+            "notices_sha256": file_sha256(notices),
+            "review_sha256": file_sha256(legal_review),
+            "review_mode": freeze_module.PACKAGE_REVIEW_MODE,
+            "risk_statement": freeze_module.PACKAGE_REVIEW_STATEMENT,
+            "source_artifacts": [
+                {
+                    "sha256": file_sha256(evidence / "legal/SOURCE-OFFER.md"),
+                    "target": "legal/SOURCE-OFFER.md",
+                },
+                {
+                    "sha256": file_sha256(source),
+                    "target": "source/container-dependency.tar.gz",
+                },
+            ],
+            "source": "explicit fixture review decision",
+        },
+    )
+
+    declarations = [
+        ("approval", "approvals/architecture.json", "all", "human architecture decision"),
+        ("approval", "approvals/development.json", "organizer-only", "human authority"),
+        ("approval", "approvals/legal.json", "all", "human legal decision"),
+        ("approval", "approvals/camera-context.json", "organizer-only", "human privacy review"),
+        ("licence", "legal/LICENSE.txt", "all", "fixture licence archive"),
+        ("legal-review", "legal/review.json", "organizer-only", "human package review"),
+        (
+            "third-party-notices",
+            "legal/THIRD-PARTY-NOTICES.md",
+            "all",
+            "generated from approved package review",
+        ),
+        ("written-offer", "legal/SOURCE-OFFER.md", "all", "human-approved source offer"),
+        (
+            "corresponding-source",
+            "source/container-dependency.tar.gz",
+            "all",
+            "fixture source archive",
+        ),
+        ("sbom", "sbom/container.spdx.json", "linux-amd64", "fixture SPDX tool"),
+        ("sbom", "sbom/site.spdx.json", "all", "fixture SPDX tool"),
+    ]
+    declaration = tmp_path / "cc-declaration.json"
+    _write_json(
+        declaration,
+        {
+            "architecture": {
+                "advertised_participant_platforms": ["windows-amd64-host"],
+                "approval": {
+                    "document_sha256": architecture_hash,
+                    "id": "human-architecture-fixture",
+                },
+                "container_platforms": ["linux-amd64"],
+                "decision": "single container architecture on an approved host",
+                "viewer_platforms": ["windows-amd64"],
+            },
+            "artifacts": [
+                {"platform": platform, "provenance": provenance, "role": role, "target": target}
+                for role, target, platform, provenance in declarations
+            ],
+            "camera_context": {
+                "approval": {
+                    "document_sha256": camera_context_hash,
+                    "id": "human-camera-context-fixture",
+                }
+            },
+            "contract": freeze_module.DECLARATION_CONTRACT,
+            "development_authority": {
+                "approval": {
+                    "document_sha256": development_hash,
+                    "id": "human-development-fixture",
+                },
+                "datasets": ["reims", "kashiwa"],
+                "participant_distribution": False,
+                "record_count": 24,
+                "sealed_authority_included": False,
+                "set_sha256": "5" * 64,
+            },
+            "legal_review_target": "legal/review.json",
+            "legal_approval_target": "approvals/legal.json",
+            "notices_target": "legal/THIRD-PARTY-NOTICES.md",
+            "sboms": [
+                {"subject": "container", "target": "sbom/container.spdx.json"},
+                {"subject": "public-site", "target": "sbom/site.spdx.json"},
+            ],
+            "source_commit": _CC_SOURCE_COMMIT,
+        },
+    )
+    return assembly, evidence, declaration
+
+
+def test_camera_context_freeze_is_deterministic_and_binds_the_context_component(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    first = tmp_path / "cc-first/release-freeze.json"
+    second = tmp_path / "cc-second/release-freeze.json"
+
+    first_result = build_release_freeze(assembly, evidence, declaration, first)
+    second_result = build_release_freeze(assembly, evidence, declaration, second)
+
+    assert first.read_bytes() == second.read_bytes()
+    assert first_result == second_result
+    document = json.loads(first.read_text(encoding="utf-8"))
+    assert document["contract"] == freeze_module.CONTRACT_V2
+    assert document["release_id"] == freeze_module.CAMERA_CONTEXT_RELEASE_ID
+    assert set(document) == STABLE_FIELDS[freeze_module.CONTRACT_V2]
+    assert document["assembly"]["camera_context"]["product_count"] == 13
+    assert document["assembly"]["camera_context"]["approval"]["id"] == (
+        "human-camera-context-fixture"
+    )
+    assert {item["name"] for item in document["assembly"]["components"]} == set(
+        freeze_module.CAMERA_CONTEXT_COMPONENT_METADATA
+    )
+    assert audit_release_freeze(first, assembly, evidence) == first_result
+
+
+def test_camera_context_freeze_rejects_missing_context_component(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    document = json.loads(assembly.read_text(encoding="utf-8"))
+    document["files"] = [
+        item for item in document["files"] if not str(item["target"]).startswith("context/")
+    ]
+    _write_json(assembly, document)
+
+    with pytest.raises(CivError, match="missing participant component: context"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "cc-freeze/release-freeze.json"
+        )
+
+
+def test_camera_context_freeze_rejects_replaced_companion(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    document = json.loads(assembly.read_text(encoding="utf-8"))
+    for item in document["files"]:
+        if item["target"] == "context/camera-00.mcap":
+            item["sha256"] = "9" * 64
+    _write_json(assembly, document)
+
+    with pytest.raises(CivError, match="camera-context component identity changed"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "cc-freeze/release-freeze.json"
+        )
+
+
+def test_camera_context_freeze_rejects_changed_product_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    document = json.loads(assembly.read_text(encoding="utf-8"))
+    for item in document["files"]:
+        if item["target"] == "context/camera-context-products.json":
+            item["sha256"] = "9" * 64
+    _write_json(assembly, document)
+
+    with pytest.raises(CivError, match="camera-context component identity changed"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "cc-freeze/release-freeze.json"
+        )
+
+
+def test_camera_context_freeze_rejects_extra_context_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    document = json.loads(assembly.read_text(encoding="utf-8"))
+    document["files"].append(
+        {"byte_size": 1, "sha256": "e" * 64, "target": "context/extra.mcap"}
+    )
+    _write_json(assembly, document)
+
+    with pytest.raises(CivError, match="camera-context component identity changed"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "cc-freeze/release-freeze.json"
+        )
+
+
+def test_camera_context_freeze_rejects_wrong_approval_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    document = json.loads(declaration.read_text(encoding="utf-8"))
+    document["camera_context"]["approval"]["document_sha256"] = "9" * 64
+    _write_json(declaration, document)
+
+    with pytest.raises(CivError, match="every human approval document"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "cc-freeze/release-freeze.json"
+        )
+
+
+def test_camera_context_freeze_rejects_missing_declaration_section(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _camera_context_fixture(tmp_path, monkeypatch)
+    document = json.loads(declaration.read_text(encoding="utf-8"))
+    del document["camera_context"]
+    _write_json(declaration, document)
+
+    with pytest.raises(CivError, match="missing a required field"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "cc-freeze/release-freeze.json"
+        )
+
+
+def test_phase4_assembly_rejects_a_context_component(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _release_fixture(tmp_path, monkeypatch)
+    document = json.loads(assembly.read_text(encoding="utf-8"))
+    document["files"].append(
+        {"byte_size": 1, "sha256": "e" * 64, "target": "context/camera-00.mcap"}
+    )
+    _write_json(assembly, document)
+
+    with pytest.raises(CivError, match="unknown participant component: context"):
+        build_release_freeze(
+            assembly, evidence, declaration, tmp_path / "freeze/release-freeze.json"
+        )
+
+
+def test_unknown_assembly_release_id_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assembly, evidence, declaration = _release_fixture(tmp_path, monkeypatch)
+    document = json.loads(assembly.read_text(encoding="utf-8"))
+    document["release_id"] = "civ-2026-unknown-profile"
+    _write_json(assembly, document)
+
+    with pytest.raises(CivError, match="not a recognized release profile"):
         build_release_freeze(
             assembly, evidence, declaration, tmp_path / "freeze/release-freeze.json"
         )

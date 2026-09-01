@@ -104,6 +104,7 @@ PRIVATE_RUNTIME_MODULES = frozenset(
         "label_packs.py",
         "release_freeze.py",
         "tally.py",
+        "workstation_qualification.py",
     }
 )
 FORBIDDEN_ASSEMBLY_TEXT = (

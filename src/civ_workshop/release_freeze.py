@@ -4,6 +4,7 @@ import argparse
 import re
 import sys
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -14,6 +15,7 @@ from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import audit_assembly
 
 CONTRACT = "civ.release-freeze/v1"
+CONTRACT_V2 = "civ.release-freeze/v2"
 DECLARATION_CONTRACT = "civ.release-freeze-declaration/v1"
 LEGAL_REVIEW_CONTRACT = "civ.release-legal-review/v1"
 LEGAL_APPROVAL_CONTRACT = "civ.release-legal-approval/v1"
@@ -35,6 +37,20 @@ ACCEPTED_IMAGE_ARCHIVE_SHA256 = (
     "ff983defaa02671982ee78dbf13026d0d007c5c16082cd898658228875f289db"
 )
 ACCEPTED_IMAGE_ARCHIVE_BYTES = 464_562_688
+CAMERA_CONTEXT_RELEASE_ID = "civ-2026-phase5-camera-context-release-freeze-v1"
+CAMERA_CONTEXT_SOURCE_COMMIT = "4d4983fe0be65473f6a89e8b5bf51263ebdd1cff"
+CAMERA_CONTEXT_ASSEMBLY_RELEASE_ID = "civ-2026-phase5-camera-context-attendee-kit-v1"
+CAMERA_CONTEXT_ASSEMBLY_SHA256 = "95ec64edc7adcf5ecffe0f7a573a4292a62602858b4b5c53087f2c42abe6b016"
+CAMERA_CONTEXT_INVENTORY_SHA256 = "32c374dea980742256fcbdcaa8f35c81e9658c2d49792a2d627f1d1a186a31b4"
+CAMERA_CONTEXT_SET_TARGET = "context/camera-context-products.json"
+CAMERA_CONTEXT_SET_SHA256 = "4250737318af51edec62bb4bd39d4c19444b97152b2885a3b40e0df68c770542"
+CAMERA_CONTEXT_PRODUCT_COUNT = 13
+CAMERA_CONTEXT_REQUIRED_DISK_BYTES = 5_424_077_234
+CAMERA_CONTEXT_COMPONENT_FILE_COUNT = 27
+CAMERA_CONTEXT_COMPONENT_SET_SHA256 = (
+    "7d6ce7ef00a669fc1dc20ff5807a9c200941dced89694de91daa24f24665aed2"
+)
+CAMERA_CONTEXT_DECLARATION_FIELDS = {"approval"}
 RECOVERY_NOTICE = (
     "Two Kashiwa products derive from recovered recordings. Structural recovery made the "
     "recordings readable but does not prove that truncation lost no records. The caveat must "
@@ -64,6 +80,67 @@ PARTICIPANT_COMPONENT_METADATA = {
     "site": ("public-static-site", "all"),
     "templates": ("submission-templates", "all"),
     "viewer": ("offline-viewers", "windows-amd64"),
+}
+CAMERA_CONTEXT_COMPONENT_METADATA = {
+    **PARTICIPANT_COMPONENT_METADATA,
+    "context": ("participant-camera-context", "all"),
+}
+
+
+@dataclass(frozen=True)
+class CameraContextIdentity:
+    set_target: str
+    set_sha256: str
+    product_count: int
+    required_disk_bytes: int
+    component_file_count: int
+    component_set_sha256: str
+
+
+@dataclass(frozen=True)
+class ReleaseProfile:
+    contract: str
+    release_id: str
+    assembly_release_id: str
+    assembly_sha256: str
+    inventory_sha256: str
+    source_commit: str
+    components: Mapping[str, tuple[str, str]]
+    provenance_prefix: str
+    camera_context: CameraContextIdentity | None = None
+
+
+_PHASE4_PROFILE = ReleaseProfile(
+    contract=CONTRACT,
+    release_id=RELEASE_ID,
+    assembly_release_id="civ-2026-phase4-attendee-kit-v1",
+    assembly_sha256=ACCEPTED_ASSEMBLY_SHA256,
+    inventory_sha256=ACCEPTED_INVENTORY_SHA256,
+    source_commit=ACCEPTED_SOURCE_COMMIT,
+    components=PARTICIPANT_COMPONENT_METADATA,
+    provenance_prefix="phase4-assembly",
+)
+_CAMERA_CONTEXT_PROFILE = ReleaseProfile(
+    contract=CONTRACT_V2,
+    release_id=CAMERA_CONTEXT_RELEASE_ID,
+    assembly_release_id=CAMERA_CONTEXT_ASSEMBLY_RELEASE_ID,
+    assembly_sha256=CAMERA_CONTEXT_ASSEMBLY_SHA256,
+    inventory_sha256=CAMERA_CONTEXT_INVENTORY_SHA256,
+    source_commit=CAMERA_CONTEXT_SOURCE_COMMIT,
+    components=CAMERA_CONTEXT_COMPONENT_METADATA,
+    provenance_prefix=f"assembly:{CAMERA_CONTEXT_ASSEMBLY_RELEASE_ID}",
+    camera_context=CameraContextIdentity(
+        set_target=CAMERA_CONTEXT_SET_TARGET,
+        set_sha256=CAMERA_CONTEXT_SET_SHA256,
+        product_count=CAMERA_CONTEXT_PRODUCT_COUNT,
+        required_disk_bytes=CAMERA_CONTEXT_REQUIRED_DISK_BYTES,
+        component_file_count=CAMERA_CONTEXT_COMPONENT_FILE_COUNT,
+        component_set_sha256=CAMERA_CONTEXT_COMPONENT_SET_SHA256,
+    ),
+)
+RELEASE_PROFILES: Mapping[str, ReleaseProfile] = {
+    _PHASE4_PROFILE.assembly_release_id: _PHASE4_PROFILE,
+    _CAMERA_CONTEXT_PROFILE.assembly_release_id: _CAMERA_CONTEXT_PROFILE,
 }
 
 DECLARATION_FIELDS = {
@@ -812,13 +889,13 @@ def _development_authority(value: object) -> dict[str, object]:
 
 
 def _participant_components(
-    files: Sequence[Mapping[str, object]], manifest_sha256: str
+    files: Sequence[Mapping[str, object]], manifest_sha256: str, profile: ReleaseProfile
 ) -> list[dict[str, object]]:
     grouped: dict[str, list[dict[str, object]]] = {}
     for item in files:
         target = _target(item.get("target"), "assembly component target")
         component = target.split("/", 1)[0]
-        if component not in PARTICIPANT_COMPONENT_METADATA:
+        if component not in profile.components:
             raise CivError(f"assembly contains an unknown participant component: {component}")
         grouped.setdefault(component, []).append(
             {
@@ -831,8 +908,8 @@ def _participant_components(
                 "target": target,
             }
         )
-    if set(grouped) != set(PARTICIPANT_COMPONENT_METADATA):
-        missing = sorted(set(PARTICIPANT_COMPONENT_METADATA) - set(grouped))
+    if set(grouped) != set(profile.components):
+        missing = sorted(set(profile.components) - set(grouped))
         if missing:
             raise CivError(f"assembly is missing participant component: {missing[0]}")
         raise CivError("assembly participant component set changed")
@@ -843,13 +920,13 @@ def _participant_components(
         identity = "".join(
             f"{item['sha256']}  {item['target']}\n" for item in records
         ).encode("utf-8")
-        role, platform = PARTICIPANT_COMPONENT_METADATA[name]
+        role, platform = profile.components[name]
         result.append(
             {
                 "file_count": len(records),
                 "name": name,
                 "platform": platform,
-                "provenance": f"phase4-assembly:{manifest_sha256}",
+                "provenance": f"{profile.provenance_prefix}:{manifest_sha256}",
                 "required_disk_bytes": sum(
                     _non_negative_integer(item["byte_size"], "component byte_size")
                     for item in records
@@ -862,13 +939,19 @@ def _participant_components(
 
 
 def _assembly_record(manifest_path: Path) -> dict[str, object]:
+    document = _mapping(read_json_file(manifest_path, "assembly manifest"), "assembly manifest")
+    assembly_release_id = _string(document.get("release_id"), "assembly release_id")
+    profile = RELEASE_PROFILES.get(assembly_release_id)
+    if profile is None:
+        raise CivError(
+            f"assembly release_id is not a recognized release profile: {assembly_release_id}"
+        )
     audit = audit_assembly(manifest_path)
     manifest_sha256 = _sha256(audit.get("manifest_sha256"), "assembly manifest_sha256")
-    if manifest_sha256 != ACCEPTED_ASSEMBLY_SHA256:
-        raise CivError("assembly does not match the accepted Phase 4 manifest")
-    document = _mapping(read_json_file(manifest_path, "assembly manifest"), "assembly manifest")
-    if document.get("inventory_sha256") != ACCEPTED_INVENTORY_SHA256:
-        raise CivError("assembly does not bind the accepted Phase 4 inventory")
+    if manifest_sha256 != profile.assembly_sha256:
+        raise CivError("assembly does not match the accepted manifest for its release profile")
+    if document.get("inventory_sha256") != profile.inventory_sha256:
+        raise CivError("assembly does not bind the accepted inventory for its release profile")
     files = [
         _mapping(item, "assembly file")
         for item in _sequence(document.get("files"), "assembly files")
@@ -884,8 +967,9 @@ def _assembly_record(manifest_path: Path) -> dict[str, object]:
     )
     if archive is None:
         raise CivError("assembly does not contain the accepted container archive")
-    return {
-        "components": _participant_components(files, manifest_sha256),
+    components = _participant_components(files, manifest_sha256, profile)
+    record: dict[str, object] = {
+        "components": components,
         "file_count": _positive_integer(audit.get("file_count"), "assembly file_count"),
         "image": {
             "archive_byte_size": ACCEPTED_IMAGE_ARCHIVE_BYTES,
@@ -894,13 +978,45 @@ def _assembly_record(manifest_path: Path) -> dict[str, object]:
             "name": ACCEPTED_IMAGE_NAME,
             "platform": "linux-amd64",
         },
-        "inventory_sha256": ACCEPTED_INVENTORY_SHA256,
+        "inventory_sha256": profile.inventory_sha256,
         "manifest_sha256": manifest_sha256,
-        "release_id": _string(document.get("release_id"), "assembly release_id"),
+        "release_id": assembly_release_id,
         "required_disk_bytes": _positive_integer(
             audit.get("required_disk_bytes"), "assembly required_disk_bytes"
         ),
     }
+    if profile.camera_context is not None:
+        cc = profile.camera_context
+        context_component = next(
+            (item for item in components if item["name"] == "context"), None
+        )
+        if context_component is None:
+            raise CivError("camera-context assembly is missing the context component")
+        if (
+            context_component["file_count"] != cc.component_file_count
+            or context_component["required_disk_bytes"] != cc.required_disk_bytes
+            or context_component["set_sha256"] != cc.component_set_sha256
+        ):
+            raise CivError("assembly camera-context component identity changed")
+        set_entry = next(
+            (
+                item
+                for item in files
+                if _target(item.get("target"), "assembly file target") == cc.set_target
+            ),
+            None,
+        )
+        if set_entry is None or _sha256(
+            set_entry.get("sha256"), "camera-context set sha256"
+        ) != cc.set_sha256:
+            raise CivError("camera-context product set does not match the accepted hash")
+        record["camera_context"] = {
+            "product_count": cc.product_count,
+            "required_disk_bytes": cc.required_disk_bytes,
+            "set_sha256": cc.set_sha256,
+            "set_target": cc.set_target,
+        }
+    return record
 
 
 def build_release_freeze(
@@ -909,18 +1025,26 @@ def build_release_freeze(
     declaration_path: Path,
     output: Path,
 ) -> dict[str, object]:
+    assembly = _assembly_record(assembly_manifest)
+    profile = RELEASE_PROFILES[str(assembly["release_id"])]
     declaration = _mapping(
         read_json_file(declaration_path, "release declaration"), "release declaration"
     )
-    _closed(declaration, DECLARATION_FIELDS, "release declaration")
-    if set(declaration) != DECLARATION_FIELDS:
+    expected_declaration_fields = (
+        DECLARATION_FIELDS | {"camera_context"}
+        if profile.camera_context is not None
+        else DECLARATION_FIELDS
+    )
+    _closed(declaration, expected_declaration_fields, "release declaration")
+    if set(declaration) != expected_declaration_fields:
         raise CivError("release declaration is missing a required field")
     if declaration.get("contract") != DECLARATION_CONTRACT:
         raise CivError(f"release declaration contract must be '{DECLARATION_CONTRACT}'")
     source_commit = _string(declaration["source_commit"], "source_commit")
-    if COMMIT_PATTERN.fullmatch(source_commit) is None or source_commit != ACCEPTED_SOURCE_COMMIT:
-        raise CivError("release freeze must bind the accepted Phase 4 source commit")
-    assembly = _assembly_record(assembly_manifest)
+    if COMMIT_PATTERN.fullmatch(source_commit) is None or source_commit != profile.source_commit:
+        raise CivError(
+            "release freeze must bind the accepted source commit for its release profile"
+        )
     architecture = _architecture(declaration["architecture"])
     development_authority = _development_authority(declaration["development_authority"])
 
@@ -1033,6 +1157,24 @@ def build_release_freeze(
         ),
         legal_approval["document_sha256"],
     }
+    if profile.camera_context is not None:
+        camera_context_declaration = _mapping(
+            declaration["camera_context"], "camera context declaration"
+        )
+        _closed(
+            camera_context_declaration,
+            CAMERA_CONTEXT_DECLARATION_FIELDS,
+            "camera context declaration",
+        )
+        if set(camera_context_declaration) != CAMERA_CONTEXT_DECLARATION_FIELDS:
+            raise CivError("camera context declaration is missing a required field")
+        camera_context_approval = _approval(
+            camera_context_declaration["approval"], "camera context approval"
+        )
+        camera_context_record = assembly["camera_context"]
+        assert isinstance(camera_context_record, dict)
+        camera_context_record["approval"] = camera_context_approval
+        approval_hashes.add(camera_context_approval["document_sha256"])
     frozen_approval_hashes = {
         str(item["sha256"]) for item in artifacts if item["role"] == "approval"
     }
@@ -1051,7 +1193,7 @@ def build_release_freeze(
         "architecture": architecture,
         "artifacts": artifacts,
         "assembly": assembly,
-        "contract": CONTRACT,
+        "contract": profile.contract,
         "development_authority": development_authority,
         "legal": {
             "approval": legal_approval,
@@ -1064,7 +1206,7 @@ def build_release_freeze(
             "unresolved_count": legal_unresolved_count,
         },
         "recovery_notice": RECOVERY_NOTICE,
-        "release_id": RELEASE_ID,
+        "release_id": profile.release_id,
         "required_disk_bytes": _positive_integer(
             assembly["required_disk_bytes"], "assembly required_disk_bytes"
         )
@@ -1087,14 +1229,26 @@ def audit_release_freeze(
     manifest_path: Path, assembly_manifest: Path, evidence_root: Path
 ) -> dict[str, object]:
     document = _mapping(read_json_file(manifest_path, "release freeze"), "release freeze")
-    if document.get("contract") != CONTRACT:
-        raise CivError(f"release freeze contract must be '{CONTRACT}'")
-    require_closed_fields(document, kind="release freeze", expected=CONTRACT)
-    if document.get("release_id") != RELEASE_ID:
-        raise CivError(f"release freeze release_id must be '{RELEASE_ID}'")
-    if document.get("source_commit") != ACCEPTED_SOURCE_COMMIT:
-        raise CivError("release freeze source commit changed")
     assembly = _assembly_record(assembly_manifest)
+    profile = RELEASE_PROFILES[str(assembly["release_id"])]
+    if document.get("contract") != profile.contract:
+        raise CivError(f"release freeze contract must be '{profile.contract}'")
+    require_closed_fields(document, kind="release freeze", expected=profile.contract)
+    if document.get("release_id") != profile.release_id:
+        raise CivError(f"release freeze release_id must be '{profile.release_id}'")
+    if document.get("source_commit") != profile.source_commit:
+        raise CivError("release freeze source commit changed")
+    if profile.camera_context is not None:
+        document_assembly = _mapping(document.get("assembly"), "release freeze assembly")
+        camera_context_record = _mapping(
+            document_assembly.get("camera_context"), "release freeze camera context"
+        )
+        camera_context_approval = _approval(
+            camera_context_record.get("approval"), "release freeze camera context approval"
+        )
+        assembly_camera_context = assembly["camera_context"]
+        assert isinstance(assembly_camera_context, dict)
+        assembly_camera_context["approval"] = camera_context_approval
     if document.get("assembly") != assembly:
         raise CivError("release freeze assembly identity changed")
     _architecture(document.get("architecture"))
