@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.camera-context-recipe.v1.schema.json",
+  "title": "CIV camera-context recipe v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "recipe_id", "version", "product_name", "source", "signal_product", "dataset", "split", "topics", "time_bounds", "calibration", "rights"],
+  "properties": {
+    "contract": {"const": "civ.camera-context-recipe/v1"},
+    "recipe_id": {"type": "string", "minLength": 1},
+    "version": {"const": 1},
+    "product_name": {"type": "string", "pattern": "^[^/\\\\]+-camera-context\\.mcap$"},
+    "source": {"$ref": "#/$defs/source"},
+    "signal_product": {"$ref": "#/$defs/signal"},
+    "dataset": {"enum": ["kashiwa", "reims"]},
+    "split": {"enum": ["warmup", "development"]},
+    "topics": {"type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "time_bounds": {"$ref": "#/$defs/bounds"},
+    "calibration": {"$ref": "#/$defs/calibration"},
+    "rights": {"$ref": "#/$defs/rights"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source": {"type": "object", "additionalProperties": false, "required": ["id", "sha256"], "properties": {"id": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "signal": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "manifest", "manifest_sha256"], "properties": {"name": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}, "manifest": {"type": "string", "minLength": 1}, "manifest_sha256": {"$ref": "#/$defs/sha256"}}},
+    "bounds": {"type": "object", "additionalProperties": false, "required": ["start_ns", "end_ns"], "properties": {"start_ns": {"type": "integer", "minimum": 0}, "end_ns": {"type": "integer", "minimum": 0}}},
+    "calibration": {"type": "object", "additionalProperties": false, "required": ["status", "topic"], "properties": {"status": {"enum": ["embedded-camera-info", "absent-not-inferred"]}, "topic": {"type": ["string", "null"]}}},
+    "rights": {"type": "object", "additionalProperties": false, "required": ["attribution", "scope"], "properties": {"attribution": {"type": "string", "minLength": 1}, "scope": {"type": "string", "minLength": 1}}}
+  }
+}

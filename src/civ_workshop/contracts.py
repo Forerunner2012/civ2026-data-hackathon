@@ -64,6 +64,53 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
     "civ.data-product-set/v1": frozenset(
         {"contract", "release_id", "products", "required_disk_bytes"}
     ),
+    "civ.camera-context-recipe/v1": frozenset(
+        {
+            "contract",
+            "recipe_id",
+            "version",
+            "product_name",
+            "source",
+            "signal_product",
+            "dataset",
+            "split",
+            "topics",
+            "time_bounds",
+            "calibration",
+            "rights",
+        }
+    ),
+    "civ.camera-context-privacy-rights-approval/v1": frozenset(
+        {
+            "contract",
+            "approval_id",
+            "authority",
+            "decision",
+            "frame_review_set_sha256",
+            "inspection_complete",
+            "redaction_required",
+            "rights_statement",
+        }
+    ),
+    "civ.camera-context-manifest/v1": frozenset(
+        {
+            "contract",
+            "approval",
+            "calibration",
+            "dataset",
+            "parent",
+            "product",
+            "recipe",
+            "rights",
+            "signal_product",
+            "split",
+            "time_bounds",
+            "transformation",
+        }
+    ),
+    "civ.camera-context-set/v1": frozenset(
+        {"contract", "release_id", "approval", "products", "required_disk_bytes"}
+    ),
     "civ.participant-kit-inventory/v1": frozenset(
         {
             "contract",

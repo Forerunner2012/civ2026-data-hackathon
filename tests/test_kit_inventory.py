@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 import civ_workshop.kit_inventory as inventory_module
+from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.contracts import STABLE_FIELDS
 from civ_workshop.data_products import (
     audit_participant_set,
@@ -191,6 +192,61 @@ def test_inventory_rejects_context_without_separate_human_approval(
                 }
             ],
         )
+
+
+def test_inventory_records_explicit_camera_context_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    set_path, viewers = _accepted_fixture(tmp_path, monkeypatch)
+    products = []
+    for index in range(13):
+        dataset = "kashiwa" if index < 8 else "reims"
+        products.append(
+            {
+                "dataset": dataset,
+                "source_id": f"source-{index}",
+                "split": "warmup" if index == 0 else "development",
+            }
+        )
+    context_set = tmp_path / "context" / "camera-context-products.json"
+    context_set.parent.mkdir()
+    context_document = {
+        "approval": {"id": "matthieu-carre-approval", "document_sha256": "a" * 64},
+        "contract": "civ.camera-context-set/v1",
+        "products": products,
+        "release_id": "civ-2026-phase5-camera-context-v1",
+        "required_disk_bytes": 123,
+    }
+    context_set.write_text(
+        f"{canonical_json(context_document)}\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    output = tmp_path / "kit" / "participant-kit.json"
+
+    build_kit_inventory(
+        set_path,
+        REPOSITORY,
+        viewers,
+        output,
+        source_commit="7" * 40,
+        context_set_path=context_set,
+    )
+
+    document = _document(output)
+    assert document["release_id"] == "civ-2026-phase5-camera-context-participant-kit-v1"
+    assert document["content_profile"] == "signals-plus-camera-context"
+    assert document["layout"]["directories"][2] == "context"
+    assert document["context_packs"] == [
+        {
+            "approval": {"id": "matthieu-carre-approval", "sha256": "a" * 64},
+            "manifest": "context/camera-context-products.json",
+            "manifest_sha256": file_sha256(context_set),
+            "name": "camera-context-v1",
+            "required_disk_bytes": 123,
+        }
+    ]
+    assert audit_kit_inventory(output)["context_pack_count"] == 1
 
 
 def test_inventory_rejects_unpinned_or_changed_viewer(

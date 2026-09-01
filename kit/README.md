@@ -11,9 +11,10 @@ the data. The pinned desktop artifacts remain in `viewer/` for the offline path.
 `checksums/SHA256SUMS` before running them.
 
 Use `layouts/lichtblick-kashiwa-right-turn.json` or
-`layouts/lichtblick-reims-left-turn.json` with Lichtblick. Their source layouts were visually
-checked with one Kashiwa and one Reims participant MCAP. PlotJuggler uses the corresponding
-`*.pj4.xml` layouts.
+`layouts/lichtblick-reims-left-turn.json` with Lichtblick. Open one `data/*-signals.mcap` and its
+same-source companion from `context/kashiwa/` or `context/reims/` in the same session. Their source
+identity and time bounds match, so the stacked files replay on one timeline. PlotJuggler uses the
+corresponding `*.pj4.xml` layouts for signal manipulation; camera context is not required there.
 
 If a laptop or container fails, pair with another participant. While the environment is repaired,
 `fallback/kashiwa` and `fallback/reims` keep the analysis moving without ROS or a viewer:
@@ -25,6 +26,9 @@ If a laptop or container fails, pair with another participant. While the environ
 
 Fallback work supports reasoning; the paired primary path still produces the scored EventSpec,
 events, metrics, report, and metadata-only submission.
+
+Camera-context MCAPs are viewing inputs only. They, their frames, signal MCAPs, and evidence clips
+remain outside the metadata-only submission bundle.
 
 Before use, verify `checksums/ASSEMBLY-SHA256SUMS`. Do not rename or edit kit inputs. Work only in a
 separate participant-owned directory. The two recovered Kashiwa recordings retain the caveat in

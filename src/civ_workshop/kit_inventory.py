@@ -12,11 +12,14 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.camera_context import SET_CONTRACT as CAMERA_CONTEXT_SET_CONTRACT
 from civ_workshop.contracts import require_closed_fields
 from civ_workshop.data_products import audit_participant_set
 from civ_workshop.errors import CivError
 
 CONTRACT = "civ.participant-kit-inventory/v1"
+PHASE4_RELEASE = "civ-2026-phase4-participant-kit-v1"
+PHASE5_RELEASE = "civ-2026-phase5-camera-context-participant-kit-v1"
 ACCEPTED_PRODUCT_SET_SHA256 = "d515c0a7cd748f8b2ad0cb41b93d8847b0917c2e6469be2f8be09582fc62ef9b"
 ACCEPTED_PRODUCT_SET_RELEASE = "civ-2026-phase3-participant-signals-v1"
 ACCEPTED_REQUIRED_DISK_BYTES = 335_177_173
@@ -66,6 +69,10 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("schema", "schemas/civ.reproduction.v1.schema.json"),
     ("schema", "schemas/civ.data-product-manifest.v1.schema.json"),
     ("schema", "schemas/civ.data-product-set.v1.schema.json"),
+    ("schema", "schemas/civ.camera-context-recipe.v1.schema.json"),
+    ("schema", "schemas/civ.camera-context-privacy-rights-approval.v1.schema.json"),
+    ("schema", "schemas/civ.camera-context-manifest.v1.schema.json"),
+    ("schema", "schemas/civ.camera-context-set.v1.schema.json"),
     ("schema", "schemas/civ.participant-kit-inventory.v1.schema.json"),
     ("schema", "schemas/civ.attendee-fallback-pack.v1.schema.json"),
     ("schema", "schemas/civ.attendee-kit-assembly.v1.schema.json"),
@@ -239,6 +246,41 @@ def _context_packs(values: Sequence[Mapping[str, object]]) -> list[dict[str, obj
     return sorted(packs, key=lambda item: str(item["name"]))
 
 
+def _camera_context_pack(set_path: Path) -> dict[str, object]:
+    document = read_json_file(set_path, "camera-context product set")
+    if document.get("contract") != CAMERA_CONTEXT_SET_CONTRACT:
+        raise CivError("camera-context product set has the wrong contract")
+    products = document.get("products")
+    if not isinstance(products, list) or len(products) != 13:
+        raise CivError("camera-context product set must contain exactly 13 products")
+    roles: Counter[tuple[str, str]] = Counter()
+    for index, raw in enumerate(products):
+        product = _mapping(raw, f"camera-context product {index}")
+        roles[
+            (
+                _string(product.get("dataset"), f"camera-context product {index} dataset"),
+                _string(product.get("split"), f"camera-context product {index} split"),
+            )
+        ] += 1
+    if roles != ACCEPTED_ROLES:
+        raise CivError("camera-context product set does not match the accepted participant roles")
+    approval = _mapping(document.get("approval"), "camera-context set approval")
+    return {
+        "approval": {
+            "id": _string(approval.get("id"), "camera-context approval id"),
+            "sha256": _sha256(
+                approval.get("document_sha256"), "camera-context approval sha256"
+            ),
+        },
+        "manifest": "context/camera-context-products.json",
+        "manifest_sha256": file_sha256(set_path),
+        "name": "camera-context-v1",
+        "required_disk_bytes": _positive_integer(
+            document.get("required_disk_bytes"), "camera-context required disk bytes"
+        ),
+    }
+
+
 def _product_set(set_path: Path) -> tuple[dict[str, object], list[dict[str, object]]]:
     audit = audit_participant_set(set_path)
     if audit != {
@@ -328,13 +370,18 @@ def build_kit_inventory(
     *,
     source_commit: str,
     context_packs: Sequence[Mapping[str, object]] = (),
+    context_set_path: Path | None = None,
 ) -> dict[str, object]:
     if COMMIT_PATTERN.fullmatch(source_commit) is None:
         raise CivError("tool source commit must be a lowercase 40-character Git commit")
     product_set, checksum_entries = _product_set(set_path)
     tracked_assets = _tracked_assets(repository)
     viewers = _viewers(viewer_paths)
-    contexts = _context_packs(context_packs)
+    if context_set_path is not None and context_packs:
+        raise CivError("camera-context set and manual context packs are mutually exclusive")
+    contexts = _context_packs(
+        [_camera_context_pack(context_set_path)] if context_set_path is not None else context_packs
+    )
     lock_path = repository / "uv.lock"
     if not lock_path.is_file():
         raise CivError("tool lockfile does not exist: uv.lock")
@@ -363,7 +410,7 @@ def build_kit_inventory(
             "name": CONTAINER_IMAGE_NAME,
             "platform": "linux-amd64",
         },
-        "content_profile": "signals-only",
+        "content_profile": "signals-plus-camera-context" if contexts else "signals-only",
         "context_packs": contexts,
         "contract": CONTRACT,
         "layout": {
@@ -371,6 +418,7 @@ def build_kit_inventory(
             "directories": [
                 "checksums",
                 "container",
+                *(["context"] if contexts else []),
                 "data",
                 "docs",
                 "examples",
@@ -383,7 +431,7 @@ def build_kit_inventory(
         },
         "product_set": product_set,
         "recovery_notice": RECOVERY_NOTICE,
-        "release_id": "civ-2026-phase4-participant-kit-v1",
+        "release_id": PHASE5_RELEASE if contexts else PHASE4_RELEASE,
         "required_disk_bytes": 0,
         "tool": tool,
         "tracked_assets": tracked_assets,
@@ -437,10 +485,14 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
     for term in FORBIDDEN_PUBLIC_TERMS:
         if term in serialized:
             raise CivError(f"participant-kit inventory contains forbidden term '{term}'")
-    if document.get("release_id") != "civ-2026-phase4-participant-kit-v1":
+    contexts_value = document.get("context_packs")
+    has_context = isinstance(contexts_value, list) and bool(contexts_value)
+    expected_release = PHASE5_RELEASE if has_context else PHASE4_RELEASE
+    expected_profile = "signals-plus-camera-context" if has_context else "signals-only"
+    if document.get("release_id") != expected_release:
         raise CivError("participant-kit inventory has the wrong release identity")
-    if document.get("content_profile") != "signals-only":
-        raise CivError("participant-kit inventory must default to signals-only")
+    if document.get("content_profile") != expected_profile:
+        raise CivError("participant-kit inventory has the wrong content profile")
     product_set = _mapping(document.get("product_set"), "participant-kit product set")
     if set(product_set) != {
         "manifest",
@@ -621,19 +673,21 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
     if document.get("recovery_notice") != RECOVERY_NOTICE:
         raise CivError("participant-kit inventory is missing the recovery caveat")
     layout = _mapping(document.get("layout"), "participant-kit layout")
+    expected_directories = [
+        "checksums",
+        "container",
+        *(["context"] if has_context else []),
+        "data",
+        "docs",
+        "examples",
+        "layouts",
+        "templates/submission",
+        "viewer/linux-amd64",
+        "viewer/windows-amd64",
+    ]
     if layout != {
         "checksum_manifest": "checksums/SHA256SUMS",
-        "directories": [
-            "checksums",
-            "container",
-            "data",
-            "docs",
-            "examples",
-            "layouts",
-            "templates/submission",
-            "viewer/linux-amd64",
-            "viewer/windows-amd64",
-        ],
+        "directories": expected_directories,
         "inventory": "participant-kit.json",
     }:
         raise CivError("participant-kit inventory has the wrong deterministic layout")
@@ -696,6 +750,7 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("product_set", type=Path)
     build.add_argument("--repository", type=Path, required=True)
     build.add_argument("--viewer", action="append", default=[], type=Path)
+    build.add_argument("--context-set", type=Path)
     build.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit", help="audit a generated kit inventory and checksums")
     audit.add_argument("inventory", type=Path)
@@ -712,6 +767,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 args.viewer,
                 args.output,
                 source_commit=_git_head(args.repository),
+                context_set_path=args.context_set,
             )
         else:
             result = audit_kit_inventory(args.inventory)

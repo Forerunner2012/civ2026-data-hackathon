@@ -55,9 +55,9 @@ Samples:
   1000000000 ns  15
 ```
 
-Copy the topic and field exactly from step 2; nested fields use dotted paths. `--limit` defaults to
-20; `--start-ns` / `--end-ns` bound the window. Open `layouts/kashiwa-right-turn.pj4.xml` in PlotJuggler
-to see the same signal against its evidence context.
+Copy the topic and field exactly from step 2; nested fields use dotted paths. `--limit` defaults to 20; `--start-ns` / `--end-ns` bound the window. PlotJuggler remains the signal-manipulation path: open `layouts/kashiwa-right-turn.pj4.xml` with the signal MCAP.
+
+For synchronized camera context, open the matching signal and companion MCAP together in Lichtblick, then load `layouts/lichtblick-kashiwa-right-turn.json` or `layouts/lichtblick-reims-left-turn.json`. The stacked files share one source identity and timeline; do not mix source IDs between `data/` and `context/kashiwa/` or `context/reims/`.
 
 ## 4. Detect intervals
 
@@ -101,7 +101,8 @@ For your own run, start once with `civ submission-init working --shell powershel
 `civ report` writes `working/submission.zip` with exactly seven **metadata** entries: the EventSpec,
 `events.jsonl`, one figure, `metrics.json`, `report.md`, your `reproduce.ps1` or `reproduce.sh`, and
 `run-manifest.json`. No bag and no clip is ever bundled — the manifest carries the clip hashes, so
-the run stays checkable without shipping the bytes.
+the run stays checkable without shipping the bytes. Camera-context MCAPs and video frames are also
+excluded from every metadata-only submission.
 
 ## Next
 

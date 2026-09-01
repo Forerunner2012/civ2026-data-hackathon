@@ -7,9 +7,9 @@ Copyright 2025 Tsukada Laboratory (T-Lab), The University of Tokyo. Contributors
 Javanmardi, Dongyang Li, Manabu Tsukada. Source: https://github.com/tlab-wide/URT-Kashiwa.
 Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/.
 
-The distributed products are modified signals-only subsets: unselected topics and imagery were
-removed while retained message payloads, timestamps, sequences, channel metadata, and embedded
-schemas were preserved.
+The distributed signal products remain modified signals-only subsets. Separate camera-context
+companions contain the selected compressed traffic-light camera stream and its recorded CameraInfo;
+unselected imagery and unrelated transforms remain excluded.
 
 ## Reims
 
@@ -18,9 +18,9 @@ to registered CIV 2026 participants for event learning and demonstration. Partic
 source-derived copies are deleted after the event; no general redistribution or public release is
 granted.
 
-The distributed products are modified signals-only subsets: unselected topics, camera imagery,
-and point clouds were removed while retained message payloads, timestamps, sequences, channel
-metadata, and embedded schemas were preserved.
+The distributed signal products remain modified signals-only subsets. Separate camera-context
+companions contain the selected compressed RGB stream. No CameraInfo was present in the selected
+recordings, so no calibration was inferred or added.
 
 ## PlotJuggler
 

@@ -21,6 +21,7 @@ from civ_workshop.kit_inventory import (
     ACCEPTED_PRODUCT_SET_SHA256,
     CONTRACT,
     FORBIDDEN_PUBLIC_TERMS,
+    PHASE5_RELEASE,
     TRACKED_ASSET_SOURCES,
     audit_kit_inventory,
 )
@@ -94,6 +95,7 @@ PARTICIPANT_RUNTIME_MODULES = (
 PRIVATE_RUNTIME_MODULES = frozenset(
     {
         "batch.py",
+        "camera_context.py",
         "cli.py",
         "data_products.py",
         "intake.py",
@@ -432,6 +434,95 @@ def _copy_participant_runtime(repository: Path, target: Path) -> None:
     )
 
 
+def _context_inputs(
+    inventory: Mapping[str, object], context_root: Path | None
+) -> list[tuple[Path, str, str]]:
+    raw_packs = inventory.get("context_packs", [])
+    if not isinstance(raw_packs, list):
+        raise CivError("assembly inventory context packs must be a list")
+    if not raw_packs:
+        if context_root is not None:
+            raise CivError("assembly received an unused camera-context root")
+        return []
+    if context_root is None or len(raw_packs) != 1:
+        raise CivError("assembly requires the one explicit camera-context root")
+    pack = raw_packs[0]
+    if not isinstance(pack, dict):
+        raise CivError("assembly camera-context pack must be a mapping")
+    set_target = _target(str(pack.get("manifest")))
+    set_source = context_root / Path(set_target).name
+    if file_sha256(set_source) != pack.get("manifest_sha256"):
+        raise CivError("assembly camera-context set does not match inventory")
+    context_set = read_json_file(set_source, "camera-context product set")
+    if context_set.get("contract") != "civ.camera-context-set/v1":
+        raise CivError("assembly camera-context set has the wrong contract")
+    approval = context_set.get("approval")
+    pack_approval = pack.get("approval")
+    if (
+        not isinstance(approval, dict)
+        or not isinstance(pack_approval, dict)
+        or approval.get("id") != pack_approval.get("id")
+        or approval.get("document_sha256") != pack_approval.get("sha256")
+    ):
+        raise CivError("assembly camera-context approval does not match inventory")
+    raw_product_set = inventory.get("product_set")
+    if not isinstance(raw_product_set, dict):
+        raise CivError("assembly participant product set must be a mapping")
+    raw_signals = raw_product_set.get("products")
+    if not isinstance(raw_signals, list):
+        raise CivError("assembly participant products must be a list")
+    signals: dict[str, tuple[str, str]] = {}
+    for raw in raw_signals:
+        if not isinstance(raw, dict):
+            raise CivError("assembly participant product must be a mapping")
+        signals[str(raw.get("source_id"))] = (
+            Path(str(raw.get("name"))).name,
+            str(raw.get("sha256")),
+        )
+    raw_products = context_set.get("products")
+    if not isinstance(raw_products, list) or len(raw_products) != 13:
+        raise CivError("assembly camera-context set must contain exactly 13 products")
+    inputs: list[tuple[Path, str, str]] = [
+        (set_source, set_target, str(pack["manifest_sha256"]))
+    ]
+    observed_bytes = set_source.stat().st_size
+    seen: set[str] = set()
+    for raw in raw_products:
+        if not isinstance(raw, dict):
+            raise CivError("assembly camera-context product must be a mapping")
+        source_id = str(raw.get("source_id"))
+        if source_id in seen or signals.get(source_id) != (
+            raw.get("signal_product"),
+            raw.get("signal_sha256"),
+        ):
+            raise CivError("assembly camera-context signal binding is invalid")
+        seen.add(source_id)
+        dataset = str(raw.get("dataset"))
+        if dataset not in {"kashiwa", "reims"}:
+            raise CivError("assembly camera-context dataset is invalid")
+        for name_field, hash_field, byte_field in (
+            ("camera_context_product", "camera_context_sha256", "camera_context_bytes"),
+            ("manifest", "manifest_sha256", "manifest_bytes"),
+        ):
+            name = str(raw.get(name_field))
+            if Path(name).name != name:
+                raise CivError("assembly camera-context name is not a basename")
+            source = context_root / "participant" / dataset / name
+            digest = str(raw.get(hash_field))
+            expected_bytes = raw.get(byte_field)
+            if (
+                not source.is_file()
+                or source.stat().st_size != expected_bytes
+                or file_sha256(source) != digest
+            ):
+                raise CivError(f"assembly camera-context input does not match: {name}")
+            observed_bytes += source.stat().st_size
+            inputs.append((source, f"context/{dataset}/{name}", digest))
+    if seen != set(signals) or observed_bytes != pack.get("required_disk_bytes"):
+        raise CivError("assembly camera-context membership or byte total is invalid")
+    return inputs
+
+
 def assemble_kit(
     inventory_path: Path,
     repository: Path,
@@ -442,6 +533,7 @@ def assemble_kit(
     cache_root: Path,
     container_archive: Path,
     output: Path,
+    context_root: Path | None = None,
 ) -> dict[str, object]:
     audit_kit_inventory(inventory_path)
     inventory = read_json_file(inventory_path, "participant kit inventory")
@@ -456,6 +548,7 @@ def assemble_kit(
     if fallback_manifest.get("product_set_sha256") != ACCEPTED_PRODUCT_SET_SHA256:
         raise CivError("fallback pack does not match the accepted product set")
     viewer_by_name = {path.name: path for path in viewer_paths}
+    context_inputs = _context_inputs(inventory, context_root)
     output.mkdir(parents=True)
     product_set = inventory["product_set"]
     assert isinstance(product_set, dict)
@@ -477,6 +570,10 @@ def assemble_kit(
     if file_sha256(set_source) != product_set["sha256"]:
         raise CivError("assembly product-set manifest does not match inventory")
     _copy_file(set_source, output / Path(str(product_set["manifest"])))
+    for source, target, digest in context_inputs:
+        if file_sha256(source) != digest:
+            raise CivError(f"assembly camera-context changed during copy: {source.name}")
+        _copy_file(source, output / Path(target))
     for asset in inventory["tracked_assets"]:
         assert isinstance(asset, dict)
         target_name = str(asset["path"])
@@ -524,7 +621,11 @@ def assemble_kit(
         },
         "files": records,
         "inventory_sha256": file_sha256(inventory_path),
-        "release_id": "civ-2026-phase4-attendee-kit-v1",
+        "release_id": (
+            "civ-2026-phase5-camera-context-attendee-kit-v1"
+            if inventory.get("release_id") == PHASE5_RELEASE
+            else "civ-2026-phase4-attendee-kit-v1"
+        ),
         "required_disk_bytes": sum(components.values()),
     }
     manifest_path = output / "attendee-kit-assembly.json"
@@ -596,6 +697,7 @@ def build_parser() -> argparse.ArgumentParser:
     assemble.add_argument("--fallback-root", type=Path, required=True)
     assemble.add_argument("--cache-root", type=Path, required=True)
     assemble.add_argument("--container-archive", type=Path, required=True)
+    assemble.add_argument("--context-root", type=Path)
     assemble.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit")
     audit.add_argument("manifest", type=Path)
@@ -618,6 +720,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 args.cache_root,
                 args.container_archive,
                 args.output,
+                args.context_root,
             )
         else:
             result = audit_assembly(args.manifest)
