@@ -73,6 +73,9 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   assert.match(await htmlAt("12:30"), /Submissions closed/i);
 
   assert.match(b1, /Submit metadata bundle/i);
+  assert.match(b1, /PACE CAR.*QUICKSTART/is);
+  assert.match(b1, /doctor.*inspect.*sample.*submission-init.*detect.*clip.*score.*report/is);
+  assert.match(b1, /docs\/quickstart\.md/i);
   assert.match(b1, /civ report/i);
   assert.match(b1, /submission\.zip/i);
   assert.match(b1, /12 MiB per bundle.*8 MiB per metadata artifact/i);
@@ -155,6 +158,9 @@ test("coach screen renders one next action and no reversal control", async () =>
   assert.equal(response.status, 200);
   const document = (await response.text()).split("</html>", 1)[0];
   assert.match(document, /Advance room to next state/);
+  assert.match(document, /DISPLAY ASSISTANCE/);
+  assert.match(document, /Current attendee action/);
+  assert.match(document, /doctor.*inspect.*sample.*submission-init.*detect.*clip.*score.*report/is);
   assert.equal((document.match(/<button\b/g) ?? []).length, 1);
   assert.doesNotMatch(document, />\s*(?:Hold|Delay|Relock|Reverse)\b/i);
 });

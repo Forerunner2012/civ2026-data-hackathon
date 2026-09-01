@@ -50,6 +50,7 @@ FORBIDDEN_PUBLIC_TERMS = (
 
 TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("participant-instructions", "README.md"),
+    ("viewer-instructions", "viewer/README.md"),
     ("attribution", "ATTRIBUTION.md"),
     ("quickstart", "docs/quickstart.md"),
     ("layout", "layouts/kashiwa-right-turn.pj4.xml"),
@@ -98,6 +99,7 @@ TRACKED_ASSET_SOURCES = {
 TRACKED_ASSET_SOURCES.update(
     {
         "README.md": "kit/README.md",
+        "viewer/README.md": "kit/viewer/README.md",
         "ATTRIBUTION.md": "kit/ATTRIBUTION.md",
     }
 )
@@ -122,6 +124,11 @@ VIEWER_ASSETS: dict[str, dict[str, object]] = {
         "byte_size": 162_728_473,
         "platform": "linux-amd64",
         "sha256": "0cbe3ce585f1aad154ed6340ac2b2f919d395e53ebd5a4b78faf8e7fe7f2be37",
+    },
+    "lichtblick-1.28.0-mac-universal.dmg": {
+        "byte_size": 264_949_393,
+        "platform": "macos-universal",
+        "sha256": "7ad612abb223cb3da04b20b0e0b4874dcd49b97104849b48e9a8d094ebe7302c",
     },
 }
 
@@ -215,6 +222,12 @@ def _viewers(paths: Sequence[Path]) -> list[dict[str, object]]:
     has_lichtblick = any(name.startswith("lichtblick-") for name in names)
     if has_plotjuggler != has_lichtblick:
         raise CivError("PlotJuggler and Lichtblick must be staged together")
+    if names != set(VIEWER_ASSETS):
+        missing = sorted(set(VIEWER_ASSETS) - names)
+        raise CivError(
+            "participant kit requires every pinned platform viewer; missing: "
+            + ", ".join(missing)
+        )
     return sorted(viewers, key=lambda item: (str(item["platform"]), str(item["name"])))
 
 
@@ -425,6 +438,7 @@ def build_kit_inventory(
                 "layouts",
                 "templates/submission",
                 "viewer/linux-amd64",
+                "viewer/macos-universal",
                 "viewer/windows-amd64",
             ],
             "inventory": "participant-kit.json",
@@ -629,6 +643,12 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
     has_lichtblick = any(name.startswith("lichtblick-") for name in seen_viewers)
     if has_plotjuggler != has_lichtblick:
         raise CivError("participant-kit PlotJuggler and Lichtblick must be staged together")
+    if seen_viewers != set(VIEWER_ASSETS):
+        missing = sorted(set(VIEWER_ASSETS) - seen_viewers)
+        raise CivError(
+            "participant-kit requires every pinned platform viewer; missing: "
+            + ", ".join(missing)
+        )
 
     raw_assets = document.get("tracked_assets")
     if not isinstance(raw_assets, list) or len(raw_assets) != len(TRACKED_ASSETS):
@@ -683,6 +703,7 @@ def audit_kit_inventory(path: Path) -> dict[str, object]:
         "layouts",
         "templates/submission",
         "viewer/linux-amd64",
+        "viewer/macos-universal",
         "viewer/windows-amd64",
     ]
     if layout != {

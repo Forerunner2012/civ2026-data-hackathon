@@ -1,110 +1,178 @@
-# Quickstart: unpacked kit to first evidence clip
+# QuickStart: unpacked kit to accepted bundle
 
-Five offline commands, run from the unpacked kit. Swap `data/route.mcap` for your dataset and
-`examples/kashiwa/right_turn.yaml` for your path's reference detector (on the Reims data, use
-`examples/reims/left_turn.yaml` with `layouts/reims-left-turn.pj4.xml`). Outputs are from a short demo
-bag; your counts and hashes will differ.
+Run these steps from the root of the unpacked attendee kit. Everything required by the core path is
+already in that kit; the QuickStart does not depend on an online download. Commands below use the
+Kashiwa warm-up. For Reims, use `examples/reims/left_turn.yaml` and
+`layouts/reims-left-turn.pj4.xml` with the matching Reims MCAP.
+
+## The route at a glance
+
+```mermaid
+flowchart LR
+    K[Unpacked attendee kit] --> D[1. civ doctor]
+    K --> I[2. civ inspect]
+    I --> S[3. civ sample]
+    I --> V[Optional viewer]
+    S --> E[Edit your EventSpec]
+    N[4. civ submission-init] --> W[working templates]
+    E --> X[5. civ detect]
+    W --> X
+    X -->|events.jsonl + run-manifest.json| C[6. civ clip]
+    C -->|evidence/*.mcap + updated manifest| Q[7. civ score]
+    Q -->|metrics.json + updated manifest| R[8. civ report]
+    W --> R
+    R --> Z[submission.zip + printed SHA-256]
+
+    classDef local fill:#eef5d4,stroke:#647a18,color:#172117
+    class V,C local
+```
+
+The viewer and evidence clips help your investigation but stay on your machine. Only the validated
+metadata bundle is submitted.
+
+## Before step 1: choose local paths
+
+Use the supplied files; do not rename or edit kit inputs:
+
+```text
+BAG=data/KSH-64ac27cd029b-signals.mcap
+SPEC=examples/kashiwa/right_turn.yaml
+LAYOUT=layouts/kashiwa-right-turn.pj4.xml
+WORK=working
+```
+
+The examples below spell those paths out so they work in PowerShell and POSIX shells alike.
 
 ## 1. Check the environment
 
 ```text
-civ doctor --workspace work --bag data/route.mcap --layout layouts/kashiwa-right-turn.pj4.xml
+civ doctor --workspace working --bag data/KSH-64ac27cd029b-signals.mcap --layout layouts/kashiwa-right-turn.pj4.xml --offline-kit .
 ```
 
-This defaults to pure-MCAP readiness; use `--profile release-target` for Ubuntu 26.04 / ROS Lyrical.
-See the [Phase 3 policy](phase3/doctor-readiness-policy.md) for requirements and the Lichtblick path.
+Expected result: `Doctor: READY`. This command downloads, installs, and writes nothing. If it exits
+2, follow the printed `Action:` for the failing check and rerun the same command. Use the viewer
+shipped under `viewer/<your-platform>/`; its local instructions are in `viewer/README.md`.
+
+## 2. Inventory topics and fields
 
 ```text
-Doctor: READY
-Profile: pure-mcap
-...
+civ inspect data/KSH-64ac27cd029b-signals.mcap
 ```
 
-A failure exits 2 and prints an `Action:` line under the failing check. Do that one thing and rerun.
-Nothing is downloaded, installed, or written.
+Expected result: bag duration followed by topics, message counts, rates, and fields. This is read
+only. A missing topic is not in this bag; confirm the exact dataset path before changing a detector.
 
-## 2. See what is in the bag
+## 3. Sample one signal and look at the recording
 
 ```text
-civ inspect data/route.mcap
+civ sample data/KSH-64ac27cd029b-signals.mcap --topic /pix_hooke/v2a_steerstafb --field vcu_chassis_steer_angle_fb --limit 4
 ```
+
+Expected result: up to four timestamped values printed to the terminal. Nested fields use dotted
+paths; `--start-ns` and `--end-ns` narrow the window. This command writes nothing.
+
+For a visual inspection, open the same signal MCAP and `layouts/kashiwa-right-turn.pj4.xml` in the
+supplied PlotJuggler. In Lichtblick, open the signal MCAP together with its same-source companion
+from `context/kashiwa/`, then load `layouts/lichtblick-kashiwa-right-turn.json`. Do not mix source
+IDs. If a viewer does not start, continue with `civ sample` or the supplied `fallback/` material.
+
+## 4. Create your working submission once
 
 ```text
-Bag: route.mcap
-Duration: 36.000s (0..36000000000 ns)
-Topics:
-  /pix_hooke/v2a_steerstafb  37 messages  1.02778 Hz  ...  fields: vcu_chassis_steer_angle_fb
-  ...
+civ submission-init working --shell powershell
 ```
 
-A missing topic means it is not in the bag — check the dataset you unpacked, not the detector. A
-`Warning:` about an embedded schema means this is not the pinned kit bag.
+Use `--shell posix` on Linux or macOS. This creates `working/README.md`, an incomplete detector,
+report and figure template, plus exactly one reproduction script. It never overwrites an existing
+directory. If `working/` already exists, keep it or choose a new empty path.
 
-## 3. Look at one signal
+## 5. Detect intervals
+
+First run the supplied EventSpec without writing:
 
 ```text
-civ sample data/route.mcap --topic /pix_hooke/v2a_steerstafb --field vcu_chassis_steer_angle_fb --limit 4
+civ detect examples/kashiwa/right_turn.yaml data/KSH-64ac27cd029b-signals.mcap --output working --dry-run
 ```
+
+Then copy the relevant logic into `working/detector/detector.yaml`, make one evidence-led change,
+and write the run:
 
 ```text
-Bag: route.mcap
-Signal: /pix_hooke/v2a_steerstafb.vcu_chassis_steer_angle_fb
-Window: all timestamps, first 4 samples
-Samples:
-  0 ns  0
-  1000000000 ns  15
+civ detect working/detector/detector.yaml data/KSH-64ac27cd029b-signals.mcap --output working
 ```
 
-Copy the topic and field exactly from step 2; nested fields use dotted paths. `--limit` defaults to 20; `--start-ns` / `--end-ns` bound the window. PlotJuggler remains the signal-manipulation path: open `layouts/kashiwa-right-turn.pj4.xml` with the signal MCAP.
+Expected result: `working/events.jsonl`, a byte-for-byte EventSpec copy under `working/detector/`,
+and `working/run-manifest.json`. Inputs are never rewritten. If zero events appear, loosen one
+condition or timing value and rerun `--dry-run` before writing again.
 
-For synchronized camera context, open the matching signal and companion MCAP together in Lichtblick, then load `layouts/lichtblick-kashiwa-right-turn.json` or `layouts/lichtblick-reims-left-turn.json`. The stacked files share one source identity and timeline; do not mix source IDs between `data/` and `context/kashiwa/` or `context/reims/`.
-
-## 4. Detect intervals
+## 6. Extract local evidence
 
 ```text
-civ detect examples/kashiwa/right_turn.yaml data/route.mcap --output work
+civ clip working/events.jsonl data/KSH-64ac27cd029b-signals.mcap
 ```
+
+Expected result: one `working/evidence/<event_id>.mcap` per event and clip facts added to the run
+manifest. Reopen a clip in a supplied viewer. A failure names the missing topic or empty window;
+every `evidence.topics` entry must exist in the same bag used by `civ detect`.
+
+## 7. Score against the supplied development labels
 
 ```text
-{"dry_run":false,"event_count":2}
+civ score working --labels <supplied-development-labels.json>
 ```
 
-Add `--dry-run` to re-run without writing anything while you adjust `condition` or `timing` in your
-own copy of the EventSpec. Your inputs are never rewritten.
+Use the development-label path announced by the organizers and present in the attendee kit; do not
+substitute an organizer path. Expected result: `working/metrics.json` plus its hash in the updated
+run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and
+record what you changed in `working/report.md`.
 
-## 5. Extract evidence
+## 8. Validate, package, and submit
+
+Complete the five report headings, replace the figure, and make the reproduction script rerun the
+same path. Then:
 
 ```text
-civ clip work/events.jsonl data/route.mcap
+civ report working
 ```
+
+Expected result: `working/submission.zip` and its SHA-256 printed to the terminal. Submit the ZIP
+unchanged with the printed hash and your participant/team identity through the form shown on the
+live page. If the form is unavailable, give those same three items to the organizer by USB.
+
+No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, and
+`working/evidence/` stay local.
+
+## Command products and dependencies
+
+| Order | Command | Reads | Prints or writes | Used by |
+| ---: | --- | --- | --- | --- |
+| 1 | `civ doctor` | kit, bag, layout, workspace path | readiness only; no files | your recovery decision |
+| 2 | `civ inspect` | MCAP | topic/field inventory; no files | `sample`, EventSpec design |
+| 3 | `civ sample` | MCAP + topic + field | timestamped values; no files | EventSpec design, report figure |
+| 4 | `civ submission-init` | built-in templates | detector/report/figure/reproduction templates | `detect`, `report` |
+| 5 | `civ detect` | EventSpec + MCAP | `detector/`, `events.jsonl`, `run-manifest.json` | `clip`, `score`, `report` |
+| 6 | `civ clip` | events + same MCAP + manifest | `evidence/*.mcap`, updated manifest | visual review, `report` manifest checks |
+| 7 | `civ score` | working directory + supplied labels | `metrics.json`, updated manifest | report argument, `report` |
+| 8 | `civ report` | completed working directory | `submission.zip` + SHA-256 | organizer intake |
+
+## Working directory versus submission
 
 ```text
-{"clip_count":2}
+working/
+├── detector/detector.yaml      submitted
+├── events.jsonl                submitted
+├── run-manifest.json           submitted
+├── metrics.json                submitted
+├── report.md                   submitted
+├── figure.svg                  submitted
+├── reproduce.ps1 or .sh        submitted
+├── submission.zip              hand in unchanged
+└── evidence/<event_id>.mcap    local only
 ```
 
-A failure names the missing topic or the empty window: every `evidence.topics` entry must exist in
-the same bag you detected against.
+## Recovery references
 
-## Working directory vs submitted bundle
-
-`work/` keeps the heavy evidence on your machine:
-
-```text
-work/detector/right_turn.yaml   your EventSpec, copied byte-for-byte and hashed
-work/events.jsonl               one normalized interval per line
-work/evidence/<event_id>.mcap   the extracted clips — reopen these in PlotJuggler
-work/run-manifest.json          hashes, counts, evidence window, clip facts
-```
-
-For your own run, start once with `civ submission-init working --shell powershell` (use `posix` on Linux); it never overwrites, and its README explains every template prompt and normalized events.
-
-`civ report` writes `working/submission.zip` with exactly seven **metadata** entries: the EventSpec,
-`events.jsonl`, one figure, `metrics.json`, `report.md`, your `reproduce.ps1` or `reproduce.sh`, and
-`run-manifest.json`. No bag and no clip is ever bundled — the manifest carries the clip hashes, so
-the run stays checkable without shipping the bytes. Camera-context MCAPs and video frames are also
-excluded from every metadata-only submission.
-
-## Next
-
-With a label pack for your dataset, `civ score work --labels <labels.json>` writes `metrics.json`;
-`civ report work` then validates the whole working set and assembles the bundle.
+- Viewer problem: use `civ sample` and `fallback/<dataset>/`, then raise the printed help card.
+- Container problem: pair with another participant while a coach repairs the machine.
+- Command problem: read the exact diagnostic, fix only the named input, and rerun that command.
+- Submission problem: rerun `civ report`; never manually edit or recompress `submission.zip`.

@@ -98,6 +98,14 @@ export function CoachConsole({
         </button>
         <p role="status">{message}</p>
       </div>
+      <aside className="coach-pace-reference">
+        <span>DISPLAY ASSISTANCE</span>
+        <h2>Keep the room on the evidence chain</h2>
+        <p><b>Current attendee action:</b> {snapshot.stage.action}</p>
+        <p><b>Expected by now:</b> {snapshot.stage.shouldHave}</p>
+        <p><b>Recovery line to display:</b> {snapshot.stage.ifYouDont}</p>
+        <code>doctor → inspect → sample → submission-init → detect → clip → score → report</code>
+      </aside>
     </section>
   );
 }

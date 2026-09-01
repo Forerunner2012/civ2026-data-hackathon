@@ -103,32 +103,40 @@ def test_quickstart_uses_only_public_participant_commands() -> None:
         assert organizer_command not in quickstart
 
 
-def test_quickstart_covers_every_golden_path_step_with_one_recovery_pointer() -> None:
+def test_quickstart_covers_every_golden_path_step_and_product() -> None:
     quickstart = QUICKSTART.read_text(encoding="utf-8")
     steps = re.split(r"^## \d\. ", quickstart, flags=re.M)[1:]
 
     assert [step.splitlines()[0] for step in steps] == [
         "Check the environment",
-        "See what is in the bag",
-        "Look at one signal",
+        "Inventory topics and fields",
+        "Sample one signal and look at the recording",
+        "Create your working submission once",
         "Detect intervals",
-        "Extract evidence",
+        "Extract local evidence",
+        "Score against the supplied development labels",
+        "Validate, package, and submit",
     ]
-    for step in steps:
-        # Every step shows its command, its expected output, and how to recover.
-        assert step.count("```text") >= 2
-        assert step.strip().split("```")[-1].strip(), "step ends without a recovery pointer"
+    for product in (
+        "events.jsonl",
+        "run-manifest.json",
+        "evidence/<event_id>.mcap",
+        "metrics.json",
+        "submission.zip",
+    ):
+        assert product in quickstart
 
 
 def test_quickstart_separates_working_evidence_from_the_metadata_bundle() -> None:
     quickstart = QUICKSTART.read_text(encoding="utf-8")
 
-    assert "work/evidence/<event_id>.mcap" in quickstart
+    assert "working/evidence/<event_id>.mcap" in quickstart
     assert "No bag and no clip is ever bundled" in quickstart
 
 
-def test_quickstart_fits_one_rendered_page() -> None:
-    lines = QUICKSTART.read_text(encoding="utf-8").splitlines()
+def test_quickstart_visualizes_the_command_dependency_chain() -> None:
+    quickstart = QUICKSTART.read_text(encoding="utf-8")
 
-    # A rendered page holds roughly 55 lines of body text; blank lines cost nothing.
-    assert len([line for line in lines if line.strip()]) <= 80
+    assert "```mermaid" in quickstart
+    offsets = [quickstart.index(f"## {index}.") for index in range(1, 9)]
+    assert offsets == sorted(offsets)

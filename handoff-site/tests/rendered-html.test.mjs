@@ -112,14 +112,22 @@ test("participant view states the contract", async () => {
   assert.match(body, /RMS-CHUNK-0-0a0817b3afc8-signals\.mcap/);
   assert.match(body, /layouts\/kashiwa-right-turn\.pj4\.xml/);
   assert.match(body, /layouts\/reims-left-turn\.pj4\.xml/);
+  assert.match(body, /viewer\/macos-universal/);
+  assert.match(body, /PlotJuggler has\s+no macOS binary/i);
+  assert.match(body, /github\.com\/PlotJuggler\/PlotJuggler\/releases/);
+  assert.match(body, /github\.com\/lichtblick-suite\/lichtblick\/releases/);
   assert.match(body, /Optional extension.*scored, but not scheduled/is);
   assert.match(body, /\/desk\/warmup-trace\.html/);
   assert.match(body, /\/desk\/help-card\.html/);
   assert.match(body, /\/desk\/brief\.html/);
   const commandList = body.match(/<div class="command-list">([\s\S]+?)<\/div>/)?.[1] ?? "";
-  const commandOffsets = ["civ doctor", "civ inspect", "civ sample", "civ detect", "civ clip", "civ score", "civ report"].map((command) => commandList.indexOf(command));
+  const commandOffsets = ["civ doctor", "civ inspect", "civ sample", "civ submission-init", "civ detect", "civ clip", "civ score", "civ report"].map((command) => commandList.indexOf(command));
   assert.ok(commandOffsets.every((offset) => offset >= 0));
   assert.deepEqual(commandOffsets, [...commandOffsets].sort((a, b) => a - b));
+  assert.match(commandList, /events\.jsonl.*run-manifest\.json/);
+  assert.match(commandList, /evidence\/\*\.mcap.*updated manifest/);
+  assert.match(commandList, /metrics\.json.*updated manifest/);
+  assert.match(commandList, /submission\.zip.*SHA-256/);
   // The ranking rule is published to participants even though the answer key is not.
   assert.match(body, /held-back test set/i);
   // Rules that change behaviour, so they must survive a redesign of the page.

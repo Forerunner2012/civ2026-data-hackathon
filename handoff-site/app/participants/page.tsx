@@ -22,6 +22,7 @@ import {
   submissionSteps,
   youOwn,
   youReceive,
+  viewerResources,
 } from "../_content/participants";
 
 export const metadata: Metadata = {
@@ -339,13 +340,19 @@ export default function Participants() {
           ))}
         </div>
         <div className="command-list">
-          {commands.map(({ command, note }) => (
+          {commands.map(({ command, note, output }, index) => (
             <p key={command}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
               <code>{command}</code>
               <small>{note}</small>
+              <small><b>Produces:</b> {output}</small>
             </p>
           ))}
         </div>
+        <p className="output-code">
+          <span>DATA FLOW</span>
+          inspect/sample → EventSpec → detect → events + manifest → clip → score → report → submission.zip
+        </p>
       </section>
 
       <section className="kit-section" id="kit">
@@ -374,6 +381,21 @@ export default function Participants() {
           <a href="https://lichtblick-suite.github.io/lichtblick/">Lichtblick web app</a>. The kit
           also carries the pinned desktop build for offline use; verify it against the supplied
           checksums before running it.
+        </p>
+        <div className="viewer-links" aria-label="Official viewer resources">
+          {viewerResources.map(({ tool, platforms, project, releases }) => (
+            <article key={tool}>
+              <span>SUPPLIED VIEWER</span>
+              <h3>{tool}</h3>
+              <p>{platforms}</p>
+              <p><a href={project}>GitHub project</a> · <a href={releases}>Release downloads</a></p>
+            </article>
+          ))}
+        </div>
+        <p>
+          The offline kit stages pinned binaries in <code>viewer/windows-amd64/</code>,{" "}
+          <code>viewer/linux-amd64/</code>, and <code>viewer/macos-universal/</code>. PlotJuggler has
+          no macOS binary in the pinned release; use the supplied Lichtblick universal build there.
         </p>
         <div className="desk-links" aria-label="Printable desk materials">
           {deskMaterials.map(({ href, title, note }) => (

@@ -169,13 +169,29 @@ export const pipeline: { title: string; note: string; owner: "you" | "provided" 
 ];
 
 export const commands = [
-  { command: "civ doctor", note: "check your machine" },
-  { command: "civ inspect BAG", note: "topics, fields, durations" },
-  { command: "civ sample BAG --topic ...", note: "pull signals into a table" },
-  { command: "civ detect SPEC DATASET", note: "run your detector, --dry-run first" },
-  { command: "civ clip EVENTS DATASET", note: "cut compact evidence" },
-  { command: "civ score SUBMISSION --labels DEVELOPMENT_LABELS", note: "development score" },
-  { command: "civ report SUBMISSION", note: "package the one-page argument" },
+  { command: "civ doctor", note: "check your machine", output: "readiness only · no files" },
+  { command: "civ inspect BAG", note: "topics, fields, durations", output: "inventory · no files" },
+  { command: "civ sample BAG --topic ... --field ...", note: "inspect values", output: "timestamped values · no files" },
+  { command: "civ submission-init working --shell ...", note: "create your workspace once", output: "detector + report + figure + reproduce templates" },
+  { command: "civ detect SPEC DATASET --output working", note: "run your detector, --dry-run first", output: "detector/ + events.jsonl + run-manifest.json" },
+  { command: "civ clip working/events.jsonl DATASET", note: "cut compact local evidence", output: "evidence/*.mcap + updated manifest" },
+  { command: "civ score working --labels DEVELOPMENT_LABELS", note: "development score", output: "metrics.json + updated manifest" },
+  { command: "civ report working", note: "validate and package", output: "submission.zip + printed SHA-256" },
+];
+
+export const viewerResources = [
+  {
+    tool: "PlotJuggler 3.999.3",
+    platforms: "Windows amd64 · Linux amd64",
+    project: "https://github.com/PlotJuggler/PlotJuggler",
+    releases: "https://github.com/PlotJuggler/PlotJuggler/releases",
+  },
+  {
+    tool: "Lichtblick 1.28.0",
+    platforms: "Windows amd64 · Linux amd64 · macOS universal",
+    project: "https://github.com/lichtblick-suite/lichtblick",
+    releases: "https://github.com/lichtblick-suite/lichtblick/releases",
+  },
 ];
 
 export const participantProducts = [

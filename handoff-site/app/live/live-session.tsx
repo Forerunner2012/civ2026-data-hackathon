@@ -135,6 +135,24 @@ export function LiveSession({
         </ol>
       </section>
 
+      <section className="live-command-pace" aria-label="Attendee command pace car">
+        <div>
+          <span>PACE CAR · QUICKSTART</span>
+          <h2>Eight commands, one evidence chain.</h2>
+          <p>Open <code>docs/quickstart.md</code> from the kit for exact paths and recovery.</p>
+        </div>
+        <ol>
+          <li><code>doctor</code><small>ready; no files</small></li>
+          <li><code>inspect</code><small>inventory; no files</small></li>
+          <li><code>sample</code><small>values; no files</small></li>
+          <li><code>submission-init</code><small>working templates</small></li>
+          <li><code>detect</code><small>events + manifest</small></li>
+          <li><code>clip</code><small>local evidence</small></li>
+          <li><code>score</code><small>metrics</small></li>
+          <li><code>report</code><small>ZIP + hash</small></li>
+        </ol>
+      </section>
+
       <section className="live-submission" id="submission">
         <div>
           <span>SUBMISSION · METADATA ONLY</span>
