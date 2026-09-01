@@ -66,14 +66,15 @@ export const juryCategories = [
 ] as const;
 
 export const bonusCategories = [
-  ["External-input extension", 10, "Award only for a real, sourced resource seam whose predicate and resulting evidence are defensible. Do not compare against a private cave list."],
-  ["Grounded agent trace", 10, "Award only when claims point to executed tools and produced artifacts. Prompt style, transcript length, confidence, and model choice earn nothing."],
+  ["Grounded agent trace", 10, "Award only when claims point to executed tools and produced artifacts in the accepted v2 extension. Prompt style, transcript length, confidence, and model choice earn nothing."],
+  ["Advanced method", 5, "Award for a defensible multimodal, data-quality, or external-resource method. The resources plus min_distance_to exercise belongs here."],
+  ["Failure-derived regression test", 5, "Award only when the accepted inert test encodes a demonstrated failure and a check that would catch its return."],
 ] as const;
 
 export const juryProcedure = [
   "Freeze the accepted ZIP/hash and machine score first. The jury never changes submission authority or the 55 machine points.",
   "Give both agents the same accepted metadata-only bundle, machine-score summary, anchors, and output schema. Do not provide sealed labels, coach logs, participant identity, or the other agent's output.",
-  "Each agent scores all three categories and both optional bonuses independently, citing an artifact path plus a verifiable observation for every non-zero award and every deduction.",
+  "Each agent scores all three categories and all three optional bonuses independently, citing an accepted artifact path plus a verifiable observation for every non-zero award and every deduction.",
   "Do not reward fluency, formatting beyond the contract, length, confidence, prompt craft, or inferred intent. If an artifact does not support a claim, score the artifact—not the prose.",
   "Agreement stands when category scores differ by at most 5 points and jury totals differ by at most 5. Any larger delta, any factual contradiction, or any invalid citation routes to human arbitration.",
   "The human records the disputed anchor, both cited observations, the ruling, and initials. Never average away a disagreement.",
@@ -85,7 +86,7 @@ export const feedbackTemplate = [
   "Entry and accepted bundle SHA-256:",
   "Machine score: Detection __/25 (Kashiwa __/15, Reims __/10); Evidence __/15; Reproducibility __/15.",
   "Jury score: Investigation __/15; Quality __/15; Visualization __/15.",
-  "Bonus: External-input extension __/10; grounded agent trace __/10.",
+  "Bonus: Grounded agent trace __/10; advanced method __/5; failure-derived regression test __/5.",
   "What the artifacts support:",
   "Strongest next improvement:",
   "Disagreement/arbitration note (or none):",

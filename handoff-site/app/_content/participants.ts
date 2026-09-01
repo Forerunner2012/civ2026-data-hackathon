@@ -117,7 +117,7 @@ export const deliverables = [
   "One false positive, false negative or ambiguity — and what you changed",
   "A one-command reproduction path",
   "A one-page report: question, signals, transfer, failure and next action",
-  "Optional: an agent trace or extension artifact with provenance",
+  "Optional v2 extension: grounded trace, advanced-method provenance, and regression test",
 ];
 
 export const scoring: { category: string; points: number; looksFor: string }[] = [
@@ -173,7 +173,7 @@ export const commands = [
   { command: "civ inspect BAG", note: "topics, fields, durations", output: "inventory · no files" },
   { command: "civ sample BAG --topic ... --field ...", note: "inspect values", output: "timestamped values · no files" },
   { command: "civ submission-init working --shell ...", note: "create your workspace once", output: "detector + report + figure + reproduce templates" },
-  { command: "civ detect SPEC DATASET --output working", note: "run your detector, --dry-run first", output: "detector/ + events.jsonl + run-manifest.json" },
+  { command: "civ detect SPEC DATASET --output working", note: "run your detector, --dry-run first", output: "detector/ (spec + exact resources) + events.jsonl + v2 run-manifest.json" },
   { command: "civ clip working/events.jsonl DATASET", note: "cut compact local evidence", output: "evidence/*.mcap + updated manifest" },
   { command: "civ score working --labels DEVELOPMENT_LABELS", note: "development score", output: "metrics.json + updated manifest" },
   { command: "civ report working", note: "validate and package", output: "submission.zip + printed SHA-256" },
@@ -222,13 +222,14 @@ export const deskMaterials = [
  * recordings behind it — kilobytes, through a form.
  */
 export const submissionTree = `working/                       handed in?
-├── detector/                  yes   EventSpec and optional extension code
+├── detector/                  yes   EventSpec + exact declared resources
 ├── events.jsonl               yes   the intervals you found
-├── run-manifest.json          yes   versions, hashes, parameters, timings,
+├── run-manifest.json          yes   v2 versions, hashes, parameters, timings,
 │                                    and per-clip topics / durations / bytes
 ├── metrics.json               yes
 ├── report.md                  yes   one page, five headings, one figure
-├── extension/                 yes   optional resources and tool trace
+├── extension/manifest.json    if used   bounded payload declarations
+├── extension/*                if used   provenance, inert trace, regression test
 ├── reproduce.ps1|sh           yes   one-command entry point
 └── evidence/                  no    your clips stay on your machine`;
 
@@ -236,6 +237,7 @@ export const submissionSteps = [
   "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
   "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
+  "Optional traces and regression tests are inert: intake validates but never runs them.",
   "Submit the unchanged ZIP, printed hash, and the same participant or team identity. Keep the confirmation reference; its server receipt time is authoritative.",
   "If the form is unavailable, hand over those same three items by USB. Never unpack, rename, recompress, or add recordings or clips.",
 ];
@@ -265,8 +267,8 @@ export const extensionTrack = {
     "Choose a class of places the recording never knew about. The worked case is the champagne cellars along the Reims route.",
     "Write a `civ.point-resource/v1` file: an id, a latitude and a longitude per point. That is the entire contract.",
     "Reference it from an EventSpec under `resources:`, derive `min_distance_to` from your GNSS latitude and longitude signals, and put that distance in the condition. The shipped `examples/reims/cave-encounter.yaml` is a complete worked spec with illustrative points — the shape is real, the coordinates are not.",
-    "Run it across the Reims development products with the same `civ detect` you already use. Nothing new is installed and no contract changes.",
-    "Put the resource file and a note on where it came from in `extension/`.",
+    "Run it across the Reims development products with the same `civ detect` you already use. It copies each declared resource byte-for-byte beside the bundled EventSpec and declares it in `extension/manifest.json`.",
+    "Put a short provenance note under `extension/` and declare its kind, path, SHA-256, and media type in the sorted extension manifest.",
   ],
   provenance: [
     "How you source the points is deliberately unconstrained: a chat assistant, an OpenStreetMap query, a published directory, or twenty minutes with a map and a spreadsheet are all legitimate.",
@@ -277,7 +279,7 @@ export const extensionTrack = {
   budget:
     "Budget 30–45 minutes, and expect almost all of it to be sourcing. The detection itself is seconds — one spec across all five Reims development products finishes in under ten seconds on the target machine.",
   scoredAs:
-    "It scores under the existing bonus row for an external-resource method, and supports the agent-trace row if you used one and can show the trace.",
+    "Maximum +20: grounded agent trace +10; advanced multimodal, data-quality, or external-resource method +5; regression test derived from a demonstrated failure +5. Every non-zero award cites a bundled artifact.",
 };
 
 export const comeReady = [

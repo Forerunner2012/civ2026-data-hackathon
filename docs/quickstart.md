@@ -150,7 +150,7 @@ No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, 
 | 2 | `civ inspect` | MCAP | topic/field inventory; no files | `sample`, EventSpec design |
 | 3 | `civ sample` | MCAP + topic + field | timestamped values; no files | EventSpec design, report figure |
 | 4 | `civ submission-init` | built-in templates | detector/report/figure/reproduction templates | `detect`, `report` |
-| 5 | `civ detect` | EventSpec + MCAP | `detector/`, `events.jsonl`, `run-manifest.json` | `clip`, `score`, `report` |
+| 5 | `civ detect` | EventSpec + MCAP + declared resources | `detector/` with exact resources, `events.jsonl`, v2 `run-manifest.json`, optional `extension/manifest.json` | `clip`, `score`, `report` |
 | 6 | `civ clip` | events + same MCAP + manifest | `evidence/*.mcap`, updated manifest | visual review, `report` manifest checks |
 | 7 | `civ score` | working directory + supplied labels | `metrics.json`, updated manifest | report argument, `report` |
 | 8 | `civ report` | completed working directory | `submission.zip` + SHA-256 | organizer intake |
@@ -160,15 +160,22 @@ No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, 
 ```text
 working/
 ├── detector/detector.yaml      submitted
+├── detector/<resource path>    submitted when declared by EventSpec
 ├── events.jsonl                submitted
 ├── run-manifest.json           submitted
 ├── metrics.json                submitted
 ├── report.md                   submitted
 ├── figure.svg                  submitted
 ├── reproduce.ps1 or .sh        submitted
+├── extension/manifest.json     submitted when extension payloads exist
+├── extension/*                 optional provenance, inert traces, tests
 ├── submission.zip              hand in unchanged
 └── evidence/<event_id>.mcap    local only
 ```
+
+The seven core artifacts remain mandatory. A v2 extension may carry at most eight declared
+payloads (1 MiB each, 4 MiB combined). `civ report` rejects undeclared, changed, forbidden, unsafe,
+or case-colliding files. Intake validates but never runs a submitted trace or regression test.
 
 ## Recovery references
 

@@ -158,7 +158,7 @@ def test_detect_emits_one_normalized_interval_and_manifest(
     assert len(event["event_id"]) == 64
 
     manifest = json.loads((output / "run-manifest.json").read_text(encoding="utf-8"))
-    assert manifest["contract"] == "civ.run-manifest/v1"
+    assert manifest["contract"] == "civ.run-manifest/v2"
     assert manifest["source"] == {
         "name": "micro.mcap",
         "sha256": sha256(micro_case.bag.read_bytes()).hexdigest(),
@@ -660,7 +660,7 @@ def test_report_assembles_stable_metadata_only_bundle(
     }
     manifest = json.loads((working / "run-manifest.json").read_text(encoding="utf-8"))
     assert manifest["submission"] == {
-        "contract": "civ.submission-bundle/v1",
+        "contract": "civ.submission-bundle/v2",
         "reproduction": {
             "contract": "civ.reproduction/v1",
             "name": "reproduce.ps1",
@@ -767,7 +767,7 @@ def test_report_rejects_non_metadata_detector_artifacts(
     result = run_civ(micro_case.root, ["report", str(working)])
 
     assert result.returncode == 2
-    assert "detector directory contains non-EventSpec artifacts" in result.stderr
+    assert "detector directory contains undeclared artifacts" in result.stderr
     assert "Traceback" not in result.stderr
 
 

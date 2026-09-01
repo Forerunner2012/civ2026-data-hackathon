@@ -105,6 +105,8 @@ def _safe_archive_infos(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     names = [info.filename for info in infos]
     if len(names) != len(set(names)):
         raise CivError("submission bundle contains duplicate artifact names")
+    if len({name.casefold() for name in names}) != len(names):
+        raise CivError("submission bundle contains case-colliding artifact names")
     total_size = 0
     for info in infos:
         name = info.filename
@@ -119,6 +121,8 @@ def _safe_archive_infos(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
             raise CivError(f"submission bundle contains an unsafe artifact path: {name}")
         if info.flag_bits & 0x1:
             raise CivError(f"submission bundle artifact is encrypted: {name}")
+        if (info.external_attr >> 16) & 0o170000 == 0o120000:
+            raise CivError(f"submission bundle artifact is symlinked: {name}")
         if info.compress_type != zipfile.ZIP_STORED:
             raise CivError("submission bundle must use the stored ZIP format emitted by civ report")
         if info.file_size > MAX_SUBMISSION_ENTRY_BYTES:
@@ -170,7 +174,7 @@ def _extract_validated_submission(bundle_path: Path, extracted: Path) -> None:
                         f"submission bundle artifact size changed while reading: {name}"
                     )
             expected_paths = validate_submission_directory(
-                extracted, require_local_evidence=False
+                extracted, require_local_evidence=False, require_submission=True
             )
             expected = {
                 path.relative_to(extracted).as_posix() for path in expected_paths

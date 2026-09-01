@@ -137,8 +137,7 @@ def test_clip_rejects_mixed_event_and_manifest_versions_before_mutation(
     result = run_civ(tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)])
 
     assert result.returncode == 2
-    assert "mixed participant contract versions:" in result.stderr
-    assert "civ.event/v1, civ.run-manifest/v1alpha1" in result.stderr
+    assert "unsupported run manifest contract 'civ.run-manifest/v1alpha1'" in result.stderr
     assert manifest_path.read_bytes() == before
     assert not (working / "evidence").exists()
 
@@ -148,16 +147,16 @@ def test_clip_rejects_mixed_event_and_manifest_versions_before_mutation(
     [
         (
             "civ.run-manifest/v1.0",
-            "invalid run manifest contract 'civ.run-manifest/v1.0'; expected 'civ.run-manifest/v1'",
+            "invalid run manifest contract 'civ.run-manifest/v1.0'; expected 'civ.run-manifest/v2'",
         ),
         (
             "civ.metrics/v1",
-            "invalid run manifest contract 'civ.metrics/v1'; expected 'civ.run-manifest/v1'",
+            "invalid run manifest contract 'civ.metrics/v1'; expected 'civ.run-manifest/v2'",
         ),
         (
-            "civ.run-manifest/v2",
-            "unsupported run manifest contract 'civ.run-manifest/v2'; this civ-workshop "
-            "supports 'civ.run-manifest/v1'",
+            "civ.run-manifest/v3",
+            "unsupported run manifest contract 'civ.run-manifest/v3'; this civ-workshop "
+            "supports 'civ.run-manifest/v2'",
         ),
     ],
 )
@@ -363,11 +362,11 @@ def test_stable_workflow_artifacts_carry_exactly_their_published_fields(tmp_path
     spec = yaml.safe_load(case.spec.read_text(encoding="utf-8"))
     _assert_matches_schema(spec, "civ.eventspec/v1")
     _assert_matches_schema(event, "civ.event/v1")
-    _assert_matches_schema(manifest, "civ.run-manifest/v1")
+    _assert_matches_schema(manifest, "civ.run-manifest/v2")
     _assert_matches_schema(
         json.loads((working / "metrics.json").read_text(encoding="utf-8")), "civ.metrics/v1"
     )
-    _assert_matches_schema(manifest["submission"], "civ.submission-bundle/v1")
+    _assert_matches_schema(manifest["submission"], "civ.submission-bundle/v2")
     _assert_matches_schema(manifest["submission"]["reproduction"], "civ.reproduction/v1")
 
 
@@ -416,7 +415,7 @@ def test_detect_rejects_an_unknown_eventspec_field(tmp_path: Path) -> None:
         (
             "run-manifest.json",
             "runtime_seconds",
-            "invalid run manifest 'civ.run-manifest/v1': unknown field 'runtime_seconds'",
+            "invalid run manifest 'civ.run-manifest/v2': unknown field 'runtime_seconds'",
         ),
     ],
 )

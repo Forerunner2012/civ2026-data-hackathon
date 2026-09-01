@@ -37,10 +37,25 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
             "submission",
         }
     ),
+    "civ.run-manifest/v2": frozenset(
+        {
+            "contract",
+            "source",
+            "spec",
+            "events",
+            "evidence",
+            "resources",
+            "clips",
+            "metrics",
+            "submission",
+        }
+    ),
     "civ.metrics/v1": frozenset(
         {"contract", "aggregate", "datasets", "label_pack_sha256", "matching"}
     ),
     "civ.submission-bundle/v1": frozenset({"contract", "reproduction"}),
+    "civ.submission-bundle/v2": frozenset({"contract", "extension", "reproduction"}),
+    "civ.submission-extension/v1": frozenset({"contract", "entries"}),
     "civ.reproduction/v1": frozenset({"contract", "name", "sha256"}),
     "civ.data-product-recipe/v1": frozenset(
         {
@@ -216,14 +231,17 @@ def require_run_contracts(
     """Reject mixed working directories first, then any non-stable member."""
 
     event_contracts = list(event_contracts)
-    require_coherent_contracts([manifest.get("contract"), *event_contracts])
-    require_stable_contract(
-        manifest.get("contract"),
-        kind="run manifest",
-        expected="civ.run-manifest/v1",
-        candidate="civ.run-manifest/v1alpha1",
+    manifest_contract = require_contract_present(
+        manifest.get("contract"), kind="run manifest", expected="civ.run-manifest/v2"
     )
-    require_closed_fields(manifest, kind="run manifest", expected="civ.run-manifest/v1")
+    if manifest_contract not in {"civ.run-manifest/v1", "civ.run-manifest/v2"}:
+        require_stable_contract(
+            manifest_contract,
+            kind="run manifest",
+            expected="civ.run-manifest/v2",
+            candidate="civ.run-manifest/v1alpha1",
+        )
+    require_closed_fields(manifest, kind="run manifest", expected=manifest_contract)
     for contract in event_contracts:
         require_stable_contract(
             contract,

@@ -581,7 +581,7 @@ def _camera_context_files() -> tuple[list[dict[str, object]], freeze_module.Came
         set_target=str(products_entry["target"]),
         set_sha256=str(products_entry["sha256"]),
         product_count=13,
-        required_disk_bytes=sum(int(item["byte_size"]) for item in context_files),
+        required_disk_bytes=sum(int(str(item["byte_size"])) for item in context_files),
         component_file_count=len(context_files),
         component_set_sha256=sha256(identity_bytes).hexdigest(),
     )

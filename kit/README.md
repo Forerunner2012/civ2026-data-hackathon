@@ -58,8 +58,9 @@ events, metrics, report, and metadata submission.
 ## Data and submission boundary
 
 Camera-context MCAPs are viewing inputs only. Context, frames, signal MCAPs, and evidence clips
-remain outside the submission bundle. Before use, verify `checksums/ASSEMBLY-SHA256SUMS`. Do not
-rename or edit kit inputs.
+remain outside the submission bundle. A v2 bundle may carry only bounded manifest-declared
+EventSpec resources, provenance, inert agent traces, and regression tests; intake never executes
+the latter two. Before use, verify `checksums/ASSEMBLY-SHA256SUMS`. Do not rename or edit kit inputs.
 
 The two recovered Kashiwa recordings retain the caveat in `participant-kit.json`: structural
 recovery made them readable but cannot prove that no records were lost to truncation.

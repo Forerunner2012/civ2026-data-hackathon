@@ -122,7 +122,18 @@ def test_reims_resource_exemplar_detects_two_encounters_and_records_provenance(
             "sha256": sha256(resource.read_bytes()).hexdigest(),
         }
     ]
-    assert not (output / "detector" / "caves.json").exists()
+    assert (output / "detector" / "caves.json").read_bytes() == resource.read_bytes()
+    extension = json.loads(
+        (output / "extension" / "manifest.json").read_text(encoding="utf-8")
+    )
+    assert extension["entries"] == [
+        {
+            "kind": "external-resource",
+            "media_type": "application/json",
+            "path": "detector/caves.json",
+            "sha256": sha256(resource.read_bytes()).hexdigest(),
+        }
+    ]
 
 
 def test_min_distance_to_includes_the_exact_40_metre_boundary(tmp_path: Path) -> None:
@@ -309,7 +320,7 @@ def test_detector_field_is_reserved_with_a_correction(tmp_path: Path) -> None:
     )
 
 
-def test_resource_bytes_stay_out_of_the_metadata_bundle(tmp_path: Path) -> None:
+def test_resource_bytes_are_carried_in_the_extension_aware_bundle(tmp_path: Path) -> None:
     case = create_micro_case(tmp_path / "case")
     resource = case.root / "caves.json"
     resource.write_text(
@@ -341,8 +352,8 @@ def test_resource_bytes_stay_out_of_the_metadata_bundle(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     with zipfile.ZipFile(working / "submission.zip") as archive:
-        assert "detector/caves.json" not in archive.namelist()
-        assert all(not name.endswith("caves.json") for name in archive.namelist())
+        assert archive.read("detector/caves.json") == resource.read_bytes()
+        assert "extension/manifest.json" in archive.namelist()
 
 
 def test_report_rejects_invalid_resource_provenance_hash(tmp_path: Path) -> None:

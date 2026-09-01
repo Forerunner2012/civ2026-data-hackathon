@@ -20,6 +20,13 @@ from civ_workshop.event_spec import load_event_spec
 from civ_workshop.inspection import MessageDecoder, extract_field
 from civ_workshop.models import EventRecord, EventSpec, Interval, SignalBinding
 from civ_workshop.resources import PointResource, load_point_resources, minimum_distance_m
+from civ_workshop.submission_extension import (
+    EXTENSION_CONTRACT,
+    EXTENSION_MANIFEST_PATH,
+    ExtensionEntry,
+    load_extension_entries,
+    media_type_for,
+)
 
 
 @dataclass(frozen=True)
@@ -338,11 +345,47 @@ def detect_events(
     except OSError as error:
         raise CivError(f"cannot copy EventSpec into working directory: {error}") from error
 
+    extension_entries = [
+        entry for entry in load_extension_entries(output) if entry.kind != "external-resource"
+    ]
+    try:
+        for _, resource in sorted(resources.items()):
+            source = (spec_path.parent / Path(resource.binding.path)).resolve()
+            destination = detector_directory / Path(resource.binding.path)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.resolve() != source:
+                shutil.copyfile(source, destination)
+            extension_entries.append(
+                ExtensionEntry(
+                    path=destination.relative_to(output).as_posix(),
+                    kind="external-resource",
+                    sha256=resource.sha256,
+                    media_type=media_type_for(destination),
+                )
+            )
+        if extension_entries:
+            extension_entries = sorted(extension_entries)
+            extension_manifest = output / EXTENSION_MANIFEST_PATH
+            extension_manifest.parent.mkdir(parents=True, exist_ok=True)
+            extension_document = {
+                "contract": EXTENSION_CONTRACT,
+                "entries": [entry.as_dict() for entry in extension_entries],
+            }
+            extension_manifest.write_text(
+                f"{canonical_json(extension_document)}\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+    except OSError as error:
+        raise CivError(
+            f"cannot stage EventSpec resources into working directory: {error}"
+        ) from error
+
     events_text = "".join(f"{canonical_json(event.as_dict())}\n" for event in events)
     events_path = output / "events.jsonl"
     events_path.write_text(events_text, encoding="utf-8", newline="\n")
     manifest: dict[str, object] = {
-        "contract": "civ.run-manifest/v1",
+        "contract": "civ.run-manifest/v2",
         "events": {
             "count": len(events),
             "name": "events.jsonl",

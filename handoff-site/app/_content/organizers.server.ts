@@ -167,8 +167,8 @@ export const decisionsMade: Decision[] = [
   { ticket: "10", group: "Toolchain", title: "Viewer", answer: "PlotJuggler required; Lichtblick optional.", caveat: "Current identified PlotJuggler asset is 3.999.3, explicitly beta2." },
   { ticket: "04", group: "Toolchain", title: "Target machine", answer: "Container-first, BYOD only, Windows/WSL2 + Ubuntu, CPU-only.", caveat: "No hardware swap: the non-ROS fallback remains load-bearing." },
   { ticket: "11", group: "Toolchain", title: "Model policy", answer: "No model shipped; participant-supplied models remain optional." },
-  { ticket: "12", group: "Toolchain", title: "Agent scoring", answer: "Up to 10 bonus points for a trace grounded in executed tools and evidence." },
-  { ticket: "25", group: "Toolchain", title: "Extension track", answer: "External resources plug in through resources: + min_distance_to; 40 m yields two clear Reims cave encounters.", caveat: "Method is unconstrained and qualitatively judged." },
+  { ticket: "12", group: "Toolchain", title: "Bonus scoring", answer: "Maximum +20: grounded trace +10, advanced method +5, and failure-derived regression test +5; every non-zero award cites an accepted artifact." },
+  { ticket: "25", group: "Toolchain", title: "Extension track", answer: "External resources plug in through resources: + min_distance_to and score under the advanced-method +5 row.", caveat: "Method is unconstrained and judged from bundled provenance and evidence." },
   { ticket: "23", group: "Toolchain", title: "Licences", answer: "Named tools compose; standardize on Humble/Jammy and gate release on exact pins, SBOM, notices and source/relink review.", caveat: "The aggregate image has no single MIT, Apache or CC licence." },
 
   { ticket: "05", group: "Data & evaluation", title: "Kashiwa rights", answer: "CC BY 4.0 permits subsets and permanent offline copies; attribution is required." },

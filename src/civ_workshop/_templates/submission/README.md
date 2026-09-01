@@ -16,6 +16,12 @@ This workspace is deliberately incomplete. It supplies the stable shape, not a d
 `civ.event/v1` interval in nanoseconds with source and spec hashes. Events are sorted
 deterministically; matching samples, merged candidates, and emitted events are different things.
 
-The metadata bundle contains exactly one EventSpec, `events.jsonl`, `run-manifest.json`,
-`metrics.json`, this report, one top-level figure, and one reproduction entry point. Raw recordings,
-MCAP evidence clips, labels, caches, environments, and runtime state stay local.
+The v2 metadata bundle retains exactly seven core artifacts: one EventSpec, `events.jsonl`,
+`run-manifest.json`, `metrics.json`, this report, one top-level figure, and one reproduction entry
+point. `civ detect` also stages each EventSpec resource byte-for-byte at its declared contained path.
+
+Optional provenance, grounded agent traces, and participant-authored regression tests go under
+`extension/` and must be declared by the sorted `extension/manifest.json`. Intake validates and
+stores them but never executes traces or tests. The extension permits at most eight payloads,
+1 MiB each and 4 MiB combined. Raw recordings, MCAP evidence clips, frames, labels, caches,
+environments, secrets, model weights, and runtime state stay local.

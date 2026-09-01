@@ -19,6 +19,12 @@ from civ_workshop.contracts import (
 )
 from civ_workshop.errors import CivError
 from civ_workshop.event_spec import load_event_spec
+from civ_workshop.submission_extension import (
+    EXTENSION_CONTRACT,
+    EXTENSION_MANIFEST_PATH,
+    ExtensionEntry,
+    load_extension_entries,
+)
 
 REPORT_HEADINGS = (
     "Question and hypothesis",
@@ -41,14 +47,25 @@ def _detector_spec(working: Path) -> Path:
         raise CivError("submission is missing the detector directory")
     detector_files = sorted(path for path in detector_directory.rglob("*") if path.is_file())
     specs = [path for path in detector_files if path.suffix.lower() in {".yaml", ".yml"}]
-    forbidden = [path for path in detector_files if path not in specs]
-    if forbidden:
-        names = ", ".join(path.relative_to(working).as_posix() for path in forbidden)
-        raise CivError(f"detector directory contains non-EventSpec artifacts: {names}")
     if len(specs) != 1:
         raise CivError("submission detector directory must contain exactly one EventSpec")
-    load_event_spec(specs[0])
-    return specs[0]
+    spec_path = specs[0]
+    event_spec = load_event_spec(spec_path)
+    allowed = {spec_path.resolve()}
+    for binding in event_spec.resources:
+        resource_path = (spec_path.parent / Path(binding.path)).resolve()
+        try:
+            resource_path.relative_to(spec_path.parent.resolve())
+        except ValueError as error:
+            raise CivError(
+                f"resources.{binding.name}.path must stay inside the bundled detector directory"
+            ) from error
+        allowed.add(resource_path)
+    forbidden = [path for path in detector_files if path.resolve() not in allowed]
+    if forbidden:
+        names = ", ".join(path.relative_to(working).as_posix() for path in forbidden)
+        raise CivError(f"detector directory contains undeclared artifacts: {names}")
+    return spec_path
 
 
 def _validate_report(working: Path) -> tuple[Path, Path]:
@@ -104,14 +121,15 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
     return figure_path, reproduction[0]
 
 
-def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence: bool) -> None:
+def _validate_manifest(
+    working: Path,
+    spec_path: Path,
+    *,
+    require_local_evidence: bool,
+    require_submission: bool,
+) -> str:
     manifest = read_json_file(working / "run-manifest.json", "run manifest")
-    require_stable_contract(
-        manifest.get("contract"),
-        kind="run manifest",
-        expected="civ.run-manifest/v1",
-        candidate="civ.run-manifest/v1alpha1",
-    )
+    manifest_contract = require_string(manifest.get("contract"), "run manifest contract")
     source = require_mapping(manifest.get("source"), "run manifest source")
     source_hash = require_string(source.get("sha256"), "run manifest source sha256")
     spec = require_mapping(manifest.get("spec"), "run manifest spec")
@@ -146,6 +164,14 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
             raise CivError("run manifest resources do not match the EventSpec bindings")
         if re.fullmatch(r"[0-9a-f]{64}", resource_hash) is None:
             raise CivError(f"run manifest resource '{name}' sha256 is invalid")
+        if manifest_contract == "civ.run-manifest/v2":
+            bundled_resource = spec_path.parent / Path(binding.path)
+            if bundled_resource.is_symlink():
+                raise CivError(f"bundled resource '{name}' must not be a symlink")
+            if not bundled_resource.is_file():
+                raise CivError(f"bundled resource '{name}' is missing: {binding.path}")
+            if file_sha256(bundled_resource) != resource_hash:
+                raise CivError(f"bundled resource '{name}' hash changed: {binding.path}")
 
     events_path = working / "events.jsonl"
     events_metadata = require_mapping(manifest.get("events"), "run manifest events")
@@ -178,16 +204,23 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
     )
     require_closed_fields(metrics, kind="metrics", expected="civ.metrics/v1")
 
+    if require_submission and "submission" not in manifest:
+        raise CivError("run manifest is missing the submission declaration")
     if "submission" in manifest:
         submission = require_mapping(manifest.get("submission"), "run manifest submission")
+        expected_submission = (
+            "civ.submission-bundle/v2"
+            if manifest_contract == "civ.run-manifest/v2"
+            else "civ.submission-bundle/v1"
+        )
         require_stable_contract(
             submission.get("contract"),
             kind="submission bundle",
-            expected="civ.submission-bundle/v1",
+            expected=expected_submission,
             candidate="civ.submission-bundle/v1alpha1",
         )
         require_closed_fields(
-            submission, kind="submission bundle", expected="civ.submission-bundle/v1"
+            submission, kind="submission bundle", expected=expected_submission
         )
         reproduction = require_mapping(
             submission.get("reproduction"), "run manifest submission reproduction"
@@ -209,6 +242,29 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
             reproduction.get("sha256"), "run manifest submission reproduction sha256"
         ):
             raise CivError("reproduction hash does not match the run manifest")
+        extension_declaration = submission.get("extension")
+        if extension_declaration is not None:
+            extension = require_mapping(
+                extension_declaration, "run manifest submission extension"
+            )
+            if set(extension) != {"contract", "name", "sha256"}:
+                raise CivError("run manifest submission extension declaration is invalid")
+            if extension.get("contract") != EXTENSION_CONTRACT:
+                raise CivError(
+                    f"invalid submission extension contract '{extension.get('contract')}'; "
+                    f"expected '{EXTENSION_CONTRACT}'"
+                )
+            if extension.get("name") != EXTENSION_MANIFEST_PATH:
+                raise CivError(
+                    f"submission extension name must be {EXTENSION_MANIFEST_PATH}"
+                )
+            extension_path = working / EXTENSION_MANIFEST_PATH
+            if not extension_path.is_file():
+                raise CivError("submission extension manifest is missing")
+            if file_sha256(extension_path) != require_string(
+                extension.get("sha256"), "run manifest submission extension sha256"
+            ):
+                raise CivError("submission extension manifest hash does not match the run manifest")
 
     raw_clips = manifest.get("clips")
     if not isinstance(raw_clips, list):
@@ -230,10 +286,50 @@ def _validate_manifest(working: Path, spec_path: Path, *, require_local_evidence
                 raise CivError(f"clip hash does not match the run manifest: {clip_name}")
         if clip.get("valid") is not True:
             raise CivError(f"clip is not marked valid: {clip_name}")
+    return manifest_contract
+
+
+def _validate_extension(
+    working: Path, spec_path: Path, manifest_contract: str
+) -> list[ExtensionEntry]:
+    entries = load_extension_entries(working)
+    if manifest_contract == "civ.run-manifest/v1":
+        if entries or (working / EXTENSION_MANIFEST_PATH).exists():
+            raise CivError("v1 submission bundle cannot contain extension artifacts")
+        return []
+    event_spec = load_event_spec(spec_path)
+    resource_paths = {
+        (spec_path.parent / Path(binding.path)).relative_to(working).as_posix()
+        for binding in event_spec.resources
+    }
+    declared_resource_paths = {
+        entry.path for entry in entries if entry.kind == "external-resource"
+    }
+    if declared_resource_paths != resource_paths:
+        raise CivError(
+            "submission extension external-resource entries do not match EventSpec resources"
+        )
+    extension_root = working / "extension"
+    actual_extension_files = {
+        path.relative_to(working).as_posix()
+        for path in extension_root.rglob("*")
+        if path.is_file()
+    }
+    declared_extension_files = {EXTENSION_MANIFEST_PATH} | {
+        entry.path for entry in entries if entry.path.startswith("extension/")
+    }
+    undeclared = sorted(actual_extension_files - declared_extension_files)
+    if undeclared:
+        raise CivError(f"submission extension contains undeclared payload: {undeclared[0]}")
+    return entries
 
 
 def _bundle_entries(
-    working: Path, spec_path: Path, figure_path: Path, reproduction_path: Path
+    working: Path,
+    spec_path: Path,
+    figure_path: Path,
+    reproduction_path: Path,
+    extension_entries: list[ExtensionEntry],
 ) -> list[Path]:
     required = [
         spec_path,
@@ -244,6 +340,9 @@ def _bundle_entries(
         reproduction_path,
         working / "run-manifest.json",
     ]
+    if extension_entries:
+        required.append(working / EXTENSION_MANIFEST_PATH)
+        required.extend(working / entry.path for entry in extension_entries)
     missing = [path.name for path in required if not path.is_file()]
     if missing:
         raise CivError(f"submission is missing required artifacts: {', '.join(sorted(missing))}")
@@ -281,15 +380,32 @@ def _validate_bundle_limits(working: Path, entries: list[Path]) -> None:
 
 
 def validate_submission_directory(
-    working: Path, *, require_local_evidence: bool = True
+    working: Path,
+    *,
+    require_local_evidence: bool = True,
+    require_submission: bool = False,
 ) -> list[Path]:
     working = working.resolve()
     if not working.is_dir():
         raise CivError(f"submission working directory does not exist: {working}")
     figure_path, reproduction_path = _validate_report(working)
     spec_path = _detector_spec(working)
-    _validate_manifest(working, spec_path, require_local_evidence=require_local_evidence)
-    entries = _bundle_entries(working, spec_path, figure_path, reproduction_path)
+    manifest_contract = _validate_manifest(
+        working,
+        spec_path,
+        require_local_evidence=require_local_evidence,
+        require_submission=require_submission,
+    )
+    extension_entries = _validate_extension(working, spec_path, manifest_contract)
+    entries = _bundle_entries(
+        working, spec_path, figure_path, reproduction_path, extension_entries
+    )
+    folded_names = [path.relative_to(working).as_posix().casefold() for path in entries]
+    if len(folded_names) != len(set(folded_names)):
+        raise CivError("submission contains duplicate or case-colliding artifact paths")
+    symlinks = [path.relative_to(working).as_posix() for path in entries if path.is_symlink()]
+    if symlinks:
+        raise CivError(f"submission artifacts must not be symlinks: {symlinks[0]}")
     _validate_bundle_limits(working, entries)
     return entries
 
@@ -320,15 +436,25 @@ def build_report_bundle(working: Path) -> dict[str, str]:
     )
     manifest_path = working / "run-manifest.json"
     manifest = read_json_file(manifest_path, "run manifest")
-    manifest["submission"] = {
-        "contract": "civ.submission-bundle/v1",
+    manifest["contract"] = "civ.run-manifest/v2"
+    submission: dict[str, object] = {
+        "contract": "civ.submission-bundle/v2",
         "reproduction": {
             "contract": "civ.reproduction/v1",
             "name": reproduction_path.name,
             "sha256": file_sha256(reproduction_path),
         },
     }
+    extension_path = working / EXTENSION_MANIFEST_PATH
+    if extension_path.is_file():
+        submission["extension"] = {
+            "contract": EXTENSION_CONTRACT,
+            "name": EXTENSION_MANIFEST_PATH,
+            "sha256": file_sha256(extension_path),
+        }
+    manifest["submission"] = submission
     manifest_path.write_text(f"{canonical_json(manifest)}\n", encoding="utf-8", newline="\n")
+    entries = validate_submission_directory(working, require_submission=True)
     bundle_path = working / "submission.zip"
     write_canonical_submission_bundle(bundle_path, working, entries)
     return {"bundle": bundle_path.name, "sha256": file_sha256(bundle_path)}

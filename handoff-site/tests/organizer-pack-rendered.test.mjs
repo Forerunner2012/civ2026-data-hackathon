@@ -38,8 +38,10 @@ test("organizer pack renders the complete operations contract", async () => {
   assert.match(body, /Investigation and hypothesis/);
   assert.match(body, /Quality and evaluation/);
   assert.match(body, /Visualization and explanation/);
-  assert.match(body, /External-input extension/);
   assert.match(body, /Grounded agent trace/);
+  assert.match(body, /Advanced method/);
+  assert.match(body, /Failure-derived regression test/);
+  assert.match(body, /Grounded agent trace __\/10; advanced method __\/5; failure-derived regression test __\/5/);
   assert.match(body, /same accepted metadata-only bundle/);
   assert.match(body, /Never average away a disagreement/);
   assert.match(body, /Final total __\/120/);

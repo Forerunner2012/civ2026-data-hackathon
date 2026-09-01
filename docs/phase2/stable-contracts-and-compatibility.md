@@ -1,5 +1,9 @@
 # Stable participant contracts and compatibility policy
 
+> Historical Phase 2 freeze: v1 remains immutable and accepted. New `civ detect` and `civ report`
+> runs use the additive, bounded v2 manifest/bundle described in
+> [`../phase5/extension-aware-submission-v2.md`](../phase5/extension-aware-submission-v2.md).
+
 Status: **decision for issue #15; enforced by issue #20**
 
 This document fixes the participant-facing contract seam for Phase 2. Issue #20 published the

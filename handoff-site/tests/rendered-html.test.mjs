@@ -128,6 +128,11 @@ test("participant view states the contract", async () => {
   assert.match(commandList, /evidence\/\*\.mcap.*updated manifest/);
   assert.match(commandList, /metrics\.json.*updated manifest/);
   assert.match(commandList, /submission\.zip.*SHA-256/);
+  assert.match(body, /Grounded agent trace.*10/i);
+  assert.match(body, /advanced multimodal, data-quality or external-resource method.*5/i);
+  assert.match(body, /Regression test built from a failure.*5/i);
+  assert.match(body, /extension\/manifest\.json/);
+  assert.match(body, /intake validates but never runs/i);
   // The ranking rule is published to participants even though the answer key is not.
   assert.match(body, /held-back test set/i);
   // Rules that change behaviour, so they must survive a redesign of the page.
@@ -146,6 +151,8 @@ test("optional extension is offered, scored, and never scheduled", async () => {
   assert.match(body, /civ\.point-resource\/v1/);
   assert.match(body, /min_distance_to/);
   assert.match(body, /examples\/reims\/cave-encounter\.yaml/);
+  assert.match(body, /copies each declared resource byte-for-byte/i);
+  assert.match(body, /Maximum \+20: grounded agent trace \+10.*external-resource method \+5.*regression test.*\+5/i);
   assert.match(body, /30.{0,3}45 minutes/i);
   // Method is unconstrained and nothing on the required path needs a model or the network.
   assert.match(body, /No model is required/i);

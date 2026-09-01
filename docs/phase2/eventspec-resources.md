@@ -89,11 +89,12 @@ The run manifest records resources sorted by EventSpec binding name:
 }
 ```
 
-The SHA-256 covers the exact resource bytes used by detection. The copied EventSpec and manifest are
-submitted, but the external resource bytes are not copied into the working detector directory or
-metadata-only submission bundle. Reproduction therefore requires the declared local resource to be
-restored beside the source EventSpec. The checked-in Reims example uses illustrative coordinates;
-organizer coordinates and encounter intervals remain external.
+The SHA-256 covers the exact resource bytes used by detection. As of the extension-aware v2 bundle,
+`civ detect` copies those bytes beside the copied EventSpec at the already-declared contained path
+and declares the archive-relative path in `extension/manifest.json`. An extracted v2 bundle can
+therefore reproduce without restoring the original external file. Canonical v1 bundles remain
+accepted under their original seven-entry contract. The checked-in Reims example uses illustrative
+coordinates; organizer coordinates and encounter intervals remain external.
 
 Sorted resource hashes also participate in event identity when resources are present. Resource-free
 EventSpecs retain the same identity inputs; promotion changes serialized contract bytes but not the

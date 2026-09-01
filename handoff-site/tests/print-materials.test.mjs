@@ -45,6 +45,7 @@ test("brief is one A4 page with the full participant contract", async () => {
   assert.match(body, /Winners are published only with consent/i);
   assert.match(body, /scored runner constrains executable evidence, not what you may write/i);
   assert.match(body, /ONE RENDERED PAGE · ONE FIGURE/i);
-  assert.match(body, /Optional extension.*scored, not scheduled/is);
+  assert.match(body, /grounded trace \+10.*advanced method \+5.*regression test \+5/is);
+  assert.match(body, /v2 ZIP keeps seven core artifacts/i);
   assert.doesNotMatch(body, FORBIDDEN);
 });
