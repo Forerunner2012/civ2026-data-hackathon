@@ -19,7 +19,7 @@ from civ_workshop.errors import CivError
 
 CONTRACT = "civ.participant-kit-inventory/v1"
 PHASE4_RELEASE = "civ-2026-phase4-participant-kit-v1"
-PHASE5_RELEASE = "civ-2026-phase5-camera-context-participant-kit-v1"
+PHASE5_RELEASE = "civ-2026-phase5-camera-context-participant-kit-v2"
 ACCEPTED_PRODUCT_SET_SHA256 = "d515c0a7cd748f8b2ad0cb41b93d8847b0917c2e6469be2f8be09582fc62ef9b"
 ACCEPTED_PRODUCT_SET_RELEASE = "civ-2026-phase3-participant-signals-v1"
 ACCEPTED_REQUIRED_DISK_BYTES = 335_177_173

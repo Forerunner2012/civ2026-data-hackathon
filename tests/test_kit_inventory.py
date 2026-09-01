@@ -234,7 +234,7 @@ def test_inventory_records_explicit_camera_context_set(
     )
 
     document = _document(output)
-    assert document["release_id"] == "civ-2026-phase5-camera-context-participant-kit-v1"
+    assert document["release_id"] == "civ-2026-phase5-camera-context-participant-kit-v2"
     assert document["content_profile"] == "signals-plus-camera-context"
     assert document["layout"]["directories"][2] == "context"
     assert document["context_packs"] == [

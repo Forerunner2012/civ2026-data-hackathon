@@ -623,7 +623,7 @@ def assemble_kit(
         "files": records,
         "inventory_sha256": file_sha256(inventory_path),
         "release_id": (
-            "civ-2026-phase5-camera-context-attendee-kit-v1"
+            "civ-2026-phase5-camera-context-attendee-kit-v2"
             if inventory.get("release_id") == PHASE5_RELEASE
             else "civ-2026-phase4-attendee-kit-v1"
         ),

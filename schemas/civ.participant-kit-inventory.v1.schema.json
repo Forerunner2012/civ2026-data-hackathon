@@ -20,7 +20,7 @@
   ],
   "properties": {
     "contract": {"const": "civ.participant-kit-inventory/v1"},
-    "release_id": {"enum": ["civ-2026-phase4-participant-kit-v1", "civ-2026-phase5-camera-context-participant-kit-v1"]},
+    "release_id": {"enum": ["civ-2026-phase4-participant-kit-v1", "civ-2026-phase5-camera-context-participant-kit-v1", "civ-2026-phase5-camera-context-participant-kit-v2"]},
     "content_profile": {"enum": ["signals-only", "signals-plus-camera-context"]},
     "product_set": {"$ref": "#/$defs/productSet"},
     "tool": {"$ref": "#/$defs/tool"},

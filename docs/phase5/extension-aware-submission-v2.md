@@ -129,6 +129,10 @@ reported no whitespace errors. Regenerated assembly, release, workstation, intak
 media identities belong to the external release evidence and are not invented in this contract
 note.
 
+The changed participant bytes and universal five-viewer matrix use regenerated inventory and
+assembly release identities ending in `participant-kit-v2` and `attendee-kit-v2`; the accepted v1
+artifacts are not relabelled.
+
 ## Human gate
 
 An organizer must explicitly approve the three revised bonus anchors and final participant wording.
