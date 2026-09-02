@@ -1,5 +1,10 @@
 # Phase 5 release freeze
 
+> Universal-viewer addendum (2026-09-02): the extension-aware participant bytes and five-viewer
+> kit use attendee-kit identity `civ-2026-phase5-camera-context-attendee-kit-v2` and release-freeze
+> identity `civ-2026-phase5-camera-context-release-freeze-v2`. The v1 evidence below remains an
+> immutable historical acceptance record; it is not relabelled as the universal release.
+
 Status: **accepted — deterministic global-risk release freeze verified offline**
 
 Recorded: 2026-08-30 · Operator: Codex on the organizer workstation

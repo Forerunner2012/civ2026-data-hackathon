@@ -837,6 +837,19 @@ def test_camera_context_freeze_is_deterministic_and_binds_the_context_component(
     assert audit_release_freeze(first, assembly, evidence) == first_result
 
 
+def test_universal_release_profile_versions_changed_participant_bytes() -> None:
+    profile = freeze_module.RELEASE_PROFILES[
+        freeze_module.UNIVERSAL_ASSEMBLY_RELEASE_ID
+    ]
+
+    assert profile.release_id == freeze_module.UNIVERSAL_RELEASE_ID
+    assert profile.source_commit == freeze_module.UNIVERSAL_SOURCE_COMMIT
+    assert profile.assembly_sha256 == freeze_module.UNIVERSAL_ASSEMBLY_SHA256
+    assert profile.inventory_sha256 == freeze_module.UNIVERSAL_INVENTORY_SHA256
+    assert profile.components["viewer"] == ("offline-viewers", "all")
+    assert profile.camera_context == freeze_module._CAMERA_CONTEXT_PROFILE.camera_context
+
+
 def test_camera_context_freeze_rejects_missing_context_component(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

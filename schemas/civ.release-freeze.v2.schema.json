@@ -19,7 +19,7 @@
   ],
   "properties": {
     "contract": {"const": "civ.release-freeze/v2"},
-    "release_id": {"const": "civ-2026-phase5-camera-context-release-freeze-v1"},
+    "release_id": {"enum": ["civ-2026-phase5-camera-context-release-freeze-v1", "civ-2026-phase5-camera-context-release-freeze-v2"]},
     "source_commit": {"const": "4d4983fe0be65473f6a89e8b5bf51263ebdd1cff"},
     "assembly": {"$ref": "#/$defs/assembly"},
     "architecture": {"$ref": "#/$defs/architecture"},
@@ -90,7 +90,7 @@
         "camera_context"
       ],
       "properties": {
-        "release_id": {"const": "civ-2026-phase5-camera-context-attendee-kit-v1"},
+        "release_id": {"enum": ["civ-2026-phase5-camera-context-attendee-kit-v1", "civ-2026-phase5-camera-context-attendee-kit-v2"]},
         "manifest_sha256": {"const": "95ec64edc7adcf5ecffe0f7a573a4292a62602858b4b5c53087f2c42abe6b016"},
         "inventory_sha256": {"const": "32c374dea980742256fcbdcaa8f35c81e9658c2d49792a2d627f1d1a186a31b4"},
         "components": {
