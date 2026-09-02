@@ -48,6 +48,12 @@
     "humanApproval": {"type": "string", "pattern": "^human-.+"},
     "positiveInteger": {"type": "integer", "minimum": 1},
     "release": {
+      "oneOf": [
+        {"$ref": "#/$defs/phase4Release"},
+        {"$ref": "#/$defs/universalRelease"}
+      ]
+    },
+    "phase4Release": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -75,6 +81,36 @@
           "const": "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"
         },
         "release_id": {"const": "civ-2026-phase5-release-freeze-v1"}
+      }
+    },
+    "universalRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembly_manifest_sha256",
+        "development_set_sha256",
+        "freeze_manifest_sha256",
+        "image_archive_sha256",
+        "image_id",
+        "release_id"
+      ],
+      "properties": {
+        "assembly_manifest_sha256": {
+          "const": "64c55f32a0b1898b8eadc4540a97e6d1b9c44f2b404abcb13df99326e9203bef"
+        },
+        "development_set_sha256": {
+          "const": "08a7bce5b2e3029ad5e8c12da395118443fd62850e99a8f7c4a329b5f3f2da02"
+        },
+        "freeze_manifest_sha256": {
+          "const": "e7cbc09abcbfd2b1b0ac3c07cfbf5e6995f9c4d35e197edb33d441b11e5ce7c8"
+        },
+        "image_archive_sha256": {
+          "const": "ff983defaa02671982ee78dbf13026d0d007c5c16082cd898658228875f289db"
+        },
+        "image_id": {
+          "const": "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"
+        },
+        "release_id": {"const": "civ-2026-phase5-camera-context-release-freeze-v2"}
       }
     },
     "machine": {

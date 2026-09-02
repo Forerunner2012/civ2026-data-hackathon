@@ -4,6 +4,7 @@ import argparse
 import re
 import sys
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -24,6 +25,9 @@ ACCEPTED_IMAGE_ARCHIVE_SHA256 = (
 ACCEPTED_DEVELOPMENT_SET_SHA256 = (
     "08a7bce5b2e3029ad5e8c12da395118443fd62850e99a8f7c4a329b5f3f2da02"
 )
+UNIVERSAL_FREEZE_SHA256 = "e7cbc09abcbfd2b1b0ac3c07cfbf5e6995f9c4d35e197edb33d441b11e5ce7c8"
+UNIVERSAL_ASSEMBLY_SHA256 = "64c55f32a0b1898b8eadc4540a97e6d1b9c44f2b404abcb13df99326e9203bef"
+UNIVERSAL_RELEASE_ID = "civ-2026-phase5-camera-context-release-freeze-v2"
 OFFICIAL_LICHTBLICK_URL = "https://lichtblick-suite.github.io/lichtblick/"
 REQUIRED_MACHINE_CLASSES = {"ubuntu-linux-amd64", "windows-amd64-wsl2"}
 ADVERTISED_MACHINE_CLASS = "windows-amd64-wsl2"
@@ -152,6 +156,30 @@ INTERVENTION_FIELDS = {
 }
 
 
+@dataclass(frozen=True)
+class AcceptedRelease:
+    assembly_sha256: str
+    contract: str
+    freeze_sha256: str
+    release_id: str
+
+
+ACCEPTED_RELEASES: Mapping[str, AcceptedRelease] = {
+    ACCEPTED_FREEZE_SHA256: AcceptedRelease(
+        assembly_sha256=ACCEPTED_ASSEMBLY_SHA256,
+        contract="civ.release-freeze/v1",
+        freeze_sha256=ACCEPTED_FREEZE_SHA256,
+        release_id="civ-2026-phase5-release-freeze-v1",
+    ),
+    UNIVERSAL_FREEZE_SHA256: AcceptedRelease(
+        assembly_sha256=UNIVERSAL_ASSEMBLY_SHA256,
+        contract="civ.release-freeze/v2",
+        freeze_sha256=UNIVERSAL_FREEZE_SHA256,
+        release_id=UNIVERSAL_RELEASE_ID,
+    ),
+}
+
+
 def _mapping(value: object, context: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise CivError(f"{context} must be a mapping")
@@ -223,15 +251,19 @@ def _target(value: object, context: str) -> str:
 
 
 def _accepted_release(freeze_path: Path, assembly_path: Path) -> dict[str, object]:
-    if file_sha256(freeze_path) != ACCEPTED_FREEZE_SHA256:
+    freeze_sha256 = file_sha256(freeze_path)
+    profile = ACCEPTED_RELEASES.get(freeze_sha256)
+    if profile is None:
         raise CivError("release freeze does not match the accepted Phase 5 identity")
     freeze = _mapping(read_json_file(freeze_path, "release freeze"), "release freeze")
-    if freeze.get("contract") != "civ.release-freeze/v1":
+    if freeze.get("contract") != profile.contract:
         raise CivError("release freeze contract is not accepted")
+    if freeze.get("release_id") != profile.release_id:
+        raise CivError("release freeze id does not match its accepted identity")
     assembly = _mapping(freeze.get("assembly"), "release freeze assembly")
     image = _mapping(assembly.get("image"), "release freeze image")
     development = _mapping(freeze.get("development_authority"), "development authority")
-    if assembly.get("manifest_sha256") != ACCEPTED_ASSEMBLY_SHA256:
+    if assembly.get("manifest_sha256") != profile.assembly_sha256:
         raise CivError("release freeze assembly identity changed")
     if image.get("id") != ACCEPTED_IMAGE_ID:
         raise CivError("release freeze image identity changed")
@@ -242,15 +274,15 @@ def _accepted_release(freeze_path: Path, assembly_path: Path) -> dict[str, objec
     if development.get("participant_distribution") is not False:
         raise CivError("development authority must remain organizer-only")
     audit = audit_assembly(assembly_path)
-    if audit.get("manifest_sha256") != ACCEPTED_ASSEMBLY_SHA256:
+    if audit.get("manifest_sha256") != profile.assembly_sha256:
         raise CivError("copied release media does not match the accepted assembly")
     return {
-        "assembly_manifest_sha256": ACCEPTED_ASSEMBLY_SHA256,
+        "assembly_manifest_sha256": profile.assembly_sha256,
         "development_set_sha256": ACCEPTED_DEVELOPMENT_SET_SHA256,
-        "freeze_manifest_sha256": ACCEPTED_FREEZE_SHA256,
+        "freeze_manifest_sha256": profile.freeze_sha256,
         "image_archive_sha256": ACCEPTED_IMAGE_ARCHIVE_SHA256,
         "image_id": ACCEPTED_IMAGE_ID,
-        "release_id": _string(freeze.get("release_id"), "release id"),
+        "release_id": profile.release_id,
     }
 
 

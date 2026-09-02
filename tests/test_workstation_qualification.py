@@ -301,6 +301,44 @@ def test_workstation_schema_is_closed_and_pins_the_contract() -> None:
     assert schema["additionalProperties"] is False
     assert schema["properties"]["contract"]["const"] == qualification.CONTRACT
     assert set(schema["required"]) == STABLE_FIELDS[qualification.CONTRACT]
+    assert schema["$defs"]["release"]["oneOf"] == [
+        {"$ref": "#/$defs/phase4Release"},
+        {"$ref": "#/$defs/universalRelease"},
+    ]
+
+
+def test_universal_release_identity_is_accepted_without_mixing_profiles(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    freeze, assembly, _, _ = _fixture(tmp_path, monkeypatch)
+    document = json.loads(freeze.read_text(encoding="utf-8"))
+    document["assembly"]["manifest_sha256"] = qualification.UNIVERSAL_ASSEMBLY_SHA256
+    document["contract"] = "civ.release-freeze/v2"
+    document["release_id"] = qualification.UNIVERSAL_RELEASE_ID
+    _write_json(freeze, document)
+
+    real_file_sha256 = file_sha256
+
+    def universal_hash(path: Path) -> str:
+        if path == freeze:
+            return qualification.UNIVERSAL_FREEZE_SHA256
+        return real_file_sha256(path)
+
+    monkeypatch.setattr(qualification, "file_sha256", universal_hash)
+    monkeypatch.setattr(
+        qualification,
+        "audit_assembly",
+        lambda _path: {"manifest_sha256": qualification.UNIVERSAL_ASSEMBLY_SHA256},
+    )
+
+    template = tmp_path / "universal-template.json"
+    result = build_declaration_template(freeze, assembly, template)
+    assert result["status"] == "pending-human"
+
+    document["assembly"]["manifest_sha256"] = qualification.ACCEPTED_ASSEMBLY_SHA256
+    _write_json(freeze, document)
+    with pytest.raises(CivError, match="assembly identity changed"):
+        build_declaration_template(freeze, assembly, template)
 
 
 def test_declaration_template_pins_inputs_but_cannot_assert_acceptance(

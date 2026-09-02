@@ -1,6 +1,6 @@
 # Extension-aware submission v2
 
-Status: **implemented and agent-verified; organizer wording approval pending**
+Status: **implemented, agent-verified, and organizer wording approved on 2026-09-02**
 
 Recorded: 2026-09-02
 
@@ -136,5 +136,7 @@ artifacts are not relabelled.
 ## Human gate
 
 An organizer must explicitly approve the three revised bonus anchors and final participant wording.
-Agent verification cannot satisfy that decision. Until the approval is recorded, the implementation
-is technically complete but the final release go/no-go remains pending.
+Agent verification did not satisfy that decision. The event owner explicitly approved the fixed
+`+10/+5/+5` anchors, final participant wording, universal-viewer architecture, legal risk, and final
+go on 2026-09-02 in the issue #54 session. Fresh-host qualification remains separately evidenced;
+the approval is not represented as a machine execution record.

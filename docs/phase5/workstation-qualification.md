@@ -12,7 +12,8 @@ closed contract/schema, and final aggregate evidence.
 
 ## Frozen input
 
-The qualification tooling accepts only these identities:
+The qualification tooling accepts the historical Phase 4 release and the extension-aware universal
+release as two exact, non-mixable profiles:
 
 | Input | SHA-256 or identity |
 |---|---|
@@ -21,6 +22,8 @@ The qualification tooling accepts only these identities:
 | Container archive | `ff983defaa02671982ee78dbf13026d0d007c5c16082cd898658228875f289db` |
 | Loaded image | `sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560` |
 | Private development authority | `08a7bce5b2e3029ad5e8c12da395118443fd62850e99a8f7c4a329b5f3f2da02` |
+| Universal release manifest | `e7cbc09abcbfd2b1b0ac3c07cfbf5e6995f9c4d35e197edb33d441b11e5ce7c8` |
+| Universal assembly manifest | `64c55f32a0b1898b8eadc4540a97e6d1b9c44f2b404abcb13df99326e9203bef` |
 
 Any changed release byte reopens #48. The private development set remains organizer-only and is
 mounted read-only only for the `score` qualification step; it never enters release media, a
@@ -31,7 +34,13 @@ participant output, the generated qualification manifest, or git.
 The #48 event-owner decision advertises **Windows-amd64 hosts and viewers with the pinned
 linux-amd64 container through WSL2**. Ticket #49 also asks for an Ubuntu event-workstation runtime
 check. Ubuntu therefore qualifies the same linux-amd64 container as a compatibility/runtime host;
-it does not become a second advertised participant platform.
+the universal release also carries the Linux viewer binaries. macOS remains viewer-only and does
+not enter the container-runtime qualification matrix.
+
+The universal declaration template was generated from the accepted freeze and exact assembly on
+2026-09-02 with SHA-256 `09bc573a88dfee6d742cb9660eecb41df627f802ce9b666b21c9a9f80fd4f6cc`.
+It remains deliberately `pending-human`: the event-owner go decision does not fabricate fresh-host
+command, viewer, screenshot, recovery, or connected-route evidence.
 
 The command rehearsal uses one exact authorized pair per dataset:
 

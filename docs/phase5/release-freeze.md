@@ -5,6 +5,26 @@
 > identity `civ-2026-phase5-camera-context-release-freeze-v2`. The v1 evidence below remains an
 > immutable historical acceptance record; it is not relabelled as the universal release.
 
+## Accepted universal-viewer release
+
+On 2026-09-02 the event owner explicitly approved the bonus wording, universal five-viewer
+architecture, renewed legal risk, and final go. The renewed legal approval binds the exact
+`71f061855ed031c119f4a4d55b0fbce44b35a32e` workshop source archive plus the unchanged upstream
+viewer/runtime sources, licences, notices, and 2,135-package SBOM review.
+
+| Input | Frozen identity |
+|---|---|
+| Participant inventory | `0b026981f6894028542458ac7611fc105593ee9c7b04fe22de7f9445144368af` |
+| Exact assembly | `64c55f32a0b1898b8eadc4540a97e6d1b9c44f2b404abcb13df99326e9203bef` |
+| Architecture approval | `bcfa8f8382b65804492a270c58c0cd1854b18e710a2a3a2d1534ee17a65399f9` |
+| Renewed legal review | `a5487b2e8c9889f485bc3f3da3da65422cf1c075d87b4779279d2005eadb2684` |
+| Renewed legal approval | `62be57d15594e3d88f725b4ef55d8b2697500cca49b773c9644d057ce0521b9f` |
+| Release freeze | `e7cbc09abcbfd2b1b0ac3c07cfbf5e6995f9c4d35e197edb33d441b11e5ce7c8` |
+
+Two independently assembled kit trees produced byte-identical release-freeze manifests, and fresh
+audits of both returned 20 artifacts, 2,135 packages, 7,351,644,254 required bytes, and `valid=true`.
+Generated approvals and release payloads remain in organizer-controlled external storage.
+
 Status: **accepted — deterministic global-risk release freeze verified offline**
 
 Recorded: 2026-08-30 · Operator: Codex on the organizer workstation
@@ -307,10 +327,9 @@ wrong assembly. No build-1/build-2/original-bag/organizer filesystem path is eve
 and the existing `ABSOLUTE_PATH_PATTERN` check reject any such path exactly as they do for the Phase 4
 profile.
 
-`build freeze-1` and `build freeze-2` should be run independently against `assembly-1` and
-`assembly-2` with the same declaration and evidence root; both are expected to produce byte-identical
+`build freeze-1` and `build freeze-2` were run independently against `assembly-v2-1` and
+`assembly-v2-2` with the same declaration and evidence root; both produced byte-identical
 `release-freeze.json`/`SHA256SUMS`, and each is then auditable against its own assembly copy. One
 becomes the accepted freeze; the other remains reproducibility evidence, matching the pattern already
-established for `build-1`/`build-2` and `assembly-1`/`assembly-2`. Acceptance status, real hashes, and
-the failure/intervention log for this profile are recorded once freeze-1/freeze-2 are actually built
-and audited — this section documents the mechanism, not (yet) a completed acceptance.
+established for `build-1`/`build-2` and `assembly-1`/`assembly-2`. Both fresh audits passed with the
+accepted universal release-freeze hash recorded above.
