@@ -91,6 +91,7 @@ PARTICIPANT_RUNTIME_MODULES = (
     "score_reference.py",
     "scoring.py",
     "submission.py",
+    "submission_extension.py",
 )
 PRIVATE_RUNTIME_MODULES = frozenset(
     {

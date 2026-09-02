@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -210,10 +212,30 @@ def test_assembly_copies_closed_inputs_and_detects_changes(
     assert (tmp_path / "assembled" / "site" / "participants" / "index.html").is_file()
     assert (tmp_path / "assembled" / "offline" / "uv-cache" / ".lock").stat().st_size == 0
     assert not (tmp_path / "assembled" / "tool").exists()
-    runtime = tmp_path / "assembled" / "runtime" / "source" / "src" / "civ_workshop"
+    runtime_source = tmp_path / "assembled" / "runtime" / "source"
+    runtime = runtime_source / "src" / "civ_workshop"
     assert (runtime / "participant_cli.py").is_file()
     assert (runtime / "score_reference.py").is_file()
     assert not any((runtime / name).exists() for name in assembly_module.PRIVATE_RUNTIME_MODULES)
+    help_result = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            (
+                "import sys; "
+                "sys.path.insert(0, 'src'); "
+                "from civ_workshop.participant_cli import main; "
+                "main(['--help'])"
+            ),
+        ],
+        cwd=runtime_source,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert help_result.returncode == 0, help_result.stderr
+    assert "usage:" in help_result.stdout
     (tmp_path / "assembled" / "data" / "route.mcap").write_bytes(b"tampered")
     with pytest.raises(CivError, match="does not match"):
         audit_assembly(tmp_path / "assembled" / "attendee-kit-assembly.json")
