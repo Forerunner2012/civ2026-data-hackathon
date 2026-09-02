@@ -1,0 +1,23 @@
+spec: civ.eventspec/v1
+name: reims-illustrative-cave-encounter
+signals:
+  latitude: {topic: /fix, field: latitude}
+  longitude: {topic: /fix, field: longitude}
+resources:
+  caves:
+    path: cave-zones.json
+    contract: civ.point-resource/v1
+derive:
+  cave_distance_m:
+    op: min_distance_to
+    resource: caves
+    from: [latitude, longitude]
+condition: cave_distance_m <= 40.0
+timing:
+  min_duration: 0s
+  merge_gap: 2s
+  max_duration: 30s
+evidence:
+  before: 2s
+  after: 2s
+  topics: [/fix]

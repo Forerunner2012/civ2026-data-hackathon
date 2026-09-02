@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.camera-context-set.v1.schema.json",
+  "title": "CIV camera-context set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "release_id", "approval", "products", "required_disk_bytes"],
+  "properties": {
+    "contract": {"const": "civ.camera-context-set/v1"},
+    "release_id": {"const": "civ-2026-phase5-camera-context-v1"},
+    "approval": {"type": "object"},
+    "products": {"type": "array", "minItems": 13, "maxItems": 13, "items": {"type": "object"}},
+    "required_disk_bytes": {"type": "integer", "minimum": 1}
+  }
+}

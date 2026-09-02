@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.participant-kit-inventory.v1.schema.json",
+  "title": "CIV participant-kit inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "release_id",
+    "content_profile",
+    "product_set",
+    "tool",
+    "container_candidate",
+    "viewers",
+    "tracked_assets",
+    "recovery_notice",
+    "context_packs",
+    "layout",
+    "required_disk_bytes"
+  ],
+  "properties": {
+    "contract": {"const": "civ.participant-kit-inventory/v1"},
+    "release_id": {"enum": ["civ-2026-phase4-participant-kit-v1", "civ-2026-phase5-camera-context-participant-kit-v1", "civ-2026-phase5-camera-context-participant-kit-v2"]},
+    "content_profile": {"enum": ["signals-only", "signals-plus-camera-context"]},
+    "product_set": {"$ref": "#/$defs/productSet"},
+    "tool": {"$ref": "#/$defs/tool"},
+    "container_candidate": {"$ref": "#/$defs/container"},
+    "viewers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/viewer"}
+    },
+    "tracked_assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/trackedAsset"}
+    },
+    "recovery_notice": {"const": "Two Kashiwa products derive from recovered recordings. Structural recovery made the recordings readable but does not prove that truncation lost no records. The caveat must remain with every distribution; corrupt-parent locations are organizer-only."},
+    "context_packs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/contextPack"}
+    },
+    "layout": {"$ref": "#/$defs/layout"},
+    "required_disk_bytes": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "dataset", "split", "name", "sha256", "manifest", "manifest_sha256", "byte_size"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "dataset": {"enum": ["kashiwa", "reims"]},
+        "split": {"enum": ["warmup", "development"]},
+        "name": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "manifest": {"$ref": "#/$defs/relativePath"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      }
+    },
+    "productSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release_id", "manifest", "sha256", "product_count", "message_count", "required_disk_bytes", "products"],
+      "properties": {
+        "release_id": {"const": "civ-2026-phase3-participant-signals-v1"},
+        "manifest": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"const": "d515c0a7cd748f8b2ad0cb41b93d8847b0917c2e6469be2f8be09582fc62ef9b"},
+        "product_count": {"const": 13},
+        "message_count": {"const": 1102147},
+        "required_disk_bytes": {"const": 335177173},
+        "products": {"type": "array", "minItems": 13, "maxItems": 13, "items": {"$ref": "#/$defs/product"}}
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "byte_size"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "source_commit", "lockfile"],
+      "properties": {
+        "name": {"const": "civ-workshop"},
+        "version": {"const": "0.1.0"},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "lockfile": {"$ref": "#/$defs/file"}
+      }
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "image_digest", "platform"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "image_digest": {"const": "sha256:47f4017351802e878ff138c9e3aead0161de660914e79c252554968a91657560"},
+        "platform": {"const": "linux-amd64"}
+      }
+    },
+    "viewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "platform", "target", "sha256", "byte_size"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "platform": {"enum": ["linux-amd64", "windows-amd64"]},
+        "target": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      }
+    },
+    "trackedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256", "byte_size"],
+      "properties": {
+        "role": {"enum": ["quickstart", "layout", "example", "schema", "submission-template", "participant-instructions", "attribution"]},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      }
+    },
+    "contextPack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "manifest", "manifest_sha256", "required_disk_bytes", "approval"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "manifest": {"$ref": "#/$defs/relativePath"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "required_disk_bytes": {"type": "integer", "minimum": 1},
+        "approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "sha256"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inventory", "checksum_manifest", "directories"],
+      "properties": {
+        "inventory": {"$ref": "#/$defs/relativePath"},
+        "checksum_manifest": {"$ref": "#/$defs/relativePath"},
+        "directories": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/relativePath"}}
+      }
+    }
+  }
+}

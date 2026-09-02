@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.camera-context-privacy-rights-approval.v1.schema.json",
+  "title": "CIV camera-context privacy and rights approval v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "approval_id", "authority", "decision", "frame_review_set_sha256", "inspection_complete", "redaction_required", "rights_statement"],
+  "properties": {
+    "contract": {"const": "civ.camera-context-privacy-rights-approval/v1"},
+    "approval_id": {"type": "string", "minLength": 1},
+    "authority": {"type": "string", "minLength": 1},
+    "decision": {"const": "approved"},
+    "frame_review_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "inspection_complete": {"const": true},
+    "redaction_required": {"const": false},
+    "rights_statement": {"type": "string", "minLength": 1}
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.data-product-set.v1.schema.json",
+  "title": "CIV participant data-product set manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "release_id", "products", "required_disk_bytes"],
+  "properties": {
+    "contract": {"const": "civ.data-product-set/v1"},
+    "release_id": {"type": "string", "minLength": 1},
+    "products": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "dataset",
+          "split",
+          "name",
+          "sha256",
+          "manifest",
+          "manifest_sha256",
+          "byte_size"
+        ],
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "dataset": {"type": "string", "minLength": 1},
+          "split": {"enum": ["warmup", "development"]},
+          "name": {"type": "string", "pattern": "^[^/\\\\]+\\.mcap$"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "manifest": {"type": "string", "pattern": "^[^/\\\\]+\\.manifest\\.json$"},
+          "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "byte_size": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "required_disk_bytes": {"type": "integer", "minimum": 1}
+  }
+}

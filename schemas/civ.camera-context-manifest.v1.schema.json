@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.camera-context-manifest.v1.schema.json",
+  "title": "CIV camera-context manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "approval", "calibration", "dataset", "parent", "product", "recipe", "rights", "signal_product", "split", "time_bounds", "transformation"],
+  "properties": {
+    "contract": {"const": "civ.camera-context-manifest/v1"},
+    "approval": {"type": "object"},
+    "calibration": {"type": "object"},
+    "dataset": {"enum": ["kashiwa", "reims"]},
+    "parent": {"type": "object"},
+    "product": {"type": "object"},
+    "recipe": {"type": "object"},
+    "rights": {"type": "object"},
+    "signal_product": {"type": "object"},
+    "split": {"enum": ["warmup", "development"]},
+    "time_bounds": {"type": "object"},
+    "transformation": {"const": "topic-filter-and-time-bound-copy-v1"}
+  }
+}

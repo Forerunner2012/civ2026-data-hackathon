@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.attendee-kit-assembly.v1.schema.json",
+  "title": "CIV attendee kit assembly v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "release_id", "inventory_sha256", "files", "components", "required_disk_bytes", "disk_budget"],
+  "properties": {
+    "contract": {"const": "civ.attendee-kit-assembly/v1"},
+    "release_id": {"enum": ["civ-2026-phase4-attendee-kit-v1", "civ-2026-phase5-camera-context-attendee-kit-v1", "civ-2026-phase5-camera-context-attendee-kit-v2"]},
+    "inventory_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "files": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/file"}},
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "required_disk_bytes"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "required_disk_bytes": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "required_disk_bytes": {"type": "integer", "minimum": 1},
+    "disk_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drive_count", "per_drive_bytes", "fleet_bytes"],
+      "properties": {
+        "drive_count": {"const": 4},
+        "per_drive_bytes": {"const": 2199023255552},
+        "fleet_bytes": {"const": 8796093022208}
+      }
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "sha256", "byte_size"],
+      "properties": {
+        "target": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_size": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

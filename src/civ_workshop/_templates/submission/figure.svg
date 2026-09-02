@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title description">
+  <title id="title">CIV_TEMPLATE_REPLACE_ME</title>
+  <desc id="description">Replace this file with one marked participant figure.</desc>
+  <rect width="1200" height="675" fill="#f3f0e7"/>
+  <rect x="40" y="40" width="1120" height="595" fill="none" stroke="#10201b" stroke-width="4" stroke-dasharray="14 10"/>
+  <text x="600" y="318" text-anchor="middle" fill="#10201b" font-family="Arial, sans-serif" font-size="42" font-weight="700">CIV_TEMPLATE_REPLACE_ME</text>
+  <text x="600" y="370" text-anchor="middle" fill="#4c5b55" font-family="Arial, sans-serif" font-size="24">One marked plot or still · replace before civ report</text>
+</svg>

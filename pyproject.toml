@@ -1,0 +1,48 @@
+[project]
+name = "civ-workshop"
+version = "0.1.0"
+description = "Offline organizer tooling for the CIV 2026 data hackathon"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "cel-python==0.5.0",
+    "mcap>=1.4.0,<2",
+    "mcap-ros2-support>=0.5.7,<0.6",
+    "pyyaml>=6.0.2,<7",
+]
+
+[project.scripts]
+civ = "civ_workshop.cli:main"
+
+[build-system]
+requires = ["uv-build>=0.8.15,<0.9"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1,<2",
+    "pytest>=8.4.1,<9",
+    "ruff>=0.12.10,<1",
+    "types-pyyaml>=6.0.12,<7",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+exclude = ["^\\.scratch/", "^\\.venv/"]
+
+[[tool.mypy.overrides]]
+module = ["celpy", "celpy.*", "mcap", "mcap.*", "mcap_ros2", "mcap_ros2.*"]
+follow_imports = "skip"
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [".scratch"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

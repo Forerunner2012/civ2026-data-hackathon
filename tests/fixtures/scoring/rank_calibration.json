@@ -1,0 +1,66 @@
+{
+  "dataset": "rank-calibration",
+  "detectors": [
+    {
+      "expected_f1": 1.0,
+      "name": "competent-timed",
+      "predictions": [
+        {"end_ns": 100, "event_id": "c-1", "start_ns": 0},
+        {"end_ns": 300, "event_id": "c-2", "start_ns": 200},
+        {"end_ns": 500, "event_id": "c-3", "start_ns": 400},
+        {"end_ns": 700, "event_id": "c-4", "start_ns": 600}
+      ]
+    },
+    {
+      "expected_f1": 0.857142857143,
+      "name": "route-overfit",
+      "predictions": [
+        {"end_ns": 100, "event_id": "o-1", "start_ns": 0},
+        {"end_ns": 300, "event_id": "o-2", "start_ns": 200},
+        {"end_ns": 500, "event_id": "o-3", "start_ns": 400}
+      ]
+    },
+    {
+      "expected_f1": 0.666666666667,
+      "name": "naive-threshold",
+      "predictions": [
+        {"end_ns": 100, "event_id": "n-1", "start_ns": 0},
+        {"end_ns": 170, "event_id": "n-extra-1", "start_ns": 120},
+        {"end_ns": 300, "event_id": "n-2", "start_ns": 200},
+        {"end_ns": 500, "event_id": "n-3", "start_ns": 400},
+        {"end_ns": 570, "event_id": "n-extra-2", "start_ns": 520}
+      ]
+    },
+    {
+      "expected_f1": 0.5,
+      "name": "no-debounce",
+      "predictions": [
+        {"end_ns": 60, "event_id": "d-1a", "start_ns": 0},
+        {"end_ns": 75, "event_id": "d-1b", "start_ns": 0},
+        {"end_ns": 100, "event_id": "d-1c", "start_ns": 0},
+        {"end_ns": 260, "event_id": "d-2a", "start_ns": 200},
+        {"end_ns": 275, "event_id": "d-2b", "start_ns": 200},
+        {"end_ns": 300, "event_id": "d-2c", "start_ns": 200},
+        {"end_ns": 460, "event_id": "d-3a", "start_ns": 400},
+        {"end_ns": 475, "event_id": "d-3b", "start_ns": 400},
+        {"end_ns": 500, "event_id": "d-3c", "start_ns": 400},
+        {"end_ns": 660, "event_id": "d-4a", "start_ns": 600},
+        {"end_ns": 675, "event_id": "d-4b", "start_ns": 600},
+        {"end_ns": 700, "event_id": "d-4c", "start_ns": 600}
+      ]
+    }
+  ],
+  "expected_order": [
+    "competent-timed",
+    "route-overfit",
+    "naive-threshold",
+    "no-debounce"
+  ],
+  "labels": [
+    {"end_ns": 100, "label_id": "label-1", "start_ns": 0},
+    {"end_ns": 300, "label_id": "label-2", "start_ns": 200},
+    {"end_ns": 500, "label_id": "label-3", "start_ns": 400},
+    {"end_ns": 700, "label_id": "label-4", "start_ns": 600}
+  ],
+  "source_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.data-product-manifest.v1.schema.json",
+  "title": "CIV participant data-product manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "product", "parent", "recipe", "provenance", "required_disk_bytes"],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "topic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic",
+        "message_count",
+        "message_encoding",
+        "schema_name",
+        "schema_encoding",
+        "schema_sha256"
+      ],
+      "properties": {
+        "topic": {"type": "string", "pattern": "^/"},
+        "message_count": {"type": "integer", "minimum": 1},
+        "message_encoding": {"type": "string"},
+        "schema_name": {"type": "string"},
+        "schema_encoding": {"type": "string"},
+        "schema_sha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"}
+      }
+    }
+  },
+  "properties": {
+    "contract": {"const": "civ.data-product-manifest/v1"},
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sha256",
+        "byte_size",
+        "duration_ns",
+        "message_count",
+        "message_start_ns",
+        "message_end_ns",
+        "topics"
+      ],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[^/\\\\]+\\.mcap$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1},
+        "duration_ns": {"type": "integer", "minimum": 0},
+        "message_count": {"type": "integer", "minimum": 1},
+        "message_start_ns": {"type": "integer", "minimum": 0},
+        "message_end_ns": {"type": "integer", "minimum": 0},
+        "topics": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/topic"}}
+      }
+    },
+    "parent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "sha256",
+        "byte_size",
+        "duration_ns",
+        "message_count",
+        "message_start_ns",
+        "message_end_ns"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 1},
+        "duration_ns": {"type": "integer", "minimum": 0},
+        "message_count": {"type": "integer", "minimum": 1},
+        "message_start_ns": {"type": "integer", "minimum": 0},
+        "message_end_ns": {"type": "integer", "minimum": 0}
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "id", "version", "sha256", "writer", "topics"],
+      "properties": {
+        "contract": {"const": "civ.data-product-recipe/v1"},
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "writer": {"const": "civ-workshop/data-products-v1"},
+        "topics": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^/"}
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset", "split", "license", "attribution", "rights_scope", "modifications"],
+      "properties": {
+        "dataset": {"type": "string", "minLength": 1},
+        "split": {"enum": ["warmup", "development", "sealed"]},
+        "license": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "url"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "url": {"type": ["string", "null"], "format": "uri"}
+          }
+        },
+        "attribution": {"type": "string", "minLength": 1},
+        "rights_scope": {"type": "string", "minLength": 1},
+        "modifications": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "required_disk_bytes": {"type": "integer", "minimum": 1}
+  }
+}

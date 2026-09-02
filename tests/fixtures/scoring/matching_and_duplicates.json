@@ -1,0 +1,35 @@
+{
+  "cases": [
+    {
+      "dataset": "highest-iou-duplicate",
+      "labels": [{"end_ns": 100, "label_id": "label-1", "start_ns": 0}],
+      "predictions": [
+        {"end_ns": 75, "event_id": "lower-iou-duplicate", "start_ns": 0},
+        {"end_ns": 100, "event_id": "highest-iou", "start_ns": 0}
+      ],
+      "expected": {
+        "counts": {"false_negative": 0, "false_positive": 1, "true_positive": 1},
+        "f1": 0.666666666667,
+        "mean_temporal_iou": 1.0,
+        "precision": 0.5,
+        "recall": 1.0
+      }
+    },
+    {
+      "dataset": "unmatched-label",
+      "labels": [
+        {"end_ns": 100, "label_id": "label-1", "start_ns": 0},
+        {"end_ns": 300, "label_id": "label-2", "start_ns": 200}
+      ],
+      "predictions": [{"end_ns": 100, "event_id": "prediction-1", "start_ns": 0}],
+      "expected": {
+        "counts": {"false_negative": 1, "false_positive": 0, "true_positive": 1},
+        "f1": 0.666666666667,
+        "mean_temporal_iou": 1.0,
+        "precision": 1.0,
+        "recall": 0.5
+      }
+    }
+  ],
+  "source_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+}

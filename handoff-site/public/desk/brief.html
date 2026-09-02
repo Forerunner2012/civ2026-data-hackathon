@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIV 2026 — one-page participant brief</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #10201b; font: 8.4pt/1.34 Arial, sans-serif; }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 10mm; border-bottom: 2px solid #10201b; padding-bottom: 4mm; }
+    h1 { margin: 0; font-size: 24pt; line-height: .95; letter-spacing: -.04em; }
+    h2 { margin: 0 0 2mm; font: 700 8pt/1 Consolas, monospace; letter-spacing: .1em; }
+    p { margin: 0 0 2mm; }
+    code { font-size: 7.4pt; }
+    .deadline { padding: 3mm; background: #c9ff58; font-weight: bold; text-align: center; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm 7mm; margin-top: 5mm; }
+    section { break-inside: avoid; }
+    ul, ol { margin: 0; padding-left: 5mm; }
+    li { margin-bottom: 1mm; }
+    .pipeline { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; background: #10201b; border: 1px solid #10201b; }
+    .pipeline span { padding: 2.2mm 1mm; background: white; text-align: center; font: 700 6.4pt/1.2 Consolas, monospace; }
+    .report { border: 1px solid #10201b; padding: 3mm; }
+    footer { margin-top: 4mm; padding-top: 3mm; border-top: 1px solid #10201b; display: flex; justify-content: space-between; font: 7pt/1.3 Consolas, monospace; }
+    @media screen { body { max-width: 210mm; margin: 20px auto; padding: 10mm; background: white; box-shadow: 0 4px 20px #bbb; } }
+  </style>
+</head>
+<body data-print-material="participant-brief" data-pages="1">
+  <header>
+    <div><small>CIV 2026 · DATA DETECTIVE · SOLO OR DUO</small><h1>From raw bag to defensible proof.</h1></div>
+    <div class="deadline">HARD CLOSE<br>12:30 JST<br><small>last valid receipt wins</small></div>
+  </header>
+  <div class="grid">
+    <section><h2>THE BRIEF</h2><p>Locate operationally significant behaviour in two structurally different participant-safe recordings. Encode a reusable detector, cut compact evidence, explain its limits, and recommend a downstream action.</p></section>
+    <section><h2>THE TWO DATASETS</h2><p><b>Kashiwa warm-up</b><br><code>KSH-64ac27cd029b-signals.mcap</code></p><p><b>Reims development chunk 0</b><br><code>RMS-CHUNK-0-0a0817b3afc8-signals.mcap</code></p></section>
+    <div class="pipeline" aria-label="Stable command path"><span>doctor</span><span>inspect</span><span>sample</span><span>detect</span><span>clip</span><span>score</span><span>report</span></div>
+    <section><h2>WHAT COUNTS · 100 + 20</h2><ul><li>Investigation 15</li><li>Detection 25: first set 15 / transfer 10</li><li>Evidence 15 · quality 15</li><li>Visualization 15 · reproducibility 15</li><li>Bonus: grounded trace +10 · advanced method +5 · regression test +5</li></ul></section>
+    <section><h2>ROOM RULES</h2><ul><li>Solo and duo entries share one leaderboard.</li><li>Waiting for the next public hint is legitimate.</li><li>Submit repeatedly; the last valid on-time receipt is authoritative.</li><li>The scored runner constrains executable evidence, not what you may write.</li></ul></section>
+    <section class="report"><h2>ONE RENDERED PAGE · ONE FIGURE</h2><ol><li>Question and hypothesis</li><li>Signals and limitations</li><li>What transferred</li><li>One failure and the change it caused</li><li>Downstream action and deployment mode</li></ol><p>Write 1–2 at 10:40, 3–4 at 11:45, and 5 at 12:10.</p></section>
+    <section><h2>JUDGING AND FEEDBACK</h2><p>55 points are machine-scored. AI agents score the 45 report points against human-written anchors; a human arbitrates disagreements. Everyone receives written feedback at 15:00.</p><p>Awards: overall 1st–3rd, best transfer, and most instructive failure. Ties break by earliest submission of the tied score. Winners are published only with consent.</p></section>
+    <section><h2>HAND IN METADATA, KEEP DATA LOCAL</h2><p>The v2 ZIP keeps seven core artifacts and may add a bounded extension manifest with exact resources, provenance, inert traces, and tests. Never submit recordings or evidence clips.</p></section>
+    <section><h2>HELP</h2><p>Raise the two-sided card. A coach asks what you have and what you think is happening, then responds to the hypothesis—never with a private threshold or answer.</p></section>
+  </div>
+  <footer><span>Open the live page for current expectation → hint → tip.</span><span>Post-event solutions are released separately after human approval.</span></footer>
+</body>
+</html>

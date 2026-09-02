@@ -1,0 +1,41 @@
+{
+  "cases": [
+    {
+      "dataset": "iou-below-threshold",
+      "labels": [{"end_ns": 100, "label_id": "label-1", "start_ns": 0}],
+      "predictions": [{"end_ns": 49, "event_id": "prediction-1", "start_ns": 0}],
+      "expected": {
+        "counts": {"false_negative": 1, "false_positive": 1, "true_positive": 0},
+        "f1": 0.0,
+        "mean_temporal_iou": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      }
+    },
+    {
+      "dataset": "iou-exactly-threshold",
+      "labels": [{"end_ns": 100, "label_id": "label-1", "start_ns": 0}],
+      "predictions": [{"end_ns": 50, "event_id": "prediction-1", "start_ns": 0}],
+      "expected": {
+        "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
+        "f1": 1.0,
+        "mean_temporal_iou": 0.5,
+        "precision": 1.0,
+        "recall": 1.0
+      }
+    },
+    {
+      "dataset": "iou-above-threshold",
+      "labels": [{"end_ns": 100, "label_id": "label-1", "start_ns": 0}],
+      "predictions": [{"end_ns": 51, "event_id": "prediction-1", "start_ns": 0}],
+      "expected": {
+        "counts": {"false_negative": 0, "false_positive": 0, "true_positive": 1},
+        "f1": 1.0,
+        "mean_temporal_iou": 0.51,
+        "precision": 1.0,
+        "recall": 1.0
+      }
+    }
+  ],
+  "source_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+}

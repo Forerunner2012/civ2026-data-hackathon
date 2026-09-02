@@ -1,0 +1,296 @@
+# CIV 2026 data hackathon
+#
+# Expected stack: Python/uv and notebooks, MCAP/ROS 2 data, Polars/DuckDB/
+# Parquet analytics, Streamlit or Panel, optional LangGraph/local models,
+# Docker/Podman, DVC, and MLflow/Evidently/OpenTelemetry.
+#
+# Keep source code, schemas, manifests, dependency lockfiles, Dockerfiles,
+# notebooks, and reviewed documentation in Git. Large data and model files
+# belong in approved object storage, DVC, or Git LFS instead.
+
+# ---------------------------------------------------------------------------
+# Secrets, credentials, and machine-local configuration
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+.envrc
+.direnv/
+
+secrets/
+credentials/
+private-credentials/
+*.secret
+*.secrets
+*.local
+*.local.json
+*.local.yaml
+*.local.yml
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+
+.aws/
+.azure/
+.config/gcloud/
+.streamlit/secrets.toml
+.dvc/config.local
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# ---------------------------------------------------------------------------
+# Python and uv
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.uv-cache/
+
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+dist/
+build/
+
+# Keep pyproject.toml and uv.lock committed for reproducibility.
+
+# ---------------------------------------------------------------------------
+# Node.js and web front-ends (handoff-site and any future companion app)
+# ---------------------------------------------------------------------------
+node_modules/
+.pnp
+.pnp.*
+.yarn/cache/
+.yarn/install-state.gz
+
+.next/
+.vinext/
+.wrangler/
+.vercel/
+.turbo/
+.svelte-kit/
+out/
+.eslintcache
+.tsbuildinfo
+*.tsbuildinfo
+next-env.d.ts
+
+# Keep package.json and package-lock.json committed for reproducibility.
+# Note: `build/` and `dist/` are ignored globally below/above for Python and
+# ROS artifacts. A web sub-project that keeps *source* in `build/` must
+# re-include it from its own .gitignore (see handoff-site/.gitignore).
+
+# ---------------------------------------------------------------------------
+# Jupyter and interactive analysis
+# ---------------------------------------------------------------------------
+.ipynb_checkpoints/
+.jupyter/
+.ipython/
+profile_default/
+
+# ---------------------------------------------------------------------------
+# ROS 2 / colcon generated workspaces and rosbag state
+# ---------------------------------------------------------------------------
+install/
+log/
+.colcon/
+*.mcap.active
+*.db3.active
+metadata.yaml.tmp
+
+# ---------------------------------------------------------------------------
+# Datasets, bags, analytical stores, and generated evidence
+# ---------------------------------------------------------------------------
+# These formats are commonly large or generated. If a reviewed fixture must be
+# versioned, use Git LFS/DVC or force-add it intentionally with documentation.
+*.mcap
+*.bag
+*.db3
+*.parquet
+*.arrow
+*.feather
+*.orc
+*.avro
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.joblib
+
+data/raw/
+data/interim/
+data/processed/
+data/external/
+datasets/raw/
+datasets/downloads/
+dataset/raw/
+dataset/downloads/
+
+evidence/
+clips/
+outputs/
+output/
+artifacts/
+generated/
+reports/generated/
+run-manifest.local.json
+
+# ---------------------------------------------------------------------------
+# Models, checkpoints, and local inference caches
+# ---------------------------------------------------------------------------
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.tflite
+*.h5
+*.pb
+*.gguf
+*.ggml
+*.bin
+*.engine
+
+weights/
+checkpoints/
+model-cache/
+.ollama/
+.cache/huggingface/
+.cache/torch/
+.cache/transformers/
+
+# ---------------------------------------------------------------------------
+# Experiment tracking, agents, and observability runtime state
+# ---------------------------------------------------------------------------
+mlruns/
+mlartifacts/
+.mlflow/
+wandb/
+evidently_workspace/
+langgraph-checkpoints/
+traces/
+*.otlp
+*.trace
+
+# ---------------------------------------------------------------------------
+# Docker/Podman local state and exported container images
+# ---------------------------------------------------------------------------
+.docker-data/
+.podman/
+docker-data/
+volumes/
+*.oci
+*.sif
+
+# ---------------------------------------------------------------------------
+# General caches, logs, scratch files, and generated reports
+# ---------------------------------------------------------------------------
+.cache/
+.tmp/
+tmp/
+temp/
+scratch/
+work/
+*.log
+*.pid
+*.pid.lock
+*.prof
+.prof/
+
+test-results/
+.junit/
+playwright-report/
+
+# ---------------------------------------------------------------------------
+# Compiled binaries, archives, disk images, and crash dumps
+# ---------------------------------------------------------------------------
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.dmp
+*.core
+
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.bz2
+*.xz
+*.iso
+*.img
+
+# ---------------------------------------------------------------------------
+# Editors and operating systems
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.history/
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100/
+.Trashes/
+
+# ---------------------------------------------------------------------------
+# Backups and rejected patches
+# ---------------------------------------------------------------------------
+*.bak
+*.backup
+*.orig
+*.rej
+*.tmp
+*.temp
+
+.agents/skills/
+.claude/skills/

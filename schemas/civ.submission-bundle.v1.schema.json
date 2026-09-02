@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.submission-bundle.v1.schema.json",
+  "title": "CIV metadata-only submission declaration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "reproduction"],
+  "properties": {
+    "contract": {"const": "civ.submission-bundle/v1"},
+    "reproduction": {"$ref": "civ.reproduction.v1.schema.json"}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.submission-bundle.v2.schema.json",
+  "title": "CIV extension-aware metadata-only submission declaration v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "reproduction"],
+  "properties": {
+    "contract": {"const": "civ.submission-bundle/v2"},
+    "reproduction": {"$ref": "civ.reproduction.v1.schema.json"},
+    "extension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "name", "sha256"],
+      "properties": {
+        "contract": {"const": "civ.submission-extension/v1"},
+        "name": {"const": "extension/manifest.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

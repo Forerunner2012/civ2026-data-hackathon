@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIV 2026 — two-sided help card</title>
+  <style>
+    @page { size: A5 landscape; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #10201b; font-family: Arial, sans-serif; }
+    .side { width: 210mm; height: 148mm; padding: 13mm; page-break-after: always; display: grid; grid-template-rows: auto 1fr auto; }
+    .side:last-child { page-break-after: auto; }
+    .up { background: #c9ff58; }
+    .down { background: #10201b; color: #fbfaf6; }
+    small { font: 8pt/1.4 Consolas, monospace; letter-spacing: .12em; }
+    h1 { margin: 8mm 0 3mm; font-size: 38pt; line-height: .92; letter-spacing: -.05em; }
+    p, li { font-size: 13pt; line-height: 1.4; }
+    ol { margin: 5mm 0 0; padding-left: 7mm; }
+    footer { display: flex; justify-content: space-between; font: 8pt/1.4 Consolas, monospace; }
+    @media screen { body { background: #ddd; padding: 20px; } .side { margin: 0 auto 20px; box-shadow: 0 4px 20px #999; } }
+  </style>
+</head>
+<body data-print-material="help-card" data-pages="2" data-duplex="flip-short-edge">
+  <section class="side up" aria-label="Help card side one">
+    <header><small>SIDE A · KEEP THIS SIDE UP UNTIL THE GATE PASSES</small><h1>I need setup help.</h1></header>
+    <div><p>Raise this card if either command fails:</p><p><code>civ doctor</code><br><code>civ inspect &lt;warm-up&gt;</code></p></div>
+    <footer><span>A coach will fix access and tooling.</span><span>Turn over after both commands succeed.</span></footer>
+  </section>
+  <section class="side down" aria-label="Help card side two">
+    <header><small>SIDE B · NORMAL SESSION HELP</small><h1>I have a hypothesis.</h1></header>
+    <div><p>Raise this side. Be ready for two questions:</p><ol><li>What have you got so far?</li><li>What do you think is happening?</li></ol></div>
+    <footer><span>The coach responds to your hypothesis.</span><span>Private thresholds and private answers are never given.</span></footer>
+  </section>
+</body>
+</html>
