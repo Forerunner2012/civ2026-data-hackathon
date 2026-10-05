@@ -8,7 +8,7 @@ import re
 import shutil
 import sys
 from collections.abc import Mapping, Sequence
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from mcap.exceptions import McapError
 from mcap.reader import make_reader
@@ -25,6 +25,7 @@ from civ_workshop.kit_inventory import (
     TRACKED_ASSET_SOURCES,
     audit_kit_inventory,
 )
+from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 ASSEMBLY_CONTRACT = "civ.attendee-kit-assembly/v1"
 INVENTORY_CONTRACT = CONTRACT
@@ -121,9 +122,7 @@ ABSOLUTE_PATH_PATTERN = re.compile(r"(?:[A-Za-z]:\\|/(?:home|Users)/)")
 
 
 def _target(value: str) -> str:
-    path = PurePosixPath(value)
-    if path.is_absolute() or ".." in path.parts or str(path) != value or "\\" in value:
-        raise CivError(f"assembly target must be a normalized relative path: {value}")
+    safe_archive_path(value, 'assembly target')
     return value
 
 
@@ -398,7 +397,7 @@ def _verify_participant_assembly(
             PRIVATE_RUNTIME_MODULES
         ):
             raise CivError(f"attendee kit contains private runtime module: {target}")
-        path = root / Path(target)
+        path = contained_archive_path(root, target, "assembly target")
         if path.suffix.casefold() not in PARTICIPANT_TEXT_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
@@ -567,15 +566,17 @@ def assemble_kit(
             source = data_root / source_name
             if file_sha256(source) != digest:
                 raise CivError(f"assembly data input does not match inventory: {source_name}")
-            _copy_file(source, output / Path(target_name))
+            _copy_file(source, contained_archive_path(output, target_name, "assembly target"))
     set_source = data_root / Path(str(product_set["manifest"])).name
     if file_sha256(set_source) != product_set["sha256"]:
         raise CivError("assembly product-set manifest does not match inventory")
-    _copy_file(set_source, output / Path(str(product_set["manifest"])))
+    _copy_file(
+        set_source, contained_archive_path(output, str(product_set["manifest"]), "assembly target")
+    )
     for source, target, digest in context_inputs:
         if file_sha256(source) != digest:
             raise CivError(f"assembly camera-context changed during copy: {source.name}")
-        _copy_file(source, output / Path(target))
+        _copy_file(source, contained_archive_path(output, target, "assembly target"))
     for asset in inventory["tracked_assets"]:
         assert isinstance(asset, dict)
         target_name = str(asset["path"])
@@ -583,13 +584,15 @@ def assemble_kit(
         source = repository / source_name
         if file_sha256(source) != asset["sha256"]:
             raise CivError(f"tracked assembly asset changed after inventory: {target_name}")
-        _copy_file(source, output / Path(target_name))
+        _copy_file(source, contained_archive_path(output, target_name, "assembly target"))
     for viewer in inventory["viewers"]:
         assert isinstance(viewer, dict)
         viewer_source = viewer_by_name.get(str(viewer["name"]))
         if viewer_source is None or file_sha256(viewer_source) != viewer["sha256"]:
             raise CivError(f"assembly viewer input does not match inventory: {viewer['name']}")
-        _copy_file(viewer_source, output / Path(str(viewer["target"])))
+        _copy_file(
+            viewer_source, contained_archive_path(output, str(viewer["target"]), "assembly target")
+        )
     _copy_file(inventory_path, output / "participant-kit.json")
     _copy_file(
         inventory_path.parent / "checksums" / "SHA256SUMS",
@@ -657,7 +660,7 @@ def audit_assembly(manifest_path: Path) -> dict[str, object]:
         if target in seen:
             raise CivError("attendee kit assembly contains duplicate targets")
         seen.add(target)
-        path = root / Path(target)
+        path = contained_archive_path(root, target, "assembly target")
         if (
             not path.is_file()
             or path.stat().st_size != raw["byte_size"]

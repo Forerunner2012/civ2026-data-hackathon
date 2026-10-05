@@ -181,6 +181,10 @@ def test_v1_and_v2_bundles_share_deterministic_form_and_usb_authority(
         ("missing", "payload is missing"),
         ("changed", "payload hash changed"),
         ("traversing", "contained archive-relative POSIX path"),
+        ("drive", "contained archive-relative POSIX path"),
+        ("stream", "contained archive-relative POSIX path"),
+        ("device", "contained archive-relative POSIX path"),
+        ("alias", "contained archive-relative POSIX path"),
         ("forbidden", "payload is forbidden"),
         ("case-collision", "duplicate or case-colliding path"),
     ],
@@ -201,6 +205,13 @@ def test_v2_rejects_invalid_extension_payloads(
         target.write_text("changed", encoding="utf-8")
     elif mutation == "traversing":
         manifest["entries"][1]["path"] = "../provenance.md"
+    elif mutation in {"drive", "stream", "device", "alias"}:
+        manifest["entries"][1]["path"] = {
+            "drive": "C:provenance.md",
+            "stream": "extension/provenance.md:stream",
+            "device": "extension/NUL.md",
+            "alias": "extension/provenance.md.",
+        }[mutation]
     elif mutation == "forbidden":
         forbidden = working / "extension" / "labels.json"
         forbidden.write_bytes(payloads["extension/regression-test.json"])
@@ -219,6 +230,7 @@ def test_v2_rejects_invalid_extension_payloads(
 
     with pytest.raises(CivError, match=diagnostic):
         build_report_bundle(working)
+    assert not (working / "submission.zip").exists()
 
 
 def test_v2_rejects_extension_payload_size_limit(tmp_path: Path) -> None:
