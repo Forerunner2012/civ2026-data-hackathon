@@ -1,51 +1,58 @@
-# Domain Docs
+# Domain docs
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+Read this repo's glossary and relevant decisions before exploring code or naming domain concepts.
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists: it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`**: read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+- Read `GLOSSARY.md` at the repo root. If `GLOSSARY-MAP.md` exists, follow it to the glossaries relevant to your task.
+- Read relevant ADRs in `docs/adr/`. In repos with multiple contexts, also check `src/<context>/docs/adr/` for decisions specific to each context.
 
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
+If these files are missing, continue without reporting their absence or proposing new files. The `/domain-modeling` skill creates them when a term or decision is resolved. `/grill-with-docs` and `/improve-codebase-architecture` use that skill.
 
 ## File structure
 
-Single-context repo (most repos):
+This repo has one context and uses the root glossary and ADR directory.
 
 ```
 /
-├── CONTEXT.md
+├── GLOSSARY.md
 ├── docs/adr/
 │   ├── 0001-event-sourced-orders.md
 │   └── 0002-postgres-for-write-model.md
 └── src/
 ```
 
-Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
+Repos with multiple contexts use a root `GLOSSARY-MAP.md`.
 
 ```
 /
-├── CONTEXT-MAP.md
+├── GLOSSARY-MAP.md
 ├── docs/adr/                          ← system-wide decisions
 └── src/
     ├── ordering/
-    │   ├── CONTEXT.md
+    │   ├── GLOSSARY.md
     │   └── docs/adr/                  ← context-specific decisions
     └── billing/
-        ├── CONTEXT.md
+        ├── GLOSSARY.md
         └── docs/adr/
 ```
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+Use the terms defined in `GLOSSARY.md` for issue titles, refactor proposals, hypotheses, and test names. Respect each term's `_Avoid_` list.
 
-If the concept you need isn't in the glossary yet, that's a signal: either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
+If a concept is missing, check whether an existing term fits. If the glossary needs a new term, note it for `/domain-modeling`.
+
+Keep glossary entries to one or two sentences defining project-specific domain terms, with `_Avoid_` synonyms where useful. Keep implementation details in specs or ADRs.
+
+## Record decisions sparingly
+
+Create an ADR only when a decision is hard to reverse, surprising without context, and the result of a real trade-off.
+
+Use sequential filenames such as `0001-slug.md` and `0002-slug.md`. Increment the highest existing number. Record the context, decision, and reason in one to three sentences. Add sections only when they help explain the decision.
 
 ## Flag ADR conflicts
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
+If your proposal contradicts an ADR, name the conflict and explain why you recommend revisiting the decision. For example:
 
-> _Contradicts ADR-0007 (event-sourced orders), but worth reopening because…_
+> This proposal contradicts ADR-0007 on event-sourced orders. Explain here why the decision needs review.
