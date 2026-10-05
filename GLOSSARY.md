@@ -1,4 +1,4 @@
-# CIV Data Hackathon
+# CIV data hackathon
 
 This context covers the participant analysis workflow and the organizer evaluation workflow for
 the CIV 2026 data hackathon.
@@ -25,7 +25,7 @@ of the participant analysis contract.
 _Avoid_: Participant contract, submission artifact
 
 **Run manifest**:
-The deterministic factual spine that relates one analysis run's source, specification, events,
+A deterministic record that links one analysis run's source, specification, events,
 evidence, metrics, resources, and submission provenance.
 _Avoid_: Log, telemetry report
 

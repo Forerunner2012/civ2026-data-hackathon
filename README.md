@@ -9,7 +9,7 @@ and organizer operations for the CIV 2026 Data Detective hackathon.
   unpacked kit. It is the shortest path from environment check to a submission bundle.
 - **Using an assembled offline kit:** open `site/index.html`, then read the kit's `README.md` for
   platform, viewer, fallback, and container details.
-- **Developing this repository:** read [CONTEXT.md](CONTEXT.md) and
+- **Developing this repository:** read [GLOSSARY.md](GLOSSARY.md) and
   [docs/agents/domain.md](docs/agents/domain.md), then use `uv sync` and `uv run pytest`.
 - **Working on an issue:** follow [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
 
@@ -25,5 +25,4 @@ and organizer operations for the CIV 2026 Data Detective hackathon.
 | Website development | [handoff-site/README.md](handoff-site/README.md) |
 
 Large viewer binaries, recordings, containers, generated bundles, and runtime evidence are release
-inputs. They are assembled into the attendee kit and verified by hash; they are not committed to
-this repository.
+inputs. Kit assembly includes these inputs and verifies their hashes. Keep them out of Git.
