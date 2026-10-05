@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -43,10 +44,12 @@ def _duration_ns(value: object, context: str) -> int:
                 amount = float(text[: -len(suffix)])
             except ValueError as error:
                 raise CivError(f"{context} has an invalid duration: {text}") from error
-            duration = int(amount * units[suffix])
-            if duration < 0:
+            scaled = amount * units[suffix]
+            if not math.isfinite(amount) or not math.isfinite(scaled):
+                raise CivError(f"{context} must be a finite duration in nanoseconds: {text}")
+            if amount < 0:
                 raise CivError(f"{context} must not be negative")
-            return duration
+            return int(scaled)
     raise CivError(f"{context} must use ns, ms, or s units")
 
 
