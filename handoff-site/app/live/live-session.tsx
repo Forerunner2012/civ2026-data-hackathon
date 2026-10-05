@@ -40,13 +40,21 @@ export function LiveSession({
   useEffect(() => {
     let active = true;
     async function refresh() {
-      const response = await fetch(apiPath, { cache: "no-store" });
-      if (response.ok && active) {
+      try {
+        const response = await fetch(apiPath, { cache: "no-store" });
+        if (!response.ok || !active) {
+          return;
+        }
         const next = (await response.json()) as LivePublicSnapshot;
+        if (!active) {
+          return;
+        }
         setSnapshot(next);
         if (controlledNow) {
           setNowMs(next.nowMs);
         }
+      } catch {
+        // Keep the last valid guidance until a later poll succeeds.
       }
     }
     void refresh();
