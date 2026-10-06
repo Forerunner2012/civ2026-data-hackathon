@@ -8,7 +8,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Literal, cast
 
@@ -22,6 +22,7 @@ from civ_workshop.reporting import (
     validate_submission_directory,
     write_canonical_submission_bundle,
 )
+from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 TOKYO_CUTOFF = datetime.fromisoformat("2026-09-03T12:30:00+09:00").astimezone(timezone.utc)
 MAX_FORM_RESPONSE_BYTES = 16 * 1024
@@ -110,15 +111,10 @@ def _safe_archive_infos(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     total_size = 0
     for info in infos:
         name = info.filename
-        candidate = PurePosixPath(name)
-        if (
-            not name
-            or "\\" in name
-            or candidate.is_absolute()
-            or ".." in candidate.parts
-            or name.endswith("/")
-        ):
-            raise CivError(f"submission bundle contains an unsafe artifact path: {name}")
+        try:
+            safe_archive_path(name, "submission bundle artifact path")
+        except CivError as error:
+            raise CivError(f"submission bundle contains an unsafe artifact path: {name}") from error
         if info.flag_bits & 0x1:
             raise CivError(f"submission bundle artifact is encrypted: {name}")
         if (info.external_attr >> 16) & 0o170000 == 0o120000:
@@ -163,9 +159,12 @@ def _extract_validated_submission(bundle_path: Path, extracted: Path) -> None:
         with zipfile.ZipFile(bundle_path) as archive:
             infos = _safe_archive_infos(archive)
             names = [info.filename for info in infos]
-            for info in infos:
+            destinations = [
+                contained_archive_path(extracted, info.filename, "submission bundle artifact path")
+                for info in infos
+            ]
+            for info, destination in zip(infos, destinations, strict=True):
                 name = info.filename
-                destination = extracted.joinpath(*PurePosixPath(name).parts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(info) as source, destination.open("xb") as target:
                     shutil.copyfileobj(source, target, length=1024 * 1024)
@@ -427,6 +426,17 @@ class IntakeLedger:
             raise CivError(
                 f"delivery id exceeds {MAX_DELIVERY_ID_CHARACTERS} characters"
             )
+        # Reject unsafe names before creating ledger or snapshot artifacts. The
+        # immutable snapshot is validated again before a receipt is recorded.
+        try:
+            if bundle_path.stat().st_size > MAX_SUBMISSION_BUNDLE_BYTES:
+                raise CivError(
+                    f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes"
+                )
+            with zipfile.ZipFile(bundle_path) as archive:
+                _safe_archive_infos(archive)
+        except (OSError, zipfile.BadZipFile, RuntimeError) as error:
+            raise CivError(f"cannot read submission bundle: {error}") from error
         with self._connection() as connection:
             duplicate = connection.execute(
                 "SELECT 1 FROM receipts WHERE delivery_id = ?", (normalized_delivery_id,)
@@ -529,7 +539,10 @@ def import_form_response(response_path: Path, ledger_root: Path) -> IntakeReceip
         raise CivError(f"cannot inspect form response: {error}") from error
     response = read_json_file(response_path, "form response")
     bundle_value = _bounded_string(response.get("bundle"), "form response bundle", 255)
-    relative_bundle = PurePosixPath(bundle_value)
+    try:
+        relative_bundle = safe_archive_path(bundle_value, "form response bundle")
+    except CivError as error:
+        raise CivError("form response bundle must name one sibling .zip file") from error
     if (
         "\\" in bundle_value
         or relative_bundle.is_absolute()

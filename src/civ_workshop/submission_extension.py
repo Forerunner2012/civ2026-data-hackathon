@@ -3,7 +3,7 @@ from __future__ import annotations
 import mimetypes
 import re
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from civ_workshop.artifacts import file_sha256, read_json_file, require_mapping, require_string
 from civ_workshop.errors import CivError
@@ -91,18 +91,42 @@ class ExtensionEntry:
 
 
 def safe_archive_path(value: str, context: str) -> PurePosixPath:
+    """Require canonical relative POSIX names portable to Windows filesystems.
+
+    Reject Windows drives, streams, device names, trailing dots/spaces, control
+    characters, and reserved punctuation on every host, before filesystem I/O.
+    """
     candidate = PurePosixPath(value)
+    windows = PureWindowsPath(value)
+    reserved = {"con", "prn", "aux", "nul", "conin$", "conout$"}
+    reserved.update(f"{prefix}{number}" for prefix in ("com", "lpt") for number in "123456789¹²³")
     if (
         not value
+        or not candidate.parts
         or "\\" in value
         or candidate.is_absolute()
+        or windows.drive
         or ".." in candidate.parts
-        or "." in candidate.parts
-        or value.endswith("/")
         or candidate.as_posix() != value
+        or any(
+            part.endswith((".", " "))
+            or part.split(".")[0].rstrip(" ").casefold() in reserved
+            or any(ord(character) < 32 or character in '<>:"|?*' for character in part)
+            for part in candidate.parts
+        )
     ):
-        raise CivError(f"{context} must be a contained archive-relative POSIX path")
+        raise CivError(f"{context} must be a contained archive-relative POSIX path: {value}")
     return candidate
+
+
+def contained_archive_path(root: Path, value: str, context: str) -> Path:
+    candidate = safe_archive_path(value, context)
+    destination = root.joinpath(*candidate.parts)
+    try:
+        destination.resolve().relative_to(root.resolve())
+    except ValueError as error:
+        raise CivError(f"{context} resolves outside its intended root: {value}") from error
+    return destination
 
 
 def media_type_for(path: Path) -> str:
@@ -203,7 +227,7 @@ def load_extension_entries(working: Path) -> list[ExtensionEntry]:
         media_type = require_string(
             entry.get("media_type"), f"submission extension entry {index} media type"
         )
-        payload = working.joinpath(*archive_path.parts)
+        payload = contained_archive_path(working, relative, "submission extension payload")
         if payload.is_symlink():
             raise CivError(f"submission extension payload must not be a symlink: {relative}")
         if not payload.is_file():

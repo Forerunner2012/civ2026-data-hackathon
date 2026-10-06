@@ -833,3 +833,63 @@ def test_report_rejects_corrupt_bundle_artifacts(
     assert result.returncode == 2
     assert expected_error in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("duration", ["NaNns", "infs", "1e309s", "1e308s", "-0.1ns", "badns"])
+def test_detect_rejects_invalid_durations_before_artifacts(
+    tmp_path: Path, duration: str
+) -> None:
+    case = create_micro_case(tmp_path / "case")
+    case.spec.write_text(MICRO_SPEC.replace("before: 0.5s", f"before: {duration}"))
+    output = tmp_path / "working"
+
+    result = detect_micro_case(case, output)
+
+    assert result.returncode == 2
+    assert "civ:" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("field", ["before_ns", "after_ns"])
+@pytest.mark.parametrize("value", [True, False, -1, None, 0.5, "0"])
+def test_clip_rejects_invalid_windows_without_mutation(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    case = create_micro_case(tmp_path / "case")
+    working = tmp_path / "working"
+    prepare_scored_submission(case, working)
+    manifest_path = working / "run-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    if value is None:
+        del manifest["evidence"][field]
+    else:
+        manifest["evidence"][field] = value
+    manifest_path.write_text(json.dumps(manifest))
+    before = {p.relative_to(working): p.read_bytes() for p in working.rglob("*") if p.is_file()}
+
+    result = run_civ(tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)])
+
+    assert result.returncode == 2
+    assert "evidence window" in result.stderr
+    assert "Traceback" not in result.stderr
+    after = {p.relative_to(working): p.read_bytes() for p in working.rglob("*") if p.is_file()}
+    assert after == before
+
+
+@pytest.mark.parametrize("window", [0, 500_000_000])
+def test_clip_preserves_valid_window_intervals(tmp_path: Path, window: int) -> None:
+    case = create_micro_case(tmp_path / "case")
+    working = tmp_path / "working"
+    assert detect_micro_case(case, working).returncode == 0
+    manifest_path = working / "run-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["evidence"].update(before_ns=window, after_ns=window)
+    manifest_path.write_text(json.dumps(manifest))
+
+    result = run_civ(tmp_path, ["clip", str(working / "events.jsonl"), str(case.bag)])
+
+    assert result.returncode == 0, result.stderr
+    clip = json.loads(manifest_path.read_text())["clips"][0]
+    assert clip["requested_start_ns"] == 1_000_000_000 - window
+    assert clip["requested_end_ns"] == 2_000_000_000 + window

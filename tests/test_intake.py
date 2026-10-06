@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
@@ -477,3 +478,114 @@ def test_concurrent_duplicate_delivery_is_atomic_and_corrupt_bundle_is_repaired(
     )
     assert len(ledger.receipts()) == 1
     assert ledger.scorer_input("team-atomic").read_bytes() == bundle.read_bytes()
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "C:/audit-outside/file.txt", "C:audit-outside.txt", "file.txt:stream",
+        "nested/file.txt:stream", "//server/share/file.txt", "nested\\file.txt",
+        "../file.txt", "/file.txt", "nested/CON.txt", "nested/NUL",
+        "nested/COM1.txt", "nested/LPT9.txt", "nested/file.", "nested/file ",
+        "nested//file.txt", "nested/./file.txt",
+    ],
+)
+def test_unsafe_archive_paths_fail_before_extraction(tmp_path: Path, name: str) -> None:
+    if os.name == "nt" and name.startswith("C:"):
+        name = (
+            (tmp_path / "sentinel.txt").as_posix()
+            if "/" in name else f"{tmp_path.drive}sentinel.txt"
+        )
+    bundle = tmp_path / "unsafe.zip"
+    extracted = tmp_path / "extracted"
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("valid/nested.txt", b"must not be extracted")
+        archive.writestr(name, b"rejected")
+
+    with pytest.raises(CivError, match="unsafe artifact path"):
+        intake_module._extract_validated_submission(bundle, extracted)
+
+    assert not extracted.exists()
+    assert sentinel.read_bytes() == b"unchanged"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows filesystem")
+def test_native_windows_drive_paths_do_not_modify_sibling_sentinel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    names = [sentinel.as_posix(), f"{tmp_path.drive}sentinel.txt", "sentinel.txt:stream"]
+    for index, name in enumerate(names):
+        bundle = tmp_path / f"unsafe-{index}.zip"
+        with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.writestr(name, b"rejected")
+        with pytest.raises(CivError, match="unsafe artifact path"):
+            intake_module._extract_validated_submission(bundle, tmp_path / "extracted")
+        assert sentinel.read_bytes() == b"unchanged"
+        assert not (tmp_path / "extracted").exists()
+
+
+def test_drive_path_rejection_creates_no_intake_artifacts(tmp_path: Path) -> None:
+    bundle = tmp_path / "unsafe.zip"
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("C:sentinel.txt", b"rejected")
+    root = tmp_path / "intake"
+    with pytest.raises(CivError, match="unsafe artifact path"):
+        IntakeLedger(root).accept_local(
+            identity="team", received_at="2026-09-03T03:29:00Z",
+            submitted_sha256=sha256(bundle.read_bytes()).hexdigest(),
+            bundle_path=bundle, delivery_id="unsafe",
+        )
+    assert not root.exists()
+
+
+def test_windows_join_semantics_demonstrate_drive_escape() -> None:
+    from pathlib import PurePosixPath, PureWindowsPath
+
+    root = PureWindowsPath("D:/workspace/extracted")
+    assert root.joinpath(*PurePosixPath("C:/workspace/sentinel.txt").parts) == PureWindowsPath(
+        "C:workspace/sentinel.txt"
+    )
+    assert root.joinpath(*PurePosixPath("D:sentinel.txt").parts).drive == "D:"
+
+
+def test_extraction_rejects_existing_parent_symlink_before_writing(tmp_path: Path) -> None:
+    extracted = tmp_path / "extracted"
+    extracted.mkdir()
+    sibling = tmp_path / "sibling"
+    sibling.mkdir()
+    sentinel = sibling / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    try:
+        (extracted / "linked").symlink_to(sibling, target_is_directory=True)
+    except OSError:
+        pytest.skip("host does not permit directory symlinks")
+    bundle = tmp_path / "unsafe.zip"
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("first.txt", b"must not be extracted")
+        archive.writestr("linked/sentinel.txt", b"rejected")
+    with pytest.raises(CivError, match="outside its intended root"):
+        intake_module._extract_validated_submission(bundle, extracted)
+    assert sentinel.read_bytes() == b"unchanged"
+    assert not (extracted / "first.txt").exists()
+
+
+@pytest.mark.parametrize(
+    "module_name", ["kit_assembly", "kit_inventory", "release_freeze", "workstation_qualification"]
+)
+@pytest.mark.parametrize(
+    "name", ["C:/file.txt", "C:file.txt", "nested/file:stream", "nested/NUL.txt"]
+)
+def test_organizer_targets_use_portable_path_rules(module_name: str, name: str) -> None:
+    import importlib
+
+    module = importlib.import_module(f"civ_workshop.{module_name}")
+    with pytest.raises(CivError, match="contained archive-relative POSIX path"):
+        if module_name == "workstation_qualification":
+            module._target(name, "participant recovery path")
+        else:
+            module._target(name)

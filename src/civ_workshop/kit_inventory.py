@@ -8,7 +8,7 @@ import sys
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from hashlib import sha256
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
@@ -16,6 +16,7 @@ from civ_workshop.camera_context import SET_CONTRACT as CAMERA_CONTEXT_SET_CONTR
 from civ_workshop.contracts import require_closed_fields
 from civ_workshop.data_products import audit_participant_set
 from civ_workshop.errors import CivError
+from civ_workshop.submission_extension import safe_archive_path
 
 CONTRACT = "civ.participant-kit-inventory/v1"
 PHASE4_RELEASE = "civ-2026-phase4-participant-kit-v1"
@@ -162,9 +163,7 @@ def _positive_integer(value: object, context: str) -> int:
 
 
 def _target(path: str) -> str:
-    candidate = PurePosixPath(path)
-    if candidate.is_absolute() or ".." in candidate.parts or str(candidate) != path:
-        raise CivError(f"kit target must be a normalized relative path: {path}")
+    safe_archive_path(path, 'kit target')
     return path
 
 
