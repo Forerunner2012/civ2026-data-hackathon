@@ -133,9 +133,10 @@ def _copy_file(source: Path, target: Path) -> None:
     shutil.copyfile(source, target)
 
 
-def _copy_tree(source: Path, target: Path) -> None:
+def _tree_inputs(source: Path, output: Path, prefix: str) -> list[tuple[Path, Path]]:
     if not source.is_dir():
         raise CivError(f"assembly input directory does not exist: {source.name}")
+    inputs: list[tuple[Path, Path]] = []
     for path in sorted(item for item in source.rglob("*") if item.is_file()):
         relative = path.relative_to(source)
         if any(
@@ -145,7 +146,11 @@ def _copy_tree(source: Path, target: Path) -> None:
             continue
         if path.suffix in {".pyc", ".pyo"}:
             continue
-        _copy_file(path, target / relative)
+        target = contained_archive_path(
+            output, f"{prefix}/{relative.as_posix()}", "assembly target"
+        )
+        inputs.append((path, target))
+    return inputs
 
 
 def _scalar(value: object) -> str:
@@ -429,10 +434,6 @@ def _copy_participant_runtime(repository: Path, target: Path) -> None:
         encoding="utf-8",
         newline="\n",
     )
-    _copy_tree(
-        package_source / "_templates" / "submission",
-        package_target / "_templates" / "submission",
-    )
 
 
 def _context_inputs(
@@ -550,6 +551,19 @@ def assemble_kit(
         raise CivError("fallback pack does not match the accepted product set")
     viewer_by_name = {path.name: path for path in viewer_paths}
     context_inputs = _context_inputs(inventory, context_root)
+    tree_inputs = [
+        entry
+        for source, prefix in (
+            (site_root, "site"),
+            (fallback_root, "fallback"),
+            (cache_root, "offline/uv-cache"),
+            (
+                repository / "src" / "civ_workshop" / "_templates" / "submission",
+                "runtime/source/src/civ_workshop/_templates/submission",
+            ),
+        )
+        for entry in _tree_inputs(source, output, prefix)
+    ]
     output.mkdir(parents=True)
     product_set = inventory["product_set"]
     assert isinstance(product_set, dict)
@@ -598,9 +612,8 @@ def assemble_kit(
         inventory_path.parent / "checksums" / "SHA256SUMS",
         output / "checksums" / "SHA256SUMS",
     )
-    _copy_tree(site_root, output / "site")
-    _copy_tree(fallback_root, output / "fallback")
-    _copy_tree(cache_root, output / "offline" / "uv-cache")
+    for tree_source, tree_target in tree_inputs:
+        _copy_file(tree_source, tree_target)
     _copy_file(
         container_archive,
         output / "container" / "civ-phase4-attendee-candidate-558e85c.tar",

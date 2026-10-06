@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -135,9 +136,10 @@ def test_fallback_refuses_changed_product(tmp_path: Path, monkeypatch: pytest.Mo
         build_fallback_pack(set_path, data_root, tmp_path / "fallback")
 
 
-def test_assembly_copies_closed_inputs_and_detects_changes(
+@pytest.fixture
+def assembly_inputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+) -> dict[str, object]:
     data_root = tmp_path / "data"
     data_root.mkdir()
     product = data_root / "route.mcap"
@@ -195,17 +197,47 @@ def test_assembly_copies_closed_inputs_and_detects_changes(
     container.write_bytes(b"container")
     monkeypatch.setattr(assembly_module, "audit_kit_inventory", lambda _: {"valid": True})
 
-    result = assemble_kit(
-        inventory,
-        REPOSITORY,
-        data_root,
-        [viewer],
-        site,
-        fallback,
-        cache,
-        container,
-        tmp_path / "assembled",
-    )
+    return {
+        "inventory_path": inventory,
+        "repository": REPOSITORY,
+        "data_root": data_root,
+        "viewer_paths": [viewer],
+        "site_root": site,
+        "fallback_root": fallback,
+        "cache_root": cache,
+        "container_archive": container,
+        "output": tmp_path / "assembled",
+    }
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires a POSIX filename invalid on Windows")
+@pytest.mark.parametrize("tree", ["site_root", "fallback_root", "cache_root", "templates"])
+def test_assembly_rejects_invalid_later_tree_entry_before_output(
+    tmp_path: Path, assembly_inputs: dict[str, object], tree: str
+) -> None:
+    if tree == "templates":
+        repository = tmp_path / "repository"
+        assembly_inputs["repository"] = repository
+        source = repository / "src" / "civ_workshop" / "_templates" / "submission"
+        source.mkdir(parents=True)
+    else:
+        source = assembly_inputs[tree]
+    output = assembly_inputs["output"]
+    assert isinstance(source, Path)
+    assert isinstance(output, Path)
+    (source / "aaa-valid.txt").write_bytes(b"valid earlier entry")
+    (source / "zzz-invalid.txt:stream").write_bytes(b"invalid later entry")
+
+    with pytest.raises(CivError, match="assembly target.*archive-relative POSIX path"):
+        assemble_kit(**assembly_inputs)
+
+    assert not output.exists()
+
+
+def test_assembly_copies_closed_inputs_and_detects_changes(
+    tmp_path: Path, assembly_inputs: dict[str, object]
+) -> None:
+    result = assemble_kit(**assembly_inputs)
 
     assert result["valid"] is True
     assert audit_assembly(tmp_path / "assembled" / "attendee-kit-assembly.json") == result
