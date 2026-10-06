@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Literal, TypedDict
 
 import pytest
 from mcap.writer import CompressionType, Writer
@@ -19,6 +20,31 @@ from tests.helpers import create_micro_case
 from tests.test_participant_runtime import participant_workflow
 
 REPOSITORY = Path(__file__).parents[1]
+
+
+class _OptionalAssemblyInputs(TypedDict, total=False):
+    context_root: Path | None
+
+
+class _AssemblyInputs(_OptionalAssemblyInputs):
+    inventory_path: Path
+    repository: Path
+    data_root: Path
+    viewer_paths: list[Path]
+    site_root: Path
+    fallback_root: Path
+    cache_root: Path
+    container_archive: Path
+    output: Path
+
+
+class _SignalProductSet(TypedDict):
+    products: list[dict[str, object]]
+
+
+class _CameraContextInventory(TypedDict):
+    context_packs: list[dict[str, object]]
+    product_set: _SignalProductSet
 
 
 def test_participant_runtime_exposes_only_the_public_command_path() -> None:
@@ -141,7 +167,7 @@ def test_fallback_refuses_changed_product(tmp_path: Path, monkeypatch: pytest.Mo
 @pytest.fixture
 def assembly_inputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> dict[str, object]:
+) -> _AssemblyInputs:
     data_root = tmp_path / "data"
     data_root.mkdir()
     product = data_root / "route.mcap"
@@ -215,7 +241,9 @@ def assembly_inputs(
 @pytest.mark.skipif(os.name == "nt", reason="requires a POSIX filename invalid on Windows")
 @pytest.mark.parametrize("tree", ["site_root", "fallback_root", "cache_root", "templates"])
 def test_assembly_rejects_invalid_later_tree_entry_before_output(
-    tmp_path: Path, assembly_inputs: dict[str, object], tree: str
+    tmp_path: Path,
+    assembly_inputs: _AssemblyInputs,
+    tree: Literal["site_root", "fallback_root", "cache_root", "templates"],
 ) -> None:
     if tree == "templates":
         repository = tmp_path / "repository"
@@ -237,7 +265,7 @@ def test_assembly_rejects_invalid_later_tree_entry_before_output(
 
 
 def test_assembly_copies_closed_inputs_and_detects_changes(
-    tmp_path: Path, assembly_inputs: dict[str, object]
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
 ) -> None:
     result = assemble_kit(**assembly_inputs)
 
@@ -300,7 +328,7 @@ def test_static_export_leakage_gate_rejects_private_route(tmp_path: Path) -> Non
 
 def _camera_context_fixture(
     tmp_path: Path, invalid_field: str | None = None, signal: dict[str, object] | None = None
-) -> tuple[Path, dict[str, object]]:
+) -> tuple[Path, _CameraContextInventory]:
     context_root = tmp_path / "context-source"
     products: list[dict[str, object]] = []
     signals: list[dict[str, object]] = []
@@ -364,7 +392,7 @@ def _camera_context_fixture(
             break
         context_set["required_disk_bytes"] = required
     set_path.write_text(serialized, encoding="utf-8", newline="\n")
-    inventory: dict[str, object] = {
+    inventory: _CameraContextInventory = {
         "context_packs": [
             {
                 "approval": {"id": "approval", "sha256": "a" * 64},
@@ -395,7 +423,7 @@ def test_camera_context_inputs_require_exact_signal_bindings(tmp_path: Path) -> 
 @pytest.mark.skipif(os.name == "nt", reason="requires a POSIX filename invalid on Windows")
 @pytest.mark.parametrize("invalid_field", ["camera_context_product", "manifest"])
 def test_assembly_rejects_invalid_later_context_entry_before_output(
-    tmp_path: Path, assembly_inputs: dict[str, object], invalid_field: str
+    tmp_path: Path, assembly_inputs: _AssemblyInputs, invalid_field: str
 ) -> None:
     inventory_path = assembly_inputs["inventory_path"]
     output = assembly_inputs["output"]

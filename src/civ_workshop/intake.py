@@ -110,7 +110,8 @@ def _safe_archive_infos(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
         raise CivError("submission bundle contains case-colliding artifact names")
     total_size = 0
     for info in infos:
-        name = info.filename
+        # ZipInfo.filename can normalize backslashes on Windows before validation.
+        name = info.orig_filename
         try:
             safe_archive_path(name, "submission bundle artifact path")
         except CivError as error:
