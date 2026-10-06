@@ -59,15 +59,17 @@ def participant_workflow(
 
 
 @pytest.mark.parametrize("command", PUBLIC_COMMANDS)
-def test_public_subcommand_arguments_match(command: str) -> None:
+def test_public_subcommand_arguments_match(
+    command: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    help_output = []
     for parser in (organizer_parser(), participant_parser()):
         # Help uses SystemExit before any dispatch, preserving argparse semantics.
         with pytest.raises(SystemExit) as result:
             parser.parse_args([command, "--help"])
         assert result.value.code == 0
-    organizer = organizer_parser()._subparsers._group_actions[0].choices[command]
-    participant = participant_parser()._subparsers._group_actions[0].choices[command]
-    assert organizer.format_help() == participant.format_help()
+        help_output.append(capsys.readouterr().out)
+    assert help_output[0] == help_output[1]
 
 
 def test_both_entry_points_reproduce_complete_workflow(tmp_path: Path) -> None:
