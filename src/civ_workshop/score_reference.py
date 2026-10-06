@@ -91,6 +91,48 @@ def _validate_order_and_overlap(records: list[dict[str, object]], context: str) 
             raise CivError(f"label pack {context} must not overlap")
 
 
+def parse_reference_intervals(
+    document: Mapping[str, object], *, context_name: str, labels_context: str, gaps_context: str
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    labels: list[dict[str, object]] = []
+    label_ids: set[str] = set()
+    for index, raw_label in enumerate(_records(document.get("labels"), labels_context)):
+        context = f"label {index}"
+        _closed(raw_label, LABEL_FIELDS, context)
+        interval = interval_from_mapping(raw_label, context)
+        label_id = require_string(raw_label.get("label_id"), f"{context} label_id")
+        if label_id in label_ids:
+            raise CivError(f"{context_name} contains duplicate label_id '{label_id}'")
+        label_ids.add(label_id)
+        labels.append(
+            {"end_ns": interval.end_ns, "label_id": label_id, "start_ns": interval.start_ns}
+        )
+    _validate_order_and_overlap(labels, "labels")
+
+    gaps: list[dict[str, object]] = []
+    gap_ids: set[str] = set()
+    for index, raw_gap in enumerate(_records(document.get("data_gaps"), gaps_context)):
+        context = f"data gap {index}"
+        _closed(raw_gap, GAP_FIELDS, context)
+        interval = interval_from_mapping(raw_gap, context)
+        normalized: dict[str, object] = {
+            "end_ns": interval.end_ns,
+            "start_ns": interval.start_ns,
+        }
+        if "gap_id" in raw_gap:
+            gap_id = require_string(raw_gap.get("gap_id"), f"{context} gap_id")
+            if gap_id in gap_ids:
+                raise CivError(f"{context_name} contains duplicate gap_id '{gap_id}'")
+            gap_ids.add(gap_id)
+            normalized["gap_id"] = gap_id
+        if "reason" in raw_gap:
+            normalized["reason"] = require_string(raw_gap.get("reason"), f"{context} reason")
+        gaps.append(normalized)
+    _validate_order_and_overlap(gaps, "data_gaps")
+
+    return labels, gaps
+
+
 def validate_score_reference(document: Mapping[str, object]) -> dict[str, Any]:
     reference = {str(key): value for key, value in document.items()}
     _closed(reference, REFERENCE_FIELDS, "scoring reference")
@@ -103,41 +145,10 @@ def validate_score_reference(document: Mapping[str, object]) -> dict[str, Any]:
         reference.get("source_sha256"), "scoring reference source_sha256"
     )
 
-    labels: list[dict[str, object]] = []
-    label_ids: set[str] = set()
-    for index, raw_label in enumerate(_records(reference.get("labels"), "scoring labels")):
-        context = f"label {index}"
-        _closed(raw_label, LABEL_FIELDS, context)
-        interval = interval_from_mapping(raw_label, context)
-        label_id = require_string(raw_label.get("label_id"), f"{context} label_id")
-        if label_id in label_ids:
-            raise CivError(f"scoring reference contains duplicate label_id '{label_id}'")
-        label_ids.add(label_id)
-        labels.append(
-            {"end_ns": interval.end_ns, "label_id": label_id, "start_ns": interval.start_ns}
-        )
-    _validate_order_and_overlap(labels, "labels")
-
-    gaps: list[dict[str, object]] = []
-    gap_ids: set[str] = set()
-    for index, raw_gap in enumerate(_records(reference.get("data_gaps"), "scoring data gaps")):
-        context = f"data gap {index}"
-        _closed(raw_gap, GAP_FIELDS, context)
-        interval = interval_from_mapping(raw_gap, context)
-        normalized: dict[str, object] = {
-            "end_ns": interval.end_ns,
-            "start_ns": interval.start_ns,
-        }
-        if "gap_id" in raw_gap:
-            gap_id = require_string(raw_gap.get("gap_id"), f"{context} gap_id")
-            if gap_id in gap_ids:
-                raise CivError(f"scoring reference contains duplicate gap_id '{gap_id}'")
-            gap_ids.add(gap_id)
-            normalized["gap_id"] = gap_id
-        if "reason" in raw_gap:
-            normalized["reason"] = require_string(raw_gap.get("reason"), f"{context} reason")
-        gaps.append(normalized)
-    _validate_order_and_overlap(gaps, "data_gaps")
+    labels, gaps = parse_reference_intervals(
+        reference, context_name="scoring reference",
+        labels_context="scoring labels", gaps_context="scoring data gaps",
+    )
 
     normalized_reference: dict[str, Any] = {
         "contract": SCORE_REFERENCE_CONTRACT,
