@@ -13,6 +13,8 @@ from mcap.reader import make_reader
 from mcap.writer import CompressionType, Writer
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
+from civ_workshop.artifacts import require_string as _string
 from civ_workshop.errors import CivError
 
 RECIPE_CONTRACT = "civ.camera-context-recipe/v1"
@@ -28,18 +30,6 @@ EXPECTED_ROLES = Counter(
         ("reims", "development"): 5,
     }
 )
-
-
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
-def _string(value: object, context: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise CivError(f"{context} must be a non-empty string")
-    return value.strip()
 
 
 def _digest(value: object, context: str) -> str:
