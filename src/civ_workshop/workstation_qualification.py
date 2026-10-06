@@ -7,9 +7,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import audit_assembly
 from civ_workshop.submission_extension import safe_archive_path
@@ -179,12 +179,6 @@ ACCEPTED_RELEASES: Mapping[str, AcceptedRelease] = {
         release_id=UNIVERSAL_RELEASE_ID,
     ),
 }
-
-
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
 
 
 def _sequence(value: object, context: str) -> list[object]:
