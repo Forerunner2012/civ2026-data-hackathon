@@ -284,7 +284,9 @@ def test_static_export_leakage_gate_rejects_private_route(tmp_path: Path) -> Non
         assembly_module._verify_static_site(site)
 
 
-def test_camera_context_inputs_require_exact_signal_bindings(tmp_path: Path) -> None:
+def _camera_context_fixture(
+    tmp_path: Path, invalid_field: str | None = None, signal: dict[str, object] | None = None
+) -> tuple[Path, dict[str, object]]:
     context_root = tmp_path / "context-source"
     products: list[dict[str, object]] = []
     signals: list[dict[str, object]] = []
@@ -294,15 +296,25 @@ def test_camera_context_inputs_require_exact_signal_bindings(tmp_path: Path) -> 
         source_id = f"source-{index}"
         signal_name = f"{source_id}-signals.mcap"
         signal_sha256 = f"{index + 1:064x}"
-        signals.append(
-            {
-                "name": f"data/{signal_name}",
-                "sha256": signal_sha256,
-                "source_id": source_id,
-            }
-        )
+        if signal is None:
+            signals.append(
+                {
+                    "name": f"data/{signal_name}",
+                    "sha256": signal_sha256,
+                    "source_id": source_id,
+                }
+            )
+        else:
+            signal_name = Path(str(signal["name"])).name
+            signal_sha256 = str(signal["sha256"])
+            signals.append(dict(signal, source_id=source_id))
         product_name = f"{source_id}-camera-context.mcap"
         manifest_name = f"{product_name}.manifest.json"
+        if index == 12:
+            if invalid_field == "camera_context_product":
+                product_name = "bad.txt:stream"
+            elif invalid_field == "manifest":
+                manifest_name = "bad.txt:stream"
         directory = context_root / "participant" / dataset
         directory.mkdir(parents=True, exist_ok=True)
         product_path = directory / product_name
@@ -350,13 +362,43 @@ def test_camera_context_inputs_require_exact_signal_bindings(tmp_path: Path) -> 
         "product_set": {"products": signals},
     }
 
+    return context_root, inventory
+
+
+def test_camera_context_inputs_require_exact_signal_bindings(tmp_path: Path) -> None:
+    context_root, inventory = _camera_context_fixture(tmp_path)
+    products = inventory["product_set"]["products"]
+
     inputs = assembly_module._context_inputs(inventory, context_root)
 
     assert len(inputs) == 27
     assert inputs[0][1] == "context/camera-context-products.json"
-    signals[0]["sha256"] = "f" * 64
+    products[0]["sha256"] = "f" * 64
     with pytest.raises(CivError, match="signal binding"):
         assembly_module._context_inputs(inventory, context_root)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires a POSIX filename invalid on Windows")
+@pytest.mark.parametrize("invalid_field", ["camera_context_product", "manifest"])
+def test_assembly_rejects_invalid_later_context_entry_before_output(
+    tmp_path: Path, assembly_inputs: dict[str, object], invalid_field: str
+) -> None:
+    inventory_path = assembly_inputs["inventory_path"]
+    output = assembly_inputs["output"]
+    assert isinstance(inventory_path, Path)
+    assert isinstance(output, Path)
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    signal = inventory["product_set"]["products"][0]
+    context_root, context_inventory = _camera_context_fixture(tmp_path, invalid_field, signal)
+    inventory["context_packs"] = context_inventory["context_packs"]
+    inventory["product_set"]["products"] = context_inventory["product_set"]["products"]
+    inventory_path.write_text(canonical_json(inventory), encoding="utf-8")
+    assembly_inputs["context_root"] = context_root
+
+    with pytest.raises(CivError, match="assembly target.*archive-relative POSIX path"):
+        assemble_kit(**assembly_inputs)
+
+    assert not output.exists()
 
 
 @pytest.mark.parametrize(

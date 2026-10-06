@@ -509,6 +509,7 @@ def _context_inputs(
             name = str(raw.get(name_field))
             if Path(name).name != name:
                 raise CivError("assembly camera-context name is not a basename")
+            target_name = _target(f"context/{dataset}/{name}")
             source = context_root / "participant" / dataset / name
             digest = str(raw.get(hash_field))
             expected_bytes = raw.get(byte_field)
@@ -519,7 +520,7 @@ def _context_inputs(
             ):
                 raise CivError(f"assembly camera-context input does not match: {name}")
             observed_bytes += source.stat().st_size
-            inputs.append((source, f"context/{dataset}/{name}", digest))
+            inputs.append((source, target_name, digest))
     if seen != set(signals) or observed_bytes != pack.get("required_disk_bytes"):
         raise CivError("assembly camera-context membership or byte total is invalid")
     return inputs
@@ -550,7 +551,10 @@ def assemble_kit(
     if fallback_manifest.get("product_set_sha256") != ACCEPTED_PRODUCT_SET_SHA256:
         raise CivError("fallback pack does not match the accepted product set")
     viewer_by_name = {path.name: path for path in viewer_paths}
-    context_inputs = _context_inputs(inventory, context_root)
+    context_copies = [
+        (source, contained_archive_path(output, target, "assembly target"), digest)
+        for source, target, digest in _context_inputs(inventory, context_root)
+    ]
     tree_inputs = [
         entry
         for source, prefix in (
@@ -587,10 +591,10 @@ def assemble_kit(
     _copy_file(
         set_source, contained_archive_path(output, str(product_set["manifest"]), "assembly target")
     )
-    for source, target, digest in context_inputs:
-        if file_sha256(source) != digest:
-            raise CivError(f"assembly camera-context changed during copy: {source.name}")
-        _copy_file(source, contained_archive_path(output, target, "assembly target"))
+    for context_source, context_target, context_digest in context_copies:
+        if file_sha256(context_source) != context_digest:
+            raise CivError(f"assembly camera-context changed during copy: {context_source.name}")
+        _copy_file(context_source, context_target)
     for asset in inventory["tracked_assets"]:
         assert isinstance(asset, dict)
         target_name = str(asset["path"])
