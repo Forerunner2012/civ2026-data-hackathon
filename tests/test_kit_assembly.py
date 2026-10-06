@@ -15,6 +15,8 @@ from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import assemble_kit, audit_assembly, build_fallback_pack
 from civ_workshop.kit_inventory import ACCEPTED_PRODUCT_SET_SHA256
 from civ_workshop.participant_cli import build_parser as build_participant_parser
+from tests.helpers import create_micro_case
+from tests.test_participant_runtime import participant_workflow
 
 REPOSITORY = Path(__file__).parents[1]
 
@@ -268,6 +270,18 @@ def test_assembly_copies_closed_inputs_and_detects_changes(
     )
     assert help_result.returncode == 0, help_result.stderr
     assert "usage:" in help_result.stdout
+    case = create_micro_case(tmp_path / "synthetic-workflow")
+
+    def invoke(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, "-I", "-c",
+             "import sys; sys.path.insert(0, sys.argv.pop(1)); "
+             "from civ_workshop.participant_cli import main; main(sys.argv[1:])",
+             str(runtime_source / "src"), *arguments],
+            cwd=case.root, capture_output=True, text=True, check=False,
+        )
+
+    participant_workflow(case, case.root / "submission", invoke)
     (tmp_path / "assembled" / "data" / "route.mcap").write_bytes(b"tampered")
     with pytest.raises(CivError, match="does not match"):
         audit_assembly(tmp_path / "assembled" / "attendee-kit-assembly.json")
