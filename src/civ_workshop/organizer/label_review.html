@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local label review</title>
+  <style>
+    :root{font:16px/1.45 system-ui,sans-serif;color:#192737;background:#f3f6f8}
+    *{box-sizing:border-box}body{margin:0}header,main{max-width:1280px;margin:auto;padding:20px}
+    header{padding-bottom:6px}h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.05rem;margin:0 0 12px}
+    p{margin:8px 0}.muted{color:#536273;font-size:.9rem}.mono{font: .85rem ui-monospace,monospace;overflow-wrap:anywhere}
+    section,.panel,aside{background:#fff;border:1px solid #d5dde5;border-radius:8px;padding:16px}
+    section{margin:12px 0}.topbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+    label{display:block;font-weight:600;margin:8px 0}input,select,textarea{display:block;width:100%;padding:8px;margin-top:4px;border:1px solid #9eacba;border-radius:5px;font:inherit}
+    input[type=checkbox]{display:inline;width:auto;margin-right:7px}label.check{display:flex;align-items:center;font-weight:500}
+    textarea{min-height:76px;resize:vertical}button{background:#e9f0f7;border:1px solid #9db5cb;border-radius:5px;padding:8px 12px;color:#173d5e;font:inherit;cursor:pointer}
+    button.primary{background:#174b75;color:#fff;border-color:#174b75}button.danger{background:#fff1ee;color:#842e24;border-color:#d2a39d}
+    button:disabled{opacity:.5;cursor:default}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .workspace{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:12px;align-items:start}
+    aside{position:sticky;top:12px}.candidate-list{display:grid;gap:6px;max-height:70vh;overflow:auto}
+    .candidate-list button{text-align:left;display:flex;justify-content:space-between;gap:8px}
+    .candidate-list button.active{background:#174b75;color:#fff}.status{font-size:.82rem;opacity:.85}
+    .review-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr);gap:12px}
+    .evidence{display:grid;grid-template-columns:1fr;gap:10px}.camera-box{min-height:190px;background:#eef2f5;display:grid;place-items:center;border-radius:5px;overflow:hidden}
+    .camera-box img{display:block;max-width:100%;max-height:360px}.camera-box span{padding:16px;text-align:center;color:#536273}
+    input[type=range]{padding:0}.signal-box{height:190px;border:1px solid #e0e6eb;border-radius:5px;overflow:hidden}
+    .signal-box svg{width:100%;height:100%}.signal-name{font-size:12px;fill:#435366}.gate{padding:10px;background:#edf4fa;border-radius:5px;min-height:38px}
+    .gate.blocked{background:#fff0ec;color:#842e24}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    details pre{max-height:320px;overflow:auto;background:#f4f6f8;padding:10px;border-radius:5px}
+    #message{min-height:24px;color:#174b75}#message.error{color:#9b3025}
+    @media(max-width:850px){.workspace,.review-grid{grid-template-columns:1fr}aside{position:static}.candidate-list{max-height:230px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Local label review</h1>
+    <p id="identity" class="muted mono"></p>
+  </header>
+  <main>
+    <section>
+      <div class="topbar">
+        <label style="flex:1;min-width:220px">Reviewer
+          <input id="reviewer" autocomplete="name" placeholder="Name">
+        </label>
+        <button id="save">Save locally</button>
+        <button id="reload">Reload saved review</button>
+        <button id="undo">Undo</button>
+      </div>
+      <p id="gate" class="gate" role="status" aria-live="polite"></p>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <div class="workspace">
+      <aside>
+        <h2>Candidates</h2>
+        <div id="candidate-list" class="candidate-list" role="list"></div>
+        <p class="muted">Detected intervals are proposals. Review each one and check the full recording for missed events.</p>
+      </aside>
+      <article>
+        <div class="review-grid">
+          <section class="evidence">
+            <h2 id="candidate-title">Select a candidate</h2>
+            <p id="missing-context" class="muted"></p>
+            <div class="camera-box">
+              <img id="frame" alt="Approved local camera context">
+              <span id="frame-empty">No permitted camera frame is available for this interval.</span>
+            </div>
+            <label>Synchronize signal and camera time
+              <input id="scrub" type="range" min="0" max="1000" value="500">
+            </label>
+            <p id="cursor-time" class="muted mono"></p>
+            <div id="signals" class="signal-box" aria-label="Synchronized signal plots"></div>
+          </section>
+
+          <section>
+            <h2>Human decision</h2>
+            <div class="row">
+              <label>Start time (integer ns)
+                <input id="start-ns" inputmode="numeric" autocomplete="off">
+              </label>
+              <label>End time (integer ns)
+                <input id="end-ns" inputmode="numeric" autocomplete="off">
+              </label>
+            </div>
+            <label>Reason for adjustment, rejection, or data gap
+              <textarea id="reason" placeholder="Required when adjusting, rejecting, or excluding a data gap"></textarea>
+            </label>
+            <label>Uncertainty disposition
+              <select id="uncertainty">
+                <option value="unresolved">Choose a disposition</option>
+                <option value="clear">No material uncertainty</option>
+                <option value="accept_event">Accept event with uncertainty</option>
+                <option value="reject_candidate">Reject as not an event</option>
+                <option value="scoring_data_gap">Exclude as a scoring data gap</option>
+              </select>
+            </label>
+            <label>Reason for accepting uncertainty
+              <textarea id="uncertainty-reason" placeholder="Required when accepting an uncertain event"></textarea>
+            </label>
+            <div class="buttons">
+              <button id="approve" class="primary">Approve</button>
+              <button id="adjust">Adjust</button>
+              <button id="reject" class="danger">Reject</button>
+              <button id="data-gap">Mark scoring data gap</button>
+            </div>
+            <label id="practice-wrap" class="check">
+              <input id="practice-selected" type="checkbox">
+              Include this interval in participant practice labels
+            </label>
+            <p id="decision-status" class="muted"></p>
+          </section>
+        </div>
+      </article>
+    </div>
+
+    <section>
+      <h2>Missed-event review</h2>
+      <div class="row">
+        <label>Missed event start (integer ns)
+          <input id="missed-start" inputmode="numeric" autocomplete="off">
+        </label>
+        <label>Missed event end (integer ns)
+          <input id="missed-end" inputmode="numeric" autocomplete="off">
+        </label>
+      </div>
+      <label>Why this interval is an event
+        <textarea id="missed-reason" placeholder="Required evidence note"></textarea>
+      </label>
+      <button id="add-missed">Add missed event</button>
+      <label class="check">
+        <input id="coverage" type="checkbox">
+        I reviewed the whole recording for missed events
+      </label>
+      <p id="coverage-status" class="muted"></p>
+    </section>
+
+    <section>
+      <h2>Separate outputs</h2>
+      <p class="muted">The local audit remains in the progress file. Practice export contains only intervals you explicitly selected.</p>
+      <div class="buttons">
+        <button id="export-practice" class="primary">Export participant practice labels</button>
+        <button id="export-private">Export organizer-private truth</button>
+      </div>
+    </section>
+    <details>
+      <summary>View local review audit</summary>
+      <pre id="audit" class="mono"></pre>
+    </details>
+  </main>
+
+  <script>
+    "use strict";
+    const token = new URLSearchParams(window.location.search).get("token") || "";
+    const $ = (id) => document.getElementById(id);
+    const svgNS = "http://www.w3.org/2000/svg";
+    let review = null;
+    let selectedId = null;
+    let cursorNs = 0n;
+
+    async function request(path, body) {
+      const options = {headers: {"X-CIV-Token": token}};
+      if (body !== undefined) {
+        options.method = "POST";
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+      const response = await fetch(path, options);
+      const value = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(value.error || "The local review request failed.");
+      return value;
+    }
+
+    function showMessage(text, error) {
+      $("message").textContent = text || "";
+      $("message").className = error ? "error" : "";
+    }
+
+    function candidateById(id) {
+      return review.state.candidates.find((item) => item.id === id);
+    }
+
+    function currentCandidate() {
+      return candidateById(selectedId) || review.state.candidates[0] || null;
+    }
+
+    function makeSvg(tag, attributes) {
+      const node = document.createElementNS(svgNS, tag);
+      Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
+      return node;
+    }
+
+    function timeWindow(candidate) {
+      const start = BigInt(candidate.start_ns);
+      const end = BigInt(candidate.end_ns);
+      const times = [start, end];
+      Object.values(candidate.signals || {}).forEach((points) => {
+        points.forEach((point) => times.push(BigInt(point.timestamp_ns)));
+      });
+      (candidate.camera_frames || []).forEach((frame) => times.push(BigInt(frame.timestamp_ns)));
+      let left = times.reduce((a, b) => a < b ? a : b);
+      let right = times.reduce((a, b) => a > b ? a : b);
+      if (left === right) right = left + 1n;
+      return [left, right];
+    }
+
+    function relativeX(time, left, span, width) {
+      return Number(time - left) * width / Number(span);
+    }
+
+    function renderSignals(candidate) {
+      const container = $("signals");
+      container.replaceChildren();
+      const names = Object.keys(candidate.signals || {});
+      const svg = makeSvg("svg", {viewBox: "0 0 720 190", role: "img", "aria-label": "Signal traces with synchronized cursor"});
+      const [left, right] = timeWindow(candidate);
+      const span = right - left;
+      const chartTop = 12;
+      const chartHeight = 158;
+      const chartWidth = 650;
+      const colors = ["#145c8a", "#b25a18", "#43804b", "#784a8e", "#9a3443"];
+      let plotted = 0;
+      names.forEach((name, index) => {
+        const numeric = candidate.signals[name].filter((point) => typeof point.value === "number");
+        if (!numeric.length) return;
+        plotted += 1;
+        const values = numeric.map((point) => point.value);
+        let min = Math.min(...values);
+        let max = Math.max(...values);
+        if (min === max) { min -= 1; max += 1; }
+        const points = numeric.map((point) => {
+          const x = 46 + relativeX(BigInt(point.timestamp_ns), left, span, chartWidth);
+          const y = chartTop + chartHeight - ((point.value - min) / (max - min)) * chartHeight;
+          return x.toFixed(1) + "," + y.toFixed(1);
+        }).join(" ");
+        svg.append(makeSvg("polyline", {points, fill: "none", stroke: colors[index % colors.length], "stroke-width": 2}));
+        const label = makeSvg("text", {x: 4, y: 20 + index * 16, class: "signal-name"});
+        label.textContent = name;
+        svg.append(label);
+      });
+      const eventStart = relativeX(BigInt(candidate.start_ns), left, span, chartWidth);
+      const eventEnd = relativeX(BigInt(candidate.end_ns), left, span, chartWidth);
+      svg.prepend(makeSvg("rect", {x: 46 + eventStart, y: 4, width: Math.max(1, eventEnd - eventStart), height: 174, fill: "#66a4dc", opacity: .13}));
+      const cursorX = 46 + relativeX(cursorNs, left, span, chartWidth);
+      svg.append(makeSvg("line", {x1: cursorX, x2: cursorX, y1: 4, y2: 178, stroke: "#1b2836", "stroke-width": 1.5}));
+      if (!plotted) {
+        const empty = makeSvg("text", {x: 18, y: 36, class: "signal-name"});
+        empty.textContent = "No numeric signal trace is available in this interval.";
+        svg.append(empty);
+      }
+      container.append(svg);
+    }
+
+    function renderFrame(candidate) {
+      const frames = candidate.camera_frames || [];
+      const image = $("frame");
+      const empty = $("frame-empty");
+      if (!frames.length) {
+        image.removeAttribute("src");
+        image.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+      let nearest = frames[0];
+      let distance = BigInt(nearest.timestamp_ns) - cursorNs;
+      if (distance < 0n) distance = -distance;
+      frames.slice(1).forEach((frame) => {
+        let nextDistance = BigInt(frame.timestamp_ns) - cursorNs;
+        if (nextDistance < 0n) nextDistance = -nextDistance;
+        if (nextDistance < distance) { nearest = frame; distance = nextDistance; }
+      });
+      image.hidden = false;
+      empty.hidden = true;
+      image.src = "/api/frame/" + nearest.index + "?token=" + encodeURIComponent(token);
+      $("cursor-time").textContent = "Cursor " + cursorNs.toString() + " ns; nearest approved frame " + nearest.timestamp_ns + " ns.";
+    }
+
+    function renderCandidate() {
+      const candidate = currentCandidate();
+      if (!candidate) {
+        $("candidate-title").textContent = "No candidates";
+        $("signals").textContent = "Add a missed event to begin review.";
+        $("missing-context").textContent = "No detected intervals were supplied.";
+        return;
+      }
+      selectedId = candidate.id;
+      $("candidate-title").textContent = (candidate.kind === "missed" ? "Missed event " : "Candidate ") + candidate.id;
+      $("start-ns").value = candidate.start_ns;
+      $("end-ns").value = candidate.end_ns;
+      $("reason").value = candidate.reason || "";
+      $("uncertainty").value = candidate.uncertainty_disposition;
+      $("uncertainty-reason").value = candidate.uncertainty_reason || "";
+      $("practice-selected").checked = candidate.practice_selected === true;
+      $("practice-selected").disabled = !["approved", "data_gap"].includes(candidate.decision);
+      $("decision-status").textContent = "Decision: " + candidate.decision + "; context: " + candidate.context_status + ".";
+      $("missing-context").textContent = (candidate.missing_context || []).join(" ");
+      const [left, right] = timeWindow(candidate);
+      const position = right === left ? 500 : Number((cursorNs - left) * 1000n / (right - left));
+      $("scrub").value = String(Math.min(1000, Math.max(0, position)));
+      renderSignals(candidate);
+      renderFrame(candidate);
+      $("candidate-list").querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.id === candidate.id);
+      });
+    }
+
+    function render() {
+      if (!review) return;
+      const state = review.state;
+      const identity = review.identity;
+      $("identity").textContent = identity.dataset + " · source " + identity.source_sha256.slice(0, 12) + " · EventSpec " + identity.spec_sha256.slice(0, 12);
+      $("reviewer").value = state.reviewer || "";
+      $("coverage").checked = state.coverage_reviewed === true && state.coverage_revision === state.geometry_revision;
+      $("coverage-status").textContent = state.coverage_reviewed ? "Signed off by " + (state.coverage_reviewer || "reviewer") : "Not signed off.";
+      $("gate").textContent = review.gate.length ? review.gate.join(" ") : "Review complete. Choose an explicit output target.";
+      $("gate").classList.toggle("blocked", review.gate.length > 0);
+      $("undo").disabled = !review.can_undo;
+      $("export-practice").disabled = review.gate.length > 0 || !review.outputs.practice;
+      $("export-private").disabled = review.gate.length > 0 || !review.outputs["organizer-private"];
+      const list = $("candidate-list");
+      list.replaceChildren();
+      state.candidates.forEach((candidate) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.id = candidate.id;
+        button.setAttribute("role", "listitem");
+        const name = document.createElement("span");
+        name.textContent = candidate.id;
+        const status = document.createElement("span");
+        status.className = "status";
+        status.textContent = candidate.decision;
+        button.append(name, status);
+        button.onclick = () => {
+          selectedId = candidate.id;
+          cursorNs = BigInt(candidate.start_ns);
+          render();
+        };
+        list.append(button);
+      });
+      $("audit").textContent = JSON.stringify(state, null, 2);
+      if (currentCandidate()) {
+        if (!cursorNs) cursorNs = BigInt(currentCandidate().start_ns);
+        renderCandidate();
+      } else {
+        renderCandidate();
+      }
+    }
+
+    async function act(action) {
+      try {
+        if (action.type !== "set-reviewer") {
+          const name = $("reviewer").value.trim();
+          if (!name) throw new Error("Name the reviewer before recording a decision.");
+          if (review && name !== review.state.reviewer) {
+            review = await request("/api/action", {type: "set-reviewer", name});
+          }
+        }
+        review = await request("/api/action", action);
+        showMessage("Review saved locally.");
+        render();
+      } catch (error) {
+        showMessage(error.message, true);
+        render();
+      }
+    }
+
+    $("reviewer").addEventListener("change", () => act({type: "set-reviewer", name: $("reviewer").value}));
+    $("save").onclick = async () => {
+      try { review = await request("/api/save", {}); showMessage("Review progress saved locally."); render(); }
+      catch (error) { showMessage(error.message, true); }
+    };
+    $("reload").onclick = async () => {
+      try { review = await request("/api/reload", {}); selectedId = null; cursorNs = 0n; showMessage("Saved review reloaded."); render(); }
+      catch (error) { showMessage(error.message, true); }
+    };
+    $("undo").onclick = () => act({type: "undo"});
+    $("approve").onclick = () => {
+      const disposition = $("uncertainty").value;
+      act({type: "approve", candidate_id: selectedId, uncertainty_disposition: disposition, uncertainty_reason: $("uncertainty-reason").value});
+    };
+    $("adjust").onclick = () => act({
+      type: "edit", candidate_id: selectedId, start_ns: $("start-ns").value,
+      end_ns: $("end-ns").value, reason: $("reason").value
+    });
+    $("reject").onclick = () => act({
+      type: "reject", candidate_id: selectedId, reason: $("reason").value,
+      uncertainty_disposition: "reject_candidate"
+    });
+    $("data-gap").onclick = () => act({
+      type: "data-gap", candidate_id: selectedId, reason: $("reason").value,
+      exclusion_kind: "scoring_data_gap", uncertainty_disposition: "scoring_data_gap"
+    });
+    $("practice-selected").addEventListener("change", () => act({
+      type: "set-practice", candidate_id: selectedId, selected: $("practice-selected").checked
+    }));
+    $("add-missed").onclick = () => act({
+      type: "add-missed", start_ns: $("missed-start").value, end_ns: $("missed-end").value,
+      reason: $("missed-reason").value
+    });
+    $("coverage").addEventListener("change", () => act({type: "signoff", checked: $("coverage").checked}));
+    $("scrub").addEventListener("input", () => {
+      const candidate = currentCandidate();
+      if (!candidate) return;
+      const [left, right] = timeWindow(candidate);
+      cursorNs = left + (right - left) * BigInt($("scrub").value) / 1000n;
+      renderSignals(candidate);
+      renderFrame(candidate);
+    });
+
+    async function exportTarget(target) {
+      try {
+        const result = await request("/api/export", {target});
+        showMessage("Exported " + result.target + " output: " + result.name + " · SHA-256 " + result.sha256);
+      } catch (error) {
+        showMessage(error.message, true);
+      }
+    }
+    $("export-practice").onclick = () => exportTarget("practice");
+    $("export-private").onclick = () => exportTarget("organizer-private");
+
+    request("/api/state?token=" + encodeURIComponent(token)).then((value) => {
+      review = value;
+      cursorNs = review.state.candidates.length ? BigInt(review.state.candidates[0].start_ns) : 0n;
+      render();
+    }).catch((error) => showMessage(error.message, true));
+  </script>
+</body>
+</html>

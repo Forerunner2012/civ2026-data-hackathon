@@ -104,6 +104,7 @@ PRIVATE_RUNTIME_MODULES = frozenset(
         "intake.py",
         "kit_assembly.py",
         "kit_inventory.py",
+        "label_review.py",
         "label_packs.py",
         "release_freeze.py",
         "tally.py",
