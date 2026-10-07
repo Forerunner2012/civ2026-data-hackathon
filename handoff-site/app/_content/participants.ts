@@ -10,6 +10,12 @@
 export const brief =
   "A fleet recorded several passages through a shared environment. A risky or operationally significant behaviour was reported, but the report is incomplete. You must locate relevant occurrences, encode a reusable detector, transfer the reasoning to a structurally different recording, extract compact evidence, evaluate its limitations, and recommend what should happen next.";
 
+export const participantIntroduction =
+  "Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action.";
+
+export const datasetAttributionUrl =
+  "https://github.com/Forerunner2012/civ2026-data-hackathon/blob/main/kit/ATTRIBUTION.md";
+
 /**
  * The three-hour run of show. A rehearsal baseline, not a countdown: the order
  * and the 12:30 deadline are fixed, the minutes may move.
