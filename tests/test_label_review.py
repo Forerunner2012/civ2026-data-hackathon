@@ -219,6 +219,27 @@ def _case(
     return args, app, events[0].event_id
 
 
+def _state_with_spoofed_context(
+    app: ReviewApplication, candidate_id: str, *, approved: bool = False
+) -> dict[str, Any]:
+    state = json.loads(canonical_json(app.state))
+    candidate = next(
+        item for item in state["candidates"] if item["id"] == candidate_id
+    )
+    candidate["context_status"] = "available"
+    candidate["missing_context"] = []
+    if approved:
+        candidate["decision"] = "approved"
+        candidate["uncertainty_disposition"] = "clear"
+        candidate["uncertainty_reason"] = ""
+        candidate["practice_selected"] = True
+        state["reviewer"] = "Synthetic reviewer"
+        state["coverage_reviewed"] = True
+        state["coverage_reviewer"] = "Synthetic reviewer"
+        state["coverage_revision"] = state["geometry_revision"]
+    return state
+
+
 def _record_review(app: ReviewApplication, candidate_id: str) -> None:
     app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
     app.act(
@@ -231,6 +252,71 @@ def _record_review(app: ReviewApplication, candidate_id: str) -> None:
     )
     app.act({"type": "set-practice", "candidate_id": candidate_id, "selected": True})
     app.act({"type": "signoff", "checked": True})
+
+
+def test_initial_saved_progress_refreshes_context_before_gate(tmp_path: Path) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    saved = _state_with_spoofed_context(app, candidate_id, approved=True)
+    _write_atomic(args.progress, f"{canonical_json(saved)}\n")
+
+    loaded = ReviewApplication(
+        app.binding,
+        _read_progress(args.progress, app.binding),
+        before_ns=app.before_ns,
+        after_ns=app.after_ns,
+    )
+
+    assert loaded.state["candidates"][0]["context_status"] == "missing"
+    assert any("explicit disposition for missing context" in reason
+               for reason in loaded.view()["gate"])
+
+
+def test_reload_refreshes_saved_context_before_gate(tmp_path: Path) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    saved = _state_with_spoofed_context(app, candidate_id, approved=True)
+    _write_atomic(args.progress, f"{canonical_json(saved)}\n")
+
+    view = app.reload()
+
+    assert app.state["candidates"][0]["context_status"] == "missing"
+    assert any("explicit disposition for missing context" in reason
+               for reason in view["gate"])
+
+
+def test_approval_uses_bound_context_not_saved_status(tmp_path: Path) -> None:
+    _, app, candidate_id = _case(tmp_path / "case")
+    app.state = _state_with_spoofed_context(app, candidate_id)
+    app.state["reviewer"] = "Synthetic reviewer"
+
+    with pytest.raises(CivError, match="missing context cannot be marked clear"):
+        app.act(
+            {
+                "type": "approve",
+                "candidate_id": candidate_id,
+                "uncertainty_disposition": "clear",
+            }
+        )
+
+
+def test_undo_refreshes_restored_context_in_authoritative_state(tmp_path: Path) -> None:
+    _, app, candidate_id = _case(tmp_path / "case")
+    app.state = _state_with_spoofed_context(app, candidate_id)
+
+    app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    app.act({"type": "undo"})
+
+    assert app.state["candidates"][0]["context_status"] == "missing"
+    assert app.state["candidates"][0]["missing_context"]
+
+
+def test_direct_export_refreshes_context_before_gate(tmp_path: Path) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    app.state = _state_with_spoofed_context(app, candidate_id, approved=True)
+
+    with pytest.raises(CivError, match="missing context"):
+        app.export("practice")
+
+    assert not args.practice_output.exists()
 
 
 def test_exact_epoch_nanoseconds_round_trip_and_consumer_export(tmp_path: Path) -> None:

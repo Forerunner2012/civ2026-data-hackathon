@@ -29,8 +29,10 @@ interval edit or missed-event addition clears the full-recording signoff.
 
 Progress autosaves locally and can be reloaded. A progress file is reusable only with the same
 source, EventSpec, referenced resources, detected events, run manifest, and camera-context
-identities. Label packs do not record an EventSpec hash, so they cannot safely seed a review on
-their own.
+identities. On initial load, reload, each action (including edits and undo), gate checks, and
+export, interval context is refreshed from evidence bound to the source, EventSpec, and approved
+camera context; stored context fields cannot authorize a review decision. Label packs do not record
+an EventSpec hash, so they cannot safely seed a review on their own.
 
 Practice and organizer-private exports are separate buttons. Practice export requires explicit
 per-interval selection and contains only selected intervals in the existing label-pack contract.

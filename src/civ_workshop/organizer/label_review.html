@@ -346,6 +346,7 @@
     }
 
     async function act(action) {
+      const previous = review ? currentCandidate() : null;
       try {
         if (action.type !== "set-reviewer") {
           const name = $("reviewer").value.trim();
@@ -355,6 +356,11 @@
           }
         }
         review = await request("/api/action", action);
+        const updated = currentCandidate();
+        if (updated && previous &&
+            (updated.start_ns !== previous.start_ns || updated.end_ns !== previous.end_ns)) {
+          cursorNs = BigInt(updated.start_ns);
+        }
         showMessage("Review saved locally.");
         render();
       } catch (error) {

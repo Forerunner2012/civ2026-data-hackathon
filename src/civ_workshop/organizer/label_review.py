@@ -1100,12 +1100,15 @@ class ReviewApplication:
         self.after_ns = after_ns
         self.history: list[dict[str, object]] = []
         self.frame_cache: dict[int, tuple[str, bytes]] = {}
+        self._refresh_context(self.state)
 
     def save(self) -> None:
+        self._refresh_context(self.state)
         _write_atomic(self.binding.progress_path, f"{canonical_json(self.state)}\n")
 
     def reload(self) -> dict[str, object]:
         self.state = _read_progress(self.binding.progress_path, self.binding)
+        self._refresh_context(self.state)
         self.history.clear()
         return self.view()
 
@@ -1142,20 +1145,8 @@ class ReviewApplication:
         return evidence
 
     def view(self) -> dict[str, object]:
+        self._refresh_context(self.state)
         state = copy.deepcopy(self.state)
-        raw_candidates = state.get("candidates")
-        if isinstance(raw_candidates, list):
-            for raw in raw_candidates:
-                if isinstance(raw, dict):
-                    evidence = self._evidence_for(raw)
-                    raw.update(
-                        {
-                            "camera_frames": evidence["camera_frames"],
-                            "signals": evidence["signals"],
-                            "context_status": evidence["status"],
-                            "missing_context": evidence["missing_context"],
-                        }
-                    )
         return {
             "gate": gate_review(self.state),
             "identity": self.binding.identity,
@@ -1168,6 +1159,7 @@ class ReviewApplication:
         }
 
     def act(self, action: Mapping[str, object]) -> dict[str, object]:
+        self._refresh_context(self.state)
         if action.get("type") == "undo":
             if not self.history:
                 raise CivError("there is no review action to undo")
@@ -1192,6 +1184,7 @@ class ReviewApplication:
             if isinstance(revision, bool) or not isinstance(revision, int):
                 raise CivError("review revision is invalid")
             previous["revision"] = revision + 1
+            self._refresh_context(previous)
             _write_atomic(self.binding.progress_path, f"{canonical_json(previous)}\n")
             self.history.pop()
             self.state = previous
@@ -1212,8 +1205,14 @@ class ReviewApplication:
                 raise CivError("review candidate is invalid")
             candidate = cast(dict[str, object], raw)
             evidence = self._evidence_for(candidate)
-            candidate["context_status"] = evidence["status"]
-            candidate["missing_context"] = evidence["missing_context"]
+            candidate.update(
+                {
+                    "camera_frames": copy.deepcopy(evidence["camera_frames"]),
+                    "signals": copy.deepcopy(evidence["signals"]),
+                    "context_status": evidence["status"],
+                    "missing_context": copy.deepcopy(evidence["missing_context"]),
+                }
+            )
 
     def recheck_inputs(self) -> None:
         if file_sha256(self.binding.source_path) != self.binding.identity["source_sha256"]:
@@ -1243,6 +1242,7 @@ class ReviewApplication:
 
     def export(self, target: str) -> dict[str, object]:
         self.recheck_inputs()
+        self._refresh_context(self.state)
         output = (
             self.binding.practice_output
             if target == "practice"
