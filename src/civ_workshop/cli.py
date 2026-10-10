@@ -10,6 +10,10 @@ from pathlib import Path
 from civ_workshop.batch import run_batch
 from civ_workshop.errors import CivError
 from civ_workshop.intake import IntakeLedger, import_form_response
+from civ_workshop.organizer.label_review import (
+    add_label_review_command,
+    dispatch_label_review_command,
+)
 from civ_workshop.participant_commands import add_participant_commands, dispatch_participant_command
 from civ_workshop.tally import import_tally_csv
 
@@ -19,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     add_participant_commands(commands)
+    add_label_review_command(commands)
 
     form_parser = commands.add_parser(
         "intake-form", help="import one exported online form response"
@@ -54,6 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
     try:
+        if dispatch_label_review_command(args):
+            return
         if dispatch_participant_command(args):
             return
         if args.command == "intake-form":

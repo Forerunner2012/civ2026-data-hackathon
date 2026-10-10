@@ -1,7 +1,5 @@
 # Local organizer label review
 
-> **Pending PR #97:** The review adapter, `civ labels review` command, its options, and the review behavior described here are not available on the current `develop` tree. Do not run the review command until draft PR #97 lands. The separate label-pack build and audit commands documented in [organizer label packs](organizer-label-packs.md) are already present.
-
 civ labels review opens a loopback-only browser review for one stable civ detect run. It reads the
 source, EventSpec, event records, and run manifest as a bound set. It can show EventSpec signal
 samples and camera frames only when an approved camera-context manifest matches the same source.
@@ -49,15 +47,6 @@ uv run -m civ_workshop.label_packs build \
   --output ORGANIZER_LABEL_PACKS
 uv run -m civ_workshop.label_packs audit ORGANIZER_LABEL_PACKS/label-pack-set.json
 ```
-
-Practice packs contain only explicitly selected intervals, and the label-pack contract has no
-partial-coverage field. The scorer evaluates every prediction except those overlapping a genuine
-supported data gap, so a valid event omitted from a pack can score as a false positive. Practice
-self-evaluation uses complete reviewed event coverage for its designated source or chunk: review and
-include all relevant events for that exact scoring input before treating precision, recall, or F1 as
-complete-reference results. A small illustrative subset cannot substantiate full-run performance.
-Data-gap exclusions represent genuine supported gaps and must not be used to suppress omitted valid
-events.
 
 The local progress file is the complete review audit. Never put it in a participant bundle or
 submit it as participant work.
