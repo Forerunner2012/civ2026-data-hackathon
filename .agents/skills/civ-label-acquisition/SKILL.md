@@ -3,8 +3,6 @@ name: civ-label-acquisition
 description: Use when organizers need to review CIV event candidates from authorized local recordings and export selected practice labels or private truth.
 ---
 
-> **Availability on `develop`:** The review adapter and `civ labels review` workflow below depend on draft PR #97 and are unavailable in this tree until #97 lands. The synthetic validation helper is not included here; it is present at the [reviewed #99 draft head](https://github.com/Forerunner2012/civ2026-data-hackathon/blob/dee71888e39ccd9598cc2fc7f0d0ee2a2c4c02b1/.agents/skills/civ-label-acquisition/scripts/synthetic_demo.py) and is unavailable from `develop` until #99 lands. This change contains Markdown only.
-
 # CIV label acquisition
 
 Use this skill for local organizer review of recordings whose permitted use covers the work. EventSpec scans propose candidates. A human reviewer decides what each interval means.
@@ -18,8 +16,6 @@ Recompute the recording hash before reuse, detection, review, and export. Compar
 A label pack does not record EventSpec identity and cannot seed review by itself. Reuse prior review only through progress whose complete bound identity matches. Treat any other reviewed labels as a separate reference, then review the current candidates yourself. Never invent provenance.
 
 ## Review and export
-
-> **Pending PR #97:** The `civ labels review` command and output options in the following example are not available on the current `develop` tree. This is the reviewed future workflow and must wait for #97.
 
 From the repository root, run `uv sync` before the project commands. Validate the EventSpec and run its scan against the authorized recording. Then open the local review interface with distinct progress and output paths:
 
@@ -41,13 +37,12 @@ The adapter validates practice output against the existing scoring and label-pac
 
 Practice packs contain only explicitly selected intervals, and the label-pack contract has no
 partial-coverage field. The scorer evaluates every prediction except those overlapping a genuine
-supported data gap, so a valid event omitted from a pack can score as a false positive.
-
-Practice self-evaluation uses complete reviewed event coverage for its designated source or
-chunk: review and include all relevant events for that exact scoring input before treating
-precision, recall, or F1 as complete-reference results. A small illustrative subset cannot
-substantiate full-run performance. Data-gap exclusions represent genuine supported gaps and must
-not be used to suppress omitted valid events.
+supported data gap, so a valid event omitted from a pack can score as a false positive. Practice
+self-evaluation uses complete reviewed event coverage for its designated source or chunk: review and
+include all relevant events for that exact scoring input before treating precision, recall, or F1 as
+complete-reference results. A small illustrative subset cannot substantiate full-run performance.
+Data-gap exclusions represent genuine supported gaps and must not be used to suppress omitted valid
+events.
 
 Build and audit organizer-private label packs with the existing consumer:
 
@@ -59,8 +54,6 @@ uv run -m civ_workshop.label_packs audit ORGANIZER_LABEL_PACKS/label-pack-set.js
 Stop when an exclusion cannot be represented by the receiving contract. Do not silently omit it or add a new field. Never fetch recordings or labels, use credentials, assign truth automatically, or publish any input, progress, or output.
 
 ## Synthetic validation
-
-> **Pending PR #99:** The helper invoked below is not present in this branch. Run it only after #99 lands; see the immutable reviewed helper link above.
 
 From the repository root, run:
 

@@ -48,5 +48,14 @@ uv run -m civ_workshop.label_packs build \
 uv run -m civ_workshop.label_packs audit ORGANIZER_LABEL_PACKS/label-pack-set.json
 ```
 
+Practice packs contain only explicitly selected intervals, and the label-pack contract has no
+partial-coverage field. The scorer evaluates every prediction except those overlapping a genuine
+supported data gap, so a valid event omitted from a pack can score as a false positive. Practice
+self-evaluation uses complete reviewed event coverage for its designated source or chunk: review and
+include all relevant events for that exact scoring input before treating precision, recall, or F1 as
+complete-reference results. A small illustrative subset cannot substantiate full-run performance.
+Data-gap exclusions represent genuine supported gaps and must not be used to suppress omitted valid
+events.
+
 The local progress file is the complete review audit. Never put it in a participant bundle or
 submit it as participant work.
