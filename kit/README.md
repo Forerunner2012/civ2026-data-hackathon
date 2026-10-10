@@ -2,6 +2,8 @@
 
 ## Start here
 
+Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action. Start with the participant page and kit README, then follow the kit's `docs/quickstart.md`. Submit a reproducible metadata-only bundle. Recordings and evidence clips stay local.
+
 1. Open `site/index.html` for the participant page and the room's current instructions.
 2. Follow `docs/quickstart.md` for the ordered command path from `civ doctor` to
    `submission.zip`.
@@ -61,6 +63,9 @@ Camera-context MCAPs are viewing inputs only. Context, frames, signal MCAPs, and
 remain outside the submission bundle. A v2 bundle may carry only bounded manifest-declared
 EventSpec resources, provenance, inert agent traces, and regression tests; intake never executes
 the latter two. Before use, verify `checksums/ASSEMBLY-SHA256SUMS`. Do not rename or edit kit inputs.
+
+For dataset and tool attribution, modification notes, and third-party notices, see
+[`ATTRIBUTION.md`](ATTRIBUTION.md).
 
 The two recovered Kashiwa recordings retain the caveat in `participant-kit.json`: structural
 recovery made them readable but cannot prove that no records were lost to truncation.
