@@ -1,0 +1,16 @@
+[
+  {
+    "pin": "82776fc9068d1e0cd4af11c2e2700195994b2eb1",
+    "upstream_sha256": "0e6f429967a29ba34b224c5c0236c938084e82ee1279deeaf0666768cba220ae",
+    "text_equal": false,
+    "fields_equal": true,
+    "embedded_sha256": "e518889ba19b5e524086ec04e6042f0abe70a03ee9b55b05a1bb6fdb3d76d854"
+  },
+  {
+    "pin": "b949fe767f61ef42dcce3a6445427b4cde93de96",
+    "upstream_sha256": "9420448e5944eea85599d8226c0f2bd6b537a1890bdb0a33be1930aed0e2f3e5",
+    "text_equal": false,
+    "fields_equal": true,
+    "embedded_sha256": "e518889ba19b5e524086ec04e6042f0abe70a03ee9b55b05a1bb6fdb3d76d854"
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "refs": 41,
+  "commits": 131,
+  "blobs": 762,
+  "unique_paths": 311,
+  "blob_bytes": 10947184,
+  "marker_blob_counts": {
+    "private_key": 0,
+    "github_token": 0,
+    "aws_access_key": 0,
+    "credential_assignment": 0,
+    "local_path": 54,
+    "contact": 2,
+    "operational_url": 2,
+    "truth_or_review": 121,
+    "geographic_marker": 65,
+    "lfs_pointer": 0,
+    "mcap_bytes": 0
+  },
+  "archives": 2,
+  "archive_members": 135,
+  "ocr_media": 21,
+  "ocr_complete": 21
+}
