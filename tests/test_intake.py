@@ -22,6 +22,15 @@ from civ_workshop.reporting import MAX_SUBMISSION_ENTRY_BYTES, build_report_bund
 from tests.helpers import MicroCase, create_micro_case, prepare_scored_submission, run_civ
 
 
+def _write_stored_zip_entry(archive: zipfile.ZipFile, name: str, content: bytes) -> None:
+    """Preserve hostile ZIP names verbatim on every host, including Windows."""
+    info = zipfile.ZipInfo()
+    info.filename = name
+    info.orig_filename = name
+    info.compress_type = zipfile.ZIP_STORED
+    archive.writestr(info, content)
+
+
 @pytest.fixture
 def micro_case(tmp_path: Path) -> MicroCase:
     return create_micro_case(tmp_path)
@@ -502,12 +511,46 @@ def test_unsafe_archive_paths_fail_before_extraction(tmp_path: Path, name: str) 
     sentinel.write_bytes(b"unchanged")
     with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
         archive.writestr("valid/nested.txt", b"must not be extracted")
-        archive.writestr(name, b"rejected")
+        _write_stored_zip_entry(archive, name, b"rejected")
+    with zipfile.ZipFile(bundle) as archive:
+        assert [info.orig_filename for info in archive.infolist()] == ["valid/nested.txt", name]
 
     with pytest.raises(CivError, match="unsafe artifact path"):
         intake_module._extract_validated_submission(bundle, extracted)
 
     assert not extracted.exists()
+    assert sentinel.read_bytes() == b"unchanged"
+
+
+def test_raw_backslash_zip_headers_are_rejected_before_extraction(tmp_path: Path) -> None:
+    name = "nested\\file.txt"
+    bundle = tmp_path / "raw-backslash.zip"
+    extracted = tmp_path / "extracted"
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("valid/nested.txt", b"must not be extracted")
+        _write_stored_zip_entry(archive, name, b"rejected")
+    with zipfile.ZipFile(bundle) as archive:
+        info = archive.infolist()[1]
+        assert info.orig_filename == name
+        local_offset = info.header_offset
+
+    payload = bundle.read_bytes()
+    assert payload[local_offset:local_offset + 4] == b"PK\x03\x04"
+    # The synthetic archive has two entries; inspect the second central header.
+    first_central = payload.index(b"PK\x01\x02")
+    central_offset = payload.index(b"PK\x01\x02", first_central + 4)
+    local_size = int.from_bytes(payload[local_offset + 26:local_offset + 28], "little")
+    central_size = int.from_bytes(payload[central_offset + 28:central_offset + 30], "little")
+    assert payload[local_offset + 30:local_offset + 30 + local_size] == name.encode("ascii")
+    assert payload[central_offset + 46:central_offset + 46 + central_size] == name.encode("ascii")
+
+    with pytest.raises(CivError, match="unsafe artifact path"):
+        intake_module._extract_validated_submission(bundle, extracted)
+
+    assert not extracted.exists()
+    assert not (extracted / "valid" / "nested.txt").exists()
     assert sentinel.read_bytes() == b"unchanged"
 
 
@@ -522,7 +565,9 @@ def test_native_windows_drive_paths_do_not_modify_sibling_sentinel(
     for index, name in enumerate(names):
         bundle = tmp_path / f"unsafe-{index}.zip"
         with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
-            archive.writestr(name, b"rejected")
+            _write_stored_zip_entry(archive, name, b"rejected")
+        with zipfile.ZipFile(bundle) as archive:
+            assert [info.orig_filename for info in archive.infolist()] == [name]
         with pytest.raises(CivError, match="unsafe artifact path"):
             intake_module._extract_validated_submission(bundle, tmp_path / "extracted")
         assert sentinel.read_bytes() == b"unchanged"

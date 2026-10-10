@@ -86,6 +86,7 @@ PARTICIPANT_RUNTIME_MODULES = (
     "inspection.py",
     "models.py",
     "participant_cli.py",
+    "participant_commands.py",
     "reporting.py",
     "resources.py",
     "schema_pins.py",

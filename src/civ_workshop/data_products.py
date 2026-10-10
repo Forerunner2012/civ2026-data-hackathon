@@ -14,6 +14,8 @@ from mcap.reader import make_reader
 from mcap.writer import CompressionType, Writer
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
+from civ_workshop.artifacts import require_string as _string
 from civ_workshop.errors import CivError
 
 RECIPE_CONTRACT = "civ.data-product-recipe/v1"
@@ -83,22 +85,10 @@ def _canonical_with_disk_total(
         required = next_required
 
 
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
 def _closed(value: Mapping[str, object], allowed: frozenset[str], context: str) -> None:
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise CivError(f"{context} has unknown field '{unknown[0]}'")
-
-
-def _string(value: object, context: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise CivError(f"{context} must be a non-empty string")
-    return value.strip()
 
 
 def _string_list(value: object, context: str, *, allow_empty: bool = False) -> list[str]:

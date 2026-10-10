@@ -9,9 +9,10 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
+from civ_workshop.artifacts import require_string as _string
 from civ_workshop.camera_context import SET_CONTRACT as CAMERA_CONTEXT_SET_CONTRACT
 from civ_workshop.contracts import require_closed_fields
 from civ_workshop.data_products import audit_participant_set
@@ -135,18 +136,6 @@ VIEWER_ASSETS: dict[str, dict[str, object]] = {
         "sha256": "7ad612abb223cb3da04b20b0e0b4874dcd49b97104849b48e9a8d094ebe7302c",
     },
 }
-
-
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
-def _string(value: object, context: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise CivError(f"{context} must be a non-empty string")
-    return value.strip()
 
 
 def _sha256(value: object, context: str) -> str:

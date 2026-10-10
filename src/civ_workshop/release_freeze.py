@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
+from civ_workshop.artifacts import require_string as _string
 from civ_workshop.contracts import require_closed_fields
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import audit_assembly
@@ -234,22 +236,10 @@ LEGAL_PACKAGE_FIELDS = {
 }
 
 
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
 def _sequence(value: object, context: str) -> list[object]:
     if not isinstance(value, list):
         raise CivError(f"{context} must be a list")
     return list(value)
-
-
-def _string(value: object, context: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise CivError(f"{context} must be a non-empty string")
-    return value.strip()
 
 
 def _sha256(value: object, context: str) -> str:
