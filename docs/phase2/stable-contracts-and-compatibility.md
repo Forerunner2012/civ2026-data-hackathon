@@ -88,9 +88,16 @@ These artifacts may keep their current candidate identifiers until an organizer 
 separate freeze. They are not allowed to add fields to, select versions for, or otherwise widen the
 participant contracts.
 
+The label-pack contract has two audiences. A sealed pack containing full truth and private
+provenance remains organizer-only. A designated practice pack may use the same
+`civ.label-pack/v1alpha1` identifier and may be supplied separately for participant self-evaluation
+under the approved distribution. Both stay outside participant-authored submission payloads. See
+the [Phase 3 organizer-pack record](../phase3/organizer-label-packs.md) for the sealed product
+history. This audience distinction does not change participant contracts or scoring semantics.
+
 | Organizer-only artifact | Current identifier or shape | Reason excluded |
 | --- | --- | --- |
-| Label pack | `civ.label-pack/v1alpha1` | sealed scoring input supplied separately; never participant-authored or bundled |
+| Sealed organizer label pack | `civ.label-pack/v1alpha1` | sealed full-truth scoring input and private provenance for organizer evaluation; never participant-authored or bundled |
 | Online form response / Tally CSV | unversioned provider envelopes | transport adapters into the intake ledger, not participant analysis artifacts |
 | Intake receipt | `civ.intake-receipt/v1alpha1` | organizer transport/audit result |
 | Tally import summary | `civ.tally-import-summary/v1alpha1` | provider-specific operator result |

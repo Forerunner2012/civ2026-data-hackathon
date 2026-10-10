@@ -6,11 +6,13 @@ import {
   brief,
   comeReady,
   commands,
+  datasetAttributionUrl,
   deliverables,
   deskMaterials,
   extensionTrack,
   journey,
   notYourJob,
+  participantIntroduction,
   pipeline,
   participantProducts,
   recognition,
@@ -111,6 +113,7 @@ export default function Participants() {
       <section className="brief-section" id="brief">
         <h2 className="section-label">YOUR BRIEF</h2>
         <div className="brief-card">
+          <p>{participantIntroduction}</p>
           <p>{brief}</p>
         </div>
         <div className="shift-grid">
@@ -392,6 +395,10 @@ export default function Participants() {
             </article>
           ))}
         </div>
+        <p>
+          Dataset and tool attribution, modification notes, and third-party notices are in the{" "}
+          <a href={datasetAttributionUrl}>kit attribution file</a>.
+        </p>
         <p>
           The offline kit stages pinned binaries in <code>viewer/windows-amd64/</code>,{" "}
           <code>viewer/linux-amd64/</code>, and <code>viewer/macos-universal/</code>. PlotJuggler has

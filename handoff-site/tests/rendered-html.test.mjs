@@ -91,6 +91,10 @@ test("participant view states the contract", async () => {
   assert.match(body, /From raw bag/);
   assert.match(body, /defensible proof/);
   assert.match(body, /The rule ladder/);
+  assert.match(body, /Investigate an incomplete report of vehicle behaviour/);
+  assert.match(body, /test your reasoning on a different recording/i);
+  assert.match(body, /recommend a next action/i);
+  assert.match(body, /href="https:\/\/github\.com\/Forerunner2012\/civ2026-data-hackathon\/blob\/main\/kit\/ATTRIBUTION\.md"/);
   assert.match(body, /A fleet recorded several passages/);
   assert.match(body, /How the jury reads your work/);
   assert.match(body, /civ detect/);

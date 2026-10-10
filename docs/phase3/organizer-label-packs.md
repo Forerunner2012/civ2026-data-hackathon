@@ -4,6 +4,17 @@ Status: **accepted for the Phase 3 product-to-truth binding gate**
 
 Recorded: 2026-08-28
 
+## Current audience scope
+
+The accepted record below documents the sealed organizer product and its binding evidence as of
+2026-08-28. Its organizer-only statements apply to that sealed full-truth product and private
+provenance. A designated practice pack may use the same `civ.label-pack/v1alpha1` identifier and be
+supplied separately for participant self-evaluation under the approved distribution; both types
+remain outside participant-authored submission payloads. This historical record does not identify
+a practice source or chunk, select a pack, or establish a release path. See the [stable-contract
+audience guidance](../phase2/stable-contracts-and-compatibility.md#organizer-only-exclusions) and
+[local review and coverage guidance](label-review.md).
+
 Label packs are sealed organizer-only inputs. They are never participant-authored, placed in a
 submission bundle, copied into a report, or published with development data. The checked-in surface
 is limited to generic builder/validator code, tests, and this redacted acceptance record. Source
