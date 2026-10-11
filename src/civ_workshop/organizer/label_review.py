@@ -37,6 +37,7 @@ from civ_workshop.label_packs import (
     validate_label_pack,
 )
 from civ_workshop.models import SignalBinding
+from civ_workshop.organizer.label_catalog import add_catalog_command, catalog_command
 from civ_workshop.resources import load_point_resources
 from civ_workshop.score_reference import SCORING_POLICY, validate_score_reference
 
@@ -1525,6 +1526,7 @@ def add_label_review_command(
 ) -> None:
     labels = commands.add_parser("labels", help="review organizer labels locally")
     subcommands = labels.add_subparsers(dest="labels_command", required=True)
+    add_catalog_command(subcommands)
     review = subcommands.add_parser(
         "review",
         help="review detected intervals in a local browser and export source-bound labels",
@@ -1544,6 +1546,9 @@ def add_label_review_command(
 
 
 def dispatch_label_review_command(args: argparse.Namespace) -> bool:
+    if args.command == "labels" and args.labels_command == "catalog":
+        catalog_command(args)
+        return True
     if args.command == "labels" and args.labels_command == "review":
         if args.port < 0 or args.port > 65535:
             raise CivError("local review port must be between 0 and 65535")

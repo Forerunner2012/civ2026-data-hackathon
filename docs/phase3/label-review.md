@@ -60,6 +60,19 @@ events.
 The local progress file is the complete review audit. Never put it in a participant bundle or
 submit it as participant work.
 
+## Catalog historical inputs
+
+Before reopening a review, declare each local artifact and its expected SHA-256 in an organizer-only inventory:
+
+```json
+{"artifacts":[{"id":"development-reference","kind":"consumer-pack","path":"reference.json","sha256":"EXPECTED_SHA256"}]}
+```
+
+Run `uv run civ labels catalog --inventory LOCAL/inventory.json`. Relative artifact paths resolve beside the inventory. The command reads only declared files and prints a deterministic local report. Save the report outside Git and participant bundles; it includes organizer paths.
+
+Supported kinds are `recording`, `product-manifest`, `eventspec`, `run-manifest`, `consumer-pack`, `review-progress`, and `approval`. Approval currently means the historical private development-authority contract. Unsupported approval formats fail explicitly. Missing files, byte mismatches and wrong artifact types appear as errors, and the command exits unsuccessfully. Duplicate bytes are reported without inventing a new artifact identity.
+
+Identity verification proves matching bytes and the declared artifact type. It does not qualify product semantics or full review bindings. A consumer pack remains a reference. Progress must pass the existing review adapter's complete source/spec/resources/run/context check. Historical development approval remains private and excludes sealed authority. Its approved aggregate digest stays unverified until its original canonicalization procedure is recovered and applied separately. The catalog never seeds approvals or writes truth.
 ## Check evidence outside proposals
 
 Use the Whole recording panel to inspect exact start and end nanoseconds anywhere within the displayed source bounds. Previous window and Next window move by the current window width. Inspect whole source provides a sampled overview. Inspect smaller windows for signal detail; a sampled trace can omit short changes.
