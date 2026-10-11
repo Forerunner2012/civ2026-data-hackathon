@@ -50,6 +50,33 @@
       <p id="message" role="status" aria-live="polite"></p>
     </section>
 
+    <section aria-labelledby="source-heading">
+      <h2 id="source-heading">Whole recording</h2>
+      <p id="source-bounds" class="mono muted"></p>
+      <div id="source-timeline" class="signal-box" aria-label="Source intervals and checked windows"></div>
+      <p class="muted">Blue marks proposals, green marks approved events, orange marks data gaps, gray marks rejected proposals. The lower row marks checked windows. These notes do not prove completeness.</p>
+      <div class="row">
+        <label>Window start, exact ns<input id="window-start" inputmode="numeric"></label>
+        <label>Window end, exact ns<input id="window-end" inputmode="numeric"></label>
+      </div>
+      <div class="buttons">
+        <button id="window-previous">Previous window</button>
+        <button id="window-next">Next window</button>
+        <button id="window-open">Inspect window</button>
+        <button id="window-full">Inspect whole source</button>
+        <button id="window-check" disabled>Mark displayed window checked</button>
+      </div>
+      <p id="window-context" class="muted"></p>
+      <div id="window-signals" class="signal-box" aria-label="Whole-source signal evidence"></div>
+      <label>Window signal and camera time<input id="window-scrub" type="range" min="0" max="1000" value="0"></label>
+      <p id="window-cursor-time" class="mono muted"></p>
+      <div class="camera-box">
+        <img id="window-frame" alt="Approved local camera context in source window" hidden>
+        <span id="window-frame-empty">Inspect a window to see available context.</span>
+      </div>
+      <button id="window-missed">Use displayed window for missed-event boundaries</button>
+    </section>
+
     <div class="workspace">
       <aside>
         <h2>Candidates</h2>
@@ -156,6 +183,9 @@
     let review = null;
     let selectedId = null;
     let cursorNs = 0n;
+    let windowEvidence = null;
+    let windowCursorNs = 0n;
+    let windowRequestRevision = 0;
 
     async function request(path, body) {
       const options = {headers: {"X-CIV-Token": token}};
@@ -207,8 +237,8 @@
       return Number(time - left) * width / Number(span);
     }
 
-    function renderSignals(candidate) {
-      const container = $("signals");
+    function renderSignals(candidate, elementId = "signals", cursor = cursorNs) {
+      const container = $(elementId);
       container.replaceChildren();
       const names = Object.keys(candidate.signals || {});
       const svg = makeSvg("svg", {viewBox: "0 0 720 190", role: "img", "aria-label": "Signal traces with synchronized cursor"});
@@ -240,7 +270,7 @@
       const eventStart = relativeX(BigInt(candidate.start_ns), left, span, chartWidth);
       const eventEnd = relativeX(BigInt(candidate.end_ns), left, span, chartWidth);
       svg.prepend(makeSvg("rect", {x: 46 + eventStart, y: 4, width: Math.max(1, eventEnd - eventStart), height: 174, fill: "#66a4dc", opacity: .13}));
-      const cursorX = 46 + relativeX(cursorNs, left, span, chartWidth);
+      const cursorX = 46 + relativeX(cursor, left, span, chartWidth);
       svg.append(makeSvg("line", {x1: cursorX, x2: cursorX, y1: 4, y2: 178, stroke: "#1b2836", "stroke-width": 1.5}));
       if (!plotted) {
         const empty = makeSvg("text", {x: 18, y: 36, class: "signal-name"});
@@ -250,10 +280,11 @@
       container.append(svg);
     }
 
-    function renderFrame(candidate) {
+    function renderFrame(candidate, prefix = "", cursor = cursorNs) {
       const frames = candidate.camera_frames || [];
-      const image = $("frame");
-      const empty = $("frame-empty");
+      const image = $(prefix + "frame");
+      const empty = $(prefix + "frame-empty");
+      $(prefix + "cursor-time").textContent = "Cursor " + cursor.toString() + " ns.";
       if (!frames.length) {
         image.removeAttribute("src");
         image.hidden = true;
@@ -261,23 +292,30 @@
         return;
       }
       let nearest = frames[0];
-      let distance = BigInt(nearest.timestamp_ns) - cursorNs;
+      let distance = BigInt(nearest.timestamp_ns) - cursor;
       if (distance < 0n) distance = -distance;
       frames.slice(1).forEach((frame) => {
-        let nextDistance = BigInt(frame.timestamp_ns) - cursorNs;
+        let nextDistance = BigInt(frame.timestamp_ns) - cursor;
         if (nextDistance < 0n) nextDistance = -nextDistance;
         if (nextDistance < distance) { nearest = frame; distance = nextDistance; }
       });
       image.hidden = false;
       empty.hidden = true;
       image.src = "/api/frame/" + nearest.index + "?token=" + encodeURIComponent(token);
-      $("cursor-time").textContent = "Cursor " + cursorNs.toString() + " ns; nearest approved frame " + nearest.timestamp_ns + " ns.";
+      $(prefix + "cursor-time").textContent = "Cursor " + cursor.toString() + " ns; nearest approved frame " + nearest.timestamp_ns + " ns.";
     }
 
     function renderCandidate() {
       const candidate = currentCandidate();
+      ["approve", "adjust", "reject", "data-gap"].forEach((id) => { $(id).disabled = !candidate; });
       if (!candidate) {
         $("candidate-title").textContent = "No candidates";
+        $("frame").removeAttribute("src");
+        $("frame").hidden = true;
+        $("frame-empty").hidden = false;
+        $("cursor-time").textContent = "";
+        $("practice-selected").checked = false;
+        $("practice-selected").disabled = true;
         $("signals").textContent = "Add a missed event to begin review.";
         $("missing-context").textContent = "No detected intervals were supplied.";
         return;
@@ -337,6 +375,7 @@
         list.append(button);
       });
       $("audit").textContent = JSON.stringify(state, null, 2);
+      renderSourceTimeline();
       if (currentCandidate()) {
         if (!cursorNs) cursorNs = BigInt(currentCandidate().start_ns);
         renderCandidate();
@@ -412,6 +451,102 @@
       renderFrame(candidate);
     });
 
+    function renderSourceTimeline() {
+      const bounds = review.source_bounds;
+      const left = BigInt(bounds.start_ns);
+      const right = BigInt(bounds.end_ns);
+      const span = right > left ? right - left : 1n;
+      $("source-bounds").textContent = "Source " + bounds.start_ns + " to " + bounds.end_ns + " ns.";
+      const svg = makeSvg("svg", {viewBox: "0 0 720 190", role: "img", "aria-label": "All proposals and checked windows across source bounds"});
+      const colors = {approved: "#43804b", rejected: "#75818a", data_gap: "#b25a18", pending: "#145c8a"};
+      function interval(item, y, color, title) {
+        const x = 10 + relativeX(BigInt(item.start_ns), left, span, 700);
+        const end = 10 + relativeX(BigInt(item.end_ns), left, span, 700);
+        const rect = makeSvg("rect", {x, y, width: Math.max(1, end - x), height: 45, fill: color, opacity: .7});
+        const label = makeSvg("title", {});
+        label.textContent = title + " " + item.start_ns + " to " + item.end_ns + " ns";
+        rect.append(label);
+        svg.append(rect);
+      }
+      review.state.candidates.forEach((item) => interval(item, 25, colors[item.decision] || "#145c8a", item.id + " " + item.decision));
+      (review.state.checked_windows || []).forEach((item) => interval(item, 110, "#784a8e", "Checked by " + item.reviewer));
+      $("source-timeline").replaceChildren(svg);
+    }
+
+    function renderWindow() {
+      if (!windowEvidence) return;
+      $("window-context").textContent = (windowEvidence.missing_context || []).join(" ") + " Signal traces are sampled for display; inspect smaller windows for detail.";
+      renderSignals(windowEvidence, "window-signals", windowCursorNs);
+      renderFrame(windowEvidence, "window-", windowCursorNs);
+    }
+
+    async function inspectWindow() {
+      const revision = ++windowRequestRevision;
+      $("window-open").disabled = true;
+      $("window-check").disabled = true;
+      try {
+        const value = await request("/api/window", {start_ns: $("window-start").value, end_ns: $("window-end").value});
+        if (revision !== windowRequestRevision) return;
+        windowEvidence = value;
+        windowCursorNs = BigInt(value.start_ns);
+        $("window-scrub").value = "0";
+        $("window-check").disabled = false;
+        renderWindow();
+        showMessage("Source window loaded. Record any missed event separately.");
+      } catch (error) {
+        if (revision !== windowRequestRevision) return;
+        windowEvidence = null;
+        $("window-signals").replaceChildren();
+        $("window-frame").removeAttribute("src");
+        $("window-frame").hidden = true;
+        $("window-frame-empty").hidden = false;
+        $("window-context").textContent = "Window evidence could not be loaded.";
+        showMessage(error.message, true);
+      } finally { if (revision === windowRequestRevision) $("window-open").disabled = false; }
+    }
+
+    function shiftWindow(direction) {
+      try {
+        const lower = BigInt(review.source_bounds.start_ns);
+        const upper = BigInt(review.source_bounds.end_ns);
+        const start = BigInt($("window-start").value);
+        const end = BigInt($("window-end").value);
+        const width = end - start;
+        if (width <= 0n || start < lower || end > upper) throw new Error("Choose a positive window inside source bounds.");
+        let next = start + BigInt(direction) * width;
+        if (next < lower) next = lower;
+        if (next + width > upper) next = upper - width;
+        $("window-start").value = next.toString();
+        $("window-end").value = (next + width).toString();
+        inspectWindow();
+      } catch (error) { showMessage(error.message, true); }
+    }
+
+    $("window-open").onclick = inspectWindow;
+    $("window-previous").onclick = () => shiftWindow(-1);
+    $("window-next").onclick = () => shiftWindow(1);
+    $("window-full").onclick = () => {
+      $("window-start").value = review.source_bounds.start_ns;
+      $("window-end").value = review.source_bounds.end_ns;
+      inspectWindow();
+    };
+    $("window-check").onclick = () => {
+      if (windowEvidence) act({type: "check-window", start_ns: windowEvidence.start_ns, end_ns: windowEvidence.end_ns});
+    };
+    $("window-missed").onclick = () => {
+      if (!windowEvidence) return;
+      $("missed-start").value = windowEvidence.start_ns;
+      $("missed-end").value = windowEvidence.end_ns;
+      $("missed-reason").focus();
+    };
+    $("window-scrub").addEventListener("input", () => {
+      if (!windowEvidence) return;
+      const left = BigInt(windowEvidence.start_ns);
+      const right = BigInt(windowEvidence.end_ns);
+      windowCursorNs = left + (right - left) * BigInt($("window-scrub").value) / 1000n;
+      renderWindow();
+    });
+
     async function exportTarget(target) {
       try {
         const result = await request("/api/export", {target});
@@ -425,6 +560,10 @@
 
     request("/api/state?token=" + encodeURIComponent(token)).then((value) => {
       review = value;
+      $("window-start").value = review.source_bounds.start_ns;
+      const firstEnd = BigInt(review.source_bounds.start_ns) + 10000000000n;
+      const upper = BigInt(review.source_bounds.end_ns);
+      $("window-end").value = (firstEnd < upper ? firstEnd : upper).toString();
       cursorNs = review.state.candidates.length ? BigInt(review.state.candidates[0].start_ns) : 0n;
       render();
     }).catch((error) => showMessage(error.message, true));

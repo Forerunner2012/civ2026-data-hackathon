@@ -59,3 +59,13 @@ events.
 
 The local progress file is the complete review audit. Never put it in a participant bundle or
 submit it as participant work.
+
+## Check evidence outside proposals
+
+Use the Whole recording panel to inspect exact start and end nanoseconds anywhere within the displayed source bounds. Previous window and Next window move by the current window width. Inspect whole source provides a sampled overview. Inspect smaller windows for signal detail; a sampled trace can omit short changes.
+
+The source overview marks proposals, approved events, rejected proposals, data gaps, and locally checked windows separately. A source with zero proposals still provides evidence navigation. Signal samples and approved camera frames share an integer-safe cursor. Missing context remains explicit.
+
+Mark displayed window checked records a local reviewer note for the window whose evidence was loaded. Notes save and reload with the same bound progress, and interval geometry edits clear them. These notes do not approve an event or provide completeness signoff. Use the displayed window to prefill missed-event boundaries, then refine the boundaries, supply a reason, and review through the existing actions. Sign off whole-recording completeness only after your contextual review.
+
+The window endpoint remains loopback-only and token-protected. It rechecks bound source/spec/resources/run/context identities before reading evidence. Its responses and local checked-window records never enter practice packs or private consumer truth.

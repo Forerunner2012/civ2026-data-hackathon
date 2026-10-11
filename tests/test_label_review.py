@@ -76,7 +76,7 @@ def _png_pixel() -> bytes:
     ) + chunk(b"IEND", b"")
 
 
-def _write_source(path: Path) -> None:
+def _write_source(path: Path, values: tuple[float, ...] = (0.0, 2.0, 2.0, 0.0, 0.0)) -> None:
     schemas = {
         "/micro/signal": (
             "civ.micro.Signal",
@@ -102,7 +102,7 @@ def _write_source(path: Path) -> None:
                 topic=topic,
                 message_encoding="json",
             )
-        for second, value in enumerate((0.0, 2.0, 2.0, 0.0, 0.0)):
+        for second, value in enumerate(values):
             timestamp = EPOCH_NS + second * 1_000_000_000
             writer.add_message(
                 channel_id=channels["/micro/signal"],
@@ -208,14 +208,17 @@ def _write_camera_context(root: Path, source: Path) -> Path:
 
 
 def _case(
-    root: Path, *, with_camera_context: bool = False
+    root: Path,
+    *,
+    with_camera_context: bool = False,
+    source_values: tuple[float, ...] = (0.0, 2.0, 2.0, 0.0, 0.0),
 ) -> tuple[Namespace, ReviewApplication, str]:
     root.mkdir(parents=True, exist_ok=True)
     source = root / "synthetic.mcap"
     spec = root / "synthetic.yaml"
     run = root / "detected"
     progress = root / "review-progress.json"
-    _write_source(source)
+    _write_source(source, source_values)
     camera_manifest = _write_camera_context(root, source) if with_camera_context else None
     spec.write_text(MICRO_SPEC, encoding="utf-8", newline="\n")
     detect_events(spec, source, run)
@@ -701,3 +704,129 @@ def test_camera_context_refresh_cache_and_local_frame_ui(tmp_path: Path) -> None
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+def test_whole_source_window_outside_proposals_is_read_only(tmp_path: Path) -> None:
+    _, app, _ = _case(tmp_path / "case", with_camera_context=True)
+    before = canonical_json(app.state)
+    evidence = app.evidence_window(
+        {"start_ns": str(EPOCH_NS + 3_000_000_000), "end_ns": str(EPOCH_NS + 4_000_000_000)}
+    )
+    assert evidence["start_ns"] == str(EPOCH_NS + 3_000_000_000)
+    assert evidence["end_ns"] == str(EPOCH_NS + 4_000_000_000)
+    assert evidence["signals"]["signal"][-1]["timestamp_ns"] == str(EPOCH_NS + 4_000_000_000)
+    assert evidence["camera_frames"]
+    assert canonical_json(app.state) == before
+    assert "source_bounds" in app.view()
+    with pytest.raises(CivError, match="source bounds"):
+        app.evidence_window({"start_ns": str(EPOCH_NS - 1), "end_ns": str(EPOCH_NS + 1)})
+    app.binding.source_path.write_bytes(b"changed")
+    with pytest.raises(CivError, match="changed"):
+        app.evidence_window({"start_ns": str(EPOCH_NS), "end_ns": str(EPOCH_NS + 1)})
+
+
+def test_zero_proposals_can_inspect_and_add_missed_event(tmp_path: Path) -> None:
+    args, _, _ = _case(tmp_path / "case")
+    args.spec.write_text(MICRO_SPEC.replace("signal > 1.0", "signal > 99.0"))
+    # Preserve the original run and create a distinct revision with no proposals.
+    run = tmp_path / "zero-run"
+    detect_events(args.spec, args.source, run)
+    args.events = run / "events.jsonl"
+    args.manifest = run / "run-manifest.json"
+    binding, events, _, before_ns, after_ns = _prepare_binding(args)
+    assert not events
+    app = ReviewApplication(
+        binding,
+        initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before_ns,
+        after_ns=after_ns,
+    )
+    evidence = app.evidence_window(
+        {"start_ns": str(EPOCH_NS), "end_ns": str(EPOCH_NS + 4_000_000_000)}
+    )
+    assert evidence["signals"]["signal"]
+    app.act({"type": "set-reviewer", "name": "Fixture reviewer"})
+    app.act(
+        {
+            "type": "add-missed",
+            "start_ns": str(EPOCH_NS + 1_000_000_000),
+            "end_ns": str(EPOCH_NS + 2_000_000_000),
+            "reason": "Fixture event found in full source",
+        }
+    )
+    assert gate_review(app.state)
+    with pytest.raises(CivError, match="does not match"):
+        _read_progress(
+            args.progress, replace(binding, identity={**binding.identity, "spec_sha256": "a" * 64})
+        )
+
+
+def test_checked_windows_save_reload_edit_invalidation_and_undo(tmp_path: Path) -> None:
+    _, app, candidate_id = _case(tmp_path / "case")
+    app.act({"type": "set-reviewer", "name": "Fixture reviewer"})
+    app.act(
+        {"type": "check-window", "start_ns": str(EPOCH_NS), "end_ns": str(EPOCH_NS + 4_000_000_000)}
+    )
+    assert app.state["coverage_reviewed"] is False
+    assert gate_review(app.state)
+    app.reload()
+    assert app.state["checked_windows"]
+    app.act(
+        {
+            "type": "edit",
+            "candidate_id": candidate_id,
+            "start_ns": str(EPOCH_NS + 1_100_000_000),
+            "end_ns": str(EPOCH_NS + 1_900_000_000),
+            "reason": "Fixture boundary correction",
+        }
+    )
+    assert app.state["checked_windows"] == []
+    app.act({"type": "undo"})
+    assert app.state["checked_windows"]
+    assert app.state["coverage_reviewed"] is False
+
+
+def test_evidence_beyond_every_detected_window(tmp_path: Path) -> None:
+    _, app, candidate_id = _case(
+        tmp_path / "long", source_values=(0.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    )
+    original = _mapping(app.binding.evidence_by_id[candidate_id]["signals"])
+    original_points = _records(original["signal"])
+    assert (
+        max(int(str(point["timestamp_ns"])) for point in original_points)
+        <= EPOCH_NS + 4_000_000_000
+    )
+    evidence = app.evidence_window(
+        {"start_ns": str(EPOCH_NS + 6_000_000_000), "end_ns": str(EPOCH_NS + 8_000_000_000)}
+    )
+    assert len(evidence["signals"]["signal"]) == 3
+    assert evidence["signals"]["signal"][0]["timestamp_ns"] == str(EPOCH_NS + 6_000_000_000)
+    assert evidence["status"] == "missing"
+    assert gate_review(app.state)
+
+
+def test_window_http_auth_bounds_and_exact_nanoseconds(tmp_path: Path) -> None:
+    _, app, _ = _case(tmp_path / "case")
+    server = HTTPServer(("127.0.0.1", 0), _create_handler(app, "fixture-token"))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_port}/api/window"
+    body = json.dumps({"start_ns": str(EPOCH_NS), "end_ns": str(EPOCH_NS + 4_000_000_000)}).encode()
+    try:
+        with pytest.raises(HTTPError) as denied:
+            urlopen(Request(url, data=body), timeout=5)
+        assert denied.value.code == 403
+        with urlopen(
+            Request(url, data=body, headers={"X-CIV-Token": "fixture-token"}), timeout=5
+        ) as response:
+            result = json.load(response)
+        assert result["start_ns"] == str(EPOCH_NS)
+        assert result["end_ns"] == str(EPOCH_NS + 4_000_000_000)
+        invalid = json.dumps({"start_ns": True, "end_ns": str(EPOCH_NS + 1)}).encode()
+        with pytest.raises(HTTPError) as rejected:
+            urlopen(Request(url, data=invalid, headers={"X-CIV-Token": "fixture-token"}), timeout=5)
+        assert rejected.value.code == 400
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
