@@ -77,6 +77,16 @@
       <button id="window-missed">Use displayed window for missed-event boundaries</button>
     </section>
 
+    <section id="profile-panel" hidden>
+      <h2>Compare candidate profiles</h2>
+      <p class="muted">Alternative runs are read-only proposals. Their middle timeline row shows retained geometry in blue, changed boundaries in gold and added proposals in red. Agreement does not establish truth.</p>
+      <label>Alternative profile<select id="profile-select"></select></label>
+      <p id="profile-summary" class="mono muted"></p>
+      <details><summary>Exact alternative EventSpec</summary><pre id="profile-spec" class="mono"></pre></details>
+      <div id="profile-intervals" class="candidate-list"></div>
+      <p class="muted">Choose an interval to inspect it and prefill missed-event boundaries. Supply your reason and use Add missed event if review confirms it. The active run stays unchanged.</p>
+    </section>
+
     <div class="workspace">
       <aside>
         <h2>Candidates</h2>
@@ -377,6 +387,7 @@
         list.append(button);
       });
       $("audit").textContent = JSON.stringify(state, null, 2);
+      renderProfiles();
       renderSourceTimeline();
       if (currentCandidate()) {
         if (!cursorNs) cursorNs = BigInt(currentCandidate().start_ns);
@@ -453,6 +464,55 @@
       renderFrame(candidate);
     });
 
+    let selectedProfileId = null;
+
+    function selectedProfile() {
+      return (review.comparisons || []).find((profile) => profile.id === selectedProfileId) || null;
+    }
+
+    function renderProfiles() {
+      const profiles = review.comparisons || [];
+      $("profile-panel").hidden = !profiles.length;
+      if (!profiles.length) return;
+      if (!profiles.some((profile) => profile.id === selectedProfileId)) selectedProfileId = profiles[0].id;
+      $("profile-select").replaceChildren();
+      profiles.forEach((profile) => {
+        const option = document.createElement("option");
+        option.value = profile.id;
+        option.textContent = profile.id + " · " + profile.name;
+        $("profile-select").append(option);
+      });
+      $("profile-select").value = selectedProfileId;
+      const profile = selectedProfile();
+      const changes = profile.differences;
+      $("profile-summary").textContent = "Spec " + profile.identity.spec_sha256 + "; run " + profile.identity.manifest_sha256 + "; condition " + profile.condition + "; timing ns " + JSON.stringify(profile.timing_ns) + ". Retained " + changes.retained.length + ", boundary changed " + changes.boundary_changed.length + ", added " + changes.added.length + ", removed " + changes.removed.length + ".";
+      $("profile-spec").textContent = profile.spec_text;
+      $("profile-intervals").replaceChildren();
+      profile.intervals.forEach((interval) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "Inspect/prefill " + interval.start_ns + " to " + interval.end_ns + " ns";
+        button.onclick = () => {
+          $("window-start").value = interval.start_ns;
+          $("window-end").value = interval.end_ns;
+          $("missed-start").value = interval.start_ns;
+          $("missed-end").value = interval.end_ns;
+          $("missed-reason").value = "";
+          $("missed-reason").focus();
+          inspectWindow();
+          showMessage("Alternative proposal copied for inspection. Explain and add it only if your review confirms a missed event.");
+        };
+        $("profile-intervals").append(button);
+      });
+      if (!profile.intervals.length) $("profile-intervals").textContent = "This profile has zero proposals. Whole-source review is still required.";
+    }
+
+    $("profile-select").onchange = () => {
+      selectedProfileId = $("profile-select").value;
+      renderProfiles();
+      renderSourceTimeline();
+    };
+
     function renderSourceTimeline() {
       const bounds = review.source_bounds;
       const left = BigInt(bounds.start_ns);
@@ -471,7 +531,13 @@
         svg.append(rect);
       }
       review.state.candidates.forEach((item) => interval(item, 25, colors[item.decision] || "#145c8a", item.id + " " + item.decision));
-      (review.state.checked_windows || []).forEach((item) => interval(item, 110, "#784a8e", "Checked by " + item.reviewer));
+      const profile = selectedProfile();
+      if (profile) {
+        const added = new Set(profile.differences.added.map((item) => item.event_id));
+        const changed = new Set(profile.differences.boundary_changed.map((item) => item.alternative.event_id));
+        profile.intervals.forEach((item) => interval(item, 80, added.has(item.event_id) ? "#9b3b25" : changed.has(item.event_id) ? "#9c7a17" : "#145c8a", "Reference " + profile.id));
+      }
+      (review.state.checked_windows || []).forEach((item) => interval(item, 135, "#784a8e", "Checked by " + item.reviewer));
       $("source-timeline").replaceChildren(svg);
     }
 

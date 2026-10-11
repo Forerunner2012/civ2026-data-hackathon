@@ -39,6 +39,7 @@ from civ_workshop.label_packs import (
 )
 from civ_workshop.models import SignalBinding
 from civ_workshop.organizer.label_catalog import add_catalog_command, catalog_command
+from civ_workshop.organizer.label_profiles import ProfileComparisons, load_profile_comparisons
 from civ_workshop.resources import load_point_resources
 from civ_workshop.score_reference import SCORING_POLICY, validate_score_reference
 
@@ -1165,8 +1166,10 @@ class ReviewApplication:
         *,
         before_ns: int,
         after_ns: int,
+        comparisons: ProfileComparisons | None = None,
     ) -> None:
         self.binding = binding
+        self.comparisons = comparisons
         self.state = state
         self.before_ns = before_ns
         self.after_ns = after_ns
@@ -1245,6 +1248,7 @@ class ReviewApplication:
                 ),
                 "practice": self.binding.practice_output is not None,
             },
+            "comparisons": self.comparisons.view() if self.comparisons else [],
             "output_blockers": {"organizer-private": private_blocker},
             "state": state,
         }
@@ -1288,6 +1292,8 @@ class ReviewApplication:
         return self.view()
 
     def _refresh_context(self, state: dict[str, object]) -> None:
+        if self.comparisons is not None:
+            self.comparisons.recheck()
         self._recheck_signal_manifest()
         candidates = state.get("candidates")
         if not isinstance(candidates, list):
@@ -1564,12 +1570,16 @@ def _prepare_binding(
 
 def review_command(args: argparse.Namespace) -> None:
     binding, events, _, before_ns, after_ns = _prepare_binding(args)
+    inventory = getattr(args, "comparison_inventory", None)
+    comparisons = load_profile_comparisons(inventory, binding) if inventory else None
     if binding.progress_path.exists():
         state = _read_progress(binding.progress_path, binding)
     else:
         state = initial_review_state(binding, events, binding.evidence_by_id)
         _write_atomic(binding.progress_path, f"{canonical_json(state)}\n")
-    app = ReviewApplication(binding, state, before_ns=before_ns, after_ns=after_ns)
+    app = ReviewApplication(
+        binding, state, before_ns=before_ns, after_ns=after_ns, comparisons=comparisons
+    )
     token = secrets.token_urlsafe(24)
     server = HTTPServer(("127.0.0.1", args.port), _create_handler(app, token))
     host, port = cast(tuple[str, int], server.server_address[:2])
@@ -1595,6 +1605,7 @@ def add_label_review_command(
         "review",
         help="review detected intervals in a local browser and export source-bound labels",
     )
+    review.add_argument("--comparison-inventory", type=Path)
     review.add_argument("--source", type=Path, required=True)
     review.add_argument("--spec", type=Path, required=True)
     review.add_argument("--events", type=Path, required=True)
