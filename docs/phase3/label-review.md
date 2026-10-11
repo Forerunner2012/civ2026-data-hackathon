@@ -102,3 +102,41 @@ an explanation, and direct private export fails before writing a file. Original-
 review retains its existing behavior. A prior private output mislabeled as sealed must remain local
 and unqualified; do not hand-edit it or feed warm-up/development manifests into the sealed builder.
 Existing bound progress and practice packs remain reusable without repeating human decisions.
+
+
+## Compare independent candidate profiles
+
+For a bound warm-up/development signal product, pass --comparison-inventory LOCAL/profiles.json
+alongside the existing source, product-sidecar and approved-context options. The local inventory
+names independent EventSpecs and run directories; relative paths resolve beside the inventory:
+
+```json
+{"profiles":[{"id":"alternative-v1","spec":"specs/alternative-v1.yaml","run":"runs/alternative-v1"}]}
+```
+
+Create each variant as a new EventSpec file, validate it with the existing parser, and run civ detect
+into a new directory. Do not reuse an existing output directory: detection can overwrite files.
+Keep the baseline, old runs and bound progress unchanged. For a completed review, copy its progress
+into a new revision and configure fresh output paths before making new human decisions. Inspection
+alone leaves decisions unchanged, but the existing actions save to the configured progress file.
+This comparison feature does not scan,
+edit profiles, seed approvals or combine events. It refuses sealed or unverified product membership.
+
+The comparison panel shows the declared condition, parsed timing values in nanoseconds, exact
+EventSpec text and bound spec/run identities. Alternative proposals occupy a separate timeline row.
+Exact interval geometry is paired first, then positive overlaps by descending intersection duration
+with deterministic chronological tie breaks. Remaining intervals are added or removed proposals;
+paired nonidentical intervals have changed boundaries. This discovery display rule is separate from
+the frozen scorer. Counts and agreement do not establish truth or precision/recall/F1.
+
+Select an alternative interval to inspect its evidence and prefill exact missed-event boundaries.
+Supply your contextual reason and add it through the existing missed-event action only if confirmed.
+The new interval stays pending until reviewed, and geometry changes clear completeness signoff.
+The comparison alone does not change any review decision or practice selection.
+
+Inventory, active inputs and every alternative spec/resource/events/manifest identity are frozen
+for the session. Changes refuse display and actions before progress is written; reopen with a new
+inventory revision or remove the comparison option. Comparison references are not added to progress
+identity or consumer exports. To make another profile active, use its own spec/events/manifest and a
+new progress/output revision; old progress is rejected by the existing full binding check. Never
+tune profiles using sealed labels or sealed feedback.
