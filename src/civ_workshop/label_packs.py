@@ -287,7 +287,9 @@ def _mcap_statistics(path: Path) -> dict[str, int]:
     }
 
 
-def _product_binding(path: Path) -> ProductBinding:
+def _product_binding(
+    path: Path, *, permitted_splits: frozenset[str] = frozenset({"sealed"})
+) -> ProductBinding:
     manifest = read_json_file(path, "data-product manifest")
     _closed(manifest, MANIFEST_FIELDS, "data-product manifest")
     if manifest.get("contract") != DATA_PRODUCT_CONTRACT:
@@ -306,8 +308,10 @@ def _product_binding(path: Path) -> ProductBinding:
     dataset = require_string(provenance.get("dataset"), "data-product manifest dataset")
     if dataset not in {"kashiwa", "reims"}:
         raise CivError(f"unsupported sealed dataset '{dataset}'")
-    if provenance.get("split") != "sealed":
-        raise CivError("label packs require sealed data-product manifests")
+    if provenance.get("split") not in permitted_splits:
+        if permitted_splits == frozenset({"sealed"}):
+            raise CivError("label packs require sealed data-product manifests")
+        raise CivError("data-product manifest split does not permit this review")
     if recipe.get("contract") != DATA_PRODUCT_RECIPE_CONTRACT:
         raise CivError("data-product manifest names an unsupported recipe contract")
     if recipe.get("writer") != DATA_PRODUCT_WRITER:

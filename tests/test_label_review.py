@@ -830,3 +830,113 @@ def test_window_http_auth_bounds_and_exact_nanoseconds(tmp_path: Path) -> None:
         server.shutdown()
         thread.join(timeout=5)
         server.server_close()
+
+
+def _reduced_case(root: Path) -> Namespace:
+    args, _, _ = _case(root, with_camera_context=True)
+    original_source = args.source
+    recipe = root / "warmup-recipe.json"
+    _write_json(
+        recipe,
+        {
+            "attribution": "Synthetic fixture",
+            "contract": "civ.data-product-recipe/v1",
+            "dataset": "kashiwa",
+            "license": {"name": "Test-only", "url": None},
+            "modifications": ["Filtered synthetic signals"],
+            "product_name": "warmup-signals.mcap",
+            "recipe_id": "fixture-warmup-v1",
+            "rights_scope": "Synthetic tests only",
+            "source": {"id": "synthetic-source", "sha256": file_sha256(original_source)},
+            "split": "warmup",
+            "topics": ["/micro/signal"],
+            "version": 1,
+        },
+    )
+    products = root / "products"
+    result = build_data_product(original_source, recipe, products)
+    args.source = products / "warmup-signals.mcap"
+    args.signal_product_manifest = products / str(result["manifest"])
+    camera = json.loads(args.camera_context_manifest.read_text(encoding="utf-8"))
+    camera["signal_product"] = {
+        "name": args.source.name,
+        "sha256": file_sha256(args.source),
+        "manifest": args.signal_product_manifest.name,
+        "manifest_sha256": file_sha256(args.signal_product_manifest),
+    }
+    _write_json(args.camera_context_manifest, camera)
+    run = root / "reduced-run"
+    detect_events(args.spec, args.source, run)
+    args.events = run / "events.jsonl"
+    args.manifest = run / "run-manifest.json"
+    return args
+
+
+def test_reduced_product_review_requires_exact_context_manifest_binding(tmp_path: Path) -> None:
+    args = _reduced_case(tmp_path / "case")
+    binding, events, _, before_ns, after_ns = _prepare_binding(args)
+    assert binding.identity["source_sha256"] == file_sha256(args.source)
+    assert binding.identity["signal_product_manifest_sha256"] == file_sha256(
+        args.signal_product_manifest
+    )
+    assert binding.camera_frames is not None
+    app = ReviewApplication(
+        binding,
+        initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before_ns,
+        after_ns=after_ns,
+    )
+    _record_review(app, events[0].event_id)
+    practice = build_export_document(
+        app.state, "practice", spec_name=binding.spec_name, source_bounds=binding.source_bounds
+    )
+    assert practice["source_sha256"] == file_sha256(args.source)
+    app.save()
+    app.reload()
+    args.signal_product_manifest.write_text(
+        args.signal_product_manifest.read_text(encoding="utf-8") + " "
+    )
+    with pytest.raises(CivError, match="signal-product manifest changed"):
+        app.reload()
+    with pytest.raises(CivError, match="signal-product manifest changed"):
+        app.act({"type": "signoff", "checked": True})
+    with pytest.raises(CivError, match="signal-product manifest changed"):
+        app.export("practice")
+
+
+@pytest.mark.parametrize("field", ["manifest_sha256", "sha256", "name"])
+def test_reduced_context_rejects_wrong_signal_identity(tmp_path: Path, field: str) -> None:
+    args = _reduced_case(tmp_path / "case")
+    camera = json.loads(args.camera_context_manifest.read_text(encoding="utf-8"))
+    camera["signal_product"][field] = "wrong.mcap" if field == "name" else "b" * 64
+    _write_json(args.camera_context_manifest, camera)
+    with pytest.raises(CivError, match="signal-product identity"):
+        _prepare_binding(args)
+
+
+def test_reduced_context_requires_explicit_sidecar_and_preserves_sealed_only_builder(
+    tmp_path: Path,
+) -> None:
+    from civ_workshop.label_packs import _product_binding
+
+    args = _reduced_case(tmp_path / "case")
+    with pytest.raises(CivError, match="require sealed"):
+        _product_binding(args.signal_product_manifest)
+    args.signal_product_manifest = None
+    with pytest.raises(CivError, match="source identity"):
+        _prepare_binding(args)
+
+
+@pytest.mark.parametrize("change", ["parent", "dataset", "split"])
+def test_reduced_context_rejects_cross_source_or_membership(tmp_path: Path, change: str) -> None:
+    args = _reduced_case(tmp_path / "case")
+    camera = json.loads(args.camera_context_manifest.read_text(encoding="utf-8"))
+    if change == "parent":
+        camera["parent"]["sha256"] = "b" * 64
+    elif change == "dataset":
+        camera["dataset"] = "reims"
+    else:
+        camera["split"] = "development"
+    _write_json(args.camera_context_manifest, camera)
+    with pytest.raises(CivError, match="identity|dataset"):
+        _prepare_binding(args)

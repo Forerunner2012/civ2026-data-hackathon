@@ -33,6 +33,7 @@ from civ_workshop.errors import CivError
 from civ_workshop.event_spec import load_event_spec
 from civ_workshop.inspection import MessageDecoder, extract_field
 from civ_workshop.label_packs import (
+    _product_binding,
     _truth_document,
     validate_label_pack,
 )
@@ -78,6 +79,7 @@ class ReviewBinding:
     truth_output: Path | None
     spec_name: str
     event_ids: frozenset[str]
+    signal_product_manifest_path: Path | None = None
 
 
 def _nonnegative_ns(value: object, context: str) -> int:
@@ -226,12 +228,33 @@ def _camera_frames(
     source_sha256: str,
     source_id: str,
     dataset: str,
+    signal_product_manifest_path: Path | None = None,
 ) -> CameraFrames:
     manifest = read_json_file(manifest_path, "camera-context manifest")
     if manifest.get("contract") != "civ.camera-context-manifest/v1":
         raise CivError("camera-context manifest has the wrong contract")
     parent = require_mapping(manifest.get("parent"), "camera-context source")
-    if parent.get("sha256") != source_sha256 or parent.get("id") != source_id:
+    if signal_product_manifest_path is not None:
+        signal_binding = _product_binding(
+            signal_product_manifest_path, permitted_splits=frozenset({"warmup", "development"})
+        )
+        signal = require_mapping(manifest.get("signal_product"), "camera-context signal product")
+        signal_manifest = read_json_file(signal_product_manifest_path, "signal-product manifest")
+        provenance = require_mapping(signal_manifest.get("provenance"), "signal provenance")
+        if (
+            signal_binding.product_sha256 != source_sha256
+            or signal_binding.product_sha256 != signal.get("sha256")
+            or signal_binding.product_name != signal.get("name")
+            or signal_product_manifest_path.name != signal.get("manifest")
+            or signal_binding.manifest_sha256 != signal.get("manifest_sha256")
+            or signal_binding.source_sha256 != parent.get("sha256")
+            or signal_binding.source_id != parent.get("id")
+            or signal_binding.source_id != source_id
+            or signal_binding.dataset != dataset
+            or provenance.get("split") != manifest.get("split")
+        ):
+            raise CivError("camera-context signal-product identity does not match this review")
+    elif parent.get("sha256") != source_sha256 or parent.get("id") != source_id:
         raise CivError("camera-context source identity does not match this review")
     if manifest.get("dataset") != dataset or manifest.get("split") == "sealed":
         raise CivError("camera-context dataset or split does not permit this review")
@@ -364,6 +387,7 @@ def _identity_for_inputs(
     dataset: str,
     source_id: str,
     camera_manifest_path: Path | None,
+    signal_product_manifest_path: Path | None = None,
 ) -> tuple[ReviewBinding, list[Any], dict[str, Any], CameraFrames | None, int, int]:
     source_path = source_path.resolve()
     spec_path = spec_path.resolve()
@@ -418,6 +442,11 @@ def _identity_for_inputs(
         ):
             raise CivError(f"candidate interval is outside source bounds: {event.event_id}")
 
+    signal_product_manifest_path = (
+        signal_product_manifest_path.resolve() if signal_product_manifest_path else None
+    )
+    if signal_product_manifest_path is not None and camera_manifest_path is None:
+        raise CivError("a signal-product manifest requires approved camera context")
     camera_manifest_path = camera_manifest_path.resolve() if camera_manifest_path else None
     camera: CameraFrames | None = None
     camera_manifest_hash: str | None = None
@@ -427,6 +456,7 @@ def _identity_for_inputs(
             source_sha256=source_hash,
             source_id=source_id,
             dataset=dataset,
+            signal_product_manifest_path=signal_product_manifest_path,
         )
         camera_manifest_hash = file_sha256(camera_manifest_path)
 
@@ -465,6 +495,8 @@ def _identity_for_inputs(
         "source_end_ns": str(source_bounds[1]),
         "spec_sha256": spec_hash,
     }
+    if signal_product_manifest_path is not None:
+        identity["signal_product_manifest_sha256"] = file_sha256(signal_product_manifest_path)
     binding = ReviewBinding(
         source_path=source_path,
         spec_path=spec_path,
@@ -480,6 +512,7 @@ def _identity_for_inputs(
         truth_output=None,
         spec_name=spec.name,
         event_ids=frozenset(event_ids),
+        signal_product_manifest_path=signal_product_manifest_path,
     )
     return binding, events, manifest, camera, spec.evidence_before_ns, spec.evidence_after_ns
 
@@ -1237,6 +1270,7 @@ class ReviewApplication:
         return self.view()
 
     def _refresh_context(self, state: dict[str, object]) -> None:
+        self._recheck_signal_manifest()
         candidates = state.get("candidates")
         if not isinstance(candidates, list):
             raise CivError("review candidates are invalid")
@@ -1254,7 +1288,15 @@ class ReviewApplication:
                 }
             )
 
+    def _recheck_signal_manifest(self) -> None:
+        path = self.binding.signal_product_manifest_path
+        if path is not None and file_sha256(path) != self.binding.identity.get(
+            "signal_product_manifest_sha256"
+        ):
+            raise CivError("signal-product manifest changed during review")
+
     def recheck_inputs(self) -> None:
+        self._recheck_signal_manifest()
         if file_sha256(self.binding.source_path) != self.binding.identity["source_sha256"]:
             raise CivError("source recording changed during review")
         if file_sha256(self.binding.spec_path) != self.binding.identity["spec_sha256"]:
@@ -1458,11 +1500,14 @@ def _prepare_binding(
         args.dataset,
         args.source_id,
         camera_manifest,
+        getattr(args, "signal_product_manifest", None),
     )
     progress_path = args.progress.resolve()
     practice_output = args.practice_output.resolve() if args.practice_output else None
     truth_output = args.organizer_output.resolve() if args.organizer_output else None
     paths = [binding.source_path, binding.spec_path, binding.events_path, binding.manifest_path]
+    if binding.signal_product_manifest_path is not None:
+        paths.append(binding.signal_product_manifest_path)
     if camera_manifest:
         paths.append(camera_manifest.resolve())
     if camera is not None:
@@ -1494,6 +1539,7 @@ def _prepare_binding(
         truth_output=truth_output,
         spec_name=binding.spec_name,
         event_ids=binding.event_ids,
+        signal_product_manifest_path=binding.signal_product_manifest_path,
     )
     return binding, events, manifest, before_ns, after_ns
 
@@ -1541,6 +1587,7 @@ def add_label_review_command(
     review.add_argument("--practice-output", type=Path)
     review.add_argument("--organizer-output", type=Path)
     review.add_argument("--camera-context-manifest", type=Path)
+    review.add_argument("--signal-product-manifest", type=Path)
     review.add_argument("--port", type=int, default=0)
     review.add_argument("--no-browser", action="store_true")
 

@@ -82,3 +82,15 @@ The source overview marks proposals, approved events, rejected proposals, data g
 Mark displayed window checked records a local reviewer note for the window whose evidence was loaded. Notes save and reload with the same bound progress, and interval geometry edits clear them. These notes do not approve an event or provide completeness signoff. Use the displayed window to prefill missed-event boundaries, then refine the boundaries, supply a reason, and review through the existing actions. Sign off whole-recording completeness only after your contextual review.
 
 The window endpoint remains loopback-only and token-protected. It rechecks bound source/spec/resources/run/context identities before reading evidence. Its responses and local checked-window records never enter practice packs or private consumer truth.
+## Review a reduced signal product with approved context
+
+When the scored source is a reduced warm-up or development product, also pass
+--signal-product-manifest SIGNAL_PRODUCT.mcap.manifest.json with the approved camera-context
+manifest. The adapter verifies the physical product, its exact sidecar hash named by the camera
+manifest, original parent, source ID, dataset, split and identity timestamp mapping. It never
+substitutes a same-name recording.
+
+Progress includes that sidecar identity. Changes invalidate reuse, actions and export. Reviews
+against original recordings keep their existing identity and do not need this option. The sealed
+label-pack builder remains sealed-only. This option supplies an exact technical binding; it grants
+no new imagery rights or human coverage approval.
