@@ -94,6 +94,14 @@ def _nonnegative_ns(value: object, context: str) -> int:
     return result
 
 
+def _source_window(request: Mapping[str, object], bounds: tuple[int, int]) -> tuple[int, int]:
+    start_ns = _nonnegative_ns(request.get("start_ns"), "window start_ns")
+    end_ns = _nonnegative_ns(request.get("end_ns"), "window end_ns")
+    if not bounds[0] <= start_ns < end_ns <= bounds[1]:
+        raise CivError("evidence window must be a positive interval inside source bounds")
+    return start_ns, end_ns
+
+
 def _required_reason(value: object, context: str) -> str:
     reason = require_string(value, context)
     if not reason.strip():
@@ -153,6 +161,8 @@ def _collect_signals(
     bindings: Mapping[str, object],
     windows: Mapping[str, tuple[int, int]],
 ) -> dict[str, dict[str, list[dict[str, object]]]]:
+    if not windows:
+        return {}
     signal_bindings: dict[str, tuple[str, str]] = {}
     by_topic: dict[str, list[tuple[str, str]]] = {}
     for name, raw_binding in bindings.items():
@@ -167,15 +177,18 @@ def _collect_signals(
         by_topic.setdefault(topic, []).append((name, field))
 
     samples: dict[str, dict[str, list[dict[str, object]]]] = {
-        candidate_id: {name: [] for name in signal_bindings}
-        for candidate_id in windows
+        candidate_id: {name: [] for name in signal_bindings} for candidate_id in windows
     }
     decoder = MessageDecoder()
     try:
         for topic, signal_fields in sorted(by_topic.items()):
             with source_path.open("rb") as stream:
                 reader = make_reader(stream, validate_crcs=True)
-                for schema, channel, message in reader.iter_messages(topics=[topic]):
+                for schema, channel, message in reader.iter_messages(
+                    topics=[topic],
+                    start_time=min(window[0] for window in windows.values()),
+                    end_time=max(window[1] for window in windows.values()) + 1,
+                ):
                     matching = [
                         candidate_id
                         for candidate_id, (start_ns, end_ns) in windows.items()
@@ -185,9 +198,7 @@ def _collect_signals(
                         continue
                     payload = decoder.decode(schema, channel, message.data)
                     for name, field in signal_fields:
-                        value = _json_signal_value(
-                            extract_field(payload, field, f"topic {topic}")
-                        )
+                        value = _json_signal_value(extract_field(payload, field, f"topic {topic}"))
                         for candidate_id in matching:
                             samples[candidate_id][name].append(
                                 {"timestamp_ns": str(message.log_time), "value": value}
@@ -196,10 +207,7 @@ def _collect_signals(
         raise CivError(f"cannot read source signals: {error}") from error
 
     return {
-        candidate_id: {
-            name: _decimate(points)
-            for name, points in candidate_signals.items()
-        }
+        candidate_id: {name: _decimate(points) for name, points in candidate_signals.items()}
         for candidate_id, candidate_signals in samples.items()
     }
 
@@ -209,6 +217,7 @@ def _advance_geometry_revision(state: dict[str, object]) -> None:
     if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
         raise CivError("review geometry revision is invalid")
     state["geometry_revision"] = revision + 1
+    state["checked_windows"] = []
 
 
 def _camera_frames(
@@ -510,6 +519,7 @@ def initial_review_state(
     return {
         "audit": [],
         "candidates": candidates,
+        "checked_windows": [],
         "coverage_revision": -1,
         "coverage_reviewed": False,
         "coverage_reviewer": None,
@@ -560,15 +570,25 @@ def transition_review(
         _audit(state, {"action": action_type, "reviewer": reviewer})
         return state
 
+    if action_type == "check-window":
+        start_ns, end_ns = _source_window(action, source_bounds)
+        reviewer = _reviewer(state)
+        windows = state.setdefault("checked_windows", [])
+        if not isinstance(windows, list):
+            raise CivError("checked windows must be a list")
+        record = {"start_ns": str(start_ns), "end_ns": str(end_ns), "reviewer": reviewer}
+        if record not in windows:
+            windows.append(record)
+        _audit(state, {"action": action_type, **record})
+        return state
+
     if action_type == "signoff":
         checked = action.get("checked")
         if not isinstance(checked, bool):
             raise CivError("missed-event signoff must be checked or unchecked")
         reviewer = _reviewer(state)
         state["coverage_reviewed"] = checked
-        state["coverage_revision"] = (
-            state.get("geometry_revision") if checked else -1
-        )
+        state["coverage_revision"] = state.get("geometry_revision") if checked else -1
         state["coverage_reviewer"] = reviewer if checked else None
         _audit(state, {"action": action_type, "checked": checked, "reviewer": reviewer})
         return state
@@ -584,11 +604,7 @@ def transition_review(
         if not isinstance(raw_candidates, list):
             raise CivError("review candidates must be a list")
         number = 1
-        existing_ids = {
-            str(item.get("id"))
-            for item in raw_candidates
-            if isinstance(item, dict)
-        }
+        existing_ids = {str(item.get("id")) for item in raw_candidates if isinstance(item, dict)}
         while f"missed-{number:04d}" in existing_ids:
             number += 1
         identifier = f"missed-{number:04d}"
@@ -1053,14 +1069,14 @@ def _read_progress(path: Path, binding: ReviewBinding) -> dict[str, object]:
                 raise CivError(f"saved missed-event identity is invalid: {identifier}")
         else:
             raise CivError(f"saved candidate kind is unsupported: {identifier}")
-        if candidate.get("decision") == "data_gap" and candidate.get(
-            "exclusion_kind"
-        ) != "scoring_data_gap":
+        if (
+            candidate.get("decision") == "data_gap"
+            and candidate.get("exclusion_kind") != "scoring_data_gap"
+        ):
             raise CivError(f"unsupported exclusion kind for {identifier}")
         if candidate.get("exclusion_kind") not in {None, "scoring_data_gap"}:
             raise CivError(
-                f"unsupported exclusion kind for {identifier}: "
-                f"{candidate.get('exclusion_kind')}"
+                f"unsupported exclusion kind for {identifier}: {candidate.get('exclusion_kind')}"
             )
         if candidate.get("decision") not in {
             "pending",
@@ -1075,6 +1091,14 @@ def _read_progress(path: Path, binding: ReviewBinding) -> dict[str, object]:
             raise CivError(f"saved review interval is outside source bounds: {identifier}")
     if detected_ids != set(binding.event_ids):
         raise CivError("saved progress candidate set does not match the detected events")
+    windows = state.get("checked_windows", [])
+    if not isinstance(windows, list):
+        raise CivError("saved checked windows must be a list")
+    for raw in windows:
+        checked = require_mapping(raw, "saved checked window")
+        _source_window(checked, binding.source_bounds)
+        require_string(checked.get("reviewer"), "checked-window reviewer")
+    state["checked_windows"] = windows
     return cast(dict[str, object], state)
 
 
@@ -1145,10 +1169,25 @@ class ReviewApplication:
         self.binding.evidence_by_id[candidate_id] = evidence
         return evidence
 
+    def evidence_window(self, request: Mapping[str, object]) -> dict[str, Any]:
+        start_ns, end_ns = _source_window(request, self.binding.source_bounds)
+        self.recheck_inputs()
+        spec = load_event_spec(self.binding.spec_path)
+        signals = _collect_signals(
+            self.binding.source_path, spec.signals, {"source-window": (start_ns, end_ns)}
+        )["source-window"]
+        return _candidate_context(
+            "source-window", start_ns, end_ns, signals, self.binding.camera_frames, 0, 0
+        )
+
     def view(self) -> dict[str, object]:
         self._refresh_context(self.state)
         state = copy.deepcopy(self.state)
         return {
+            "source_bounds": {
+                "start_ns": str(self.binding.source_bounds[0]),
+                "end_ns": str(self.binding.source_bounds[1]),
+            },
             "gate": gate_review(self.state),
             "identity": self.binding.identity,
             "can_undo": bool(self.history),
@@ -1380,7 +1419,9 @@ def _create_handler(app: ReviewApplication, token: str) -> type[BaseHTTPRequestH
                 return
             path = urlsplit(self.path).path
             try:
-                if path == "/api/action":
+                if path == "/api/window":
+                    result = app.evidence_window(self._json_body())
+                elif path == "/api/action":
                     result = app.act(self._json_body())
                 elif path == "/api/save":
                     app.save()
