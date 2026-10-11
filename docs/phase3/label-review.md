@@ -94,3 +94,11 @@ Progress includes that sidecar identity. Changes invalidate reuse, actions and e
 against original recordings keep their existing identity and do not need this option. The sealed
 label-pack builder remains sealed-only. This option supplies an exact technical binding; it grants
 no new imagery rights or human coverage approval.
+
+
+Explicitly bound warm-up/development signal products support practice export and local review audit,
+but the current organizer-private truth contract is sealed-only. The private button is disabled with
+an explanation, and direct private export fails before writing a file. Original-recording private
+review retains its existing behavior. A prior private output mislabeled as sealed must remain local
+and unqualified; do not hand-edit it or feed warm-up/development manifests into the sealed builder.
+Existing bound progress and practice packs remain reusable without repeating human decisions.
