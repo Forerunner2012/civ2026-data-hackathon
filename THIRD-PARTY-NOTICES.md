@@ -15,19 +15,6 @@ copy conditional. Its upstream MIT copyright and permission notice is retained v
 [OpenAI Sites 2023 MIT license](LICENSES/OpenAI-Sites-2023-MIT.txt).
 The plugin remains at its existing path and retains its behavior.
 
-## Historical Sites favicon
-
-`handoff-site/public/favicon.svg`, blob `ca747cb66b233fedec5ff0c84f97bb4631c05dbf`,
-is byte-identical to the
-[Sites template at `100d3f27eda10bc95c15403f5fe200600eefbbad`](https://github.com/openai/sites/blob/100d3f27eda10bc95c15403f5fe200600eefbbad/packages/create-sites/templates/vinext/public/favicon.svg).
-The upstream copyright and permission notice is retained verbatim in
-[OpenAI Sites 2026 MIT license](LICENSES/OpenAI-Sites-2026-MIT.txt).
-
-The copyright notice does not establish permission to use the Sites product mark as CIV
-identity. The maintainer approved replacement with a CIV/hackathon icon and confirmed CIV
-brand authorization. Replacement artwork and its review are still pending. The existing
-favicon and its historical bytes are preserved by this notice-only change.
-
 ## ROS message-schema fixture
 
 `tests/fixtures/schemas/reims-imu.ros2msg.b64` was historically named
