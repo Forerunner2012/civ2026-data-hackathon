@@ -832,7 +832,7 @@ def test_window_http_auth_bounds_and_exact_nanoseconds(tmp_path: Path) -> None:
         server.server_close()
 
 
-def _reduced_case(root: Path) -> Namespace:
+def _reduced_case(root: Path, *, split: str = "warmup") -> Namespace:
     args, _, _ = _case(root, with_camera_context=True)
     original_source = args.source
     recipe = root / "warmup-recipe.json"
@@ -848,7 +848,7 @@ def _reduced_case(root: Path) -> Namespace:
             "recipe_id": "fixture-warmup-v1",
             "rights_scope": "Synthetic tests only",
             "source": {"id": "synthetic-source", "sha256": file_sha256(original_source)},
-            "split": "warmup",
+            "split": split,
             "topics": ["/micro/signal"],
             "version": 1,
         },
@@ -858,6 +858,7 @@ def _reduced_case(root: Path) -> Namespace:
     args.source = products / "warmup-signals.mcap"
     args.signal_product_manifest = products / str(result["manifest"])
     camera = json.loads(args.camera_context_manifest.read_text(encoding="utf-8"))
+    camera["split"] = split
     camera["signal_product"] = {
         "name": args.source.name,
         "sha256": file_sha256(args.source),
@@ -940,3 +941,45 @@ def test_reduced_context_rejects_cross_source_or_membership(tmp_path: Path, chan
     _write_json(args.camera_context_manifest, camera)
     with pytest.raises(CivError, match="identity|dataset"):
         _prepare_binding(args)
+
+
+@pytest.mark.parametrize("split", ["warmup", "development"])
+def test_nonsealed_product_refuses_private_export_and_preserves_practice(
+    tmp_path: Path, split: str
+) -> None:
+    args = _reduced_case(tmp_path / "case", split=split)
+    binding, events, _, before_ns, after_ns = _prepare_binding(args)
+    app = ReviewApplication(
+        binding,
+        initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before_ns,
+        after_ns=after_ns,
+    )
+    _record_review(app, events[0].event_id)
+    app.save()
+    saved_progress = args.progress.read_bytes()
+    app.reload()
+    assert gate_review(app.state) == []
+    with pytest.raises(CivError, match="warm-up/development"):
+        app.export("organizer-private")
+    assert not args.organizer_output.exists()
+    assert args.progress.read_bytes() == saved_progress
+    with pytest.raises(CivError, match="warm-up/development"):
+        build_export_document(
+            app.state, "organizer-private", spec_name=binding.spec_name,
+            source_bounds=binding.source_bounds,
+        )
+    view = app.view()
+    outputs = view["outputs"]
+    blockers = view["output_blockers"]
+    assert isinstance(outputs, dict) and isinstance(blockers, dict)
+    assert outputs["organizer-private"] is False
+    assert outputs["practice"] is True
+    assert "warm-up/development" in blockers["organizer-private"]
+    app.export("practice")
+    practice = json.loads(args.practice_output.read_text(encoding="utf-8"))
+    assert practice["source_sha256"] == file_sha256(args.source)
+    assert practice == build_export_document(
+        app.state, "practice", spec_name=binding.spec_name, source_bounds=binding.source_bounds
+    )
+    assert args.progress.read_bytes() == saved_progress

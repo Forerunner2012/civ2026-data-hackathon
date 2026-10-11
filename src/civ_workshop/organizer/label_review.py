@@ -924,6 +924,17 @@ def _ordered_records(
     )
 
 
+def _private_export_blocker(identity: Mapping[str, object]) -> str | None:
+    # Explicit signal-product bindings currently accept only warmup/development.
+    # Use the existing identity field so previously saved progress stays reusable.
+    if identity.get("signal_product_manifest_sha256") is not None:
+        return (
+            "Organizer-private sealed truth cannot represent warm-up/development products. "
+            "Export practice labels and retain the review audit locally."
+        )
+    return None
+
+
 def build_export_document(
     state: Mapping[str, object],
     target: str,
@@ -993,6 +1004,9 @@ def build_export_document(
 
     if target != "organizer-private":
         raise CivError(f"unknown review output target '{target}'")
+
+    if blocker := _private_export_blocker(identity):
+        raise CivError(blocker)
 
     if str(identity.get("dataset")) not in {"kashiwa", "reims"}:
         raise CivError("organizer-private output requires a supported dataset")
@@ -1216,6 +1230,7 @@ class ReviewApplication:
     def view(self) -> dict[str, object]:
         self._refresh_context(self.state)
         state = copy.deepcopy(self.state)
+        private_blocker = _private_export_blocker(self.binding.identity)
         return {
             "source_bounds": {
                 "start_ns": str(self.binding.source_bounds[0]),
@@ -1225,9 +1240,12 @@ class ReviewApplication:
             "identity": self.binding.identity,
             "can_undo": bool(self.history),
             "outputs": {
-                "organizer-private": self.binding.truth_output is not None,
+                "organizer-private": (
+                    self.binding.truth_output is not None and private_blocker is None
+                ),
                 "practice": self.binding.practice_output is not None,
             },
+            "output_blockers": {"organizer-private": private_blocker},
             "state": state,
         }
 

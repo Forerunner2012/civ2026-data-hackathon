@@ -168,6 +168,7 @@
         <button id="export-practice" class="primary">Export participant practice labels</button>
         <button id="export-private">Export organizer-private truth</button>
       </div>
+      <p id="private-export-status" class="muted"></p>
     </section>
     <details>
       <summary>View local review audit</summary>
@@ -354,6 +355,7 @@
       $("undo").disabled = !review.can_undo;
       $("export-practice").disabled = review.gate.length > 0 || !review.outputs.practice;
       $("export-private").disabled = review.gate.length > 0 || !review.outputs["organizer-private"];
+      $("private-export-status").textContent = review.output_blockers["organizer-private"] || "";
       const list = $("candidate-list");
       list.replaceChildren();
       state.candidates.forEach((candidate) => {
