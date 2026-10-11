@@ -137,3 +137,36 @@ def test_catalog_cli_reads_relative_paths_and_fails_on_mismatch(
         main(["labels", "catalog", "--inventory", str(inventory)])
     assert error.value.code == 2
     assert json.loads(capsys.readouterr().out)["valid"] is False
+
+
+def test_renamed_pack_cannot_masquerade_as_review_progress(tmp_path: Path) -> None:
+    path = tmp_path / "renamed.json"
+    path.write_text(
+        canonical_json(
+            {
+                "format": "civ.label-review-progress/v1",
+                "dataset": "kashiwa",
+                "source_sha256": "a" * 64,
+                "labels": [],
+                "data_gaps": [],
+            }
+        )
+    )
+    inventory = tmp_path / "inventory.json"
+    inventory.write_text(
+        canonical_json(
+            {
+                "artifacts": [
+                    {
+                        "id": "renamed",
+                        "kind": "review-progress",
+                        "path": path.name,
+                        "sha256": file_sha256(path),
+                    }
+                ]
+            }
+        )
+    )
+    result = catalog_artifacts(inventory)
+    assert result["valid"] is False
+    assert result["artifacts"][0]["review_compatibility"] == "mismatch"

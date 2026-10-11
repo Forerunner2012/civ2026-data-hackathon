@@ -50,6 +50,12 @@ def _inspect(path: Path, kind: str) -> dict[str, object] | None:
         raise CivError(f"artifact type {kind} requires {expected}")
     if kind == "consumer-pack":
         load_label_pack(path)
+    if kind == "review-progress":
+        identity = require_mapping(document.get("identity"), "review progress identity")
+        _digest(identity.get("source_sha256"))
+        _digest(identity.get("spec_sha256"))
+        if not isinstance(document.get("candidates"), list):
+            raise CivError("artifact type review-progress requires candidate decisions")
     if kind != "approval":
         return None
     authority = require_mapping(document.get("development_authority"), "development authority")
@@ -110,6 +116,8 @@ def catalog_artifacts(inventory_path: Path) -> dict[str, Any]:
             if actual != expected:
                 raise CivError("artifact SHA-256 mismatch")
             authority = _inspect(path, kind)
+            if file_sha256(path) != actual:
+                raise CivError("artifact changed during catalog inspection")
             record["identity_verified"] = True
             if authority is not None:
                 record["authority"] = authority
