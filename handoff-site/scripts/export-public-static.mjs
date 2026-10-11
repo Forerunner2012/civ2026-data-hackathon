@@ -36,13 +36,14 @@ function staticHtml(source, prefix, participantTarget) {
     .replace(/<link\b[^>]*rel=["'](?:modulepreload|preload)["'][^>]*>/gi, "")
     .replaceAll('href="/assets/', `href="${prefix}assets/`)
     .replaceAll('href="/desk/', `href="${prefix}desk/`)
+    .replaceAll('href="/favicon.svg"', `href="${prefix}favicon.svg"`)
     .replaceAll('href="/participants"', `href="${participantTarget}"`)
     .replaceAll('href="/"', `href="${prefix}index.html"`);
 }
 
 await mkdir(outputRoot, { recursive: false });
 const clientRoot = path.join(projectRoot, "dist/client");
-for (const name of ["assets", "desk", "session-fallback.html"]) {
+for (const name of ["assets", "desk", "favicon.svg", "session-fallback.html"]) {
   await cp(path.join(clientRoot, name), path.join(outputRoot, name), { recursive: true });
 }
 
