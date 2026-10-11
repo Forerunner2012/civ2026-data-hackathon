@@ -59,3 +59,16 @@ events.
 
 The local progress file is the complete review audit. Never put it in a participant bundle or
 submit it as participant work.
+
+## Review a reduced signal product with approved context
+
+When the scored source is a reduced warm-up or development product, also pass
+--signal-product-manifest SIGNAL_PRODUCT.mcap.manifest.json with the approved camera-context
+manifest. The adapter verifies the physical product, its exact sidecar hash named by the camera
+manifest, original parent, source ID, dataset, split and identity timestamp mapping. It never
+substitutes a same-name recording.
+
+Progress includes that sidecar identity. Changes invalidate reuse, actions and export. Reviews
+against original recordings keep their existing identity and do not need this option. The sealed
+label-pack builder remains sealed-only. This option supplies an exact technical binding; it grants
+no new imagery rights or human coverage approval.
