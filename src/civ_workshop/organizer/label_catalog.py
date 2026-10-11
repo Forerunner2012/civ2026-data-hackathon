@@ -46,7 +46,8 @@ def _inspect(path: Path, kind: str) -> dict[str, object] | None:
         return None
     field, expected = JSON_TYPES[kind]
     document = read_json_file(path, "catalog artifact")
-    if document.get(field) != expected:
+    accepted = (expected, "civ.run-manifest/v2") if kind == "run-manifest" else (expected,)
+    if document.get(field) not in accepted:
         raise CivError(f"artifact type {kind} requires {expected}")
     if kind == "consumer-pack":
         load_label_pack(path)

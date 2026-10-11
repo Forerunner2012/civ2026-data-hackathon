@@ -170,3 +170,29 @@ def test_renamed_pack_cannot_masquerade_as_review_progress(tmp_path: Path) -> No
     result = catalog_artifacts(inventory)
     assert result["valid"] is False
     assert result["artifacts"][0]["review_compatibility"] == "mismatch"
+
+
+@pytest.mark.parametrize("contract", ["civ.run-manifest/v1", "civ.run-manifest/v2"])
+def test_catalog_distinguishes_historical_and_current_run_identities(
+    tmp_path: Path, contract: str
+) -> None:
+    path = tmp_path / "run.json"
+    path.write_text(canonical_json({"contract": contract}))
+    inventory = tmp_path / "inventory.json"
+    inventory.write_text(
+        canonical_json(
+            {
+                "artifacts": [
+                    {
+                        "id": "run",
+                        "kind": "run-manifest",
+                        "path": path.name,
+                        "sha256": file_sha256(path),
+                    }
+                ]
+            }
+        )
+    )
+    result = catalog_artifacts(inventory)
+    assert result["valid"] is True
+    assert result["artifacts"][0]["review_compatibility"] == "reference-only"
