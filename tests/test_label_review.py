@@ -43,6 +43,27 @@ EPOCH_NS = 1_791_300_000_000_000_123
 CAMERA_TOPIC = "/camera/image/compressed"
 
 
+def _mapping(value: object) -> dict[str, object]:
+    assert isinstance(value, dict)
+    assert all(isinstance(key, str) for key in value)
+    mapping: dict[str, object] = value
+    return mapping
+
+
+def _records(value: object) -> list[dict[str, object]]:
+    assert isinstance(value, list)
+    return [_mapping(item) for item in value]
+
+
+def _gate_reasons(value: object) -> list[str]:
+    assert isinstance(value, list)
+    reasons: list[str] = []
+    for reason in value:
+        assert isinstance(reason, str)
+        reasons.append(reason)
+    return reasons
+
+
 def _png_pixel() -> bytes:
     def chunk(name: bytes, value: bytes) -> bytes:
         checksum = zlib.crc32(name + value) & 0xFFFFFFFF
@@ -221,10 +242,10 @@ def _case(
 
 def _state_with_spoofed_context(
     app: ReviewApplication, candidate_id: str, *, approved: bool = False
-) -> dict[str, Any]:
-    state = json.loads(canonical_json(app.state))
+) -> dict[str, object]:
+    state = _mapping(json.loads(canonical_json(app.state)))
     candidate = next(
-        item for item in state["candidates"] if item["id"] == candidate_id
+        item for item in _records(state["candidates"]) if item["id"] == candidate_id
     )
     candidate["context_status"] = "available"
     candidate["missing_context"] = []
@@ -266,9 +287,9 @@ def test_initial_saved_progress_refreshes_context_before_gate(tmp_path: Path) ->
         after_ns=app.after_ns,
     )
 
-    assert loaded.state["candidates"][0]["context_status"] == "missing"
+    assert _records(loaded.state["candidates"])[0]["context_status"] == "missing"
     assert any("explicit disposition for missing context" in reason
-               for reason in loaded.view()["gate"])
+               for reason in _gate_reasons(loaded.view()["gate"]))
 
 
 def test_reload_refreshes_saved_context_before_gate(tmp_path: Path) -> None:
@@ -278,9 +299,9 @@ def test_reload_refreshes_saved_context_before_gate(tmp_path: Path) -> None:
 
     view = app.reload()
 
-    assert app.state["candidates"][0]["context_status"] == "missing"
+    assert _records(app.state["candidates"])[0]["context_status"] == "missing"
     assert any("explicit disposition for missing context" in reason
-               for reason in view["gate"])
+               for reason in _gate_reasons(view["gate"]))
 
 
 def test_approval_uses_bound_context_not_saved_status(tmp_path: Path) -> None:
@@ -305,8 +326,8 @@ def test_undo_refreshes_restored_context_in_authoritative_state(tmp_path: Path) 
     app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
     app.act({"type": "undo"})
 
-    assert app.state["candidates"][0]["context_status"] == "missing"
-    assert app.state["candidates"][0]["missing_context"]
+    assert _records(app.state["candidates"])[0]["context_status"] == "missing"
+    assert _records(app.state["candidates"])[0]["missing_context"]
 
 
 def test_direct_export_refreshes_context_before_gate(tmp_path: Path) -> None:
@@ -333,7 +354,7 @@ def test_exact_epoch_nanoseconds_round_trip_and_consumer_export(tmp_path: Path) 
             "reason": "Synthetic one-nanosecond boundary adjustment.",
         }
     )
-    assert app.state["candidates"][0]["decision"] == "pending"
+    assert _records(app.state["candidates"])[0]["decision"] == "pending"
     app.act(
         {
             "type": "approve",
@@ -350,8 +371,8 @@ def test_exact_epoch_nanoseconds_round_trip_and_consumer_export(tmp_path: Path) 
     assert saved["candidates"][0]["end_ns"] == str(end)
 
     reloaded = app.reload()
-    assert reloaded["state"]["candidates"][0]["start_ns"] == str(start)
-    assert reloaded["state"]["candidates"][0]["end_ns"] == str(end)
+    assert _records(_mapping(reloaded["state"])["candidates"])[0]["start_ns"] == str(start)
+    assert _records(_mapping(reloaded["state"])["candidates"])[0]["end_ns"] == str(end)
     result = app.export("practice")
     assert result["target"] == "practice"
     output = json.loads(args.practice_output.read_text(encoding="utf-8"))
@@ -369,9 +390,11 @@ def test_exact_epoch_nanoseconds_round_trip_and_consumer_export(tmp_path: Path) 
 def test_adjustment_undo_preserves_reason_in_local_audit(tmp_path: Path) -> None:
     _, app, candidate_id = _case(tmp_path / "case")
     _record_review(app, candidate_id)
-    candidate = app.state["candidates"][0]
+    candidate = _records(app.state["candidates"])[0]
     original_start = candidate["start_ns"]
     original_end = candidate["end_ns"]
+    assert isinstance(original_start, str)
+    assert isinstance(original_end, str)
     app.act(
         {
             "type": "edit",
@@ -381,21 +404,21 @@ def test_adjustment_undo_preserves_reason_in_local_audit(tmp_path: Path) -> None
             "reason": "Synthetic adjustment after approval.",
         }
     )
-    assert app.state["candidates"][0]["decision"] == "pending"
+    assert _records(app.state["candidates"])[0]["decision"] == "pending"
     assert app.state["coverage_reviewed"] is False
     app.act({"type": "undo"})
-    assert app.state["candidates"][0]["decision"] == "approved"
-    assert app.state["candidates"][0]["start_ns"] == original_start
-    audit = app.state["audit"]
+    assert _records(app.state["candidates"])[0]["decision"] == "approved"
+    assert _records(app.state["candidates"])[0]["start_ns"] == original_start
+    audit = _records(app.state["audit"])
     undo = audit[-1]
     assert undo["action"] == "undo"
-    assert undo["undid"]["reason"] == "Synthetic adjustment after approval."
+    assert _mapping(undo["undid"])["reason"] == "Synthetic adjustment after approval."
     assert gate_review(app.state) == []
 
 
 def test_reasons_uncertainty_missed_signoff_and_unsupported_exclusion(tmp_path: Path) -> None:
     args, app, candidate_id = _case(tmp_path / "case")
-    assert app.state["candidates"][0]["context_status"] == "missing"
+    assert _records(app.state["candidates"])[0]["context_status"] == "missing"
     with pytest.raises(CivError, match="missing context"):
         transition_review(
             {**app.state, "reviewer": "Reviewer"},
@@ -442,7 +465,8 @@ def test_reasons_uncertainty_missed_signoff_and_unsupported_exclusion(tmp_path: 
     )
     assert app.state["coverage_reviewed"] is False
     assert gate_review(app.state)
-    missed_id = app.state["candidates"][-1]["id"]
+    missed_id = _records(app.state["candidates"])[-1]["id"]
+    assert isinstance(missed_id, str)
     app.act(
         {
             "type": "approve",
@@ -477,7 +501,7 @@ def test_practice_selection_excludes_private_only_and_private_truth_builds(tmp_p
             "reason": "Synthetic private-only event.",
         }
     )
-    private_id = str(app.state["candidates"][-1]["id"])
+    private_id = str(_records(app.state["candidates"])[-1]["id"])
     app.act(
         {
             "type": "approve",
@@ -588,7 +612,9 @@ def test_local_browser_is_loopback_token_gated_and_uses_exact_integer_fields(
     server = HTTPServer(("127.0.0.1", 0), _create_handler(app, token))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    host, port = server.server_address
+    host, port = server.server_address[:2]
+    assert isinstance(host, str)
+    assert isinstance(port, int)
     try:
         with urlopen(f"http://{host}:{port}/?token={token}", timeout=5) as response:
             html = response.read().decode("utf-8")
@@ -616,7 +642,7 @@ def test_local_browser_is_loopback_token_gated_and_uses_exact_integer_fields(
 
 def test_camera_context_refresh_cache_and_local_frame_ui(tmp_path: Path) -> None:
     _, app, candidate_id = _case(tmp_path / "case", with_camera_context=True)
-    original = app.state["candidates"][0]
+    original = _records(app.state["candidates"])[0]
     original_start = original["start_ns"]
     original_end = original["end_ns"]
     assert original["context_status"] == "missing"
@@ -625,9 +651,11 @@ def test_camera_context_refresh_cache_and_local_frame_ui(tmp_path: Path) -> None
     server = HTTPServer(("127.0.0.1", 0), _create_handler(app, token))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    host, port = server.server_address
+    host, port = server.server_address[:2]
+    assert isinstance(host, str)
+    assert isinstance(port, int)
 
-    def post_action(payload: dict[str, object]) -> dict[str, Any]:
+    def post_action(payload: dict[str, object]) -> dict[str, object]:
         request = Request(
             f"http://{host}:{port}/api/action",
             data=json.dumps(payload).encode(),
@@ -635,7 +663,7 @@ def test_camera_context_refresh_cache_and_local_frame_ui(tmp_path: Path) -> None
             method="POST",
         )
         with urlopen(request, timeout=5) as response:
-            return json.loads(response.read().decode("utf-8"))
+            return _mapping(json.loads(response.read().decode("utf-8")))
 
     try:
         with urlopen(f"http://{host}:{port}/?token={token}", timeout=5) as response:
@@ -652,19 +680,19 @@ def test_camera_context_refresh_cache_and_local_frame_ui(tmp_path: Path) -> None
                 "reason": "Synthetic adjustment to inspect the approved frame.",
             }
         )
-        candidate = result["state"]["candidates"][0]
+        candidate = _records(_mapping(result["state"])["candidates"])[0]
         assert candidate["context_status"] == "available"
         assert candidate["camera_frames"] == [
             {"index": 0, "timestamp_ns": str(EPOCH_NS + 4_000_000_000)}
         ]
-        assert candidate["signals"]["signal"]
+        assert _mapping(candidate["signals"])["signal"]
         with urlopen(
             f"http://{host}:{port}/api/frame/0?token={token}", timeout=5
         ) as response:
             assert response.headers.get_content_type() == "image/png"
             assert response.read() == _png_pixel()
 
-        undone = post_action({"type": "undo"})["state"]["candidates"][0]
+        undone = _records(_mapping(post_action({"type": "undo"})["state"])["candidates"])[0]
         assert undone["start_ns"] == original_start
         assert undone["end_ns"] == original_end
         assert undone["context_status"] == "missing"
