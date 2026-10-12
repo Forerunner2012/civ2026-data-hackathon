@@ -4,15 +4,17 @@ This folder is reserved for complete, human-reviewed practice labels for designa
 
 ## Kashiwa warm-up
 
-The first intended practice target is the accepted Kashiwa warm-up product. Use a separately supplied dataset only where its use is authorized, and keep the dataset external and read-only. This repository does not include the source recording or its camera companion.
+The accepted Kashiwa warm-up product is the first designated practice target. Use a separately supplied dataset only where its use is authorized, and keep the dataset external and read-only. This repository does not include the source recording or its camera companion.
 
-When a reviewed pack is available, score a detected run with the existing consumer:
+Complete local practice reviews and consumer qualification are recorded in [issue #117](https://github.com/Forerunner2012/civ2026-data-hackathon/issues/117). This does not establish participant availability or permission to distribute the packs. No real label JSON is tracked here.
+
+After [installing the participant CLI](../docs/setup.md), score a detected run only when your session supplies its matching complete pack:
 
 ```sh
-uv run civ score WORKING_DIR --labels practice-labels/kashiwa-warmup/KASHIWA_WARM_UP_PRACTICE_PACK.json
+civ score WORKING_DIR --labels SUPPLIED_PRACTICE_PACK.json
 ```
 
-`WORKING_DIR` stands for the local detected-run directory. `KASHIWA_WARM_UP_PRACTICE_PACK.json` is an intentionally absent placeholder; no source-bound, human-reviewed pack has been verified or supplied here yet. The command will work only after the exact source and qualifying reviewed pack are available.
+`WORKING_DIR` is your detected-run directory; replace `SUPPLIED_PRACTICE_PACK.json` with the real local pack path announced for that exact source and event definition. Do not infer a pack filename or distribution schedule from this reserved folder. Keep supplied labels read-only.
 
 Practice labels are for participant self-evaluation. Held-out evaluation truth, sealed organizer packs, review audits, private provenance, source MCAPs, and camera companions remain outside this folder and organizer-only materials remain private. A valid schema or matching hash alone does not establish human review, complete coverage, or permission to publish.
 

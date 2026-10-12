@@ -28,7 +28,7 @@ export const journey: { time: string; title: string; doing: string; produces: st
     time: "09:30",
     title: "Briefing",
     doing: "Five minutes on where everything is and what to do if you get lost.",
-    produces: "Nothing to build yet. Start your container while you listen.",
+    produces: "Nothing to build yet. Open your supplied kit while you listen.",
   },
   {
     time: "09:35",
@@ -57,7 +57,7 @@ export const journey: { time: string; title: string; doing: string; produces: st
   {
     time: "10:40",
     title: "Scale",
-    doing: "Batch the detector across routes and inspect one failure you can name.",
+    doing: "Run your EventSpec across recordings and inspect one failure you can name.",
     produces: "Events, metrics, one reasoned iteration — and report headings 1 and 2, written now.",
   },
   {
@@ -81,15 +81,14 @@ export const journey: { time: string; title: string; doing: string; produces: st
 ];
 
 /**
- * The page is the room's tempo. It says what you should be holding by now and,
- * more usefully, what to do if you are not.
+ * The static participant page points readers to the separate live session page.
  */
 export const theDayPage = [
-  "A page you keep open all session. It moves on a schedule; you do not have to watch it.",
-  "At each step it states what you should have by now — and what to do if you do not.",
-  "Hints and tips unlock as the session goes. Waiting for one is legitimate, not a confession.",
+  "This participant page and its kit copy are static guides. Use the separate live page supplied for your session.",
+  "The live page states what you should have at each step and what to do if you do not.",
+  "Hints and tips unlock on the live page as the session goes. Waiting for a public hint is allowed.",
   "A coach can release the next hints early for the whole room, so help is never private.",
-  "Worked solutions are published after the event, not during it.",
+  "Worked solutions require a separate approved release after the session.",
 ];
 
 export const youOwn = [
@@ -111,15 +110,15 @@ export const youReceive = [
   "Clip extraction and standardized output",
   "Pre-loaded PlotJuggler and Lichtblick layouts for both recordings, and an offline bundle",
   "Practice data, a reference detector and a submission template",
-  "The answer key for two or three events, so you can see where an occurrence starts and ends",
-  "A page that tells you what you should have by now, and what to do if you do not",
-  "SSDs in the room carrying the container image and both recordings, if your download failed",
+  "Complete reviewed practice labels for the exact source announced in your session, when supplied",
+  "Static kit guidance and a separately supplied live page for session progress",
+  "Setup and recovery instructions in docs/setup.md",
 ];
 
 export const deliverables = [
   "The engineering question and your detection hypothesis",
   "The signals you used, what was missing, and what you judged unreliable",
-  "An executable EventSpec or detector",
+  "An executable EventSpec",
   "Normalized events.jsonl — the intervals you found, not the data behind them",
   "A run manifest and metrics, recording the clips you cut: topics, durations, bytes in and out",
   "One figure in the report — a plot or a frame with the occurrence marked",

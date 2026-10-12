@@ -55,4 +55,5 @@ await run([
   "tests/accessibility.test.mjs",
   "tests/print-materials.test.mjs",
   "tests/static-export.test.mjs",
+  "tests/participant-consistency.test.mjs",
 ]);

@@ -5,7 +5,7 @@ audience views so organizer material is never shown to participants.
 
 | Route | Audience | Contains |
 | --- | --- | --- |
-| `/` | either | Entry door. Links to both views, carries no audience content of its own. |
+| `/` | attendees in public builds; entry door in local/internal builds | Public participant page, equivalent to `/participants`; the local/internal entry door links audience views. |
 | `/participants` | attendees | Brief, the three-hour ladder, ownership boundary, deliverables, the published rubric, toolkit and CLI, submission layout, what to come ready with. |
 | `/organizers` | **internal** | Strategy/tactics/operations, success criteria and non-goals, the six preparation phases and gates, readiness workstreams, evaluation internals, facilitation mechanics, the seven driving forces, the open decision queue, source precedence. |
 | `/organizers/pack` | organizers and jury, **internal** | Day-of coach, recovery, scoring, feedback, and results runbook; absent from the public production artifact. |
@@ -36,9 +36,7 @@ that must never appear in the participant route, on the entry door, or in any fi
 `organizers.server.ts`.**
 
 > [!IMPORTANT]
-> The split is a *content* boundary, not access control. `/organizers` is unauthenticated — anyone
-> who knows the URL can read it. It is marked `noindex`, but before deploying anywhere participants
-> can reach, put a real gate in front of the route (`worker/index.ts` is the place to do it).
+> Local/internal audience routes are not access control. Public builds exclude organizer, live and solution routes; keep internal builds in their authorized local scope. This documentation does not change route access or hosting.
 
 ## Local preview
 
@@ -114,3 +112,9 @@ npm run lint
 After `npm test`, run `npm run test:navigation` from this directory. The check uses an existing Chromium browser, a temporary local server and an isolated browser profile. It exercises the two public routes and both exported files at desktop/mobile sizes, then checks the disk fallback with JavaScript disabled. Receipts and screenshots stay in ignored `tmp/navigation-browser/`.
 
 Windows defaults to the installed Microsoft Edge executable. Set `CIV_BROWSER_EXECUTABLE` to an existing Chrome or Chromium executable on another test host. This browser is test infrastructure; participants do not need it for the CLI workflows.
+
+## Participant content ownership
+
+Canonical commands and recovery belong to `docs/quickstart.md` and `docs/setup.md`; runtime limits belong to `docs/runtime-requirements.md`, and point-resource instructions belong to `docs/extension.md`. Kit inventory and assembly copy those exact files. The website summarizes them and displays kit-relative paths. Update the guide and affected participant summaries together.
+
+The participant page and offline export are static guidance with local section navigation. Room progress comes from the separately supplied live page. Export retains only `participant-navigation.js`; framework JavaScript and organizer/live content remain excluded. Local label qualification does not make a pack available for download or authorize distribution. Use the pack announced for the exact source and event definition.
