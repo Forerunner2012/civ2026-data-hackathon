@@ -36,6 +36,8 @@ Intended support does not establish complete platform qualification.
 | Native Linux AMD64 | Not executed in this run | An accessible native AMD64 environment is still needed; previous ARM64 execution is preserved but does not qualify AMD64 |
 | Optional WSL2 Linux AMD64 | Existing Ubuntu 26.04 LTS x86_64, CPython 3.12.13 and uv 0.11.2; isolated tools/caches; all eight commands from an exact-main export and relocated Linux wheels; repeated artifacts, disposable Git updates and constraint/source replacement passed | Exact-main export/local Git probe, not authenticated GitHub install/update qualification; process-local PATH and source-layout doctor; not native Linux or a clean physical host |
 
+| Additional Pi ARM64 test environment | Existing Debian 13.7 container on Raspberry Pi 5, CPython 3.12.13 and uv 0.12.1; GitHub-main participant install, updates/constraints, relocated wheel recovery and source replacement passed; 166 expected checks, with identical JSON/ROS2-CDR repeat artifacts | ARM64 container execution only; no bare-host, actual-kit, persistent PATH or external network denial; does not qualify Windows or native Linux AMD64 |
+
 Windows Git evidence used main commit `37b05439f73376ccc9131697a472ad0ee0fe3c36`.
 The HTTPS attempt failed on private-repository authentication; the existing SSH transport
 succeeded without credential changes. Frozen backups have separate wheel/dependency hashes.
