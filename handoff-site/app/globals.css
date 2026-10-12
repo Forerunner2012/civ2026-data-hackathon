@@ -538,3 +538,9 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 @media (max-width:720px) {
   .workflow-list li, .kit-guide-list > div { grid-template-columns:minmax(0,1fr); gap:8px; }
 }
+
+/* Participant section contrast and preparation spacing. */
+#toolkit { background:var(--paper-2); }
+#kit { background:var(--paper); }
+#ready h2 { margin-bottom:24px; line-height:1.08; }
+#ready > div > p { margin:0 0 12px; line-height:1.6; }
