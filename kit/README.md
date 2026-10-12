@@ -7,7 +7,8 @@ Investigate an incomplete report of vehicle behaviour. Inspect the recordings, w
 1. Open `site/index.html` for the static participant page. It does not show live room state.
 2. Open [setup and recovery](docs/setup.md) to install the participant CLI and check recovery requirements.
 3. Follow the [QuickStart](docs/quickstart.md) from `civ doctor` through `submission.zip`.
-4. Keep kit inputs read-only. Work in `working/` or another participant-owned directory.
+4. Try the optional [external-point exercise](docs/extension.md) after reproducing the core workflow.
+5. Keep kit inputs read-only. Work in `working/` or another participant-owned directory.
 
 Paths on this page are relative to the unpacked kit root. The [runtime requirements](docs/runtime-requirements.md) separate intended support from completed execution and lists optional tools.
 

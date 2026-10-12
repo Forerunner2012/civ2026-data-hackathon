@@ -15,7 +15,7 @@ import civ_workshop.kit_assembly as assembly_module
 from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import assemble_kit, audit_assembly, build_fallback_pack
-from civ_workshop.kit_inventory import ACCEPTED_PRODUCT_SET_SHA256
+from civ_workshop.kit_inventory import ACCEPTED_PRODUCT_SET_SHA256, TRACKED_ASSET_SOURCES
 from civ_workshop.participant_cli import build_parser as build_participant_parser
 from tests.helpers import create_micro_case
 from tests.test_participant_runtime import participant_workflow
@@ -474,13 +474,13 @@ def test_assembly_preserves_setup_guides_and_local_links(
 ) -> None:
     targets = {
         "README.md", "ATTRIBUTION.md", "viewer/README.md", "docs/quickstart.md",
-        "docs/setup.md", "docs/runtime-requirements.md",
+        "docs/setup.md", "docs/runtime-requirements.md", "docs/extension.md",
     }
     inventory_path = assembly_inputs["inventory_path"]
     inventory = json.loads(inventory_path.read_text("utf-8"))
     inventory["tracked_assets"] = [
         {"path": target, "sha256": file_sha256(
-            REPOSITORY / assembly_module.TRACKED_ASSET_SOURCES.get(target, target)
+            REPOSITORY / TRACKED_ASSET_SOURCES.get(target, target)
         )}
         for target in sorted(targets)
     ]
@@ -488,13 +488,13 @@ def test_assembly_preserves_setup_guides_and_local_links(
     assemble_kit(**assembly_inputs)
     output = assembly_inputs["output"]
     for target in targets:
-        source = REPOSITORY / assembly_module.TRACKED_ASSET_SOURCES.get(target, target)
+        source = REPOSITORY / TRACKED_ASSET_SOURCES.get(target, target)
         copied = output / target
         assert copied.read_bytes() == source.read_bytes()
         for destination in re.findall(r"\]\(([^)]+)\)", copied.read_text("utf-8")):
             if "://" in destination or destination.startswith("#"):
                 continue
             assert (copied.parent / destination.split("#", 1)[0]).exists(), destination
-    (output / "docs/setup.md").write_text("changed after assembly\n", encoding="utf-8")
+    (output / "docs/extension.md").write_text("changed after assembly\n", encoding="utf-8")
     with pytest.raises(CivError, match="does not match"):
         audit_assembly(output / "attendee-kit-assembly.json")
