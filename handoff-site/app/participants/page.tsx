@@ -5,7 +5,6 @@ import {
   bonus,
   brief,
   comeReady,
-  commands,
   datasetAttributionUrl,
   deliverables,
   deskMaterials,
@@ -14,7 +13,8 @@ import {
   notYourJob,
   participantIntroduction,
   pipeline,
-  participantProducts,
+  workflow,
+  kitGuides,
   recognition,
   scoring,
   scoringRules,
@@ -24,7 +24,6 @@ import {
   submissionSteps,
   youOwn,
   youReceive,
-  viewerResources,
 } from "../_content/participants";
 
 export const metadata: Metadata = {
@@ -313,7 +312,7 @@ export default function Participants() {
             <li key={rule}>{rule}</li>
           ))}
         </ul>
-        <h3>What is recognised at 15:00</h3>
+        <h3 className="recognition-heading">What is recognised at 15:00</h3>
         <ul className="rule-list">
           {recognition.map((line) => (
             <li key={line}>{line}</li>
@@ -342,68 +341,36 @@ export default function Participants() {
             </div>
           ))}
         </div>
-        <div className="command-list">
-          {commands.map(({ command, note, output }, index) => (
-            <p key={command}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <code>{command}</code>
-              <small>{note}</small>
-              <small><b>Produces:</b> {output}</small>
-            </p>
+        <h3 className="workflow-heading">From inspection to submission</h3>
+        <ol className="workflow-list">
+          {workflow.map(({ step, action }) => (
+            <li key={step}>
+              <b>{step}</b>
+              <p>{action}</p>
+            </li>
           ))}
-        </div>
-        <p className="output-code">
-          <span>DATA FLOW</span>
-          inspect/sample → EventSpec → detect → events + manifest → clip → score → report → submission.zip
+        </ol>
+        <p className="kit-guide-note">
+          In the attendee kit, open <code>docs/quickstart.md</code> for commands and expected results.
         </p>
       </section>
 
       <section className="kit-section" id="kit">
         <div className="section-heading compact">
           <div>
-            <span>05 / EXACT KIT REFERENCES</span>
-            <h2>Open the supplied products, not a guess.</h2>
+            <span>05 / KIT REFERENCES</span>
+            <h2>Open the kit guides</h2>
           </div>
-          <p>These participant-safe paths are the shared baseline for both datasets.</p>
+          <p>Paths below are relative to the attendee kit root.</p>
         </div>
-        <div className="kit-grid">
-          {participantProducts.map(
-            ({ dataset, product, plotJugglerLayout, lichtblickLayout, inventory }) => (
-              <article key={dataset}>
-                <span>{dataset}</span>
-                <h3>{product}</h3>
-                <p><b>PlotJuggler layout:</b> <code>{plotJugglerLayout}</code></p>
-                <p><b>Lichtblick layout:</b> <code>{lichtblickLayout}</code></p>
-                <p><b>Visible inventory:</b> {inventory}</p>
-              </article>
-            ),
-          )}
-        </div>
-        <p>
-          On a connected machine, prefer the official no-install{" "}
-          <a href="https://lichtblick-suite.github.io/lichtblick/">Lichtblick web app</a>. The kit
-          also carries the pinned desktop build for offline use; verify it against the supplied
-          checksums before running it.
-        </p>
-        <div className="viewer-links" aria-label="Official viewer resources">
-          {viewerResources.map(({ tool, platforms, project, releases }) => (
-            <article key={tool}>
-              <span>SUPPLIED VIEWER</span>
-              <h3>{tool}</h3>
-              <p>{platforms}</p>
-              <p><a href={project}>GitHub project</a> · <a href={releases}>Release downloads</a></p>
-            </article>
+        <dl className="kit-guide-list">
+          {kitGuides.map(({ title, path, note }) => (
+            <div key={path}>
+              <dt>{title}</dt>
+              <dd><code>{path}</code><p>{note}</p></dd>
+            </div>
           ))}
-        </div>
-        <p>
-          Dataset and tool attribution, modification notes, and third-party notices are in the{" "}
-          <a href={datasetAttributionUrl}>kit attribution file</a>.
-        </p>
-        <p>
-          The offline kit stages pinned binaries in <code>viewer/windows-amd64/</code>,{" "}
-          <code>viewer/linux-amd64/</code>, and <code>viewer/macos-universal/</code>. PlotJuggler has
-          no macOS binary in the pinned release; use the supplied Lichtblick universal build there.
-        </p>
+        </dl>
         <div className="desk-links" aria-label="Printable desk materials">
           {deskMaterials.map(({ href, title, note }) => (
             <a href={href} key={href}>
@@ -413,58 +380,37 @@ export default function Participants() {
             </a>
           ))}
         </div>
-        <div className="extension-note">
-          <b>Optional extension · scored, but not scheduled</b>
-          <p>
-            The bonus extension is available throughout the session for teams whose core result
-            already reproduces. It earns up to 20 bonus points and has no reserved beat or timebox.
-          </p>
-        </div>
       </section>
 
       <section className="extension-section" id="extension">
         <div className="section-heading compact">
           <div>
             <span>06 / OPTIONAL EXTENSION</span>
-            <h2>Bring knowledge the recording never had.</h2>
+            <h2>Add external geographic points</h2>
           </div>
           <p>{extensionTrack.lesson}</p>
         </div>
-        <ul className="rule-list">
-          {extensionTrack.placement.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-        <div className="extension-grid">
-          <div>
-            <h3>The exercise</h3>
-            <ol>
-              {extensionTrack.steps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          </div>
-          <div>
-            <h3>What counts as doing it well</h3>
-            <ul>
-              {extensionTrack.provenance.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <p className="extension-budget">{extensionTrack.budget}</p>
-        <p className="extension-budget">{extensionTrack.scoredAs}</p>
+        <ol className="extension-steps">
+          {extensionTrack.steps.map((step) => <li key={step}>{step}</li>)}
+        </ol>
+        <p className="kit-guide-note">
+          Kit examples: <code>examples/reims/cave-zones.json</code> and{" "}
+          <code>examples/reims/cave-encounter.yaml</code>. The supplied coordinates are illustrative.
+          Open <code>docs/extension.md</code> for exact resource and provenance instructions.
+        </p>
+        <p className="extension-budget">
+          Get the core submission reproducing first. There is no reserved session time; you can
+          continue afterwards. See <a href="#scoring">Scoring</a> for bonus evidence requirements.
+          Completing this exercise does not automatically earn all bonus points.
+        </p>
       </section>
 
       <section className="next-section" id="ready">
         <div>
           <span>COME READY</span>
-          <h2>
-            Bring curiosity.
-            <br />
-            We bring the plumbing.
-          </h2>
+          <h2>Prepare your laptop and kit</h2>
+          <p>No paid model, API key, or GPU is required.</p>
+          <p>Check your session brief for support, language, and team arrangements.</p>
         </div>
         <ol>
           {comeReady.map((item, index) => (
@@ -478,6 +424,10 @@ export default function Participants() {
         </ol>
       </section>
 
+      <p className="participant-attribution">
+        Dataset and tool attribution, modification notes, and third-party notices are in the{" "}
+        <a href={datasetAttributionUrl}>kit attribution file</a>.
+      </p>
       <Footer note="Participant view · CIV 2026 Data Hackathon" />
     </main>
   );

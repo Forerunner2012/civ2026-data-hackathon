@@ -517,3 +517,30 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+
+/* Approved participant workflow and kit references. */
+.recognition-heading { margin:44px 0 0; font-size:clamp(20px,2vw,26px); line-height:1.3; letter-spacing:-.02em; }
+.recognition-heading + .rule-list { margin-top:20px; }
+.workflow-heading { margin:38px 0 18px; font-size:22px; }
+.workflow-list { margin:0; padding:0; list-style:none; border-top:1px solid var(--line); }
+.workflow-list li { display:grid; grid-template-columns:minmax(120px,180px) minmax(0,1fr); gap:24px; padding:20px 0; border-bottom:1px solid var(--line); }
+.workflow-list b { font-size:16px; }
+.workflow-list p, .kit-guide-list p { margin:0; color:var(--muted); line-height:1.6; }
+.kit-guide-list { margin:30px 0 0; }
+.kit-guide-list > div { display:grid; grid-template-columns:minmax(150px,220px) minmax(0,1fr); gap:24px; padding:20px 0; border-bottom:1px solid var(--line); }
+.kit-guide-list dt { font-weight:700; }
+.kit-guide-list dd { margin:0; min-width:0; }
+.kit-guide-list code, .kit-guide-note code { overflow-wrap:anywhere; }
+.kit-guide-list p { margin-top:8px; }
+.kit-guide-note { margin:24px 0 0; line-height:1.6; }
+.extension-steps { margin:30px 0 0; padding-left:24px; display:grid; gap:16px; line-height:1.6; }
+.participant-attribution { margin:0; padding:28px 7vw; font-size:13px; line-height:1.6; }
+@media (max-width:720px) {
+  .workflow-list li, .kit-guide-list > div { grid-template-columns:minmax(0,1fr); gap:8px; }
+}
+
+/* Participant section contrast and preparation spacing. */
+#toolkit { background:var(--paper-2); }
+#kit { background:var(--paper); }
+#ready h2 { margin-bottom:24px; line-height:1.08; }
+#ready > div > p { margin:0 0 12px; line-height:1.6; }

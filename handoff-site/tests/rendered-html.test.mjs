@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
+import { JSDOM } from "jsdom";
 import { fileURLToPath } from "node:url";
 
 let workerPromise;
@@ -97,7 +98,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /href="https:\/\/github\.com\/Forerunner2012\/civ2026-data-hackathon\/blob\/main\/kit\/ATTRIBUTION\.md"/);
   assert.match(body, /A fleet recorded several passages/);
   assert.match(body, /How the jury reads your work/);
-  assert.match(body, /civ detect/);
+  assert.match(body, /Write an EventSpec and run it across the supplied recordings/);
   assert.match(body, /events\.jsonl/);
   assert.match(body, /solo or duo/i);
   assert.match(body, /different sensor stack/i);
@@ -112,27 +113,12 @@ test("participant view states the contract", async () => {
   assert.match(body, /Hash mismatch/);
   assert.match(body, /Duplicate reference/);
   assert.match(body, /Late/);
-  assert.match(body, /KSH-64ac27cd029b-signals\.mcap/);
-  assert.match(body, /RMS-CHUNK-0-0a0817b3afc8-signals\.mcap/);
-  assert.match(body, /layouts\/kashiwa-right-turn\.pj4\.xml/);
-  assert.match(body, /layouts\/reims-left-turn\.pj4\.xml/);
-  assert.match(body, /viewer\/macos-universal/);
-  assert.match(body, /PlotJuggler has\s+no macOS binary/i);
-  assert.match(body, /github\.com\/PlotJuggler\/PlotJuggler\/releases/);
-  assert.match(body, /github\.com\/lichtblick-suite\/lichtblick\/releases/);
-  assert.match(body, /Optional extension.*scored, but not scheduled/is);
+  assert.match(body, /docs\/quickstart\.md/);
+  assert.match(body, /viewer\/README\.md/);
   assert.match(body, /\/desk\/warmup-trace\.html/);
   assert.match(body, /\/desk\/help-card\.html/);
   assert.match(body, /\/desk\/brief\.html/);
-  const commandList = body.match(/<div class="command-list">([\s\S]+?)<\/div>/)?.[1] ?? "";
-  const commandOffsets = ["civ doctor", "civ inspect", "civ sample", "civ submission-init", "civ detect", "civ clip", "civ score", "civ report"].map((command) => commandList.indexOf(command));
-  assert.ok(commandOffsets.every((offset) => offset >= 0));
-  assert.deepEqual(commandOffsets, [...commandOffsets].sort((a, b) => a - b));
-  assert.match(commandList, /events\.jsonl.*run-manifest\.json/);
-  assert.match(commandList, /evidence\/\*\.mcap.*updated manifest/);
-  assert.match(commandList, /metrics\.json.*updated manifest/);
-  assert.match(commandList, /submission\.zip.*SHA-256/);
-  assert.match(body, /Grounded agent trace.*10/i);
+  assert.match(body, /Bounded agent with a useful trace.*10/i);
   assert.match(body, /advanced multimodal, data-quality or external-resource method.*5/i);
   assert.match(body, /Regression test built from a failure.*5/i);
   assert.match(body, /extension\/manifest\.json/);
@@ -144,23 +130,22 @@ test("participant view states the contract", async () => {
   assert.match(body, /scored by AI agents/i);
   assert.match(body, /your clips stay on your machine/i);
   assert.doesNotMatch(body, /tally\.so|SUBMISSION_FORM_URL|intake-local/i);
-  assert.match(body, /pairing up on the day is normal/i);
+  assert.match(body, /fallback material or pair with someone if blocked/i);
 });
 
 test("optional extension is offered, scored, and never scheduled", async () => {
   const body = await html("/participants");
-  assert.match(body, /knowledge that was never in the bag/i);
-  assert.match(body, /open and scored before 12:30.*receives no time in the run of show/i);
-  assert.match(body, /stays on this page after the event/i);
-  assert.match(body, /civ\.point-resource\/v1/);
-  assert.match(body, /min_distance_to/);
+  assert.match(body, /outside both the recording and kit/i);
+  assert.match(body, /no reserved session time/i);
+  assert.match(body, /continue afterwards/i);
+  assert.match(body, /examples\/reims\/cave-zones\.json/);
   assert.match(body, /examples\/reims\/cave-encounter\.yaml/);
-  assert.match(body, /copies each declared resource byte-for-byte/i);
-  assert.match(body, /Maximum \+20: grounded agent trace \+10.*external-resource method \+5.*regression test.*\+5/i);
-  assert.match(body, /30.{0,3}45 minutes/i);
-  // Method is unconstrained and nothing on the required path needs a model or the network.
-  assert.match(body, /No model is required/i);
-  assert.match(body, /no answer key here and nothing is diffed against a held-back list/i);
+  assert.match(body, /coordinates are illustrative/i);
+  assert.match(body, /docs\/extension\.md/);
+  assert.match(body, /core submission reproducing first/i);
+  assert.match(body, /href="#scoring">Scoring/);
+  assert.match(body, /does not automatically earn all bonus points/i);
+  assert.match(body, /No paid model, API key, or GPU is required/i);
   // The zone coordinates are the exercise. Publishing any of them would hand over the answer.
   assert.doesNotMatch(body, /49\.2[0-9]{3}|4\.0[0-9]{3}/);
   assert.doesNotMatch(body, /martel|pommery|ruinart|taittinger|clicquot/i);
@@ -261,5 +246,38 @@ test("server bundle contains no organizer route or material", async () => {
   }
   for (const pattern of LIVE_INTERNAL_ONLY) {
     assert.doesNotMatch(serverBundle, pattern, `server bundle leaks live-only ${pattern}`);
+  }
+});
+
+test("simplified sections preserve workflow, kit paths and usable destinations", async () => {
+  const document = new JSDOM(await html("/participants")).window.document;
+  const toolkit = document.querySelector("#toolkit");
+  assert.deepEqual(
+    [...toolkit.querySelectorAll(".workflow-list li > b")].map((row) => row.textContent),
+    ["Inspect", "Detect", "Check evidence", "Submit"],
+  );
+  assert.equal(toolkit.querySelectorAll(".pipeline > div").length, 6);
+  assert.equal(toolkit.querySelector(".command-list"), null);
+  assert.doesNotMatch(toolkit.textContent, /DATA FLOW/);
+  const kit = document.querySelector("#kit");
+  const paths = [...kit.querySelectorAll(".kit-guide-list code")].map((entry) => entry.textContent);
+  assert.deepEqual(paths, ["README.md", "viewer/README.md", "docs/quickstart.md"]);
+  assert.equal(kit.querySelectorAll("a[href^='http']").length, 0);
+  assert.equal(kit.querySelectorAll(".kit-grid, .viewer-links, .extension-note").length, 0);
+  const inventory = await readFile(new URL("../../src/civ_workshop/kit_inventory.py", import.meta.url), "utf8");
+  for (const path of [...paths, "docs/extension.md", "examples/reims/cave-zones.json", "examples/reims/cave-encounter.yaml"]) {
+    assert.ok(inventory.includes(`"${path}"`), `${path} must be a tracked kit asset`);
+    const source = path === "README.md" || path.startsWith("viewer/") ? `kit/${path}` : path;
+    assert.ok((await readFile(new URL(`../../${source}`, import.meta.url))).length > 0);
+  }
+  assert.equal(document.querySelectorAll("#extension .extension-steps > li").length, 3);
+  assert.equal(document.querySelectorAll("#ready ol > li").length, 4);
+  assert.doesNotMatch(document.querySelector("#ready").textContent, /Docker|WSL2|fully offline|SSDs|drop-ins/i);
+  assert.equal(document.querySelector("#scoring h3.recognition-heading").textContent, "What is recognised at 15:00");
+  for (const anchor of document.querySelectorAll("a[href^='#']")) {
+    assert.ok(document.getElementById(anchor.getAttribute("href").slice(1)), "in-page link must resolve");
+  }
+  for (const anchor of kit.querySelectorAll(".desk-links a")) {
+    assert.ok((await readFile(new URL(`../public${anchor.getAttribute("href")}`, import.meta.url))).length > 0);
   }
 });

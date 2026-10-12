@@ -174,47 +174,17 @@ export const pipeline: { title: string; note: string; owner: "you" | "provided" 
   { title: "Evidence", note: "clips + score", owner: "provided" },
 ];
 
-export const commands = [
-  { command: "civ doctor", note: "check your machine", output: "readiness only · no files" },
-  { command: "civ inspect BAG", note: "topics, fields, durations", output: "inventory · no files" },
-  { command: "civ sample BAG --topic ... --field ...", note: "inspect values", output: "timestamped values · no files" },
-  { command: "civ submission-init working --shell ...", note: "create your workspace once", output: "detector + report + figure + reproduce templates" },
-  { command: "civ detect SPEC DATASET --output working", note: "run your detector, --dry-run first", output: "detector/ (spec + exact resources) + events.jsonl + v2 run-manifest.json" },
-  { command: "civ clip working/events.jsonl DATASET", note: "cut compact local evidence", output: "evidence/*.mcap + updated manifest" },
-  { command: "civ score working --labels DEVELOPMENT_LABELS", note: "development score", output: "metrics.json + updated manifest" },
-  { command: "civ report working", note: "validate and package", output: "submission.zip + printed SHA-256" },
+export const workflow = [
+  { step: "Inspect", action: "Explore the supplied signals in a viewer or with the CLI." },
+  { step: "Detect", action: "Write an EventSpec and run it across the supplied recordings." },
+  { step: "Check evidence", action: "Inspect local clips and evaluate the detected intervals." },
+  { step: "Submit", action: "Build the metadata-only ZIP and keep the printed SHA-256." },
 ];
 
-export const viewerResources = [
-  {
-    tool: "PlotJuggler 3.999.3",
-    platforms: "Windows amd64 · Linux amd64",
-    project: "https://github.com/PlotJuggler/PlotJuggler",
-    releases: "https://github.com/PlotJuggler/PlotJuggler/releases",
-  },
-  {
-    tool: "Lichtblick 1.28.0",
-    platforms: "Windows amd64 · Linux amd64 · macOS universal",
-    project: "https://github.com/lichtblick-suite/lichtblick",
-    releases: "https://github.com/lichtblick-suite/lichtblick/releases",
-  },
-];
-
-export const participantProducts = [
-  {
-    dataset: "Kashiwa warm-up",
-    product: "data/KSH-64ac27cd029b-signals.mcap",
-    plotJugglerLayout: "layouts/kashiwa-right-turn.pj4.xml",
-    lichtblickLayout: "layouts/lichtblick-kashiwa-right-turn.json",
-    inventory: "steering angle, vehicle speed, vehicle error code, object-detected flag",
-  },
-  {
-    dataset: "Reims development chunk 0",
-    product: "data/RMS-CHUNK-0-0a0817b3afc8-signals.mcap",
-    plotJugglerLayout: "layouts/reims-left-turn.pj4.xml",
-    lichtblickLayout: "layouts/lichtblick-reims-left-turn.json",
-    inventory: "IMU yaw rate and linear velocity x, y, z",
-  },
+export const kitGuides = [
+  { title: "Attendee kit guide", path: "README.md", note: "Kit contents, supplied recordings, layouts, and fallback material." },
+  { title: "Viewer guide", path: "viewer/README.md", note: "Choose a supplied viewer and verify its checksum." },
+  { title: "Participant quickstart", path: "docs/quickstart.md", note: "Run the workflow and prepare your submission." },
 ];
 
 export const deskMaterials = [
@@ -262,43 +232,19 @@ export const submissionOutcomes = [
  * deliberately carries no zone coordinates — sourcing them is the exercise.
  */
 export const extensionTrack = {
-  lesson:
-    "The system used knowledge that was never in the bag to find events it could not otherwise have found.",
-  placement: [
-    "This branch is open and scored before 12:30, and it receives no time in the run of show. Nothing in the three hours is planned around it.",
-    "If your core submission is not accepted yet, do the core. Bonus points cannot rescue a result that does not reproduce.",
-    "It stays on this page after the event, and it runs on the same products you keep. Do it at lunch, on the plane, or in six months.",
-  ],
+  lesson: "Find encounters using geographic points from outside both the recording and kit.",
   steps: [
-    "Choose a class of places the recording never knew about. The worked case is the champagne cellars along the Reims route.",
-    "Write a `civ.point-resource/v1` file: an id, a latitude and a longitude per point. That is the entire contract.",
-    "Reference it from an EventSpec under `resources:`, derive `min_distance_to` from your GNSS latitude and longitude signals, and put that distance in the condition. The shipped `examples/reims/cave-encounter.yaml` is a complete worked spec with illustrative points — the shape is real, the coordinates are not.",
-    "Run it across the Reims development products with the same `civ detect` you already use. It copies each declared resource byte-for-byte beside the bundled EventSpec and declares it in `extension/manifest.json`.",
-    "Put a short provenance note under `extension/` and declare its kind, path, SHA-256, and media type in the sorted extension manifest.",
+    "Collect the geographic points and note your sources.",
+    "Copy the supplied point resource and EventSpec into your workspace. Replace the illustrative points and use them in the EventSpec.",
+    "Run detection, inspect the evidence, and include your resource and provenance in the submission.",
   ],
-  provenance: [
-    "How you source the points is deliberately unconstrained: a chat assistant, an OpenStreetMap query, a published directory, or twenty minutes with a map and a spreadsheet are all legitimate.",
-    "No model is required, and nothing on the required path needs network access — only your own sourcing step might.",
-    "There is no answer key here and nothing is diffed against a held-back list. What is judged is whether the zones are plausible, the predicate is sound, the evidence shows what you claim, and you can say where the knowledge came from.",
-    "A 40 m radius is a sensible starting point on this route, and `timing.min_duration` is what suppresses a glancing hit. Expect a handful of encounters at most: this is a small exercise, not a hunt.",
-  ],
-  budget:
-    "Budget 30–45 minutes, and expect almost all of it to be sourcing. The detection itself is seconds — one spec across all five Reims development products finishes in under ten seconds on the target machine.",
-  scoredAs:
-    "Maximum +20: grounded agent trace +10; advanced multimodal, data-quality, or external-resource method +5; regression test derived from a demonstrated failure +5. Every non-zero award cites a bundled artifact.",
 };
 
 export const comeReady = [
-  "A laptop you can install software on, with room to spare: a container plus recordings needs disk and memory, not a GPU.",
-  "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container.",
-  "Run `civ doctor && civ inspect <warm-up>` in the week before, open the day's page, and post what it prints. That is the whole readiness check.",
-  "Support is asynchronous from two weeks out, with two live drop-ins about ten days before — deliberately before anyone starts travelling.",
-  "Explore the recordings beforehand if you want to. It is allowed and encouraged; you are not stealing a march on anyone.",
-  "Nothing to compile or download on the day. If your download failed, SSDs in the room carry the image and both recordings.",
-  "No account, paid model or API key is required. The required path runs fully offline.",
-  "Work solo or with one partner. Solo and duo entries share one leaderboard — and if your machine struggles, pairing up on the day is normal and expected.",
-  "Everything runs in professional English.",
-  "Bring experience with robotic or vehicular recordings; the challenge starts above the beginner floor.",
+  "Bring a laptop you can install software on, with space for the supplied kit and recordings.",
+  "Follow your session's setup guide before arriving.",
+  "Run civ doctor and inspect the supplied warm-up recording.",
+  "Open a supplied recording in a viewer, or check its signals with civ sample. Use the kit fallback material or pair with someone if blocked.",
 ];
 
 export const notYourJob = [

@@ -12,9 +12,9 @@ test("static attendee export is script-free and navigable from disk", async () =
 
   assert.match(root, /From raw bag/);
   assert.match(participants, /The rule ladder/);
-  assert.match(participants, /https:\/\/lichtblick-suite\.github\.io\/lichtblick\//);
-  assert.match(participants, /layouts\/lichtblick-kashiwa-right-turn\.json/);
-  assert.match(participants, /layouts\/lichtblick-reims-left-turn\.json/);
+  assert.match(participants, /docs\/quickstart\.md/);
+  assert.match(participants, /viewer\/README\.md/);
+  assert.match(participants, /docs\/extension\.md/);
   assert.match(root, /href="index\.html"/);
   assert.match(participants, /href="\.\.\/index\.html"/);
   assert.match(participants, /href="\.\.\/assets\//);
