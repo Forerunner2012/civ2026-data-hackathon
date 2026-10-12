@@ -545,3 +545,26 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 #kit { background:var(--paper); }
 #ready h2 { margin-bottom:24px; line-height:1.08; }
 #ready > div > p { margin:0 0 12px; line-height:1.6; }
+
+/* Participant-only persistent navigation. Clip without creating a scroll container. */
+main.participant-page { overflow:clip; --participant-header-height:140px; }
+.participant-page .participant-topbar { position:sticky; top:0; z-index:20; background:var(--paper); display:grid; grid-template-columns:minmax(0,1fr) auto; gap:14px 24px; padding-top:16px; padding-bottom:14px; }
+.participant-topbar .brand { grid-column:1; grid-row:1; }
+.participant-topbar .internal-pill { display:none; }
+.participant-topbar nav { display:flex; grid-column:1/-1; grid-row:2; min-width:0; overflow-x:auto; gap:24px; padding:4px 0 8px; scrollbar-width:thin; }
+.participant-topbar nav a { flex:none; padding:4px 0; }
+.participant-topbar nav a[aria-current="location"] { border-bottom:2px solid var(--ink); color:var(--ink); }
+.participant-section-controls { grid-column:2; grid-row:1; display:flex; align-items:center; gap:12px; }
+.participant-section-controls[hidden] { display:none; }
+.participant-section-controls button { padding:8px 12px; border:1px solid var(--ink); background:transparent; font-size:12px; cursor:pointer; }
+.participant-section-controls button:disabled { opacity:.4; cursor:default; }
+.participant-section-controls span { min-width:4ch; text-align:center; font:700 12px/1 ui-monospace,Consolas,monospace; }
+.participant-page > section[id] { scroll-margin-top:calc(var(--participant-header-height) + 16px); }
+.participant-page :focus-visible { outline:3px solid #698210; outline-offset:4px; }
+.participant-page :is(h1,h2,h3)[tabindex="-1"]:focus { outline:3px solid #698210; outline-offset:6px; }
+@media (max-width:720px) {
+  .participant-page .participant-topbar { padding:12px 6vw; gap:10px; }
+  .participant-topbar .brand > span:last-child { display:none; }
+  .participant-section-controls { gap:8px; }
+  .participant-section-controls button { padding:8px; }
+}
