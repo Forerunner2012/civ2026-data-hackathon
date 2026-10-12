@@ -1,33 +1,39 @@
 # CIV 2026 data hackathon
 
-This repository builds the offline attendee kit, participant-safe website, command-line workflow,
-and organizer operations for the CIV 2026 Data Detective hackathon.
+Run a data hackathon where participants inspect robotics recordings, write YAML EventSpecs,
+review detected intervals and submit a reproducible metadata-only bundle. This repository contains
+the reusable command-line workflow, offline attendee-kit builder, participant-safe website and
+organizer procedures developed for CIV 2026.
 
 ## Start here
 
-- **Attending the hackathon:** follow the [QuickStart](docs/quickstart.md) from the root of the
-  unpacked kit. It is the shortest path from environment check to a submission bundle.
-- **Using an assembled offline kit:** open `site/index.html`, then read the kit's `README.md` for
-  platform, viewer, fallback, and container details.
-- **Developing this repository:** read [GLOSSARY.md](GLOSSARY.md) and
-  [docs/agents/domain.md](docs/agents/domain.md), then use `uv sync` and `uv run pytest`.
-- **Working on an issue:** follow [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
+- **Participants:** follow the [QuickStart](docs/quickstart.md) from the root of the supplied kit.
+  Use the setup and runtime inputs qualified for your session.
+- **Organizers:** follow the [organizer guide](docs/organizers/README.md) to prepare data permissions,
+  human label review, kit construction, facilitation and evaluation.
+- **Contributors:** follow [CONTRIBUTING.md](CONTRIBUTING.md) to develop a bounded code capability
+  and run the project checks. Adapt a session with existing tools through
+  [Make it your own](MAKE-IT-YOUR-OWN.md).
+- **Using an assembled kit:** open `site/index.html`, then read its `README.md` for local paths,
+  viewers and qualified recovery options.
 
-## Reference sections
+Each session records its own recording/image permissions, platform qualification and release
+approval. CIV 2026 evidence applies to the exact original artifacts and recorded scope.
+
+## References
 
 | Concern | Reference |
 | --- | --- |
-| First successful attendee run | [QuickStart](docs/quickstart.md) |
-| Attendee kit operation and viewers | [kit/README.md](kit/README.md) |
-| EventSpec contract and examples | [Phase 2 stable contracts](docs/phase2/stable-contracts-and-compatibility.md) |
-| Participant kit inventory | [Phase 4 inventory](docs/phase4/participant-kit-inventory.md) |
-| Release and workstation evidence | [Phase 5 release freeze](docs/phase5/release-freeze.md) |
-| Website development | [handoff-site/README.md](handoff-site/README.md) |
-| Adapt an existing session | [Make it your own](MAKE-IT-YOUR-OWN.md) and [session settings](docs/session-settings.md) |
-| Contribute a new code capability | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Participant workflow | [QuickStart](docs/quickstart.md) and [kit guide](kit/README.md) |
+| Participant contract and scoring | [Contracts](docs/reference/participant-contracts.md) and [scoring](docs/reference/scoring.md) |
+| EventSpec expressions and external resources | [EventSpec rules](docs/phase2/eventspec-cel-and-derive.md) and [resource reference](docs/phase2/eventspec-resources.md) |
+| Session preparation, kit construction and release checks | [Organizer guide](docs/organizers/README.md) |
+| Website development | [Site guide](handoff-site/README.md) |
+| Adapt existing session settings | [Make it your own](MAKE-IT-YOUR-OWN.md) and [settings reference](docs/session-settings.md) |
+| Historical CIV 2026 qualification evidence | [Phase 3 acceptance](docs/phase3/integrated-gate-acceptance.md) and [Phase 5 release record](docs/phase5/release-freeze.md) |
 
-Large viewer binaries, recordings, containers, generated bundles, and runtime evidence are release
-inputs. Kit assembly includes these inputs and verifies their hashes. Keep them out of Git.
+Recordings, imagery, viewer binaries, containers, generated bundles and runtime evidence are
+separate release inputs. Kit assembly verifies their identities. Keep them out of Git.
 
 ## A possible next format
 

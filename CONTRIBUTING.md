@@ -10,9 +10,36 @@ Before proposing code, check whether existing EventSpec signal bindings, derivat
 
 Use the [issue-tracker instructions](docs/agents/issue-tracker.md) to describe the missing behavior in a GitHub issue. Identify the module that owns the behavior, then agree on a small extension and its acceptance checks before implementation.
 
-## Add a synthetic example and checks
+## Set up and check the change
 
-Add a synthetic example that exercises the new capability and meaningful regression checks. From the repository root, run `uv sync` to install the organizer project, then run `uv run pytest`. For handoff-site changes, follow the [site development guide](handoff-site/README.md) to run `npm ci`, `npm run test`, and `npm run lint`. Do not commit recordings, actual labels, private paths, or credentials.
+From the repository root, synchronize the existing Python project and run its checks:
+
+```powershell
+uv sync
+uv run ruff check src tests
+uv run mypy src
+uv run pytest
+```
+
+Add a synthetic example and meaningful regression checks for a new capability. Use permitted local
+fixtures; keep recordings, actual labels, private paths, credentials and generated artifacts out
+of commits.
+
+For website changes, work in `handoff-site/` and follow the
+[site development guide](handoff-site/README.md) for `npm ci`, `npm run test` and `npm run lint`.
+Participant platform/install qualification is separate from this contributor project setup.
+
+## Keep documentation consistent
+
+Use [GLOSSARY.md](GLOSSARY.md) for the repository's domain vocabulary. Canonical Markdown owns
+workflow commands and rules; the website summarizes them, and the kit receives exact guide copies
+through its inventory/assembly process. Update the canonical page and affected summaries together,
+validate links and commands, and leave generated kit copies to the assembler. Preserve historical
+acceptance evidence within its recorded scope.
+
+The [agent conventions](AGENTS.md) and [issue-tracker guide](docs/agents/issue-tracker.md) describe
+repository workflows when needed. Contributing a code capability does not require Orca or another
+agent tool.
 
 ## Keep participant contracts stable
 
