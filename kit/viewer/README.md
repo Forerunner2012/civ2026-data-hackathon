@@ -1,7 +1,8 @@
 # Supplied viewers
 
-Use the binary already staged in the directory for your platform. Verify its SHA-256 against
-`../checksums/SHA256SUMS` before installing or running it.
+Viewers are optional for CLI analysis. If a viewer fails, use `civ sample` or the kit fallback material while a coach investigates.
+
+Use the binary supplied for your session and staged in your platform directory. Verify its SHA-256 against `../checksums/SHA256SUMS` before installing or running it.
 
 | Platform folder | PlotJuggler 3.999.3 | Lichtblick 1.28.0 |
 | --- | --- | --- |
@@ -9,9 +10,7 @@ Use the binary already staged in the directory for your platform. Verify its SHA
 | `viewer/linux-amd64/` | `PlotJuggler-3.999.3-x86_64.AppImage` | `lichtblick-1.28.0-linux-x64.tar.gz` |
 | `viewer/macos-universal/` | Not published upstream for this release | `lichtblick-1.28.0-mac-universal.dmg` |
 
-The attendee kit is assembled from these exact release inputs; large executables are intentionally
-kept outside the source repository. If a staged file is missing or its checksum differs, do not
-fetch an arbitrary replacement during the session—use the SSD copy or ask a coach.
+The table identifies the pinned viewer assets; it does not qualify their installation on every listed platform. Large executables stay outside the source repository. If a staged file is missing or its checksum differs, do not fetch an arbitrary replacement during the session; use the SSD copy or ask a coach.
 
 Official upstream references:
 

@@ -156,6 +156,8 @@ def test_inventory_checksum_manifest_covers_products_manifests_and_tracked_asset
         assert f"{product['manifest_sha256']}  {product['manifest']}" in lines
     for asset in document["tracked_assets"]:
         assert f"{asset['sha256']}  {asset['path']}" in lines
+    guide_targets = {asset["path"] for asset in document["tracked_assets"]}
+    assert {"docs/setup.md", "docs/runtime-requirements.md"} <= guide_targets
     template_targets = {
         asset["path"]
         for asset in document["tracked_assets"]

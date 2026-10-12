@@ -55,6 +55,8 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("viewer-instructions", "viewer/README.md"),
     ("attribution", "ATTRIBUTION.md"),
     ("quickstart", "docs/quickstart.md"),
+    ("participant-instructions", "docs/setup.md"),
+    ("participant-instructions", "docs/runtime-requirements.md"),
     ("layout", "layouts/kashiwa-right-turn.pj4.xml"),
     ("layout", "layouts/lichtblick-kashiwa-right-turn.json"),
     ("layout", "layouts/lichtblick-reims-left-turn.json"),
