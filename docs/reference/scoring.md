@@ -6,13 +6,13 @@ Practice scores are participant self-evaluation against a designated source-boun
 
 | Reference | Audience and requirements | Availability |
 | --- | --- | --- |
-| Practice pack | Participant self-evaluation in this repository's dedicated `practice-labels/` folder. It covers every relevant event for one designated source or chunk, starting with the Kashiwa warm-up. The `civ.label-pack/v1alpha1` pack binds `source_sha256` to `run-manifest.json` → `source.sha256` and includes `contract`, `dataset`, `source_sha256`, `labels`, and `data_gaps`. Labels use `label_id`, `start_ns`, `end_ns`; gaps use `start_ns`, `end_ns` with optional `gap_id` and `reason`. `provenance` and `scoring` are optional; partial coverage is not expressible. | The exact Kashiwa product and reduced-product manifest are missing; no qualifying real pack exists, and the README filename is a placeholder. |
+| Practice pack | Participant self-evaluation with a separately supplied pack; `practice-labels/` is reserved for approved repository packs. It covers every relevant event for one designated source or chunk, starting with the Kashiwa warm-up. The `civ.label-pack/v1alpha1` pack binds `source_sha256` to `run-manifest.json` → `source.sha256` and includes `contract`, `dataset`, `source_sha256`, `labels`, and `data_gaps`. Labels use `label_id`, `start_ns`, `end_ns`; gaps use `start_ns`, `end_ns` with optional `gap_id` and `reason`. `provenance` and `scoring` are optional; partial coverage is not expressible. | Complete local practice review and consumer qualification are recorded in [issue #117](https://github.com/Forerunner2012/civ2026-data-hackathon/issues/117). No real practice pack is tracked here. Session availability and authorized distribution remain separate. |
 | Full truth | Sealed labels, provenance, review progress, and audit stay organizer-only. `score-batch` selects packs by exact source hash. Keep them out of participant kits, reports, bundles, and submissions. | Organizer workflow only, separate from practice distribution. |
 
 When that complete practice pack is supplied, use:
 
 ```sh
-uv run civ score WORKING_DIR --labels practice-labels/kashiwa-warmup/KASHIWA_WARM_UP_PRACTICE_PACK.json
+civ score WORKING_DIR --labels SUPPLIED_PRACTICE_PACK.json
 ```
 
 For private cohort scoring, the CLI requires an intake ledger, a directory of organizer packs, and an output directory:
@@ -21,7 +21,7 @@ For private cohort scoring, the CLI requires an intake ledger, a directory of or
 uv run civ score-batch --ledger INTAKE_LEDGER --labels ORGANIZER_LABEL_PACKS/packs --output ORGANIZER_RESULTS
 ```
 
-The example filename remains absent until source binding and review qualify a pack. Keep source and product input directories read-only. Re-export corrections through existing contracts; `metrics.json` records `label_pack_sha256` for the exact reference bytes. Export does not authorize broader publication.
+Replace the placeholders with your detected-run directory and the exact practice pack supplied for your session. Install the participant CLI through the [setup guide](../setup.md); no organizer-root install is needed. Keep source and product input directories read-only. Re-export corrections through existing contracts; `metrics.json` records `label_pack_sha256` for the exact reference bytes. Export does not authorize broader publication.
 
 ## Matching and metrics
 

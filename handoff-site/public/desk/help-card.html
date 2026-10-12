@@ -15,6 +15,7 @@
     small { font: 8pt/1.4 Consolas, monospace; letter-spacing: .12em; }
     h1 { margin: 8mm 0 3mm; font-size: 38pt; line-height: .92; letter-spacing: -.05em; }
     p, li { font-size: 13pt; line-height: 1.4; }
+    code { font-size:11pt; overflow-wrap:anywhere; }
     ol { margin: 5mm 0 0; padding-left: 7mm; }
     footer { display: flex; justify-content: space-between; font: 8pt/1.4 Consolas, monospace; }
     @media screen { body { background: #ddd; padding: 20px; } .side { margin: 0 auto 20px; box-shadow: 0 4px 20px #999; } }
@@ -23,7 +24,7 @@
 <body data-print-material="help-card" data-pages="2" data-duplex="flip-short-edge">
   <section class="side up" aria-label="Help card side one">
     <header><small>SIDE A · KEEP THIS SIDE UP UNTIL THE GATE PASSES</small><h1>I need setup help.</h1></header>
-    <div><p>Raise this card if either command fails:</p><p><code>civ doctor</code><br><code>civ inspect &lt;warm-up&gt;</code></p></div>
+    <div><p>After installation, run from the kit root. Raise this card if either command fails:</p><p><code>civ doctor --workspace . --bag data/KSH-64ac27cd029b-signals.mcap --layout layouts/kashiwa-right-turn.pj4.xml --offline-kit .</code><br><code>civ inspect data/KSH-64ac27cd029b-signals.mcap</code></p></div>
     <footer><span>A coach will fix access and tooling.</span><span>Turn over after both commands succeed.</span></footer>
   </section>
   <section class="side down" aria-label="Help card side two">

@@ -116,7 +116,7 @@ With detections, expect one `working/evidence/<event_id>.mcap` per event and cli
 civ score working --labels <supplied-development-labels.json>
 ```
 
-Use the practice-label path matched to the source announced by the organizers for your kit; do not substitute an organizer path. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
+Use the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
 
 ## 8. Validate, package, and submit
 
@@ -166,6 +166,6 @@ The seven core artifacts remain mandatory. A v2 extension may carry at most eigh
 ## Recovery references
 
 - Viewer problem: use `civ sample` and `fallback/<dataset>/`, then raise the printed help card.
-- Container problem: pair with another participant while a coach repairs the machine.
+- CLI setup problem: follow [setup and recovery](setup.md), or pair with another participant while a coach helps. Container recovery is optional.
 - Command problem: read the exact diagnostic, fix only the named input, and rerun that command.
 - Submission problem: rerun `civ report`; never manually edit or recompress `submission.zip`.
