@@ -1,5 +1,12 @@
 # Integrated Phase 1 gate acceptance record
 
+> **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
+> below describe the original event and its recorded scope. Start a current session with the
+> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
+> [participant contracts](../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> new data rights, platform qualification or public-release approval.
+
 Status: **complete — all 13 issue #11 acceptance criteria pass**
 
 Recorded: 2026-08-26 · Operator: Codex on the Forerunner2012 organizer workstation
