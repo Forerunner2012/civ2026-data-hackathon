@@ -12,6 +12,7 @@ import {
   journey,
   notYourJob,
   participantIntroduction,
+  participantOpening,
   pipeline,
   workflow,
   kitGuides,
@@ -58,7 +59,7 @@ export default function Participants() {
             <br />
             to <em>defensible proof.</em>
           </h1>
-          <p className="lede">{premise}</p>
+          <p className="lede">{participantOpening}</p>
           <div className="hero-actions">
             <a className="primary-button" href="#hours">
               See how the three hours run <span>→</span>

@@ -270,6 +270,7 @@ footer > a { color:var(--lime); text-decoration:none; font-size:11px; font-weigh
 .brief-section { padding:0 7vw 90px; }
 .brief-card { background:var(--ink); color:var(--white); padding:44px 48px; margin:26px 0 60px; box-shadow:16px 16px 0 #d8d2c4; }
 .brief-card p { margin:0; font-size:clamp(19px,2.1vw,26px); line-height:1.5; letter-spacing:-.015em; }
+#brief .brief-card p + p { margin-top:24px; }
 .journey-output { margin-top:12px !important; display:grid; grid-template-columns:16px 1fr; gap:6px; color:#4c5b55 !important; font-weight:600; }
 .journey-output i { font-style:normal; color:#698210; font-weight:900; }
 .not-your-job { margin-top:38px; padding:26px 30px; background:var(--white); border:1px solid var(--line); }
