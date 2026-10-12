@@ -1,13 +1,25 @@
 # QuickStart: unpacked kit to accepted bundle
 
-First install the participant CLI using the [setup instructions](../participant/README.md).
+First install the participant CLI using the [setup instructions](setup.md).
 Use native Windows AMD64 or native Linux AMD64; WSL2 is an optional Linux route on Windows.
 Run these steps from the root of the unpacked attendee kit with its supplied local recordings,
 EventSpecs and practice labels. Once the CLI and those inputs are available, the core workflow
 does not need a network connection. See [runtime requirements](runtime-requirements.md).
-Commands below use the
-Kashiwa warm-up. For Reims, use `examples/reims/left_turn.yaml` and
+Commands below use the Kashiwa warm-up. For Reims, use `examples/reims/left_turn.yaml` and
 `layouts/reims-left-turn.pj4.xml` with the matching Reims MCAP.
+
+## Install before the first command
+
+With Git and uv available, run in PowerShell or a Linux shell while connected:
+
+```text
+uv tool install --python 3.12 "git+https://github.com/Forerunner2012/civ2026-data-hackathon.git@main#subdirectory=participant"
+uv tool update-shell
+```
+
+Restart your shell, then run `civ --help`. Follow [setup and recovery](setup.md) if access,
+PATH, Python or the matching wheel backup needs attention. After installation, run the
+steps below from the root of the unpacked kit.
 
 ## The route at a glance
 
@@ -50,8 +62,12 @@ The examples below spell those paths out so they work in PowerShell and POSIX sh
 ## 1. Check the environment
 
 ```text
-civ doctor --workspace working --bag data/KSH-64ac27cd029b-signals.mcap --layout layouts/kashiwa-right-turn.pj4.xml --offline-kit .
+civ doctor --workspace . --bag data/KSH-64ac27cd029b-signals.mcap --layout layouts/kashiwa-right-turn.pj4.xml --offline-kit .
 ```
+
+The command checks the current writable kit directory before `working/` exists. If the
+kit directory is read-only, pass another existing writable directory with `--workspace`.
+Do not pre-create `working/`; step 4 creates the submission workspace.
 
 Expected result: `Doctor: READY`. This command downloads, installs, and writes nothing. If it exits
 2, follow the printed `Action:` for the failing check and rerun the same command. Use the viewer
@@ -115,8 +131,10 @@ condition or timing value and rerun `--dry-run` before writing again.
 civ clip working/events.jsonl data/KSH-64ac27cd029b-signals.mcap
 ```
 
-Expected result: one `working/evidence/<event_id>.mcap` per event and clip facts added to the run
-manifest. Reopen a clip in a supplied viewer. A failure names the missing topic or empty window;
+With detections, expect one `working/evidence/<event_id>.mcap` per event and clip facts
+added to the run manifest. Reopen a clip in a supplied viewer. With zero events, the
+command writes no clips; inspect your conditions and timing, then continue to scoring
+and reporting to record the result. A failure names the missing topic or empty window;
 every `evidence.topics` entry must exist in the same bag used by `civ detect`.
 
 ## 7. Score against the supplied development labels
@@ -125,9 +143,9 @@ every `evidence.topics` entry must exist in the same bag used by `civ detect`.
 civ score working --labels <supplied-development-labels.json>
 ```
 
-Use the development-label path announced by the organizers and present in the attendee kit; do not
-substitute an organizer path. Expected result: `working/metrics.json` plus its hash in the updated
-run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and
+Use the source-matching practice-label path announced by the organizers for your kit; do not
+substitute an organizer path. If labels are unavailable, ask a coach before scoring.
+Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and
 record what you changed in `working/report.md`.
 
 ## 8. Validate, package, and submit

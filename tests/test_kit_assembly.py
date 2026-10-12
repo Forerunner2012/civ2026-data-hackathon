@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -466,3 +467,34 @@ def test_assembly_leakage_gate_rejects_private_payload(
 
     with pytest.raises(CivError, match=message):
         assembly_module._verify_participant_assembly(tmp_path, records)
+
+
+def test_assembly_preserves_setup_guides_and_local_links(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
+) -> None:
+    targets = {
+        "README.md", "ATTRIBUTION.md", "viewer/README.md", "docs/quickstart.md",
+        "docs/setup.md", "docs/runtime-requirements.md",
+    }
+    inventory_path = assembly_inputs["inventory_path"]
+    inventory = json.loads(inventory_path.read_text("utf-8"))
+    inventory["tracked_assets"] = [
+        {"path": target, "sha256": file_sha256(
+            REPOSITORY / assembly_module.TRACKED_ASSET_SOURCES.get(target, target)
+        )}
+        for target in sorted(targets)
+    ]
+    inventory_path.write_text(canonical_json(inventory) + "\n", encoding="utf-8")
+    assemble_kit(**assembly_inputs)
+    output = assembly_inputs["output"]
+    for target in targets:
+        source = REPOSITORY / assembly_module.TRACKED_ASSET_SOURCES.get(target, target)
+        copied = output / target
+        assert copied.read_bytes() == source.read_bytes()
+        for destination in re.findall(r"\]\(([^)]+)\)", copied.read_text("utf-8")):
+            if "://" in destination or destination.startswith("#"):
+                continue
+            assert (copied.parent / destination.split("#", 1)[0]).exists(), destination
+    (output / "docs/setup.md").write_text("changed after assembly\n", encoding="utf-8")
+    with pytest.raises(CivError, match="does not match"):
+        audit_assembly(output / "attendee-kit-assembly.json")

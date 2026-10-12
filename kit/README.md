@@ -4,14 +4,13 @@
 
 Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action. Start with the participant page and kit README, then follow the kit's `docs/quickstart.md`. Submit a reproducible metadata-only bundle. Recordings and evidence clips stay local.
 
-1. Open `site/index.html` for the participant page and the room's current instructions.
-2. Follow `docs/quickstart.md` for the ordered command path from `civ doctor` to
-   `submission.zip`.
-3. Keep all kit inputs read only and do your work in `working/` or another participant-owned
-   directory.
+1. Open `site/index.html` for the static participant page. It does not show live room state.
+2. Open [setup and recovery](docs/setup.md) to install the participant CLI and check recovery requirements.
+3. Follow the [QuickStart](docs/quickstart.md) from `civ doctor` through `submission.zip`.
+4. Keep kit inputs read-only. Work in `working/` or another participant-owned directory.
 
-The QuickStart is the operational path. The reference sections below explain platform choices,
-viewers, fallback material, safety boundaries, and the container in more detail.
+Paths on this page are relative to the unpacked kit root. The
+[runtime requirements](docs/runtime-requirements.md) separate intended support from completed execution and lists optional tools.
 
 ## Viewer reference
 
@@ -72,10 +71,8 @@ recovery made them readable but cannot prove that no records were lost to trunca
 
 ## Runtime reference
 
-For current native Windows/Linux CLI installation, follow the
-[participant setup guide](../participant/README.md) and
-[runtime requirements](../docs/runtime-requirements.md). The commands below describe
-the historical assembled runtime and optional container route. Docker and WSL2 are
+Use `docs/setup.md` for the current native CLI route. The commands below describe
+historical assembled source and optional container recovery. Docker and WSL2 are
 not prerequisites for the native CLI.
 
 The participant runtime at `runtime/source` exposes only `doctor`, `inspect`, `sample`, `detect`,

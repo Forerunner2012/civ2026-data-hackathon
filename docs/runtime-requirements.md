@@ -21,7 +21,7 @@ transitive dependencies. No separate ROS installation is needed to decode suppor
 embedded ROS 2 schemas. Unsupported encodings still fail explicitly.
 
 Hyper-V, VMs, WSL2, Docker and administrator access are not general CLI prerequisites.
-Follow the [executable setup and update commands](../participant/README.md). The default
+Follow the [executable setup and update commands](setup.md). The default
 `civ doctor` profile is `pure-mcap`; it also checks the supplied source/kit layout and
 workspace. An empty directory is not a workshop kit.
 
