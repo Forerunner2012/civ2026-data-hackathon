@@ -50,11 +50,11 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
 
   const b1 = await htmlAt("10:00");
   assert.match(b1, /B1/);
-  assert.match(b1, /BY NOW YOU SHOULD HAVE/);
-  assert.match(b1, /IF YOU (?:DON.T|DON&#x27;T|DON&apos;T)/);
-  assert.match(b1, /EXPECTATION/);
-  assert.match(b1, /HINT/);
-  assert.match(b1, /TIP/);
+  assert.match(b1, /EXPECTED RESULT/);
+  assert.match(b1, /IF BLOCKED/);
+  assert.match(b1, /<summary>Expectation<\/summary>/);
+  assert.match(b1, /<summary>Hint<\/summary>/);
+  assert.match(b1, /<summary>Tip<\/summary>/);
   assert.match(b1, /20:00/);
   assert.match(await htmlAt("10:05"), /15:00/);
 
@@ -66,15 +66,15 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   assert.doesNotMatch(timing, /headings 1 and 2/i);
   const transfer = await htmlAt("11:00");
   assert.match(transfer, /transfer expectation/i);
-  assert.match(transfer, /unlocked so far/i);
+  assert.match(transfer, /Guidance released so far/i);
   assert.doesNotMatch(transfer, /Kashiwa|right turn|left turn|0\.08|4 m\/s|>=|<=/i);
   assert.match(await htmlAt("11:45"), /headings 3 and 4/i);
   assert.match(await htmlAt("12:10"), /heading 5/i);
   assert.match(await htmlAt("12:30"), /Submissions closed/i);
 
   assert.match(b1, /Submit metadata bundle/i);
-  assert.match(b1, /PACE CAR.*QUICKSTART/is);
-  assert.match(b1, /doctor.*inspect.*sample.*submission-init.*detect.*clip.*score.*report/is);
+  assert.match(b1, /Quickstart reference/);
+  assert.doesNotMatch(b1, /Eight commands, one evidence chain/);
   assert.match(b1, /docs\/quickstart\.md/i);
   assert.match(b1, /civ report/i);
   assert.match(b1, /submission\.zip/i);

@@ -568,3 +568,15 @@ main.participant-page { overflow:clip; --participant-header-height:140px; }
   .participant-section-controls { gap:8px; }
   .participant-section-controls button { padding:8px; }
 }
+
+/* Approved organizer/live layout uses the existing site colors and typography. */
+.historical-spec-section .section-heading p { font-size: 19px; line-height: 1.6; }
+.live-layers details { padding: 28px 30px; }
+.live-layers details + details { border-left: 1px solid var(--line); }
+.live-layers summary, .live-guidance summary, .pack-disclosure summary { cursor: pointer; font-weight: 800; line-height: 1.5; }
+.live-layers summary:focus-visible, .live-guidance summary:focus-visible, .pack-disclosure summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; }
+.live-guidance > p { color: var(--muted); line-height: 1.6; }
+.pack-disclosure { margin: 24px 0; }
+@media (max-width: 760px) {
+  .live-layers details + details { border-left: 0; border-top: 1px solid var(--line); }
+}

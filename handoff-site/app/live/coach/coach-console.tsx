@@ -74,10 +74,9 @@ export function CoachConsole({
   return (
     <section className="coach-console">
       <p className="kicker"><span /> AUTHORIZED ROOM CONTROL</p>
-      <h1>Advance once.<br /><em>Never backwards.</em></h1>
+      <h1>Release the<br /><em>next checkpoint</em></h1>
       <p className="lede">
-        This control can release only the next state. Scheduled advancement keeps running if nobody
-        touches it, and retrying the same transport request cannot skip a beat.
+        Check the current room stage, then advance it when the room is ready. Scheduled advancement continues automatically. Released guidance cannot be withdrawn.
       </p>
       <div className="coach-card">
         <label>
