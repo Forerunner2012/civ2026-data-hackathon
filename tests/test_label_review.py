@@ -983,3 +983,50 @@ def test_nonsealed_product_refuses_private_export_and_preserves_practice(
         app.state, "practice", spec_name=binding.spec_name, source_bounds=binding.source_bounds
     )
     assert args.progress.read_bytes() == saved_progress
+
+
+def test_launch_guidance_does_not_create_reviewer_or_decisions(tmp_path: Path) -> None:
+    _, original, _ = _case(tmp_path, with_camera_context=True)
+    app = ReviewApplication(
+        original.binding,
+        original.state,
+        before_ns=original.before_ns,
+        after_ns=original.after_ns,
+        review_rule="Synthetic contextual rule, not a threshold",
+        default_reviewer="Fixture reviewer",
+    )
+    before = canonical_json(app.state)
+    view = app.view()
+    assert view["review_rule"] == "Synthetic contextual rule, not a threshold"
+    assert view["default_reviewer"] == "Fixture reviewer"
+    assert canonical_json(app.state) == before
+    assert "Name the reviewer." in gate_review(app.state)
+    assert all(item["decision"] == "pending" for item in _records(app.state["candidates"]))
+
+
+def test_launch_hints_preserve_saved_review_and_consumer_output(tmp_path: Path) -> None:
+    _, original, candidate_id = _case(tmp_path, with_camera_context=True)
+    _record_review(original, candidate_id)
+    original.save()
+    before = canonical_json(original.state)
+    app = ReviewApplication(
+        original.binding,
+        _read_progress(original.binding.progress_path, original.binding),
+        before_ns=original.before_ns,
+        after_ns=original.after_ns,
+        review_rule="Synthetic guidance only",
+        default_reviewer="Different launch hint",
+    )
+    view = app.reload()
+    assert canonical_json(app.state) == before
+    assert _mapping(view["state"])["reviewer"] == original.state["reviewer"]
+    assert gate_review(app.state) == []
+    document = build_export_document(
+        app.state, "practice", spec_name=app.binding.spec_name,
+        source_bounds=app.binding.source_bounds,
+    )
+    assert document == build_export_document(
+        original.state, "practice", spec_name=original.binding.spec_name,
+        source_bounds=original.binding.source_bounds,
+    )
+    assert "review_rule" not in document and "default_reviewer" not in document

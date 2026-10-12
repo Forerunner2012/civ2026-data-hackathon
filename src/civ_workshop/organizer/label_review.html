@@ -19,7 +19,20 @@
     .workspace{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:12px;align-items:start}
     aside{position:sticky;top:12px}.candidate-list{display:grid;gap:6px;max-height:70vh;overflow:auto}
     .candidate-list button{text-align:left;display:flex;justify-content:space-between;gap:8px}
-    .candidate-list button.active{background:#174b75;color:#fff}.status{font-size:.82rem;opacity:.85}
+    .candidate-list button{min-width:0;border-left:5px solid #9db5cb}
+    .candidate-list button[data-decision=pending]{background:#fff8e1;border-left-color:#916800}
+    .candidate-list button[data-decision=approved]{background:#edf8f0;border-left-color:#287341}
+    .candidate-list button[data-decision=rejected]{background:#fff0ed;border-left-color:#a23b30}
+    .candidate-list button[data-decision=data_gap]{background:#fff5e9;border-left-color:#98570c}
+    .candidate-list button.active{outline:2px solid #174b75;outline-offset:1px}
+    .candidate-list .candidate-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .status{font-size:.82rem;font-weight:700;white-space:nowrap;flex-shrink:0}
+    .required-hint{color:#842e24;font-weight:600}.review-rule{white-space:pre-wrap;overflow-wrap:anywhere}
+    #candidate-title{overflow-wrap:anywhere}.camera-box img[hidden]{display:none}
+    [aria-invalid=true]{border:2px solid #a23b30;outline:2px solid #ffd7cf}
+    .missing-field{animation:missing-field .25s ease-in-out 3}
+    @keyframes missing-field{50%{outline:4px solid #a23b30}}
+    @media(prefers-reduced-motion:reduce){.missing-field{animation:none}}
     .review-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr);gap:12px}
     .evidence{display:grid;grid-template-columns:1fr;gap:10px}.camera-box{min-height:190px;background:#eef2f5;display:grid;place-items:center;border-radius:5px;overflow:hidden}
     .camera-box img{display:block;max-width:100%;max-height:360px}.camera-box span{padding:16px;text-align:center;color:#536273}
@@ -37,15 +50,21 @@
     <p id="identity" class="muted mono"></p>
   </header>
   <main>
+    <section aria-labelledby="review-rule-heading">
+      <h2 id="review-rule-heading">Expected event rule</h2>
+      <p id="review-rule" class="review-rule"></p>
+      <p class="muted">Use the organizer-approved contextual definition to approve or reject complete events. Threshold hits are proposals. Review the whole source for missed events and avoid approving duplicate fragments of one event.</p>
+    </section>
     <section>
       <div class="topbar">
-        <label style="flex:1;min-width:220px">Reviewer
-          <input id="reviewer" autocomplete="name" placeholder="Name">
+        <label style="flex:1;min-width:220px">Reviewer name (required)
+          <input id="reviewer" autocomplete="name" placeholder="Enter your name before reviewing" required aria-describedby="reviewer-hint">
         </label>
         <button id="save">Save locally</button>
         <button id="reload">Reload saved review</button>
         <button id="undo">Undo</button>
       </div>
+      <p id="reviewer-hint" class="required-hint">Enter your name before recording any decisions.</p>
       <p id="gate" class="gate" role="status" aria-live="polite"></p>
       <p id="message" role="status" aria-live="polite"></p>
     </section>
@@ -193,6 +212,7 @@
     const svgNS = "http://www.w3.org/2000/svg";
     let review = null;
     let selectedId = null;
+    const reasonDrafts = new Map();
     let cursorNs = 0n;
     let windowEvidence = null;
     let windowCursorNs = 0n;
@@ -335,7 +355,10 @@
       $("candidate-title").textContent = (candidate.kind === "missed" ? "Missed event " : "Candidate ") + candidate.id;
       $("start-ns").value = candidate.start_ns;
       $("end-ns").value = candidate.end_ns;
-      $("reason").value = candidate.reason || "";
+      const adjustments = candidate.adjustment_history || [];
+      const lastAdjustment = adjustments.length ? adjustments[adjustments.length - 1].reason : "";
+      $("reason").value = reasonDrafts.has(candidate.id)
+        ? reasonDrafts.get(candidate.id) : candidate.reason || lastAdjustment || "";
       $("uncertainty").value = candidate.uncertainty_disposition;
       $("uncertainty-reason").value = candidate.uncertainty_reason || "";
       $("practice-selected").checked = candidate.practice_selected === true;
@@ -357,7 +380,18 @@
       const state = review.state;
       const identity = review.identity;
       $("identity").textContent = identity.dataset + " · source " + identity.source_sha256.slice(0, 12) + " · EventSpec " + identity.spec_sha256.slice(0, 12);
-      $("reviewer").value = state.reviewer || "";
+      $("reviewer").value = state.reviewer || review.default_reviewer || "";
+      const needsReviewer = !$("reviewer").value.trim();
+      $("reviewer-hint").textContent = needsReviewer
+        ? "Enter your name before recording any decisions."
+        : "Decisions will be recorded under this name. Check it before reviewing.";
+      $("reviewer-hint").classList.toggle("required-hint", needsReviewer);
+      const datasetRules = {
+        kashiwa: "Kashiwa: review unprotected right turns under the agreed contextual rule.",
+        reims: "Reims: review right or left turns under the agreed contextual rule. Inspect both directions, even if the scan proposes only one."
+      };
+      $("review-rule").textContent = review.review_rule || datasetRules[identity.dataset]
+        || "Use the contextual event definition supplied by the organizer.";
       $("coverage").checked = state.coverage_reviewed === true && state.coverage_revision === state.geometry_revision;
       $("coverage-status").textContent = state.coverage_reviewed ? "Signed off by " + (state.coverage_reviewer || "reviewer") : "Not signed off.";
       $("gate").textContent = review.gate.length ? review.gate.join(" ") : "Review complete. Choose an explicit output target.";
@@ -372,12 +406,19 @@
         const button = document.createElement("button");
         button.type = "button";
         button.dataset.id = candidate.id;
+        button.dataset.decision = candidate.decision;
+        button.title = candidate.id + " · " + candidate.decision;
+        button.setAttribute("aria-label", candidate.id + ", " + candidate.decision);
         button.setAttribute("role", "listitem");
         const name = document.createElement("span");
-        name.textContent = candidate.id;
+        name.className = "candidate-name";
+        name.textContent = candidate.id.length > 18
+          ? candidate.id.slice(0, 8) + "…" + candidate.id.slice(-4) : candidate.id;
         const status = document.createElement("span");
         status.className = "status";
-        status.textContent = candidate.decision;
+        status.textContent = {
+          pending: "Pending", approved: "Approved", rejected: "Rejected", data_gap: "Data gap"
+        }[candidate.decision] || candidate.decision;
         button.append(name, status);
         button.onclick = () => {
           selectedId = candidate.id;
@@ -397,8 +438,47 @@
       }
     }
 
+    function missingField(id, message) {
+      const field = $(id);
+      field.setAttribute("aria-invalid", "true");
+      field.classList.remove("missing-field");
+      void field.offsetWidth;
+      field.classList.add("missing-field");
+      field.focus();
+      showMessage(message, true);
+      return false;
+    }
+
+    function hasRequiredFields(action) {
+      if (!$("reviewer").value.trim()) {
+        return missingField("reviewer", "Enter your reviewer name before recording a decision.");
+      }
+      if (["edit", "reject", "data-gap"].includes(action.type) && !String(action.reason || "").trim()) {
+        return missingField("reason", "Add a reason for this adjustment, rejection or data gap.");
+      }
+      if (action.type === "add-missed" && !String(action.reason || "").trim()) {
+        return missingField("missed-reason", "Explain why this missed interval is an event.");
+      }
+      if (["edit", "add-missed"].includes(action.type)) {
+        const prefix = action.type === "edit" ? "" : "missed-";
+        for (const [value, id] of [[action.start_ns, prefix ? "missed-start" : "start-ns"], [action.end_ns, prefix ? "missed-end" : "end-ns"]]) {
+          if (!String(value || "").trim()) return missingField(id, "Enter both exact interval boundaries.");
+        }
+      }
+      if (action.type === "approve") {
+        if (!["clear", "accept_event"].includes(action.uncertainty_disposition)) {
+          return missingField("uncertainty", "Choose how uncertainty is resolved before approving.");
+        }
+        if (action.uncertainty_disposition === "accept_event" && !String(action.uncertainty_reason || "").trim()) {
+          return missingField("uncertainty-reason", "Add a reason for accepting uncertainty.");
+        }
+      }
+      return true;
+    }
+
     async function act(action) {
       const previous = review ? currentCandidate() : null;
+      if (!hasRequiredFields(action)) return;
       try {
         if (action.type !== "set-reviewer") {
           const name = $("reviewer").value.trim();
@@ -413,6 +493,8 @@
             (updated.start_ns !== previous.start_ns || updated.end_ns !== previous.end_ns)) {
           cursorNs = BigInt(updated.start_ns);
         }
+        if (action.type === "edit" && previous) reasonDrafts.set(previous.id, action.reason);
+        if (action.type === "undo") reasonDrafts.clear();
         showMessage("Review saved locally.");
         render();
       } catch (error) {
@@ -421,13 +503,22 @@
       }
     }
 
+    document.querySelectorAll("input,textarea,select").forEach((field) => {
+      field.addEventListener("input", () => {
+        field.removeAttribute("aria-invalid");
+        field.classList.remove("missing-field");
+      });
+    });
+    $("reason").addEventListener("input", () => {
+      if (selectedId) reasonDrafts.set(selectedId, $("reason").value);
+    });
     $("reviewer").addEventListener("change", () => act({type: "set-reviewer", name: $("reviewer").value}));
     $("save").onclick = async () => {
       try { review = await request("/api/save", {}); showMessage("Review progress saved locally."); render(); }
       catch (error) { showMessage(error.message, true); }
     };
     $("reload").onclick = async () => {
-      try { review = await request("/api/reload", {}); selectedId = null; cursorNs = 0n; showMessage("Saved review reloaded."); render(); }
+      try { review = await request("/api/reload", {}); reasonDrafts.clear(); selectedId = null; cursorNs = 0n; showMessage("Saved review reloaded."); render(); }
       catch (error) { showMessage(error.message, true); }
     };
     $("undo").onclick = () => act({type: "undo"});
@@ -634,6 +725,7 @@
       $("window-end").value = (firstEnd < upper ? firstEnd : upper).toString();
       cursorNs = review.state.candidates.length ? BigInt(review.state.candidates[0].start_ns) : 0n;
       render();
+      if (!$("reviewer").value.trim()) $("reviewer").focus();
     }).catch((error) => showMessage(error.message, true));
   </script>
 </body>

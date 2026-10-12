@@ -140,3 +140,23 @@ inventory revision or remove the comparison option. Comparison references are no
 identity or consumer exports. To make another profile active, use its own spec/events/manifest and a
 new progress/output revision; old progress is rejected by the existing full binding check. Never
 tune profiles using sealed labels or sealed feedback.
+
+
+## Review guidance and required fields
+
+Use `--review-rule "ORGANIZER-APPROVED CONTEXTUAL DEFINITION"` to display the expected event rule
+above the review controls. Without it, the panel identifies the existing Kashiwa unprotected-right-turn
+or Reims right-or-left-turn scope. The EventSpec proposes candidates; the contextual rule governs
+human decisions. A changed target definition requires a new review revision.
+
+Optionally pass `--reviewer "REVIEWER NAME"` to prefill the name. Existing saved reviewer identity
+takes precedence. Check the name before recording decisions; the launch hint alone does not
+create reviewer audit or approvals. Without a prefill, the required name field receives initial
+focus. Missing required names, reasons, boundaries or uncertainty input receive a visible border
+and focus, with reduced-motion support.
+
+Candidate buttons keep their decision visible beside an abbreviated ID; the full ID remains
+available in the tooltip and accessible name. Pending, approved and rejected states have distinct
+colors as well as text. Adjusting an interval still clears its approval and completeness signoff,
+but the reason stays editable in the field. Reload restores the last adjustment reason from the
+local audit. Reasons remain local and are not added to participant output.

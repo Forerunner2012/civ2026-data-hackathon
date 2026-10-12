@@ -1167,9 +1167,19 @@ class ReviewApplication:
         before_ns: int,
         after_ns: int,
         comparisons: ProfileComparisons | None = None,
+        review_rule: str | None = None,
+        default_reviewer: str | None = None,
     ) -> None:
         self.binding = binding
         self.comparisons = comparisons
+        self.review_rule = (
+            require_string(review_rule, "review rule") if review_rule is not None else None
+        )
+        self.default_reviewer = (
+            require_string(default_reviewer, "default reviewer")
+            if default_reviewer is not None
+            else None
+        )
         self.state = state
         self.before_ns = before_ns
         self.after_ns = after_ns
@@ -1249,6 +1259,8 @@ class ReviewApplication:
                 "practice": self.binding.practice_output is not None,
             },
             "comparisons": self.comparisons.view() if self.comparisons else [],
+            "review_rule": self.review_rule,
+            "default_reviewer": self.default_reviewer,
             "output_blockers": {"organizer-private": private_blocker},
             "state": state,
         }
@@ -1578,7 +1590,13 @@ def review_command(args: argparse.Namespace) -> None:
         state = initial_review_state(binding, events, binding.evidence_by_id)
         _write_atomic(binding.progress_path, f"{canonical_json(state)}\n")
     app = ReviewApplication(
-        binding, state, before_ns=before_ns, after_ns=after_ns, comparisons=comparisons
+        binding,
+        state,
+        before_ns=before_ns,
+        after_ns=after_ns,
+        comparisons=comparisons,
+        review_rule=getattr(args, "review_rule", None),
+        default_reviewer=getattr(args, "reviewer", None),
     )
     token = secrets.token_urlsafe(24)
     server = HTTPServer(("127.0.0.1", args.port), _create_handler(app, token))
@@ -1606,6 +1624,10 @@ def add_label_review_command(
         help="review detected intervals in a local browser and export source-bound labels",
     )
     review.add_argument("--comparison-inventory", type=Path)
+    review.add_argument("--review-rule", help="organizer-approved contextual event rule to display")
+    review.add_argument(
+        "--reviewer", help="prefill the named reviewer; saved reviewer takes precedence"
+    )
     review.add_argument("--source", type=Path, required=True)
     review.add_argument("--spec", type=Path, required=True)
     review.add_argument("--events", type=Path, required=True)
