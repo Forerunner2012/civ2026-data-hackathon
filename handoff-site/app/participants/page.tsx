@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Footer, Topbar } from "../_components/chrome";
+import { ParticipantNavigationReady } from "../_components/participant-navigation-ready";
 import { premise } from "../_content/site";
 import {
   bonus,
@@ -33,12 +34,16 @@ export const metadata: Metadata = {
 };
 
 const nav = [
+  { href: "#top", label: "Introduction" },
   { href: "#brief", label: "Brief" },
   { href: "#hours", label: "Three hours" },
+  { href: "#responsibilities", label: "Responsibilities" },
   { href: "#deliver", label: "Deliver" },
   { href: "#scoring", label: "Scoring" },
   { href: "#toolkit", label: "Toolkit" },
   { href: "#kit", label: "Kit" },
+  { href: "#extension", label: "Extension" },
+  { href: "#ready", label: "Preparation" },
 ];
 
 const totalPoints = scoring.reduce((sum, row) => sum + row.points, 0);
@@ -46,8 +51,8 @@ const bonusPoints = bonus.reduce((sum, row) => sum + row.points, 0);
 
 export default function Participants() {
   return (
-    <main>
-      <Topbar nav={nav} pill="Participants" />
+    <main className="participant-page">
+      <Topbar nav={nav} pill="Participants" participantNavigation />
 
       <section className="hero" id="top">
         <div className="hero-copy">
@@ -174,7 +179,7 @@ export default function Participants() {
         </ul>
       </section>
 
-      <section className="perspective-section">
+      <section className="perspective-section" id="responsibilities">
         <div className="perspective-controls">
           <div>
             <span>THE BOUNDARY</span>
@@ -430,6 +435,8 @@ export default function Participants() {
         <a href={datasetAttributionUrl}>kit attribution file</a>.
       </p>
       <Footer note="Participant view · CIV 2026 Data Hackathon" />
+      <ParticipantNavigationReady />
+      <script defer src="/participant-navigation.js" data-participant-navigation-script="" />
     </main>
   );
 }

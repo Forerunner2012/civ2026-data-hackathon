@@ -297,3 +297,19 @@ test("participant opening is concise and the brief holds the shared instructions
   assert.match(brief, /Recordings and evidence clips stay local/);
   assert.match(brief, /A fleet recorded several passages/);
 });
+
+test("participant navigation exposes all ten native destinations and a numeric counter", async () => {
+  for (const route of ["/", "/participants"]) {
+    const document = new JSDOM(await html(route)).window.document;
+    const header = document.querySelector("[data-participant-navigation]");
+    assert.ok(header);
+    const links = [...header.querySelectorAll("nav a")];
+    assert.deepEqual(links.map((link) => link.getAttribute("href")),
+      ["#top", "#brief", "#hours", "#responsibilities", "#deliver", "#scoring", "#toolkit", "#kit", "#extension", "#ready"]);
+    for (const link of links) assert.ok(document.querySelector(link.getAttribute("href")));
+    assert.match(header.querySelector("[data-section-position]").textContent, /^1\/10$/);
+    assert.ok(header.querySelector(".participant-section-controls").hasAttribute("hidden"));
+    assert.ok(header.querySelector("[data-section-previous]").disabled);
+    assert.equal(document.querySelectorAll("script[src='/participant-navigation.js']").length, 1);
+  }
+});

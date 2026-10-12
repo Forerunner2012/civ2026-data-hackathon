@@ -108,3 +108,9 @@ npm run build
 node --test tests/rendered-html.test.mjs   # or: npm run test
 npm run lint
 ```
+
+### Participant navigation browser check
+
+After `npm test`, run `npm run test:navigation` from this directory. The check uses an existing Chromium browser, a temporary local server and an isolated browser profile. It exercises the two public routes and both exported files at desktop/mobile sizes, then checks the disk fallback with JavaScript disabled. Receipts and screenshots stay in ignored `tmp/navigation-browser/`.
+
+Windows defaults to the installed Microsoft Edge executable. Set `CIV_BROWSER_EXECUTABLE` to an existing Chrome or Chromium executable on another test host. This browser is test infrastructure; participants do not need it for the CLI workflows.
