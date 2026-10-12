@@ -1,6 +1,6 @@
 # CIV 2026 hackathon handoff site
 
-Interactive companion to [`../HACKATHON-HANDOFF.md`](../HACKATHON-HANDOFF.md), split into two
+Interactive companion to the [organizer guide](../docs/organizers/README.md), split into two
 audience views so organizer material is never shown to participants.
 
 | Route | Audience | Contains |

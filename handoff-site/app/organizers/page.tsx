@@ -46,6 +46,12 @@ export default function Organizers() {
         this page in a room with participants — the participant view lives at <a href="/participants">/participants</a>.
       </div>
 
+      <div className="internal-banner" role="note">
+        <b>CIV 2026 planning record.</b> Dates, readiness statuses and provisional score discussions
+        below describe the original event. For another session, use <code>docs/organizers/README.md</code>
+        {" "}and verify its own permissions, qualification evidence and release decisions.
+      </div>
+
       <div className="event-strip">
         <span>{eventFacts.when}</span>
         <span>{eventFacts.where}</span>
