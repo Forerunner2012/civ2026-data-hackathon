@@ -1,7 +1,11 @@
 # QuickStart: unpacked kit to accepted bundle
 
-Run these steps from the root of the unpacked attendee kit. Everything required by the core path is
-already in that kit; the QuickStart does not depend on an online download. Commands below use the
+First install the participant CLI using the [setup instructions](../participant/README.md).
+Use native Windows AMD64 or native Linux AMD64; WSL2 is an optional Linux route on Windows.
+Run these steps from the root of the unpacked attendee kit with its supplied local recordings,
+EventSpecs and practice labels. Once the CLI and those inputs are available, the core workflow
+does not need a network connection. See [runtime requirements](runtime-requirements.md).
+Commands below use the
 Kashiwa warm-up. For Reims, use `examples/reims/left_turn.yaml` and
 `layouts/reims-left-turn.pj4.xml` with the matching Reims MCAP.
 

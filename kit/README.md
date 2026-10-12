@@ -72,6 +72,12 @@ recovery made them readable but cannot prove that no records were lost to trunca
 
 ## Runtime reference
 
+For current native Windows/Linux CLI installation, follow the
+[participant setup guide](../participant/README.md) and
+[runtime requirements](../docs/runtime-requirements.md). The commands below describe
+the historical assembled runtime and optional container route. Docker and WSL2 are
+not prerequisites for the native CLI.
+
 The participant runtime at `runtime/source` exposes only `doctor`, `inspect`, `sample`, `detect`,
 `clip`, `score`, `report`, and `submission-init`. Private intake, cohort scoring, product
 construction, and held-back preparation modules are absent.
