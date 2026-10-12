@@ -281,3 +281,19 @@ test("simplified sections preserve workflow, kit paths and usable destinations",
     assert.ok((await readFile(new URL(`../public${anchor.getAttribute("href")}`, import.meta.url))).length > 0);
   }
 });
+
+test("participant opening is concise and the brief holds the shared instructions", async () => {
+  const document = new JSDOM(await html("/participants")).window.document;
+  const opening = document.querySelector("#top .lede").textContent;
+  assert.match(opening, /Investigate an incomplete report/);
+  assert.match(opening, /Inspect the recordings, write an EventSpec/);
+  assert.match(opening, /recommend a next action/);
+  assert.doesNotMatch(opening, /docs\/quickstart\.md|Start with the participant page/);
+  const brief = document.querySelector("#brief .brief-card").textContent;
+  assert.ok(brief.includes(opening));
+  assert.match(brief, /Start with the participant page and kit README/);
+  assert.match(brief, /docs\/quickstart\.md/);
+  assert.match(brief, /reproducible metadata-only bundle/);
+  assert.match(brief, /Recordings and evidence clips stay local/);
+  assert.match(brief, /A fleet recorded several passages/);
+});
