@@ -1,5 +1,12 @@
 # Stable participant contracts and compatibility policy
 
+> **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
+> below describe the original event and its recorded scope. Start a current session with the
+> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
+> [participant contracts](../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> new data rights, platform qualification or public-release approval.
+
 > Historical Phase 2 freeze: v1 remains immutable and accepted. New `civ detect` and `civ report`
 > runs use the additive, bounded v2 manifest/bundle described in
 > [`../phase5/extension-aware-submission-v2.md`](../phase5/extension-aware-submission-v2.md).

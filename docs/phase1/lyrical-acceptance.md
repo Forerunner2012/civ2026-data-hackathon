@@ -1,5 +1,12 @@
 # ROS 2 Lyrical Phase 1 acceptance record
 
+> **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
+> below describe the original event and its recorded scope. Start a current session with the
+> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
+> [participant contracts](../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> new data rights, platform qualification or public-release approval.
+
 Status: **complete — Lyrical is the forward participant and integrated-acceptance target**
 
 Recorded: 2026-08-06

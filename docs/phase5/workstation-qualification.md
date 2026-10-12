@@ -1,5 +1,12 @@
 # Phase 5 workstation qualification
 
+> **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
+> below describe the original event and its recorded scope. Start a current session with the
+> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
+> [participant contracts](../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> new data rights, platform qualification or public-release approval.
+
 Status: **in progress — deterministic contract ready; fresh-machine and human graphics evidence pending**
 
 Recorded: 2026-09-01
