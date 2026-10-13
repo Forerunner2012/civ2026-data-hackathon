@@ -30,9 +30,9 @@ def main() -> None:
         manifest["height"],
     ) != (1920, 1080):
         raise ValueError("Unsupported render manifest")
-    expected = {"briefing": 13, "submission-checklist": 1}
+    expected = {"briefing": 15, "submission-checklist": 1}
     if {deck["name"]: len(deck["slides"]) for deck in manifest["decks"]} != expected:
-        raise ValueError("Expected the approved 13+1 decks")
+        raise ValueError("Expected the approved 15+1 decks")
     if (args.output / "assembly-manifest.json").exists():
         raise ValueError("Refusing to overwrite an existing assembly receipt")
     if (
@@ -89,7 +89,7 @@ def main() -> None:
     (args.output / "assembly-manifest.json").write_text(
         json.dumps(receipt, indent=2), encoding="utf-8"
     )
-    print("Assembled the approved 13+1 image-based widescreen decks locally.")
+    print("Assembled the approved 15+1 image-based widescreen decks locally.")
 
 
 if __name__ == "__main__":

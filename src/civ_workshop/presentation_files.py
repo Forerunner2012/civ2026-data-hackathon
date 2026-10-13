@@ -35,11 +35,11 @@ def _verify_presentations(root: Path) -> tuple[Path, ...]:
         raise ValueError("Unsupported presentation receipt kind")
     if (render.get("width"), render.get("height")) != (1920, 1080):
         raise ValueError("Render canvas mismatch")
-    expected = {"briefing": 13, "submission-checklist": 1}
+    expected = {"briefing": 15, "submission-checklist": 1}
     if len(assembly["outputs"]) != 2 or len(render["decks"]) != 2:
         raise ValueError("Expected exactly the two approved decks")
     if {item["name"]: item["slides"] for item in assembly["outputs"]} != expected:
-        raise ValueError("Expected 13+1 deck outputs")
+        raise ValueError("Expected 15+1 deck outputs")
     for output, deck in zip(assembly["outputs"], render["decks"], strict=True):
         if output["name"] != deck["name"] or output["file"] != output["name"] + ".pptx":
             raise ValueError("Deck identity mismatch")

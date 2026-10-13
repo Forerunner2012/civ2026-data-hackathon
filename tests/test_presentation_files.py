@@ -21,7 +21,7 @@ def _write_fixture(root: Path, *, widescreen: bool = True) -> tuple[Path, Path]:
         return hashlib.sha256(data).hexdigest()
 
     decks, outputs = [], []
-    for name, count in [("briefing", 13), ("submission-checklist", 1)]:
+    for name, count in [("briefing", 15), ("submission-checklist", 1)]:
         slides = [
             {"file": f"{name}-{i}.png", "sha256": digest(png), "notes": ""} for i in range(count)
         ]

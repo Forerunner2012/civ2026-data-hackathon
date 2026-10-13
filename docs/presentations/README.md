@@ -1,10 +1,10 @@
 # Workshop presentations
 
-Maintain the editable [briefing](briefing.html) and [submission checklist](submission-checklist.html) here. Matt reviews the editorial content. The briefing has 13 slides for a 15–20-minute introduction; the separate checklist covers the end-of-hackathon submission. Both use a 1920 by 1080 canvas and produce one full-slide image per 16:9 PPTX slide.
+Maintain the editable [briefing](briefing.html) and [submission checklist](submission-checklist.html) here. Matt reviews the editorial content. The briefing has 15 slides, including the cover and extraction-expectations slide for a 15–20-minute introduction; the separate checklist covers the end-of-hackathon submission. Both use a 1920 by 1080 canvas and produce one full-slide image per 16:9 PPTX slide.
 
 ## Edit the sources
 
-Edit each `data-slide` section in the HTML. Keep the accepted participant introduction and Inspect → Detect → Check evidence → Submit progression. Use the [quickstart](../quickstart.md), [setup guide](../setup.md), [participant contracts](../reference/participant-contracts.md) and [scoring reference](../reference/scoring.md) for facts. Avoid adding command inventories to the slides.
+Edit each `data-slide` section in the HTML. Keep the accepted participant introduction and Inspect → Detect → Check evidence → Submit progression. Use the [quickstart](../quickstart.md), [setup guide](../setup.md), [participant contracts](../reference/participant-contracts.md) and [scoring reference](../reference/scoring.md) for facts. Keep command names in the four-step diagram; exact arguments remain in the QuickStart.
 
 `theme.css` follows the main hackathon site's colors and typography. `slides.js` provides local slide selection and arrow-key progression. `size-chart.js` contains only the selected-parent size accounting, not the event-count or time-split datasets.
 
@@ -24,9 +24,15 @@ The illustration manifest is a local rendering input with `source_sha256`, `labe
 - `practice-comparison.png`
 - `refinement-comparison.png`
 
-Supply measured text under `evidence.readiness`, `evidence.baseline-metrics` and `evidence.refined-metrics` and `evidence.submission`. The submission text must come from a validated metadata-only ZIP and its actual hash. The renderer rejects missing or changed inputs. The current preparation uses a CLI-derived scientific signal plot; it does not claim a native viewer screenshot. The supplied viewer remains available through the kit quickstart. Review this illustration choice with the finished deck.
+Supply measured text under `evidence.readiness`, `evidence.baseline-metrics` and `evidence.refined-metrics` and `evidence.submission`. The submission text must come from a validated metadata-only ZIP and its actual hash. The renderer rejects missing or changed inputs. The current preparation uses a CLI-derived scientific signal plot; it does not claim a native viewer screenshot. The supplied viewer remains available through the kit quickstart. The content review accepted the measured walkthrough; keep its illustrations bound to the same inputs.
 
 Do not disclose development or sealed event counts, collection totals, split percentages or proportional split widths. Only the warm-up's three reviewed turns are shown. Keep hidden numbers out of source, notes, assets, tooltips and accessible text. The file-size diagram is a distinct byte-size measurement; it keeps its labeled units and separate camera-context scope.
+
+## Session access and visual direction
+
+The presenter fills in the explicit QR, kit URL and access-key placeholders before presenting. Do not put credentials in Git. The slides use the site's dark green, lime and amber palette, with contrasted callouts and process arrows. Dataset labels distinguish the Kashiwa walkthrough from the Reims transfer discussion.
+
+The optional camera figure is 5.42 GB for the accepted set across both datasets, including sidecars and the set manifest. It is additional to the 335.11 MB of signals. Availability still follows supplied session material. Event counts for development and sealed evaluation remain withheld.
 
 ## Generate locally
 

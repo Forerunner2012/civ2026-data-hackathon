@@ -32,7 +32,7 @@ try{
  const manifest={kind:'civ.presentation-render/v1',source_sha256:assets.source_sha256,label_pack_sha256:assets.label_pack_sha256,width:1920,height:1080,source_files:{},assets:{},decks:[],browser:(await send('Browser.getVersion')).product,node_version:process.version};
  for(const file of sourceFiles)manifest.source_files[file]=hash(await readFile(path.join(sources,file)));
  for(const [name,item] of Object.entries(assets.assets))manifest.assets[name]=item.sha256;
- for(const [name,file,count] of [['briefing','briefing.html',13],['submission-checklist','submission-checklist.html',1]]){
+ for(const [name,file,count] of [['briefing','briefing.html',15],['submission-checklist','submission-checklist.html',1]]){
   await send('Page.navigate',{url:pathToFileURL(path.join(sources,file)).href});let loaded=false;for(let attempt=0;attempt<100;attempt++){await delay(100);loaded=await evaluate("document.readyState==='complete'&&typeof window.showSlide==='function'");if(loaded)break;}assert.ok(loaded,'Source page did not finish loading');
   assert.equal(await evaluate("document.querySelectorAll('[data-slide]').length"),count,'Unexpected slide count');
   await evaluate(`(()=>{const images=${JSON.stringify(images)},evidence=${JSON.stringify(assets.evidence)};for(const image of document.querySelectorAll('[data-asset]')){if(!images[image.dataset.asset])throw Error('Missing image '+image.dataset.asset);image.src=images[image.dataset.asset];}for(const node of document.querySelectorAll('[data-evidence]')){if(!evidence[node.dataset.evidence])throw Error('Missing evidence '+node.dataset.evidence);node.textContent=evidence[node.dataset.evidence];}return true;})()`);
@@ -47,5 +47,5 @@ try{
   }
   manifest.decks.push({name,slides});
  }
- assert.deepEqual(external,[],'External network asset requested');await writeFile(path.join(output,'render-manifest.json'),JSON.stringify(manifest,null,2));console.log('PASS: 13+1 slides, exact asset hashes, no clipping/footer overlaps or external requests.');
+ assert.deepEqual(external,[],'External network asset requested');await writeFile(path.join(output,'render-manifest.json'),JSON.stringify(manifest,null,2));console.log('PASS: 15+1 slides, exact asset hashes, no clipping/footer overlaps or external requests.');
 }finally{if(send){try{await send('Browser.close');}catch{}}ws?.close();child.kill();}
