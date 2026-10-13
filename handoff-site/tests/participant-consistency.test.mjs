@@ -10,7 +10,7 @@ test("desk commands and eight-step pipeline match the canonical quickstart", asy
   const quickstart = await canonical("quickstart.md");
   const card = await exported("desk/help-card.html");
   const commands = [...card.querySelectorAll(".up code")].map((entry) => entry.textContent);
-  const expected = ["doctor", "inspect"].map((command) => quickstart.split("\n").find((line) => line.startsWith(`civ ${command} `)));
+  const expected = ["doctor", "inspect"].map((command) => quickstart.split(/\r?\n/).find((line) => line.startsWith(`civ ${command} `)));
   assert.deepEqual(commands, expected);
   const sequence = [...quickstart.matchAll(/^\| \d \| `civ ([a-z-]+)`/gm)].map((match) => match[1]);
   const brief = await exported("desk/brief.html");

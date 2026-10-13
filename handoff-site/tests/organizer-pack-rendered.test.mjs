@@ -59,3 +59,28 @@ test("organizer pack preserves fixed evaluator and authority semantics", async (
   assert.match(body, /Later valid on-time hash.*replace authority/);
   assert.match(body, /Late: quarantine and never replace an on-time authority/);
 });
+
+test("historical organizer design keeps its specification without an active planning queue", async () => {
+  const body = await html("/organizers");
+  assert.match(body, /CIV 2026.*hackathon design/s);
+  for (const id of ["purpose", "challenge", "workflow", "requirements", "evaluation", "organizing", "decisions"]) {
+    assert.match(body, new RegExp(`id="${id}"`));
+  }
+  assert.match(body, /55 machine points, 45 jury points/);
+  assert.match(body, /detected turn does not prove it/);
+  assert.match(body, /Original caveats and provisional measurements remain historical evidence/);
+  assert.doesNotMatch(body, /id="(?:phases|readiness|next)"/);
+  assert.doesNotMatch(body, /Grilling complete|nothing remains to settle/);
+});
+
+test("operations roles expose summaries while keeping full procedures reachable", async () => {
+  const body = await html("/organizers/pack");
+  assert.match(body, /aria-label="Operations roles"/);
+  assert.match(body, /href="#intake"/);
+  assert.match(body, /id="intake"/);
+  assert.match(body, /<summary>Full coaching and recovery protocol<\/summary>/);
+  assert.match(body, /Suggest one check they can perform/);
+  assert.match(body, /Confirm the accepted bundle and machine-score record/);
+  assert.match(body, /Never average away a disagreement/);
+  assert.match(body, /Consent wording/);
+});

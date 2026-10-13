@@ -6,6 +6,8 @@ import {
   afternoonRun,
   bonusCategories,
   coachProtocol,
+  coachChecklist,
+  juryChecklist,
   consentWording,
   feedbackTemplate,
   juryCategories,
@@ -41,22 +43,22 @@ function NumberedCards({ items, label }: { items: readonly string[]; label: stri
 export default function OrganizerPack() {
   return (
     <main>
-      <Topbar nav={[{ href: "#coach", label: "Coach" }, { href: "#jury", label: "Jury" }, { href: "#afternoon", label: "Afternoon" }]} pill="Private pack" />
+      <Topbar nav={[{ href: "#coach", label: "Coaches" }, { href: "#intake", label: "Submission intake" }, { href: "#jury", label: "Jury" }, { href: "#afternoon", label: "Results and consent" }]} pill="Private pack" />
       <div className="internal-banner" role="note"><b>{ORGANIZER_PACK_MARKER}.</b> Organizer-only. Do not screen-share, publish, attach to public issues, or copy into participant media.</div>
 
-      <section className="hero organizer-hero"><div className="hero-copy"><p className="kicker"><span /> Day-of runbook</p><h1>Run the room.<br /><em>Defend every score.</em></h1><p className="lede">One operational contract for coaching, recovery, intake, independent judging, feedback, and the afternoon reveal.</p></div></section>
+      <section className="hero organizer-hero"><div className="hero-copy"><p className="kicker"><span /> Day-of runbook</p><h1>Session<br /><em>operations</em></h1><p className="lede">Choose your role. Use the recovery steps when someone is blocked, and record the evidence behind every score.</p><nav className="section-links" aria-label="Operations roles"><a href="#coach">Coaches</a><a href="#intake">Submission intake</a><a href="#jury">Jury</a><a href="#afternoon">Results and consent</a></nav></div></section>
 
       <section className="phase-section pack-section" id="coach"><div className="section-heading compact"><div><span>01 / COACH</span><h2>Respond to the hypothesis</h2></div><p>The participant owns the answer. The coach protects momentum and equal access to guidance.</p></div>
-        <NumberedCards items={coachProtocol} label="Coach response" />
+        <NumberedCards items={coachChecklist} label="Coach checklist" /><details className="pack-disclosure"><summary>Full coaching and recovery protocol</summary><NumberedCards items={coachProtocol} label="Coach response" /></details>
         <h3 className="pack-subheading">Seven checkpoint calls</h3>
         <div className="phase-list">{checkpoints.map((stage) => <article key={stage.id}><span className="phase-id">{stage.beat}</span><div><h3>{stage.time} · {stage.title}</h3><p><b>By now:</b> {stage.shouldHave}</p><p><b>Call:</b> {stage.action}</p><p className="phase-gate"><b>IF NOT</b>{stage.ifYouDont}</p></div></article>)}</div>
         <h3 className="pack-subheading">Sweep and minimal log</h3>
         <NumberedCards items={sweepProtocol} label="Room operation" />
-        <h3 className="pack-subheading">Troubleshooting and recovery tree</h3><div className="decision-list">{troubleshooting.map(([failure, response]) => <article className="made" key={failure}><span>→</span><p><b>{failure}:</b> {response}</p></article>)}</div>
+        <h3 className="pack-subheading" id="intake">Submission intake and recovery</h3><div className="decision-list">{troubleshooting.map(([failure, response]) => <article className="made" key={failure}><span>→</span><p><b>{failure}:</b> {response}</p></article>)}</div>
       </section>
 
       <section className="evaluation-section pack-section" id="jury"><div className="section-heading compact"><div><span>02 / JURY</span><h2>Artifact-verifiable anchors</h2></div><p>55 machine points stay deterministic. Two agents independently score 45 jury points and up to 20 bonus; a human resolves defined disagreements.</p></div>
-        <div className="jury-category-list">{juryCategories.map((category, categoryIndex) => <article className="jury-category" key={category.name}><header><span>{String(categoryIndex + 1).padStart(2, "0")}</span><div><h3>{category.name}</h3><p><b>Evidence surface</b>{category.headings}</p></div><strong>15 max</strong></header><div className="jury-bands">{category.anchors.map(([points, anchor]) => <div className={`jury-band jury-band-${points}`} key={points}><b>{points}<small>/15</small></b><p>{anchor}</p></div>)}</div></article>)}</div>
+        <NumberedCards items={juryChecklist} label="Jury checklist" /><div className="jury-category-list">{juryCategories.map((category, categoryIndex) => <article className="jury-category" key={category.name}><header><span>{String(categoryIndex + 1).padStart(2, "0")}</span><div><h3>{category.name}</h3><p><b>Evidence surface</b>{category.headings}</p></div><strong>15 max</strong></header><div className="jury-bands">{category.anchors.map(([points, anchor]) => <div className={`jury-band jury-band-${points}`} key={points}><b>{points}<small>/15</small></b><p>{anchor}</p></div>)}</div></article>)}</div>
         <h3 className="pack-subheading">Optional bonus · 20 maximum</h3><div className="bonus-grid">{bonusCategories.map(([name, points, anchor]) => <article key={name}><strong>{points}<small> max</small></strong><div><h4>{name}</h4><p>{anchor}</p></div></article>)}</div>
         <h3 className="pack-subheading">Independent scoring, escalation, and trace</h3><NumberedCards items={juryProcedure} label="Jury control" />
         <h3 className="pack-subheading">Written feedback template</h3><pre className="feedback-template">{feedbackTemplate.join("\n")}</pre>

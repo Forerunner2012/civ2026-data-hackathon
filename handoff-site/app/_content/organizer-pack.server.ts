@@ -104,3 +104,17 @@ export const afternoonRun = [
 
 export const consentWording =
   "We would like to show your submitted artifacts because the dead end you documented is unusually useful to the room. The organizer will narrate it; you will not present or answer questions. May we show it? No is completely fine.";
+
+export const coachChecklist = [
+  "Ask what the participant observed and what they think is happening.",
+  "Suggest one check they can perform. Do not supply a solution or private evaluation facts.",
+  "Timebox tooling diagnosis to ten minutes, then use the approved fallback or pairing procedure.",
+  "Give the room equal access to released guidance. Record material help using the existing minimal log.",
+] as const;
+
+export const juryChecklist = [
+  "Confirm the accepted bundle and machine-score record.",
+  "Apply the existing rubric to accepted artifacts. Cite the evidence for awards and deductions.",
+  "Follow the existing independent-review and human-arbitration procedure.",
+  "Record the final category scores and written feedback.",
+] as const;
