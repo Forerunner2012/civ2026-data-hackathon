@@ -18,6 +18,6 @@ civ score WORKING_DIR --labels SUPPLIED_PRACTICE_PACK.json
 
 Practice labels are for participant self-evaluation. Held-out evaluation truth, sealed organizer packs, review audits, private provenance, source MCAPs, and camera companions remain outside this folder and organizer-only materials remain private. A valid schema or matching hash alone does not establish human review, complete coverage, or permission to publish.
 
-## Future onboarding check
+## Optional onboarding check
 
-An optional check for a separately supplied chunk folder, matching EventSpec, and reviewed practice pack is recorded in [issue #100](https://github.com/Forerunner2012/civ2026-data-hackathon/issues/100). It is a future idea and is not implemented here.
+Use the [onboarding helper](../scripts/onboarding_check.py) when you have an authorized source, its matching EventSpec, and a complete human-reviewed practice pack. Follow the [contributor usage instructions](../CONTRIBUTING.md#optional-onboarding-check). The helper prints a path-free JSON summary of source binding and consumer results. It writes detector and scoring artifacts under the fresh output folder you supply. It exits with a nonzero status when input checks, detection, or scoring fail. The helper does not verify authorization, human review, or pack completeness.
