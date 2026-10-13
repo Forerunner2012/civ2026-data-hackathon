@@ -25,6 +25,7 @@ from civ_workshop.kit_inventory import (
     TRACKED_ASSET_SOURCES,
     audit_kit_inventory,
 )
+from civ_workshop.presentation_files import verified_presentations
 from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 ASSEMBLY_CONTRACT = "civ.attendee-kit-assembly/v1"
@@ -103,6 +104,7 @@ PRIVATE_RUNTIME_MODULES = frozenset(
         "data_products.py",
         "intake.py",
         "kit_assembly.py",
+        "presentation_files.py",
         "kit_inventory.py",
         "label_review.py",
         "label_packs.py",
@@ -486,9 +488,7 @@ def _context_inputs(
     raw_products = context_set.get("products")
     if not isinstance(raw_products, list) or len(raw_products) != 13:
         raise CivError("assembly camera-context set must contain exactly 13 products")
-    inputs: list[tuple[Path, str, str]] = [
-        (set_source, set_target, str(pack["manifest_sha256"]))
-    ]
+    inputs: list[tuple[Path, str, str]] = [(set_source, set_target, str(pack["manifest_sha256"]))]
     observed_bytes = set_source.stat().st_size
     seen: set[str] = set()
     for raw in raw_products:
@@ -505,7 +505,11 @@ def _context_inputs(
         if dataset not in {"kashiwa", "reims"}:
             raise CivError("assembly camera-context dataset is invalid")
         for name_field, hash_field, byte_field in (
-            ("camera_context_product", "camera_context_sha256", "camera_context_bytes"),
+            (
+            "camera_context_product",
+            "camera_context_sha256",
+            "camera_context_bytes",
+        ),
             ("manifest", "manifest_sha256", "manifest_bytes"),
         ):
             name = str(raw.get(name_field))
@@ -539,6 +543,7 @@ def assemble_kit(
     container_archive: Path,
     output: Path,
     context_root: Path | None = None,
+    presentations_root: Path | None = None,
 ) -> dict[str, object]:
     audit_kit_inventory(inventory_path)
     inventory = read_json_file(inventory_path, "participant kit inventory")
@@ -546,6 +551,12 @@ def assemble_kit(
         raise CivError("assembly requires the participant-kit inventory")
     if output.exists():
         raise CivError("assembly output must not already exist")
+    presentation_files: tuple[Path, ...] = ()
+    if presentations_root is not None:
+        try:
+            presentation_files = verified_presentations(presentations_root)
+        except (OSError, ValueError, KeyError, StopIteration) as error:
+            raise CivError(f"presentation input validation failed: {error}") from error
     _verify_static_site(site_root)
     fallback_manifest = read_json_file(
         fallback_root / "fallback-manifest.json", "fallback manifest"
@@ -625,6 +636,31 @@ def assemble_kit(
         output / "container" / "civ-phase4-attendee-candidate-558e85c.tar",
     )
     _copy_participant_runtime(repository, output / "runtime" / "source")
+    if presentation_files:
+        target = output / "presentations"
+        target.mkdir()
+        for presentation in presentation_files:
+            _copy_file(presentation, target / presentation.name)
+        (target / "README.md").write_text(
+            "# Workshop presentations\n\n"
+            "- [Briefing](briefing.pptx)\n"
+            "- [Submission checklist](submission-checklist.pptx)\n\n"
+            "These are the reviewed decks supplied for this kit. "
+            "Use the session brief for intake and deadline instructions.\n",
+            encoding="utf-8",
+        )
+        brief = output / "site" / "desk" / "brief.html"
+        if brief.is_file():
+            links = (
+                '<p class="presentation-links">Workshop presentations: '
+                '<a href="../../presentations/briefing.pptx">Briefing</a> · '
+                '<a href="../../presentations/submission-checklist.pptx">Submission checklist</a>'
+                "</p>"
+            )
+            text = brief.read_text(encoding="utf-8")
+            if "</body>" not in text:
+                raise CivError("assembled brief has no body insertion point")
+            brief.write_text(text.replace("</body>", links + "</body>"), encoding="utf-8")
     records = _file_records(
         output, excluded={"attendee-kit-assembly.json", "checksums/ASSEMBLY-SHA256SUMS"}
     )
@@ -722,6 +758,7 @@ def build_parser() -> argparse.ArgumentParser:
     assemble.add_argument("--cache-root", type=Path, required=True)
     assemble.add_argument("--container-archive", type=Path, required=True)
     assemble.add_argument("--context-root", type=Path)
+    assemble.add_argument("--presentations-root", type=Path)
     assemble.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit")
     audit.add_argument("manifest", type=Path)
@@ -745,6 +782,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 args.container_archive,
                 args.output,
                 args.context_root,
+                args.presentations_root,
             )
         else:
             result = audit_assembly(args.manifest)

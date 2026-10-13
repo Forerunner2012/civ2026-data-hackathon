@@ -95,3 +95,7 @@ uv run python .agents/skills/civ-label-acquisition/scripts/synthetic_demo.py
 
 Its fixed fixture decisions are tests, not a human approval method. Real review still needs the
 named reviewer, permitted-use statement and exact source/spec/resource/context bindings.
+
+## Presentation material
+
+Use the [maintained briefing and submission checklist](../presentations/README.md) for the approved 13-slide introduction and separate end-of-hackathon reminder. Edit the HTML, prepare the source-bound illustrations and verify generated decks locally. Include only reviewed artifacts in the approved kit; source presence does not establish a hosted download or kit delivery.
