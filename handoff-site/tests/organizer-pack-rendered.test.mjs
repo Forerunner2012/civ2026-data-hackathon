@@ -75,6 +75,7 @@ test("historical organizer design keeps its specification without an active plan
 
 test("operations roles expose summaries while keeping full procedures reachable", async () => {
   const body = await html("/organizers/pack");
+  assert.match(body, /aria-label="Operations roles"/);
   assert.match(body, /href="#intake"/);
   assert.match(body, /id="intake"/);
   assert.match(body, /<summary>Full coaching and recovery protocol<\/summary>/);

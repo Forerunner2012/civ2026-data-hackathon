@@ -25,6 +25,7 @@ export default function Organizers() {
           <p className="kicker"><span /> Historical design</p>
           <h1>CIV 2026<br /><em>hackathon design</em></h1>
           <p className="lede">This specification describes the agreed CIV 2026 hackathon design and the choices that shaped its material. It provides a reference for understanding and adapting the session.</p>
+          <nav className="section-links" aria-label="Historical design sections">{nav.map(({ href, label }) => <a href={href} key={href}>{label}</a>)}</nav>
           <div className="hero-actions">
             <a className="primary-button" href="/organizers/pack">Session operations <span>→</span></a>
             <a className="text-link" href="#decisions">Decisions and sources</a>

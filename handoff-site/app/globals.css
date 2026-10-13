@@ -580,3 +580,5 @@ main.participant-page { overflow:clip; --participant-header-height:140px; }
 @media (max-width: 760px) {
   .live-layers details + details { border-left: 0; border-top: 1px solid var(--line); }
 }
+.section-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 26px 0; }
+.section-links a { color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.5; text-underline-offset: 5px; }
