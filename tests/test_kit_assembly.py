@@ -498,3 +498,39 @@ def test_assembly_preserves_setup_guides_and_local_links(
     (output / "docs/extension.md").write_text("changed after assembly\n", encoding="utf-8")
     with pytest.raises(CivError, match="does not match"):
         audit_assembly(output / "attendee-kit-assembly.json")
+
+
+def test_optional_presentations_are_copied_hashed_and_linked(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
+) -> None:
+    from tests.test_presentation_files import _write_fixture
+
+    root = tmp_path / "reviewed-presentations"
+    briefing, checklist = _write_fixture(root)
+    site_root = assembly_inputs["site_root"]
+    brief = site_root / "desk" / "brief.html"
+    brief.parent.mkdir()
+    brief.write_text("<html><body><h1>Session brief</h1></body></html>", encoding="utf-8")
+    assemble_kit(**assembly_inputs, presentations_root=root)
+    output = assembly_inputs["output"]
+    assert file_sha256(output / "presentations/briefing.pptx") == file_sha256(briefing)
+    assert file_sha256(output / "presentations/submission-checklist.pptx") == file_sha256(checklist)
+    assert "../../presentations/briefing.pptx" in (output / "site/desk/brief.html").read_text()
+    assert "presentation-links" not in brief.read_text()
+    result = audit_assembly(output / "attendee-kit-assembly.json")
+    assert result["valid"] is True
+    (output / "presentations/briefing.pptx").write_bytes(b"changed")
+    with pytest.raises(CivError, match="hash|match"):
+        audit_assembly(output / "attendee-kit-assembly.json")
+
+
+def test_invalid_optional_presentations_fail_before_assembly_output(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
+) -> None:
+    from tests.test_presentation_files import _write_fixture
+
+    root = tmp_path / "invalid-presentations"
+    _write_fixture(root, widescreen=False)
+    with pytest.raises(CivError, match="presentation input validation failed"):
+        assemble_kit(**assembly_inputs, presentations_root=root)
+    assert not assembly_inputs["output"].exists()
