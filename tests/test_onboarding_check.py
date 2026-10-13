@@ -18,19 +18,21 @@ def run_onboarding_check(
     labels: Path,
     output: Path,
 ) -> subprocess.CompletedProcess[str]:
+    return run_onboarding_cli(
+        "--source",
+        str(source),
+        "--eventspec",
+        str(spec),
+        "--labels",
+        str(labels),
+        "--output",
+        str(output),
+    )
+
+
+def run_onboarding_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [
-            sys.executable,
-            str(ONBOARDING_SCRIPT),
-            "--source",
-            str(source),
-            "--eventspec",
-            str(spec),
-            "--labels",
-            str(labels),
-            "--output",
-            str(output),
-        ],
+        [sys.executable, str(ONBOARDING_SCRIPT), *arguments],
         cwd=PROJECT_ROOT,
         capture_output=True,
         check=False,
@@ -192,3 +194,59 @@ def test_onboarding_check_redacts_invalid_event_spec_resource_path(tmp_path: Pat
     }
     assert "/private/points.json" not in result.stdout
     assert str(tmp_path) not in result.stdout
+
+
+def test_onboarding_check_unknown_argument_does_not_echo_private_path(tmp_path: Path) -> None:
+    source = tmp_path / "private" / "source.mcap"
+    spec = tmp_path / "private" / "event.yaml"
+    labels = tmp_path / "private" / "labels.json"
+    output = tmp_path / "private" / "output"
+    private_argument = tmp_path / "private" / "review-audit.json"
+
+    result = run_onboarding_cli(
+        "--source",
+        str(source),
+        "--eventspec",
+        str(spec),
+        "--labels",
+        str(labels),
+        "--output",
+        str(output),
+        "--unexpected",
+        str(private_argument),
+    )
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert json.loads(result.stderr) == {
+        "error": {
+            "category": "arguments",
+            "message": "invalid command-line arguments; use --help for usage",
+        }
+    }
+    assert str(tmp_path) not in result.stdout
+    assert str(tmp_path) not in result.stderr
+    assert not output.exists()
+
+
+def test_onboarding_check_missing_required_arguments_has_safe_error() -> None:
+    result = run_onboarding_cli()
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert json.loads(result.stderr) == {
+        "error": {
+            "category": "arguments",
+            "message": "invalid command-line arguments; use --help for usage",
+        }
+    }
+
+
+def test_onboarding_check_help_still_lists_all_required_options() -> None:
+    result = run_onboarding_cli("--help")
+
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert "usage:" in result.stdout
+    for option in ("--source", "--eventspec", "--labels", "--output"):
+        assert option in result.stdout

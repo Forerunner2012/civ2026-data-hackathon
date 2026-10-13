@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import NoReturn
 
 from civ_workshop.artifacts import file_sha256
 from civ_workshop.detection import detect_events
@@ -17,8 +18,19 @@ class CheckInputError(Exception):
         self.category = category
 
 
+class _PathSafeArgumentParser(argparse.ArgumentParser):
+    def error(self, _message: str) -> NoReturn:
+        document = {
+            "error": {
+                "category": "arguments",
+                "message": "invalid command-line arguments; use --help for usage",
+            }
+        }
+        self.exit(2, f"{json.dumps(document, sort_keys=True, separators=(',', ':'))}\n")
+
+
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = _PathSafeArgumentParser(
         description="Run the existing detector and scorer for one supplied practice input set.",
         epilog=(
             "The caller chooses an authorized source, matching EventSpec, and complete "
