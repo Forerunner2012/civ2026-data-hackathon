@@ -29,6 +29,20 @@ For website changes, work in `handoff-site/` and follow the
 [site development guide](handoff-site/README.md) for `npm ci`, `npm run test` and `npm run lint`.
 Participant platform/install qualification is separate from this contributor project setup.
 
+## Optional onboarding check
+
+For an authorized chunk folder or a direct MCAP path, run this command:
+
+```powershell
+uv run python scripts/onboarding_check.py `
+  --source AUTHORIZED_CHUNK_OR_MCAP `
+  --eventspec MATCHING_EVENTSPEC `
+  --labels REVIEWED_PRACTICE_PACK `
+  --output FRESH_OUTPUT_FOLDER
+```
+
+The folder must contain exactly one top-level MCAP file. Pass the MCAP path directly when a folder contains more than one. The helper calls the detector and scorer functions used by `civ detect` and `civ score --labels`. It validates the pack and source hash. Choose an authorized source, a matching EventSpec, and a complete human-reviewed practice pack before you run the helper. The helper does not establish authorization, human review, or label coverage. It writes to a new output folder outside the input folders.
+
 ## Keep documentation consistent
 
 Use [GLOSSARY.md](GLOSSARY.md) for the repository's domain vocabulary. Canonical Markdown owns
