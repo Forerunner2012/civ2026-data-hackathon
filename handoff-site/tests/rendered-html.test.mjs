@@ -40,11 +40,10 @@ async function html(path) {
  * whenever new internal content lands in `app/_content/organizers.server.ts`.
  */
 const ORGANIZER_ONLY = [
-  /URT-Kashiwa/i,
   // The scenario is revealed at the event, not before: §4.3's brief is
   // deliberately an *incomplete* incident report.
   /unprotected right turn/i,
-  /\bURT\b/,
+  /\bURT\b(?!-Kashiwa)/,
   /grilling/i,
   /clean[- ]room/i,
   /sealed ground truth/i,
@@ -106,13 +105,16 @@ test("participant view states the contract", async () => {
   assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
   assert.match(body, /one-page report/i);
   assert.match(body, /civ submission-init working --shell powershell/i);
-  assert.match(body, /same participant or team identity/i);
-  assert.match(body, /server receipt time is authoritative/i);
-  assert.match(body, /later valid on-time bundle for the same dataset is authoritative/i);
-  assert.match(body, /Incomplete or invalid/);
-  assert.match(body, /Hash mismatch/);
-  assert.match(body, /Duplicate reference/);
-  assert.match(body, /Late/);
+  assert.match(body, /historical form and USB intake route are retired/i);
+  assert.match(body, /No collection route or intended recipient is active/i);
+  assert.match(body, /docs\/submission-fields\.md/i);
+  assert.match(body, /URT-Kashiwa dataset page/i);
+  assert.match(body, /href="https:\/\/github\.com\/tlab-wide\/URT-Kashiwa"/i);
+  assert.match(body, /href="https:\/\/tlab\.hongo\.wide\.ad\.jp\/portfolio\/urt-kashiwa-dataset-unprotected-right-turn-kashiwa-campus\/"/i);
+  assert.match(body, /Reims recordings are limited to registered CIV 2026 participants/i);
+  assert.match(body, /href="https:\/\/github\.com\/Forerunner2012"/i);
+  assert.match(body, /href="https:\/\/www\.linkedin\.com\/in\/matthieucarreutc\/"/i);
+  assert.match(body, /Do not forward direct download links/i);
   assert.match(body, /docs\/quickstart\.md/);
   assert.match(body, /viewer\/README\.md/);
   assert.match(body, /\/desk\/warmup-trace\.html/);
@@ -122,11 +124,18 @@ test("participant view states the contract", async () => {
   assert.match(body, /advanced multimodal, data-quality or external-resource method.*5/i);
   assert.match(body, /Regression test built from a failure.*5/i);
   assert.match(body, /extension\/manifest\.json/);
-  assert.match(body, /intake validates but never runs/i);
-  // The ranking rule is published to participants even though the answer key is not.
+  assert.match(body, /validates their declarations but never runs them/i);
+  assert.match(body, /evidence\/\s+no\s+your clips stay on your machine/i);
+  // Historical scoring and receipt rules remain explicit without inviting a current hand-in.
   assert.match(body, /held-back test set/i);
-  // Rules that change behaviour, so they must survive a redesign of the page.
-  assert.match(body, /Submit as often as you like/i);
+  assert.match(body, /During the event, participants could submit multiple versions by 12:30/i);
+  assert.match(body, /The event team used the latest valid on-time receipt for each participant or duo on each dataset/i);
+  assert.match(body, /The team retained late receipts separately/i);
+  assert.match(body, /A late receipt did not replace an on-time receipt/i);
+  assert.match(body, /For a score tie, the team ranked the entry with the earliest receipt for that score first/i);
+  assert.match(body, /No collection route or intended recipient is active/i);
+  assert.match(body, /A validated metadata-only ZIP and its SHA-256/i);
+  assert.doesNotMatch(body, /Submit as often as you like|submit again|resubmit|hand in unchanged|accepted submission/i);
   assert.match(body, /scored by AI agents/i);
   assert.match(body, /your clips stay on your machine/i);
   assert.doesNotMatch(body, /tally\.so|SUBMISSION_FORM_URL|intake-local/i);
@@ -254,7 +263,7 @@ test("simplified sections preserve workflow, kit paths and usable destinations",
   const toolkit = document.querySelector("#toolkit");
   assert.deepEqual(
     [...toolkit.querySelectorAll(".workflow-list li > b")].map((row) => row.textContent),
-    ["Inspect", "Detect", "Check evidence", "Submit"],
+    ["Inspect", "Detect", "Check evidence", "Package"],
   );
   assert.equal(toolkit.querySelectorAll(".pipeline > div").length, 6);
   assert.equal(toolkit.querySelector(".command-list"), null);

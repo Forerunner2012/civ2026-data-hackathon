@@ -55,8 +55,8 @@ The live page and coach API exist in local development and internal acceptance b
 hint, and tip; later beats remain server-only. The three printable desk materials live under
 `/desk/` and contain no worked answer.
 
-Copy `.env.example` to `.env` — it carries the configured `SUBMISSION_FORM_URL`, and Wrangler loads
-it into the dev worker. Add a private coach token to the same file, then start the local server:
+Copy `.env.example` to `.env`; Wrangler loads it into the dev worker. Add a private coach token to
+the same file, then start the local server:
 
 ```powershell
 Copy-Item .env.example .env
@@ -64,7 +64,8 @@ Add-Content .env 'LIVE_COACH_TOKEN=replace-with-a-long-random-value'
 npm run dev
 ```
 
-`.env` is git-ignored and is where secrets belong; `.env.example` holds only the public form URL.
+`.env` is git-ignored and is where secrets belong. The historical participant submission form is
+retired; `.env.example` contains no submission destination.
 
 Participants open `/live`; the facilitator opens `/live/coach` and enters the same token. The page
 advances from the Tokyo schedule automatically. The coach can only advance it one state early;
@@ -91,13 +92,9 @@ internal preview with `POST_EVENT_SOLUTIONS_PREVIEW=true`. Release requires both
 status to be `approved` and `POST_EVENT_SOLUTIONS_RELEASED=true`; preview and release flags remain
 unset during the session. No release flag can add this route to the public production artifact.
 
-`SUBMISSION_FORM_URL` is participant-visible by design. It must be HTTPS and must not contain
-credentials. On event day it is the public Tally form URL, currently `https://tally.so/r/81Yy1x`; the
-form collects participant identity, the SHA-256 printed by `civ report`, and the unchanged
-`submission.zip`, and shows a confirmation containing its unique submission reference. Provider
-configuration and the export-to-envelope mapping are in
-[`docs/phase1/intake-acceptance.md`](../docs/phase1/intake-acceptance.md). Organizer credentials and
-response exports remain outside this site.
+The `/live` page shows that the historical submission form and USB instructions are retired; it has
+no collection link. The historical collection fields and v2 bundle contents are documented in
+[`docs/submission-fields.md`](../docs/submission-fields.md).
 
 ## Verification
 

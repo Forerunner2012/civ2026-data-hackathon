@@ -1,7 +1,7 @@
 # CIV 2026 data hackathon
 
 Run a data hackathon where participants inspect robotics recordings, write YAML EventSpecs,
-review detected intervals and submit a reproducible metadata-only bundle. This repository contains
+review detected intervals and build a reproducible metadata-only bundle. This repository contains
 the reusable command-line workflow, offline attendee-kit builder, participant-safe website and
 organizer procedures developed for CIV 2026.
 

@@ -2,7 +2,7 @@
 
 ## Start here
 
-Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action. Start with the participant page and kit README, then follow the kit's `docs/quickstart.md`. Submit a reproducible metadata-only bundle. Recordings and evidence clips stay local.
+Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action. Start with the participant page and kit README, then follow the kit's `docs/quickstart.md`. Build a reproducible metadata-only bundle. Recordings and evidence clips stay local.
 
 1. Open `site/index.html` for the static participant page. It does not show live room state.
 2. Open [setup and recovery](docs/setup.md) to install the participant CLI and check recovery requirements.

@@ -14,7 +14,7 @@ export const participantOpening =
   "Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action.";
 
 export const participantIntroduction =
-  `${participantOpening} Start with the participant page and kit README, then follow the kit's docs/quickstart.md. Submit a reproducible metadata-only bundle. Recordings and evidence clips stay local.`;
+  `${participantOpening} Start with the participant page and kit README, then follow the kit's docs/quickstart.md. Build a reproducible metadata-only bundle. Recordings and evidence clips stay local.`;
 
 export const datasetAttributionUrl =
   "https://github.com/Forerunner2012/civ2026-data-hackathon/blob/main/kit/ATTRIBUTION.md";
@@ -74,9 +74,9 @@ export const journey: { time: string; title: string; doing: string; produces: st
   },
   {
     time: "12:10",
-    title: "Submit",
-    doing: "Rerun reproduction, finish the one-page report, hand in.",
-    produces: "An accepted submission — and you may keep improving it until 12:30.",
+    title: "Package",
+    doing: "Rerun reproduction, finish the one-page report, build and validate the metadata-only ZIP, then keep it and its SHA-256 locally.",
+    produces: "A validated metadata-only ZIP and its SHA-256, with recordings and evidence kept locally through 12:30.",
   },
 ];
 
@@ -150,9 +150,8 @@ export const scoringRules = [
   "At 12:30, 55 points are machine-scored; the jury reads the one-page report for the other 45 over lunch.",
   "A development score validates submission format and basic metrics during the session.",
   "The final ranking runs on a held-back test set, so a detector tuned to one route will not travel.",
-  "Submit as often as you like. The last one counts, and the deadline is hard at 12:30.",
+  "During the event, participants could submit multiple versions by 12:30. The event team used the latest valid on-time receipt for each participant or duo on each dataset. The team retained late receipts separately. A late receipt did not replace an on-time receipt. For a score tie, the team ranked the entry with the earliest receipt for that score first.",
   "Solo and duo entries share one leaderboard; the selected afternoon walkthroughs do not change the score.",
-  "Ties break on the earliest submission of the tied score.",
   "The 45 report points are scored by AI agents against anchors written by a human, with a human resolving any disagreement between them. You are told this because you should know it.",
   "Every entry gets written feedback at 15:00 — not just the ones shown.",
   "Bonus points cannot compensate for a core result that does not reproduce.",
@@ -180,13 +179,13 @@ export const workflow = [
   { step: "Inspect", action: "Explore the supplied signals in a viewer or with the CLI." },
   { step: "Detect", action: "Write an EventSpec and run it across the supplied recordings." },
   { step: "Check evidence", action: "Inspect local clips and evaluate the detected intervals." },
-  { step: "Submit", action: "Build the metadata-only ZIP and keep the printed SHA-256." },
+  { step: "Package", action: "Run `civ report` to validate the metadata-only ZIP, then keep the ZIP and its SHA-256 locally." },
 ];
 
 export const kitGuides = [
   { title: "Attendee kit guide", path: "README.md", note: "Kit contents, supplied recordings, layouts, and fallback material." },
   { title: "Viewer guide", path: "viewer/README.md", note: "Choose a supplied viewer and verify its checksum." },
-  { title: "Participant quickstart", path: "docs/quickstart.md", note: "Run the workflow and prepare your submission." },
+  { title: "Participant quickstart", path: "docs/quickstart.md", note: "Run the workflow and prepare your metadata-only ZIP." },
 ];
 
 export const deskMaterials = [
@@ -196,10 +195,10 @@ export const deskMaterials = [
 ];
 
 /**
- * You keep your evidence. What is handed in is the record of the work, not the
- * recordings behind it — kilobytes, through a form.
+ * The bundle contains the record of the work. Source recordings stay local.
+ * The collection route is retired. This list describes the file contract.
  */
-export const submissionTree = `working/                       handed in?
+export const submissionTree = `working/                       in ZIP?
 ├── detector/                  yes   EventSpec + exact declared resources
 ├── events.jsonl               yes   the intervals you found
 ├── run-manifest.json          yes   v2 versions, hashes, parameters, timings,
@@ -214,19 +213,9 @@ export const submissionTree = `working/                       handed in?
 export const submissionSteps = [
   "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
-  "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
-  "Optional traces and regression tests are inert: intake validates but never runs them.",
-  "Submit the unchanged ZIP, printed hash, and the same participant or team identity. Keep the confirmation reference; its server receipt time is authoritative.",
-  "If the form is unavailable, hand over those same three items by USB. Never unpack, rename, recompress, or add recordings or clips.",
-];
-
-export const submissionOutcomes = [
-  { state: "Accepted", action: "Keep the reference, hash, and receipt time. You may continue working." },
-  { state: "Replaced", action: "A later valid on-time bundle for the same dataset is authoritative; keep both receipts." },
-  { state: "Incomplete or invalid", action: "Read the `civ report` diagnostic, fix the named artifact, rebuild, and submit again." },
-  { state: "Hash mismatch", action: "Upload the unchanged ZIP and paste the exact hash printed by the same report run." },
-  { state: "Duplicate reference", action: "The existing receipt stands. Use a new form response only for a newly built bundle." },
-  { state: "Late", action: "The receipt is retained as late and cannot replace your last valid on-time bundle." },
+  "Run `civ report working`. It builds and validates the metadata-only ZIP and prints its SHA-256. Keep both locally.",
+  "Optional traces and regression tests are inert. `civ report` validates their declarations but never runs them.",
+  "The historical form and USB route for this event are retired. No collection route or recipient is active. See docs/submission-fields.md for the historical fields and current metadata-only ZIP contract.",
 ];
 
 /**

@@ -58,6 +58,7 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("participant-instructions", "docs/setup.md"),
     ("participant-instructions", "docs/runtime-requirements.md"),
     ("participant-instructions", "docs/extension.md"),
+    ("participant-instructions", "docs/submission-fields.md"),
     ("layout", "layouts/kashiwa-right-turn.pj4.xml"),
     ("layout", "layouts/lichtblick-kashiwa-right-turn.json"),
     ("layout", "layouts/lichtblick-reims-left-turn.json"),

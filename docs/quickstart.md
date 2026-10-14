@@ -1,6 +1,18 @@
-# Quickstart: unpacked kit to accepted bundle
+# Quickstart: unpacked kit to metadata bundle
 
 First install the participant CLI using the [setup instructions](setup.md). Use native Windows AMD64 or native Linux AMD64; WSL2 is an optional Linux route on Windows. Run these steps from the root of the unpacked attendee kit with its supplied local recordings, EventSpecs and practice labels. Once the CLI and those inputs are available, the core workflow does not need a network connection. See [runtime requirements](runtime-requirements.md). Commands below use the Kashiwa warm-up. For Reims, use `examples/reims/left_turn.yaml` and `layouts/reims-left-turn.pj4.xml` with the matching Reims MCAP.
+
+## Dataset access and terms
+
+The public [URT-Kashiwa dataset page](https://github.com/tlab-wide/URT-Kashiwa) remains available.
+See Tsukada Laboratory's [publisher page for the URT-Kashiwa dataset](https://tlab.hongo.wide.ad.jp/portfolio/urt-kashiwa-dataset-unprotected-right-turn-kashiwa-campus/)
+for the dataset description. Follow the repository's attribution terms. Reims recordings are
+limited to registered CIV 2026 participants for event learning and demonstration. Do not
+redistribute them. Delete participant copies derived from source recordings after the event. For
+Reims access questions, use the maintainer's
+[GitHub profile](https://github.com/Forerunner2012) or
+[LinkedIn profile](https://www.linkedin.com/in/matthieucarreutc/). Do not forward direct download
+links.
 
 ## Install before the first command
 
@@ -35,7 +47,8 @@ flowchart LR
     class V,C local
 ```
 
-The viewer and evidence clips help your investigation but stay on your machine. Only the validated metadata bundle is submitted.
+The viewer and evidence clips help your investigation but stay on your machine. Only the validated
+metadata bundle enters `submission.zip`.
 
 ## Before step 1: choose local paths
 
@@ -118,7 +131,7 @@ civ score working --labels <supplied-development-labels.json>
 
 Use the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
 
-## 8. Validate, package, and submit
+## 8. Validate and keep the metadata-only ZIP
 
 Complete the five report headings, replace the figure, and make the reproduction script rerun the same path. Then:
 
@@ -126,7 +139,10 @@ Complete the five report headings, replace the figure, and make the reproduction
 civ report working
 ```
 
-Expected result: `working/submission.zip` and its SHA-256 printed to the terminal. Submit the ZIP unchanged with the printed hash and your participant/team identity through the form shown on the live page. If the form is unavailable, give those same three items to the organizer by USB.
+Expected result: `working/submission.zip` and its SHA-256 printed to the terminal. The historical
+submission form and USB instructions are retired; this repository provides no active collection
+route or intended recipient. See the [submission fields and bundle contract](submission-fields.md)
+for the historical collection fields and current metadata-only ZIP contents.
 
 No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, and `working/evidence/` stay local.
 
@@ -141,31 +157,31 @@ No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, 
 | 5 | `civ detect` | EventSpec + MCAP + declared resources | `detector/` with exact resources, `events.jsonl`, v2 `run-manifest.json`, optional `extension/manifest.json` | `clip`, `score`, `report` |
 | 6 | `civ clip` | events + same MCAP + manifest | `evidence/*.mcap`, updated manifest | visual review, `report` manifest checks |
 | 7 | `civ score` | working directory + supplied labels | `metrics.json`, updated manifest | report argument, `report` |
-| 8 | `civ report` | completed working directory | `submission.zip` + SHA-256 | organizer intake |
+| 8 | `civ report` | completed working directory | validated `submission.zip` + SHA-256 | local ZIP and hash preservation |
 
-## Working directory versus submission
+## Working directory and metadata-only ZIP
 
 ```text
-working/
-├── detector/detector.yaml      submitted
-├── detector/<resource path>    submitted when declared by EventSpec
-├── events.jsonl                submitted
-├── run-manifest.json           submitted
-├── metrics.json                submitted
-├── report.md                   submitted
-├── figure.svg                  submitted
-├── reproduce.ps1 or .sh        submitted
-├── extension/manifest.json     submitted when extension payloads exist
+working/                         ZIP contents
+├── detector/detector.yaml      yes
+├── detector/<resource path>    yes, when declared by EventSpec
+├── events.jsonl                yes
+├── run-manifest.json           yes
+├── metrics.json                yes
+├── report.md                   yes
+├── figure.svg                  yes
+├── reproduce.ps1 or .sh        yes
+├── extension/manifest.json    yes, when extension payloads exist
 ├── extension/*                 optional provenance, inert traces, tests
-├── submission.zip              hand in unchanged
+├── submission.zip              local archive; keep unchanged
 └── evidence/<event_id>.mcap    local only
 ```
 
-The seven core artifacts remain mandatory. A v2 extension may carry at most eight declared payloads (1 MiB each, 4 MiB combined). `civ report` rejects undeclared, changed, forbidden, unsafe, or case-colliding files. Intake validates but never runs a submitted trace or regression test.
+The seven core artifacts remain mandatory in the ZIP. A v2 extension may carry at most eight declared payloads (1 MiB each, 4 MiB combined). `civ report` rejects undeclared, changed, forbidden, unsafe, or case-colliding files. The ZIP validator does not execute declared traces or regression tests.
 
 ## Recovery references
 
 - Viewer problem: use `civ sample` and `fallback/<dataset>/`, then raise the printed help card.
 - CLI setup problem: follow [setup and recovery](setup.md), or pair with another participant while a coach helps. Container recovery is optional.
 - Command problem: read the exact diagnostic, fix only the named input, and rerun that command.
-- Submission problem: rerun `civ report`; never manually edit or recompress `submission.zip`.
+- ZIP problem: rerun `civ report`; keep its validated `submission.zip` and printed SHA-256 locally. Never manually edit or recompress the ZIP.

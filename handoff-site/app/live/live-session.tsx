@@ -16,11 +16,9 @@ function countdown(nowMs: number, nextStartMs: number | null): string {
 export function LiveSession({
   initialSnapshot,
   controlledNow,
-  submissionFormUrl,
 }: {
   initialSnapshot: LivePublicSnapshot;
   controlledNow: string | null;
-  submissionFormUrl: string | null;
 }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [nowMs, setNowMs] = useState(initialSnapshot.nowMs);
@@ -141,37 +139,16 @@ export function LiveSession({
 
       <section className="live-submission" id="submission">
         <div>
-          <span>SUBMISSION · METADATA ONLY</span>
-          <h2>Submit metadata bundle</h2>
-          <ol>
-            <li>Run <code>civ report working</code>.</li>
-            <li>Copy the printed SHA-256 exactly.</li>
-            <li>Send your unchanged identity, hash, and <code>submission.zip</code>.</li>
-          </ol>
+          <span>HISTORICAL EVENT INTAKE</span>
+          <h2>Submission route retired</h2>
+          <p>No collection route or intended recipient is active for this event.</p>
           <p>Limit: 12 MiB per bundle and 8 MiB per metadata artifact.</p>
         </div>
         <div className="live-submission-action">
-          {submissionFormUrl ? (
-            <a
-              className="primary-button"
-              href={submissionFormUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open submission form <span>→</span>
-            </a>
-          ) : (
-            <p role="status">The online form is not configured. Use the USB fallback now.</p>
-          )}
-          <p>
-            Keep the form confirmation with its submission reference; the server receipt time tied
-            to that reference is authoritative. You may submit again. The latest valid response for
-            that dataset received by 12:30 JST is authoritative.
-          </p>
-          <p>
-            <b>USB fallback:</b> hand over the identical <code>submission.zip</code>, your identity,
-            and the same printed hash. The organizer records the same hash-and-time receipt. Do not
-            unpack or reformat it.
+          <p role="status">
+            The former form and USB instructions are retired. See the repository&apos;s
+            <code> docs/submission-fields.md</code> for the historical collection fields and
+            metadata-only bundle contract.
           </p>
         </div>
       </section>

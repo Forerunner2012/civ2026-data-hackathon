@@ -67,29 +67,31 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   const transfer = await htmlAt("11:00");
   assert.match(transfer, /transfer expectation/i);
   assert.match(transfer, /Guidance released so far/i);
+  assert.match(transfer, /Keep the warm-up result in your working directory/i);
+  assert.doesNotMatch(transfer, /submit the warm-up result|accepted submission|submit what you have/i);
   assert.doesNotMatch(transfer, /Kashiwa|right turn|left turn|0\.08|4 m\/s|>=|<=/i);
   assert.match(await htmlAt("11:45"), /headings 3 and 4/i);
-  assert.match(await htmlAt("12:10"), /heading 5/i);
-  assert.match(await htmlAt("12:30"), /Submissions closed/i);
+  const finish = await htmlAt("12:10");
+  assert.match(finish, /heading 5/i);
+  assert.match(finish, /metadata-only ZIP/i);
+  assert.match(finish, /SHA-256 locally/i);
+  assert.doesNotMatch(finish, /submit again|resubmit|final receipt|on-time valid submission/i);
+  const close = await htmlAt("12:30");
+  assert.match(close, /Submissions closed/i);
+  assert.match(close, /validated local ZIP.*SHA-256/i);
+  assert.doesNotMatch(close, /final receipt|submitted hash/i);
 
-  assert.match(b1, /Submit metadata bundle/i);
+  assert.match(b1, /Submission route retired/i);
   assert.match(b1, /Quickstart reference/);
   assert.doesNotMatch(b1, /Eight commands, one evidence chain/);
   assert.match(b1, /docs\/quickstart\.md/i);
-  assert.match(b1, /civ report/i);
-  assert.match(b1, /submission\.zip/i);
   assert.match(b1, /12 MiB per bundle.*8 MiB per metadata artifact/i);
-  assert.match(b1, /USB fallback/i);
-  if (process.env.SUBMISSION_FORM_URL) {
-    assert.match(b1, /https:\/\/forms\.example\.test\/civ-phase1/);
-  } else {
-    assert.doesNotMatch(b1, /forms\.example\.test/);
-    assert.match(b1, /online form is not configured.*USB fallback/i);
-  }
-  assert.match(b1, /confirmation.*submission reference/i);
-  assert.match(b1, /server receipt time tied.*authoritative/i);
-  assert.match(b1, /latest valid response for.*dataset.*12:30 JST is authoritative/i);
-  assert.match(b1, /organizer records the same hash-and-time receipt/i);
+  assert.match(b1, /Submission route retired/i);
+  assert.match(b1, /No collection route or intended recipient is active/i);
+  assert.match(b1, /former form and USB instructions are retired/i);
+  assert.match(b1, /docs\/submission-fields\.md/i);
+  assert.match(b1, /metadata-only bundle contract/i);
+  assert.doesNotMatch(b1, /Open submission form|USB fallback|SUBMISSION_FORM_URL|tally\.so|forms\.example\.test/i);
 });
 
 test("approved post-event solutions require a separate release flag", async () => {
@@ -184,7 +186,10 @@ test("static fallback is readable, script-free, and exposes no coach control", a
   assert.match(fallback, /Session fallback/);
   assert.match(fallback, /BY NOW YOU SHOULD HAVE/);
   assert.match(fallback, /IF YOU (?:DON.T|DON&#x27;T|DON&apos;T)/);
-  assert.match(fallback, /latest valid on-time bundle for that dataset is authoritative/i);
-  assert.match(fallback, /incomplete or invalid.*hash does not match.*repeated reference.*late receipt/is);
+  assert.match(fallback, /Historical intake route retired/i);
+  assert.match(fallback, /former participant form and USB handoff instructions are retired/i);
+  assert.match(fallback, /No collection route\s+or intended recipient is active/i);
+  assert.match(fallback, /historical collection fields\s+and current metadata-only ZIP contract/i);
+  assert.doesNotMatch(fallback, /hand over.*submission\.zip|online form|latest valid on-time bundle/i);
   assert.doesNotMatch(fallback, /<script|coach|advance|solution|Kashiwa/i);
 });
