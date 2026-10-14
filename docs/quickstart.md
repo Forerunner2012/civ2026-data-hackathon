@@ -123,11 +123,13 @@ civ clip working/events.jsonl data/KSH-64ac27cd029b-signals.mcap
 
 With detections, expect one `working/evidence/<event_id>.mcap` per event and clip facts added to the run manifest. Reopen a clip in a supplied viewer. With zero events, the command writes no clips; inspect your conditions and timing, then continue to scoring and reporting to record the result. A failure names the missing topic or empty window; every `evidence.topics` entry must exist in the same bag used by `civ detect`.
 
-## 7. Score against the supplied development labels
+## 7. Score against the supplied practice labels
 
 ```text
-civ score working --labels <supplied-development-labels.json>
+civ score working --labels <supplied-practice-labels.json>
 ```
+
+The Kashiwa warm-up is the first practice target. Organizers are encouraged to share complete, source-bound practice labels in the same space as participant kits, at a time they choose. Use practice labels for learning and self-evaluation. Development metrics do not guarantee results on sealed evaluation, whose truth remains organizer-only.
 
 Use the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
 
