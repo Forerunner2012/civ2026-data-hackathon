@@ -74,9 +74,9 @@ export const journey: { time: string; title: string; doing: string; produces: st
   },
   {
     time: "12:10",
-    title: "Submit",
-    doing: "Rerun reproduction, finish the one-page report, hand in.",
-    produces: "An accepted submission — and you may keep improving it until 12:30.",
+    title: "Package",
+    doing: "Rerun reproduction, finish the one-page report, build and validate the metadata-only ZIP, then keep it and its SHA-256 locally.",
+    produces: "A validated metadata-only ZIP and its SHA-256, with recordings and evidence kept locally through 12:30.",
   },
 ];
 
@@ -150,9 +150,8 @@ export const scoringRules = [
   "At 12:30, 55 points are machine-scored; the jury reads the one-page report for the other 45 over lunch.",
   "A development score validates submission format and basic metrics during the session.",
   "The final ranking runs on a held-back test set, so a detector tuned to one route will not travel.",
-  "Submit as often as you like. The last one counts, and the deadline is hard at 12:30.",
+  "During the event, participants could submit multiple versions by 12:30. The event team used the latest valid on-time receipt for each participant or duo on each dataset. The team retained late receipts separately. A late receipt did not replace an on-time receipt. For a score tie, the team ranked the entry with the earliest receipt for that score first.",
   "Solo and duo entries share one leaderboard; the selected afternoon walkthroughs do not change the score.",
-  "Ties break on the earliest submission of the tied score.",
   "The 45 report points are scored by AI agents against anchors written by a human, with a human resolving any disagreement between them. You are told this because you should know it.",
   "Every entry gets written feedback at 15:00 — not just the ones shown.",
   "Bonus points cannot compensate for a core result that does not reproduce.",
@@ -180,13 +179,13 @@ export const workflow = [
   { step: "Inspect", action: "Explore the supplied signals in a viewer or with the CLI." },
   { step: "Detect", action: "Write an EventSpec and run it across the supplied recordings." },
   { step: "Check evidence", action: "Inspect local clips and evaluate the detected intervals." },
-  { step: "Submit", action: "Build the metadata-only ZIP and keep the printed SHA-256." },
+  { step: "Package", action: "Run `civ report` to validate the metadata-only ZIP, then keep the ZIP and its SHA-256 locally." },
 ];
 
 export const kitGuides = [
   { title: "Attendee kit guide", path: "README.md", note: "Kit contents, supplied recordings, layouts, and fallback material." },
   { title: "Viewer guide", path: "viewer/README.md", note: "Choose a supplied viewer and verify its checksum." },
-  { title: "Participant quickstart", path: "docs/quickstart.md", note: "Run the workflow and prepare your submission." },
+  { title: "Participant quickstart", path: "docs/quickstart.md", note: "Run the workflow and prepare your metadata-only ZIP." },
 ];
 
 export const deskMaterials = [
@@ -214,9 +213,9 @@ export const submissionTree = `working/                       in ZIP?
 export const submissionSteps = [
   "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
-  "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
-  "Optional traces and regression tests are inert: intake validates but never runs them.",
-  "The historical form and USB route are retired. No collection route or recipient is active. See docs/submission-fields.md for the historical fields and bundle contract.",
+  "Run `civ report working`. It builds and validates the metadata-only ZIP and prints its SHA-256. Keep both locally.",
+  "Optional traces and regression tests are inert. `civ report` validates their declarations but never runs them.",
+  "The historical form and USB route for this event are retired. No collection route or recipient is active. See docs/submission-fields.md for the historical fields and current metadata-only ZIP contract.",
 ];
 
 /**

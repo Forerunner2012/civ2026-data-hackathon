@@ -124,12 +124,18 @@ test("participant view states the contract", async () => {
   assert.match(body, /advanced multimodal, data-quality or external-resource method.*5/i);
   assert.match(body, /Regression test built from a failure.*5/i);
   assert.match(body, /extension\/manifest\.json/);
-  assert.match(body, /intake validates but never runs/i);
+  assert.match(body, /validates their declarations but never runs them/i);
   assert.match(body, /evidence\/\s+no\s+your clips stay on your machine/i);
-  // The ranking rule is published to participants even though the answer key is not.
+  // Historical scoring and receipt rules remain explicit without inviting a current hand-in.
   assert.match(body, /held-back test set/i);
-  // Rules that change behaviour, so they must survive a redesign of the page.
-  assert.match(body, /Submit as often as you like/i);
+  assert.match(body, /During the event, participants could submit multiple versions by 12:30/i);
+  assert.match(body, /The event team used the latest valid on-time receipt for each participant or duo on each dataset/i);
+  assert.match(body, /The team retained late receipts separately/i);
+  assert.match(body, /A late receipt did not replace an on-time receipt/i);
+  assert.match(body, /For a score tie, the team ranked the entry with the earliest receipt for that score first/i);
+  assert.match(body, /No collection route or intended recipient is active/i);
+  assert.match(body, /A validated metadata-only ZIP and its SHA-256/i);
+  assert.doesNotMatch(body, /Submit as often as you like|submit again|resubmit|hand in unchanged|accepted submission/i);
   assert.match(body, /scored by AI agents/i);
   assert.match(body, /your clips stay on your machine/i);
   assert.doesNotMatch(body, /tally\.so|SUBMISSION_FORM_URL|intake-local/i);
@@ -257,7 +263,7 @@ test("simplified sections preserve workflow, kit paths and usable destinations",
   const toolkit = document.querySelector("#toolkit");
   assert.deepEqual(
     [...toolkit.querySelectorAll(".workflow-list li > b")].map((row) => row.textContent),
-    ["Inspect", "Detect", "Check evidence", "Submit"],
+    ["Inspect", "Detect", "Check evidence", "Package"],
   );
   assert.equal(toolkit.querySelectorAll(".pipeline > div").length, 6);
   assert.equal(toolkit.querySelector(".command-list"), null);

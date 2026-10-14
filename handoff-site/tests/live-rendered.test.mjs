@@ -67,10 +67,19 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   const transfer = await htmlAt("11:00");
   assert.match(transfer, /transfer expectation/i);
   assert.match(transfer, /Guidance released so far/i);
+  assert.match(transfer, /Keep the warm-up result in your working directory/i);
+  assert.doesNotMatch(transfer, /submit the warm-up result|accepted submission|submit what you have/i);
   assert.doesNotMatch(transfer, /Kashiwa|right turn|left turn|0\.08|4 m\/s|>=|<=/i);
   assert.match(await htmlAt("11:45"), /headings 3 and 4/i);
-  assert.match(await htmlAt("12:10"), /heading 5/i);
-  assert.match(await htmlAt("12:30"), /Submissions closed/i);
+  const finish = await htmlAt("12:10");
+  assert.match(finish, /heading 5/i);
+  assert.match(finish, /metadata-only ZIP/i);
+  assert.match(finish, /SHA-256 locally/i);
+  assert.doesNotMatch(finish, /submit again|resubmit|final receipt|on-time valid submission/i);
+  const close = await htmlAt("12:30");
+  assert.match(close, /Submissions closed/i);
+  assert.match(close, /validated local ZIP.*SHA-256/i);
+  assert.doesNotMatch(close, /final receipt|submitted hash/i);
 
   assert.match(b1, /Submission route retired/i);
   assert.match(b1, /Quickstart reference/);
@@ -82,7 +91,7 @@ test("live page renders schedule, countdown, prompts, and participant-safe trans
   assert.match(b1, /former form and USB instructions are retired/i);
   assert.match(b1, /docs\/submission-fields\.md/i);
   assert.match(b1, /metadata-only bundle contract/i);
-  assert.doesNotMatch(b1, /Open submission form|USB fallback|SUBMISSION_FORM_URL|tally\.so/i);
+  assert.doesNotMatch(b1, /Open submission form|USB fallback|SUBMISSION_FORM_URL|tally\.so|forms\.example\.test/i);
 });
 
 test("approved post-event solutions require a separate release flag", async () => {
