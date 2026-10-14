@@ -10,6 +10,11 @@ Investigate an incomplete report of vehicle behaviour. Inspect the recordings, w
 4. Try the optional [external-point exercise](docs/extension.md) after reproducing the core workflow.
 5. Keep kit inputs read-only. Work in `working/` or another participant-owned directory.
 
+Organizers are encouraged to share complete source-bound practice labels in the same space as
+participant kits, at a time they choose. These labels support learning and self-evaluation, but
+development metrics do not guarantee sealed-evaluation results; evaluation truth remains
+organizer-only.
+
 Paths on this page are relative to the unpacked kit root. The [runtime requirements](docs/runtime-requirements.md) separate intended support from completed execution and lists optional tools.
 
 ## Viewer reference
