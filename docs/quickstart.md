@@ -5,9 +5,11 @@ First install the participant CLI using the [setup instructions](setup.md). Use 
 ## Dataset access and terms
 
 The public [URT-Kashiwa dataset page](https://github.com/tlab-wide/URT-Kashiwa) remains available.
-Follow its attribution terms. Reims recordings are limited to registered CIV 2026 participants for
-event learning and demonstration. Do not redistribute them. Delete participant copies derived from
-source recordings after the event. For Reims access questions, use the maintainer's
+See Tsukada Laboratory's [publisher page for the URT-Kashiwa dataset](https://tlab.hongo.wide.ad.jp/portfolio/urt-kashiwa-dataset-unprotected-right-turn-kashiwa-campus/)
+for the dataset description. Follow the repository's attribution terms. Reims recordings are
+limited to registered CIV 2026 participants for event learning and demonstration. Do not
+redistribute them. Delete participant copies derived from source recordings after the event. For
+Reims access questions, use the maintainer's
 [GitHub profile](https://github.com/Forerunner2012) or
 [LinkedIn profile](https://www.linkedin.com/in/matthieucarreutc/). Do not forward direct download
 links.

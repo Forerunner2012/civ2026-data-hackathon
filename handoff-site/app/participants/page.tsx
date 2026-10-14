@@ -433,10 +433,14 @@ export default function Participants() {
       <p className="participant-attribution">
         The public{" "}
         <a href="https://github.com/tlab-wide/URT-Kashiwa">URT-Kashiwa dataset page</a>{" "}
-        remains available under its attribution terms. Reims recordings are limited to registered
-        CIV 2026 participants for event learning and demonstration. Do not redistribute them. Delete
-        participant copies derived from source recordings after the event. For Reims access questions, use
-        the maintainer&apos;s{" "}
+        remains available under its attribution terms. Tsukada Laboratory&apos;s{" "}
+        <a href="https://tlab.hongo.wide.ad.jp/portfolio/urt-kashiwa-dataset-unprotected-right-turn-kashiwa-campus/">
+          publisher page for the URT-Kashiwa dataset
+        </a>{" "}
+        provides a dataset description. Reims recordings are limited to registered CIV 2026
+        participants for event learning and demonstration. Do not redistribute them. Delete
+        participant copies derived from source recordings after the event. For Reims access questions,
+        use the maintainer&apos;s{" "}
         <a href="https://github.com/Forerunner2012">GitHub profile</a> or{" "}
         <a href="https://www.linkedin.com/in/matthieucarreutc/">LinkedIn profile</a>. Do not forward
         direct download links.

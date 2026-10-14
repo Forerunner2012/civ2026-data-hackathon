@@ -110,6 +110,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /docs\/submission-fields\.md/i);
   assert.match(body, /URT-Kashiwa dataset page/i);
   assert.match(body, /href="https:\/\/github\.com\/tlab-wide\/URT-Kashiwa"/i);
+  assert.match(body, /href="https:\/\/tlab\.hongo\.wide\.ad\.jp\/portfolio\/urt-kashiwa-dataset-unprotected-right-turn-kashiwa-campus\/"/i);
   assert.match(body, /Reims recordings are limited to registered CIV 2026 participants/i);
   assert.match(body, /href="https:\/\/github\.com\/Forerunner2012"/i);
   assert.match(body, /href="https:\/\/www\.linkedin\.com\/in\/matthieucarreutc\/"/i);
