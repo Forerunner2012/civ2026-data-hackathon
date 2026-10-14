@@ -35,6 +35,9 @@ approval. CIV 2026 evidence applies to the exact original artifacts and recorded
 Recordings, imagery, viewer binaries, containers, generated bundles and runtime evidence are
 separate release inputs. Kit assembly verifies their identities. Keep them out of Git.
 
+The root [LICENSE](LICENSE) covers eligible original contributions, and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
+and [kit/ATTRIBUTION.md](kit/ATTRIBUTION.md) identify the separate terms for third-party materials and datasets.
+
 ## A possible next format
 
 This material can support other challenges in robotics data analysis, including AI-assisted work with data from edge systems. One possible format runs for two or three months, releases new dataset chunks progressively, and repeats evaluation at each release. Organizers would define the schedule, data permissions, labels, and evaluation rules for that format.
