@@ -1,18 +1,23 @@
 # Phase 1 submission intake acceptance
 
+> Historical acceptance record. The participant form and USB intake route described here are
+> retired; there is no current collection route or intended recipient. Use
+> [the submission fields and bundle contract](../submission-fields.md) for the current bundle
+> definition and retired-field reference.
+
 > Phase 3 preserves these adapters and bundle bytes but selects authority per identity and derived
 > dataset. See [two-dataset authority](../phase3/two-dataset-authority.md).
 
 ## Contract
 
-Participants submit the unchanged metadata-only `submission.zip` emitted by `civ report`, together
-with their stable participant/team identity and the SHA-256 printed by that command. Evidence clips,
+The historical form requested the unchanged metadata-only `submission.zip` emitted by `civ report`,
+the participant or team identity, and the SHA-256 printed by that command. Evidence clips,
 raw bags, organizer labels, caches, virtual environments, and runtime state never enter the bundle.
 The published transport limit is 12 MiB per bundle, 8 MiB per artifact, at most 10 MiB total
 uncompressed metadata, and at most 16 artifacts. `civ report` enforces the same limits before it
 emits the bundle, so intake cannot reject an unchanged successful report on size or shape.
 
-The online form must collect these public fields:
+The retired online form collected these three required participant fields:
 
 1. stable participant or team identity;
 2. pasted SHA-256;
@@ -25,9 +30,9 @@ provider internals are not embedded in the attendee site.
 
 ## Form provider
 
-The selected provider is **Tally** (`tally.so`), chosen because attendees upload a file without an
-account or organizational-domain sign-in. Google Forms and Microsoft Forms both gate file-upload
-questions behind a signed-in respondent and are therefore unusable for a BYOD cohort.
+The historical provider was **Tally** (`tally.so`), chosen because attendees could upload a file
+without an account or organizational-domain sign-in. Google Forms and Microsoft Forms both gate
+file-upload questions behind a signed-in respondent and were therefore unusable for a BYOD cohort.
 
 One form, three questions plus the upload, mapped to the organizer envelope:
 
@@ -52,9 +57,8 @@ Configuration that the contract depends on:
   reference is authoritative. The respondent-confirmation-email fallback is deliberately *not*
   adopted: it would require an email question, pulling participant personal data into scope, while
   the identifier already resolves any dispute against the `Submitted at` export column.
-- `SUBMISSION_FORM_URL` is the public form URL, `https://tally.so/r/81Yy1x`, configured in
-  `handoff-site/.env` — copy the committed `handoff-site/.env.example`, which carries this value.
-  It is participant-visible by design and carries no credentials.
+- `SUBMISSION_FORM_URL` configured the retired route at the time of acceptance. The public route is
+  not part of current participant guidance; its value has been removed from `.env.example`.
 
 **Timezone hazard.** `civ intake-tally` treats Tally's timezone-naive `Submitted at` value as UTC,
 while `civ intake-form` rejects a timestamp without an offset. The 12:30:00 Asia/Tokyo cutoff is
@@ -164,4 +168,4 @@ form URL, and response identifier in the issue after completing both paths:
 Current status: **completed on 2026-08-22 and recorded in issue #9**. The online receipt
 `kbvZNW6` and disconnected USB receipt `issue9-usb-corrected-001` both retained bundle SHA-256
 `31f4eb3ad1cc3c003e0dc5474dad52d7a08ece183a095b3ef0a50c1e5588ca9c`; the USB rehearsal also
-confirmed byte-identical scorer input. The form remains published at `https://tally.so/r/81Yy1x`.
+confirmed byte-identical scorer input. The route described in this record is retired.

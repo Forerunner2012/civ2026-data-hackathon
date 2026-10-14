@@ -22,7 +22,6 @@ import {
   scoringRules,
   theDayPage,
   submissionTree,
-  submissionOutcomes,
   submissionSteps,
   youOwn,
   youReceive,
@@ -231,11 +230,11 @@ export default function Participants() {
       <section className="deliver-section" id="deliver">
         <div className="section-heading light compact">
           <div>
-            <span>02 / WHAT YOU HAND IN</span>
+            <span>02 / METADATA BUNDLE</span>
             <h2>
-              Ten things,
+              What civ report builds,
               <br />
-              one command.
+              in one bundle.
             </h2>
           </div>
           <p>
@@ -254,18 +253,19 @@ export default function Participants() {
         <pre className="tree-block">{submissionTree}</pre>
         <div className="submission-guide">
           <div>
-            <h3>Build and hand in the same bundle on every path</h3>
+            <h3>Build and inspect the metadata bundle</h3>
             <ol>
               {submissionSteps.map((step) => <li key={step}>{step}</li>)}
             </ol>
           </div>
           <div>
-            <h3>What each outcome means</h3>
-            <dl>
-              {submissionOutcomes.map(({ state, action }) => (
-                <div key={state}><dt>{state}</dt><dd>{action}</dd></div>
-              ))}
-            </dl>
+            <h3>Collection status</h3>
+            <p>
+              The historical form and USB intake route are retired. No collection route or intended
+              recipient is active. See the repository guide{" "}
+              <code>docs/submission-fields.md</code> for the established collection requirements
+              and current bundle contract.
+            </p>
           </div>
         </div>
       </section>
@@ -430,6 +430,17 @@ export default function Participants() {
         </ol>
       </section>
 
+      <p className="participant-attribution">
+        The public{" "}
+        <a href="https://github.com/tlab-wide/URT-Kashiwa">URT-Kashiwa dataset page</a>{" "}
+        remains available under its attribution terms. Reims recordings are limited to registered
+        CIV 2026 participants for event learning and demonstration. Do not redistribute them. Delete
+        participant copies derived from source recordings after the event. For Reims access questions, use
+        the maintainer&apos;s{" "}
+        <a href="https://github.com/Forerunner2012">GitHub profile</a> or{" "}
+        <a href="https://www.linkedin.com/in/matthieucarreutc/">LinkedIn profile</a>. Do not forward
+        direct download links.
+      </p>
       <p className="participant-attribution">
         Dataset and tool attribution, modification notes, and third-party notices are in the{" "}
         <a href={datasetAttributionUrl}>kit attribution file</a>.

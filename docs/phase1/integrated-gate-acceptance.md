@@ -6,6 +6,10 @@
 > [participant contracts](../reference/participant-contracts.md). See the
 > [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
 > new data rights, platform qualification or public-release approval.
+>
+> The participant form and USB intake route exercised here are retired; there is no current
+> collection route or intended recipient. The historical route may remain in this acceptance
+> evidence, but it must not be used as participant guidance.
 
 Status: **complete — all 13 issue #11 acceptance criteria pass**
 
@@ -128,7 +132,7 @@ directory silently degrades to the USB-only wording with no error.
 
 | Check | Observed | Pass |
 |---|---|---|
-| `/live` renders the configured Tally form action, not the "not configured" fallback | `https://tally.so/r/81Yy1x` rendered | PASS |
+| `/live` rendered the configured historical form action, not the "not configured" fallback | Historical route rendered | PASS |
 | Every scheduled state renders in order | Opening, B1-B7 and close matched at all nine exact boundaries | PASS |
 | Countdown and report prompts display | Countdown/closed state and B3/B6/B7 prompts rendered | PASS |
 | Coach advance moves the room one state early | Opening advanced once to B1; repeated request id was `already-applied` | PASS |

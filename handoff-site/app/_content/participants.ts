@@ -14,7 +14,7 @@ export const participantOpening =
   "Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action.";
 
 export const participantIntroduction =
-  `${participantOpening} Start with the participant page and kit README, then follow the kit's docs/quickstart.md. Submit a reproducible metadata-only bundle. Recordings and evidence clips stay local.`;
+  `${participantOpening} Start with the participant page and kit README, then follow the kit's docs/quickstart.md. Build a reproducible metadata-only bundle. Recordings and evidence clips stay local.`;
 
 export const datasetAttributionUrl =
   "https://github.com/Forerunner2012/civ2026-data-hackathon/blob/main/kit/ATTRIBUTION.md";
@@ -196,10 +196,10 @@ export const deskMaterials = [
 ];
 
 /**
- * You keep your evidence. What is handed in is the record of the work, not the
- * recordings behind it — kilobytes, through a form.
+ * The bundle contains the record of the work. Source recordings stay local.
+ * The collection route is retired. This list describes the file contract.
  */
-export const submissionTree = `working/                       handed in?
+export const submissionTree = `working/                       in ZIP?
 ├── detector/                  yes   EventSpec + exact declared resources
 ├── events.jsonl               yes   the intervals you found
 ├── run-manifest.json          yes   v2 versions, hashes, parameters, timings,
@@ -216,17 +216,7 @@ export const submissionSteps = [
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
   "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
   "Optional traces and regression tests are inert: intake validates but never runs them.",
-  "Submit the unchanged ZIP, printed hash, and the same participant or team identity. Keep the confirmation reference; its server receipt time is authoritative.",
-  "If the form is unavailable, hand over those same three items by USB. Never unpack, rename, recompress, or add recordings or clips.",
-];
-
-export const submissionOutcomes = [
-  { state: "Accepted", action: "Keep the reference, hash, and receipt time. You may continue working." },
-  { state: "Replaced", action: "A later valid on-time bundle for the same dataset is authoritative; keep both receipts." },
-  { state: "Incomplete or invalid", action: "Read the `civ report` diagnostic, fix the named artifact, rebuild, and submit again." },
-  { state: "Hash mismatch", action: "Upload the unchanged ZIP and paste the exact hash printed by the same report run." },
-  { state: "Duplicate reference", action: "The existing receipt stands. Use a new form response only for a newly built bundle." },
-  { state: "Late", action: "The receipt is retained as late and cannot replace your last valid on-time bundle." },
+  "The historical form and USB route are retired. No collection route or recipient is active. See docs/submission-fields.md for the historical fields and bundle contract.",
 ];
 
 /**

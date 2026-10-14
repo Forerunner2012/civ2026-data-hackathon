@@ -1,6 +1,16 @@
-# Quickstart: unpacked kit to accepted bundle
+# Quickstart: unpacked kit to metadata bundle
 
 First install the participant CLI using the [setup instructions](setup.md). Use native Windows AMD64 or native Linux AMD64; WSL2 is an optional Linux route on Windows. Run these steps from the root of the unpacked attendee kit with its supplied local recordings, EventSpecs and practice labels. Once the CLI and those inputs are available, the core workflow does not need a network connection. See [runtime requirements](runtime-requirements.md). Commands below use the Kashiwa warm-up. For Reims, use `examples/reims/left_turn.yaml` and `layouts/reims-left-turn.pj4.xml` with the matching Reims MCAP.
+
+## Dataset access and terms
+
+The public [URT-Kashiwa dataset page](https://github.com/tlab-wide/URT-Kashiwa) remains available.
+Follow its attribution terms. Reims recordings are limited to registered CIV 2026 participants for
+event learning and demonstration. Do not redistribute them. Delete participant copies derived from
+source recordings after the event. For Reims access questions, use the maintainer's
+[GitHub profile](https://github.com/Forerunner2012) or
+[LinkedIn profile](https://www.linkedin.com/in/matthieucarreutc/). Do not forward direct download
+links.
 
 ## Install before the first command
 
@@ -35,7 +45,8 @@ flowchart LR
     class V,C local
 ```
 
-The viewer and evidence clips help your investigation but stay on your machine. Only the validated metadata bundle is submitted.
+The viewer and evidence clips help your investigation but stay on your machine. Only the validated
+metadata bundle enters `submission.zip`.
 
 ## Before step 1: choose local paths
 
@@ -126,7 +137,10 @@ Complete the five report headings, replace the figure, and make the reproduction
 civ report working
 ```
 
-Expected result: `working/submission.zip` and its SHA-256 printed to the terminal. Submit the ZIP unchanged with the printed hash and your participant/team identity through the form shown on the live page. If the form is unavailable, give those same three items to the organizer by USB.
+Expected result: `working/submission.zip` and its SHA-256 printed to the terminal. The historical
+submission form and USB instructions are retired; this repository provides no active collection
+route or intended recipient. See the [submission fields and bundle contract](submission-fields.md)
+for the historical collection fields and current metadata-only ZIP contents.
 
 No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, and `working/evidence/` stay local.
 

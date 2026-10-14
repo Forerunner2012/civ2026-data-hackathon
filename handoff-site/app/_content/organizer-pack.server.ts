@@ -27,9 +27,9 @@ export const troubleshooting = [
   ["Viewer cannot display", "Continue with civ inspect, sample, and tracked fallback tables/layouts. Viewer state is optional runtime input, not submission content."],
   ["Schema or topic mismatch", "Run civ doctor and civ inspect against the named participant product. If the product hash differs, replace it from tracked event media; do not patch the spec with private knowledge."],
   ["Internet or hosted page lost", "Hand out the static participant export from event media. Keep the same beat, expectation, hint, and tip; coaches become the distribution channel."],
-  ["Online form unreachable", "Accept the unchanged metadata-only ZIP by local/USB intake. Record the same team identity, dataset, server/organizer receipt time, SHA-256, and reference."],
-  ["Submission invalid or incomplete", "Return the exact validation failure. Keep the receipt as rejected and ask for a corrected resubmission; never repair participant artifacts."],
-  ["Duplicate, replacement, or late receipt", "Duplicate hash: retain one reference. Later valid on-time hash for the same team and dataset: replace authority. Late: quarantine and never replace an on-time authority."],
+  ["Historical form outage fallback", "The former event route accepted the unchanged metadata-only ZIP by local or USB intake and recorded team identity, dataset, organizer receipt time, SHA-256, and reference. It is retired for this event. No collection route or recipient is active. The CLI validator and receipt rules remain available for a future authorized workflow."],
+  ["Future authorized intake: invalid or incomplete", "Return the exact validation failure. Keep the receipt as rejected and ask for a corrected resubmission; never repair participant artifacts."],
+  ["Future authorized intake: duplicate, replacement, or late receipt", "Duplicate hash: retain one reference. Later valid on-time hash for the same team and dataset: replace authority. Late: quarantine and never replace an on-time authority."],
 ] as const;
 
 export const juryCategories = [

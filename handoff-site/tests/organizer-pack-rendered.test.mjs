@@ -33,8 +33,10 @@ test("organizer pack renders the complete operations contract", async () => {
   assert.match(body, /Seven checkpoint calls/);
   for (const beat of ["B1", "B2", "B3", "B4", "B5", "B6", "B7"]) assert.match(body, new RegExp(`>${beat}<`));
   assert.match(body, /Internet or hosted page lost/);
-  assert.match(body, /Online form unreachable/);
-  assert.match(body, /Duplicate, replacement, or late receipt/);
+  assert.match(body, /Historical form outage fallback/);
+  assert.match(body, /retired for this event\. No collection route or recipient is active/i);
+  assert.match(body, /Future authorized intake: invalid or incomplete/);
+  assert.match(body, /Future authorized intake: duplicate, replacement, or late receipt/);
   assert.match(body, /Investigation and hypothesis/);
   assert.match(body, /Quality and evaluation/);
   assert.match(body, /Visualization and explanation/);
