@@ -15,7 +15,11 @@ import civ_workshop.kit_assembly as assembly_module
 from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import assemble_kit, audit_assembly, build_fallback_pack
-from civ_workshop.kit_inventory import ACCEPTED_PRODUCT_SET_SHA256, TRACKED_ASSET_SOURCES
+from civ_workshop.kit_inventory import (
+    ACCEPTED_PRODUCT_SET_SHA256,
+    TRACKED_ASSET_SOURCES,
+    TRACKED_ASSETS,
+)
 from civ_workshop.participant_cli import build_parser as build_participant_parser
 from tests.helpers import create_micro_case
 from tests.test_participant_runtime import participant_workflow
@@ -469,24 +473,51 @@ def test_assembly_leakage_gate_rejects_private_payload(
         assembly_module._verify_participant_assembly(tmp_path, records)
 
 
-def test_assembly_preserves_setup_guides_and_local_links(
+def test_assembly_preserves_guides_notices_and_local_links(
     tmp_path: Path, assembly_inputs: _AssemblyInputs
 ) -> None:
-    targets = {
-        "README.md", "ATTRIBUTION.md", "viewer/README.md", "docs/quickstart.md",
-        "docs/setup.md", "docs/runtime-requirements.md", "docs/extension.md",
+    targets = {target for _, target in TRACKED_ASSETS}
+    notice_targets = {
+        "THIRD-PARTY-NOTICES.md",
+        "LICENSES/OpenAI-Sites-2023-MIT.txt",
+        "LICENSES/ROS-Apache-2.0.txt",
+        "LICENSES/CIV-MIT.txt",
+        "LICENSES/MCAP-MIT.txt",
+        "site/LICENSES/Geist-OFL-1.1.txt",
+        "viewer/README.md",
+        "viewer/NOTICES.md",
+        "viewer/LICENSES/Lichtblick-MPL-2.0.txt",
+        "viewer/LICENSES/PlotJuggler-MPL-2.0.txt",
+        "container/NOTICES.md",
+    }
+    assert notice_targets <= targets
+    attribution_targets = notice_targets - {"viewer/README.md"}
+    assert {role for role, target in TRACKED_ASSETS if target in attribution_targets} == {
+        "attribution"
     }
     inventory_path = assembly_inputs["inventory_path"]
     inventory = json.loads(inventory_path.read_text("utf-8"))
     inventory["tracked_assets"] = [
-        {"path": target, "sha256": file_sha256(
-            REPOSITORY / TRACKED_ASSET_SOURCES.get(target, target)
-        )}
+        {
+            "path": target,
+            "sha256": file_sha256(REPOSITORY / TRACKED_ASSET_SOURCES.get(target, target)),
+        }
         for target in sorted(targets)
     ]
     inventory_path.write_text(canonical_json(inventory) + "\n", encoding="utf-8")
     assemble_kit(**assembly_inputs)
     output = assembly_inputs["output"]
+    index = (output / "THIRD-PARTY-NOTICES.md").read_text("utf-8")
+    for target in attribution_targets - {"THIRD-PARTY-NOTICES.md"}:
+        assert f"`{target}`" in index or target in index
+        assert (output / target).is_file()
+    assembly_manifest = json.loads((output / "attendee-kit-assembly.json").read_text("utf-8"))
+    recorded_hashes = {record["target"]: record["sha256"] for record in assembly_manifest["files"]}
+    assembly_checksums = (output / "checksums/ASSEMBLY-SHA256SUMS").read_text("utf-8")
+    for target in attribution_targets:
+        digest = file_sha256(output / target)
+        assert recorded_hashes[target] == digest
+        assert f"{digest}  {target}" in assembly_checksums
     for target in targets:
         source = REPOSITORY / TRACKED_ASSET_SOURCES.get(target, target)
         copied = output / target
@@ -495,7 +526,7 @@ def test_assembly_preserves_setup_guides_and_local_links(
             if "://" in destination or destination.startswith("#"):
                 continue
             assert (copied.parent / destination.split("#", 1)[0]).exists(), destination
-    (output / "docs/extension.md").write_text("changed after assembly\n", encoding="utf-8")
+    (output / "LICENSES/MCAP-MIT.txt").write_text("changed after assembly\n", encoding="utf-8")
     with pytest.raises(CivError, match="does not match"):
         audit_assembly(output / "attendee-kit-assembly.json")
 
