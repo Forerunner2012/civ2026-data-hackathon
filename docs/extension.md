@@ -103,7 +103,7 @@ Keep `contract` equal to `civ.submission-extension/v1`. Preserve the generated r
 
 The extension allows at most eight payloads, 1 MiB per payload and 4 MiB combined. Optional `agent-trace` and `regression-test` entries require the same exact hashes and supported text media. Intake treats those files as data and never executes them. The kit's `schemas/civ.submission-extension.v1.schema.json` defines the declaration.
 
-Finish the report, figure, reproduction script and required metrics as described in the [QuickStart](quickstart.md#8-validate-package-and-submit). Make the reproduction script use the bundled EventSpec and resource with the same recording. Then run:
+Finish the report, figure, reproduction script and required metrics as described in the [QuickStart](quickstart.md#8-validate-and-keep-the-metadata-only-zip). Make the reproduction script use the bundled EventSpec and resource with the same recording. Then run:
 
 ```text
 civ report working-points
