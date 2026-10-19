@@ -557,6 +557,25 @@ def test_archive_failure_and_stale_writer_preserve_active_progress(
     assert canonical_json(stale.state) == stale_state
 
 
+def test_new_review_refuses_progress_created_after_its_initial_read(tmp_path: Path) -> None:
+    args, app, _ = _case(tmp_path / "case")
+    initial_state = app.state
+    _write_atomic(args.progress, f"{canonical_json(initial_state)}\n")
+    progress_after_other_writer = args.progress.read_bytes()
+    stale = ReviewApplication(
+        app.binding,
+        initial_state,
+        before_ns=app.before_ns,
+        after_ns=app.after_ns,
+        progress_digest=None,
+        progress_digest_is_current=True,
+    )
+
+    with pytest.raises(CivError, match="changed since this session opened"):
+        stale.save()
+    assert args.progress.read_bytes() == progress_after_other_writer
+
+
 def test_export_write_failure_restores_progress_and_previous_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -1636,6 +1636,7 @@ class ReviewApplication:
         review_rule: str | None = None,
         default_reviewer: str | None = None,
         progress_digest: str | None = None,
+        progress_digest_is_current: bool = False,
     ) -> None:
         self.binding = binding
         self.comparisons = comparisons
@@ -1653,13 +1654,12 @@ class ReviewApplication:
         self.history: list[dict[str, object]] = []
         self.frame_cache: dict[int, tuple[str, bytes]] = {}
         progress_bytes = _read_active_file(binding.progress_path)
-        self._progress_digest = (
-            progress_digest
-            if progress_digest is not None
-            else _digest_bytes(progress_bytes)
-            if progress_bytes is not None
-            else None
-        )
+        if progress_digest_is_current:
+            self._progress_digest = progress_digest
+        else:
+            self._progress_digest = (
+                _digest_bytes(progress_bytes) if progress_bytes is not None else None
+            )
         self._output_digests: dict[str, str] = {}
         self._output_revisions: dict[str, int] = {}
         self._validate_active_outputs(state)
@@ -2216,6 +2216,7 @@ def review_command(args: argparse.Namespace) -> None:
         review_rule=getattr(args, "review_rule", None),
         default_reviewer=getattr(args, "reviewer", None),
         progress_digest=progress_digest,
+        progress_digest_is_current=True,
     )
     if not has_progress:
         app.save()
