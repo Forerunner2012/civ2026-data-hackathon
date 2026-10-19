@@ -76,7 +76,7 @@ qualified inputs, machine checks and release approval.
 
 From the repository root, use project mode:
 
-```powershell
+```sh
 uv sync
 ```
 
@@ -89,7 +89,7 @@ identity, review progress and output paths local. Detection proposals never crea
 The synthetic acquisition example exercises the production review and scoring consumers without
 using recordings or real labels:
 
-```powershell
+```sh
 uv run python .agents/skills/civ-label-acquisition/scripts/synthetic_demo.py
 ```
 

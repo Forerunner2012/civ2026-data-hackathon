@@ -214,7 +214,7 @@ export const submissionTree = `working/                       in ZIP?
 └── evidence/                  no    your clips stay on your machine`;
 
 export const submissionSteps = [
-  "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
+  "Start once with `civ submission-init working --shell posix` (use `--shell powershell` in PowerShell on Windows). The workspace is deliberately incomplete and is never an answer.",
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
   "Run `civ report working`. It builds and validates the metadata-only ZIP and prints its SHA-256. Keep both locally.",
   "Optional traces and regression tests are inert. `civ report` validates their declarations but never runs them.",

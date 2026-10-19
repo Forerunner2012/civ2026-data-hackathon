@@ -67,6 +67,9 @@ earlier and can turn a late submission into an on-time one.
 
 ## Organizer adapters
 
+For adapter reuse, the commands below use POSIX shell syntax. Replace `/srv/civ-intake` with your
+organizer-owned ledger directory outside the repository. The historical collection route remains retired.
+
 The normal Tally path is a manually exported submissions CSV. `civ intake-tally` reads the exact
 UTF-8 CSV export, treats its timezone-naive `Submitted at` value as UTC, downloads each row's own
 signed upload URL, verifies the participant-provided SHA-256 and unchanged `submission.zip`, and
@@ -74,8 +77,8 @@ passes the bytes through the same online intake ledger. Tally's aggregate batch-
 retained only as operator backup; its renamed member order is not an authoritative row-to-upload
 association.
 
-```powershell
-civ intake-tally tally-submissions.csv --ledger D:\civ-intake
+```sh
+civ intake-tally tally-submissions.csv --ledger /srv/civ-intake
 ```
 
 The adapter requires these export columns exactly: `Submission ID`, `Respondent ID`, `Submitted at`,
@@ -101,8 +104,8 @@ and its uploaded bundle to the same directory, then create a small provider-neut
 
 Import the recovery envelope without changing the bundle:
 
-```powershell
-civ intake-form form-response.json --ledger D:\civ-intake
+```sh
+civ intake-form form-response.json --ledger /srv/civ-intake
 ```
 
 `intake-form` is deliberately provider-neutral/manual recovery; it is not the normal Tally import
@@ -110,12 +113,12 @@ path. `intake-local` remains the disconnected USB fallback:
 
 For a local or USB receipt, use the identical bundle and record the operator receipt time:
 
-```powershell
-civ intake-local submission.zip `
-  --ledger D:\civ-intake `
-  --identity participant-or-team-id `
-  --received-at 2026-09-03T12:20:00+09:00 `
-  --sha256 participant-pasted-sha256 `
+```sh
+civ intake-local submission.zip \
+  --ledger /srv/civ-intake \
+  --identity participant-or-team-id \
+  --received-at 2026-09-03T12:20:00+09:00 \
+  --sha256 participant-pasted-sha256 \
   --delivery-id usb-receipt-id
 ```
 

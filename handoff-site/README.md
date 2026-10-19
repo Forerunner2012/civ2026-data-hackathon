@@ -40,7 +40,7 @@ that must never appear in the participant route, on the entry door, or in any fi
 
 ## Local preview
 
-```powershell
+```sh
 npm install
 npm run dev
 ```
@@ -58,9 +58,9 @@ hint, and tip; later beats remain server-only. The three printable desk material
 Copy `.env.example` to `.env`; Wrangler loads it into the dev worker. Add a private coach token to
 the same file, then start the local server:
 
-```powershell
-Copy-Item .env.example .env
-Add-Content .env 'LIVE_COACH_TOKEN=replace-with-a-long-random-value'
+```sh
+cp .env.example .env
+printf '\n%s\n' 'LIVE_COACH_TOKEN=replace-with-a-long-random-value' >> .env
 npm run dev
 ```
 
@@ -74,13 +74,13 @@ refreshes but resets when the server restarts.
 
 For rehearsals only, enable a controlled clock and append an ISO-8601 `now` query:
 
-```powershell
-Add-Content .env 'LIVE_ALLOW_CONTROLLED_CLOCK=true'
+```sh
+printf '\n%s\n' 'LIVE_ALLOW_CONTROLLED_CLOCK=true' >> .env
 # http://localhost:3000/live?now=2026-09-03T10:40:00%2B09:00
 ```
 
 The accepted Vinext worker loads these values from `.env`; setting them only in the parent
-PowerShell process does not configure the worker routes. Remove the controlled-clock line after the
+shell process does not configure the worker routes. Remove the controlled-clock line after the
 rehearsal and keep the coach token private.
 
 Leave `LIVE_ALLOW_CONTROLLED_CLOCK` unset on event day. If the local server or network is
@@ -98,7 +98,7 @@ no collection link. The historical collection fields and v2 bundle contents are 
 
 ## Verification
 
-```powershell
+```sh
 npm run build
 node --test tests/rendered-html.test.mjs   # or: npm run test
 npm run lint
