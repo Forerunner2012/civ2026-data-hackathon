@@ -104,7 +104,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /55 points are machine-scored/i);
   assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
   assert.match(body, /one-page report/i);
-  assert.match(body, /civ submission-init working --shell powershell/i);
+  assert.match(body, /civ submission-init working --shell posix/i);
   assert.match(body, /historical form and USB intake route are retired/i);
   assert.match(body, /No collection route or intended recipient is active/i);
   assert.match(body, /docs\/submission-fields\.md/i);

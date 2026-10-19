@@ -4,22 +4,22 @@ First reproduce the core workflow in the [QuickStart](quickstart.md). This optio
 
 ## Prepare a separate workspace
 
-Create the submission templates and copy the illustrative examples. In PowerShell:
-
-```powershell
-civ submission-init working-points --shell powershell
-New-Item -ItemType Directory working-points/extension | Out-Null
-Copy-Item examples/reims/cave-encounter.yaml working-points/detector/detector.yaml
-Copy-Item examples/reims/cave-zones.json working-points/detector/cave-zones.json
-```
-
-In a Linux shell:
+Create the submission templates and copy the illustrative examples. In a Linux shell:
 
 ```sh
 civ submission-init working-points --shell posix
 mkdir working-points/extension
 cp examples/reims/cave-encounter.yaml working-points/detector/detector.yaml
 cp examples/reims/cave-zones.json working-points/detector/cave-zones.json
+```
+
+In PowerShell on Windows:
+
+```powershell
+civ submission-init working-points --shell powershell
+New-Item -ItemType Directory working-points/extension | Out-Null
+Copy-Item examples/reims/cave-encounter.yaml working-points/detector/detector.yaml
+Copy-Item examples/reims/cave-zones.json working-points/detector/cave-zones.json
 ```
 
 Choose a new directory if `working-points` already exists. Replace `REIMS_SIGNALS.mcap` in the commands below with the exact supplied Reims signal recording. Inspect its GNSS fields before detection:
@@ -76,16 +76,16 @@ Expect `working-points/metrics.json` and its hash in the run manifest. Replace t
 
 ## Declare provenance and package
 
-After the last detection run, finish `extension/provenance.md`. Compute its exact file hash. In PowerShell:
-
-```powershell
-(Get-FileHash working-points/extension/provenance.md -Algorithm SHA256).Hash.ToLowerInvariant()
-```
-
-In a Linux shell:
+After the last detection run, finish `extension/provenance.md`. Compute its exact file hash. In a Linux shell:
 
 ```sh
 sha256sum working-points/extension/provenance.md
+```
+
+In PowerShell on Windows:
+
+```powershell
+(Get-FileHash working-points/extension/provenance.md -Algorithm SHA256).Hash.ToLowerInvariant()
 ```
 
 Append this entry to the existing `entries` array in `working-points/extension/manifest.json`, replacing the hash placeholder with the printed 64-character hash:

@@ -94,10 +94,10 @@ For a visual inspection, open the same signal MCAP and `layouts/kashiwa-right-tu
 ## 4. Create your working submission once
 
 ```text
-civ submission-init working --shell powershell
+civ submission-init working --shell posix
 ```
 
-Use `--shell posix` on Linux or macOS. This creates `working/README.md`, an incomplete detector, report and figure template, plus exactly one reproduction script. It never overwrites an existing directory. If `working/` already exists, keep it or choose a new empty path.
+Use `--shell powershell` when running in PowerShell on Windows. This creates `working/README.md`, an incomplete detector, report and figure template, plus exactly one reproduction script. It never overwrites an existing directory. If `working/` already exists, keep it or choose a new empty path.
 
 ## 5. Detect intervals
 
@@ -126,12 +126,12 @@ With detections, expect one `working/evidence/<event_id>.mcap` per event and cli
 ## 7. Score against the supplied practice labels
 
 ```text
-civ score working --labels <supplied-practice-labels.json>
+civ score working --labels PRACTICE_LABELS.json
 ```
 
 The Kashiwa warm-up is the first practice target. Organizers are encouraged to share complete, source-bound practice labels in the same space as participant kits, at a time they choose. Use practice labels for learning and self-evaluation. Development metrics do not guarantee results on sealed evaluation, whose truth remains organizer-only.
 
-Use the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
+Replace `PRACTICE_LABELS.json` with the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
 
 ## 8. Validate and keep the metadata-only ZIP
 
