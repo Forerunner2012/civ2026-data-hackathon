@@ -79,11 +79,11 @@ IDs. If a viewer does not start, continue with `civ sample` or the supplied `fal
 ## 4. Create your working submission once
 
 ```text
-civ submission-init working --shell powershell
+civ submission-init working --shell posix
 ```
 
-Use `--shell posix` on Linux or macOS. This creates `working/README.md`, an incomplete detector,
-report and figure template, plus exactly one reproduction script. It never overwrites an existing
+Use `--shell powershell` when running in PowerShell on Windows. This creates `working/README.md`,
+an incomplete detector, report and figure template, plus exactly one reproduction script. It never overwrites an existing
 directory. If `working/` already exists, keep it or choose a new empty path.
 
 ## 5. Detect intervals
@@ -118,10 +118,10 @@ every `evidence.topics` entry must exist in the same bag used by `civ detect`.
 ## 7. Score against the supplied development labels
 
 ```text
-civ score working --labels <supplied-development-labels.json>
+civ score working --labels DEVELOPMENT_LABELS.json
 ```
 
-Use the development-label path announced by the organizers and present in the attendee kit; do not
+Replace `DEVELOPMENT_LABELS.json` with the development-label path announced by the organizers and present in the attendee kit; do not
 substitute an organizer path. Expected result: `working/metrics.json` plus its hash in the updated
 run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and
 record what you changed in `working/report.md`.

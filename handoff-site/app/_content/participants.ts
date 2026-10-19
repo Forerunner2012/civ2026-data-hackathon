@@ -172,7 +172,7 @@ export const commands = [
   { command: "civ doctor", note: "check your machine", output: "readiness only · no files" },
   { command: "civ inspect BAG", note: "topics, fields, durations", output: "inventory · no files" },
   { command: "civ sample BAG --topic ... --field ...", note: "inspect values", output: "timestamped values · no files" },
-  { command: "civ submission-init working --shell ...", note: "create your workspace once", output: "detector + report + figure + reproduce templates" },
+  { command: "civ submission-init working --shell posix", note: "create your workspace once; use --shell powershell in PowerShell", output: "detector + report + figure + reproduce templates" },
   { command: "civ detect SPEC DATASET --output working", note: "run your detector, --dry-run first", output: "detector/ (spec + exact resources) + events.jsonl + v2 run-manifest.json" },
   { command: "civ clip working/events.jsonl DATASET", note: "cut compact local evidence", output: "evidence/*.mcap + updated manifest" },
   { command: "civ score working --labels DEVELOPMENT_LABELS", note: "development score", output: "metrics.json + updated manifest" },
@@ -234,7 +234,7 @@ export const submissionTree = `working/                       handed in?
 └── evidence/                  no    your clips stay on your machine`;
 
 export const submissionSteps = [
-  "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
+  "Start once with `civ submission-init working --shell posix` (use `--shell powershell` in PowerShell on Windows). The workspace is deliberately incomplete and is never an answer.",
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
   "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
   "Optional traces and regression tests are inert: intake validates but never runs them.",
