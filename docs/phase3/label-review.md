@@ -153,3 +153,26 @@ available in the tooltip and accessible name. Pending, approved and rejected sta
 colors as well as text. Adjusting an interval still clears its approval and completeness signoff,
 but the reason stays editable in the field. Reload restores the last adjustment reason from the
 local audit. Reasons remain local and are not added to participant output.
+
+## Organizer-private sealed camera
+
+For local sealed review, `--organizer-camera-manifest` accepts a private `civ.organizer-camera-context/v1` authorization. Also pass `--signal-product-manifest`. This path reads the original recording in place. It checks its hash against the sealed product's parent hash and checks the dataset, source ID, product bytes and manifest. It uses the original camera log timestamps for synchronization and indexed frame access.
+
+```json
+{
+  "contract": "civ.organizer-camera-context/v1",
+  "dataset": "reims",
+  "source_id": "SOURCE_ID",
+  "source": {"path": "ABSOLUTE_ORIGINAL_RECORDING_PATH", "sha256": "EXPECTED_PARENT_SHA256"},
+  "image_topic": "/zed/zed_node/rgb/image_rect_color/compressed",
+  "authorization": {
+    "authority": "NAMED_AUTHORIZING_ORGANIZER",
+    "scope": "organizer-local-review",
+    "statement": "Recorded permission for this local review"
+  }
+}
+```
+
+This authorization records organizer access. It does not assert frame-by-frame privacy inspection, permission to distribute imagery or human label approval. Keep the authorization, recording and progress private. Participant camera manifests retain their existing restrictions. The two camera options are mutually exclusive, and organizer-camera sessions refuse participant practice output.
+
+Adding a camera changes review identity. Preserve earlier progress and use a separate progress revision. Human decisions and completeness signoff remain required. Private truth from this sealed path records the verified parent hash and original log timestamps, so the existing label-pack builder can bind it to the historical product manifest. No timestamp conversion or manual truth editing is needed.

@@ -65,6 +65,7 @@ class CameraFrames:
     product_sha256: str
     topic: str
     frames: tuple[Frame, ...]
+    seek_by_timestamp: bool = False
 
 
 @dataclass(frozen=True)
@@ -226,6 +227,76 @@ def _advance_geometry_revision(state: dict[str, object]) -> None:
     state["checked_windows"] = []
 
 
+def _organizer_camera_frames(
+    manifest_path: Path,
+    signal_manifest_path: Path | None,
+    *,
+    source_sha256: str,
+    source_id: str,
+    dataset: str,
+) -> tuple[CameraFrames, str]:
+    """Read authorized raw camera context for a sealed product, without distribution approval."""
+    if signal_manifest_path is None:
+        raise CivError("organizer camera requires the sealed signal-product manifest")
+    signal = _product_binding(signal_manifest_path, permitted_splits=frozenset({"sealed"}))
+    if (signal.product_sha256, signal.source_id, signal.dataset) != (
+        source_sha256,
+        source_id,
+        dataset,
+    ):
+        raise CivError("organizer camera signal-product identity mismatch")
+    document = read_json_file(manifest_path, "organizer camera authorization")
+    if set(document) != {
+        "contract",
+        "source",
+        "dataset",
+        "source_id",
+        "image_topic",
+        "authorization",
+    }:
+        raise CivError("organizer camera authorization has unknown or missing fields")
+    if document.get("contract") != "civ.organizer-camera-context/v1":
+        raise CivError("unsupported organizer camera authorization")
+    if document.get("dataset") != dataset or document.get("source_id") != source_id:
+        raise CivError("organizer camera dataset or source identity mismatch")
+    authorization = require_mapping(document.get("authorization"), "organizer camera authorization")
+    if set(authorization) != {"authority", "scope", "statement"}:
+        raise CivError("organizer camera authorization has unknown or missing permission fields")
+    if authorization.get("scope") != "organizer-local-review":
+        raise CivError("organizer camera scope must be organizer-local-review")
+    require_string(authorization.get("authority"), "organizer camera authority")
+    require_string(authorization.get("statement"), "organizer camera rights statement")
+    source = require_mapping(document.get("source"), "organizer camera source")
+    if set(source) != {"path", "sha256"}:
+        raise CivError("organizer camera source has unknown or missing fields")
+    product_path = Path(require_string(source.get("path"), "organizer camera source path"))
+    if not product_path.is_absolute():
+        raise CivError("organizer camera source path must be absolute")
+    product_sha256 = file_sha256(product_path)
+    if source.get("sha256") != product_sha256 or product_sha256 != signal.source_sha256:
+        raise CivError("organizer camera recording does not match the sealed product parent")
+    topic = require_string(document.get("image_topic"), "organizer camera topic")
+    frames: list[Frame] = []
+    try:
+        with product_path.open("rb") as stream:
+            reader = make_reader(stream, validate_crcs=True)
+            for schema, _, message in reader.iter_messages(topics=[topic]):
+                if schema is None or schema.name != "sensor_msgs/msg/CompressedImage":
+                    raise CivError("organizer camera topic must contain CompressedImage messages")
+                if frames and message.log_time <= frames[-1].timestamp_ns:
+                    raise CivError("organizer camera frame timestamps must be strictly increasing")
+                frames.append(Frame(index=len(frames), timestamp_ns=message.log_time))
+    except (OSError, McapError) as error:
+        raise CivError(f"cannot read organizer camera context: {error}") from error
+    if not any(
+        signal.product_start_ns <= frame.timestamp_ns <= signal.product_end_ns for frame in frames
+    ):
+        raise CivError("organizer camera has no matching frames in the sealed product timeline")
+    return CameraFrames(
+        product_path, product_sha256, topic, tuple(frames), True
+    ), signal.source_sha256
+
+
 def _invalidate_coverage(state: dict[str, object]) -> None:
     state["coverage_reviewed"] = False
     state["coverage_revision"] = -1
@@ -320,10 +391,15 @@ def _camera_frame_bytes(camera: CameraFrames, index: int) -> tuple[str, bytes]:
     try:
         with camera.product_path.open("rb") as stream:
             reader = make_reader(stream, validate_crcs=True)
+            timestamp = camera.frames[index].timestamp_ns
             for frame_index, (schema, channel, message) in enumerate(
-                reader.iter_messages(topics=[camera.topic])
+                reader.iter_messages(
+                    topics=[camera.topic],
+                    start_time=timestamp if camera.seek_by_timestamp else None,
+                    end_time=timestamp + 1 if camera.seek_by_timestamp else None,
+                )
             ):
-                if frame_index != index:
+                if frame_index != (0 if camera.seek_by_timestamp else index):
                     continue
                 decoded = decoder.decode(schema, channel, message.data)
                 image_format = str(extract_field(decoded, "format", "camera context")).lower()
@@ -398,6 +474,7 @@ def _identity_for_inputs(
     source_id: str,
     camera_manifest_path: Path | None,
     signal_product_manifest_path: Path | None = None,
+    organizer_camera_manifest_path: Path | None = None,
 ) -> tuple[ReviewBinding, list[Any], dict[str, Any], CameraFrames | None, int, int]:
     source_path = source_path.resolve()
     spec_path = spec_path.resolve()
@@ -455,12 +532,29 @@ def _identity_for_inputs(
     signal_product_manifest_path = (
         signal_product_manifest_path.resolve() if signal_product_manifest_path else None
     )
-    if signal_product_manifest_path is not None and camera_manifest_path is None:
+    if organizer_camera_manifest_path is not None and camera_manifest_path is not None:
+        raise CivError("participant and organizer camera contexts are mutually exclusive")
+    if (
+        signal_product_manifest_path is not None
+        and camera_manifest_path is None
+        and organizer_camera_manifest_path is None
+    ):
         raise CivError("a signal-product manifest requires approved camera context")
     camera_manifest_path = camera_manifest_path.resolve() if camera_manifest_path else None
     camera: CameraFrames | None = None
     camera_manifest_hash: str | None = None
-    if camera_manifest_path is not None:
+    parent_sha256: str | None = None
+    if organizer_camera_manifest_path is not None:
+        camera_manifest_path = organizer_camera_manifest_path.resolve()
+        camera, parent_sha256 = _organizer_camera_frames(
+            camera_manifest_path,
+            signal_product_manifest_path,
+            source_sha256=source_hash,
+            source_id=source_id,
+            dataset=dataset,
+        )
+        camera_manifest_hash = file_sha256(camera_manifest_path)
+    elif camera_manifest_path is not None:
         camera = _camera_frames(
             camera_manifest_path,
             source_sha256=source_hash,
@@ -507,6 +601,10 @@ def _identity_for_inputs(
     }
     if signal_product_manifest_path is not None:
         identity["signal_product_manifest_sha256"] = file_sha256(signal_product_manifest_path)
+    if parent_sha256 is not None:
+        identity["signal_product_split"] = "sealed"
+        identity["source_parent_sha256"] = parent_sha256
+        identity["camera_scope"] = "organizer-local-review"
     binding = ReviewBinding(
         source_path=source_path,
         spec_path=spec_path,
@@ -949,9 +1047,12 @@ def _ordered_records(
 
 
 def _private_export_blocker(identity: Mapping[str, object]) -> str | None:
-    # Explicit signal-product bindings currently accept only warmup/development.
-    # Use the existing identity field so previously saved progress stays reusable.
-    if identity.get("signal_product_manifest_sha256") is not None:
+    # Older bound progress represents participant products. Only the separately
+    # verified organizer camera path can establish a sealed parent binding.
+    if (
+        identity.get("signal_product_manifest_sha256") is not None
+        and identity.get("signal_product_split") != "sealed"
+    ):
         return (
             "Organizer-private sealed truth cannot represent warm-up/development products. "
             "Export practice labels and retain the review audit locally."
@@ -979,9 +1080,10 @@ def build_export_document(
         end_ns = _nonnegative_ns(candidate.get("end_ns"), "review end_ns")
         if not source_bounds[0] <= start_ns < end_ns <= source_bounds[1]:
             raise CivError(f"review interval is outside source bounds: {candidate.get('id')}")
-        if candidate.get("decision") == "data_gap" and candidate.get(
-            "exclusion_kind"
-        ) != "scoring_data_gap":
+        if (
+            candidate.get("decision") == "data_gap"
+            and candidate.get("exclusion_kind") != "scoring_data_gap"
+        ):
             raise CivError(
                 f"unsupported exclusion kind for {candidate.get('id')}: "
                 f"{candidate.get('exclusion_kind')}"
@@ -1046,7 +1148,9 @@ def build_export_document(
                     "interval_id": str(item["id"]),
                     "kind": spec_name,
                     "source_id": str(identity["source_id"]),
-                    "source_sha256": str(identity["source_sha256"]),
+                    "source_sha256": str(
+                        identity.get("source_parent_sha256", identity["source_sha256"])
+                    ),
                     "start_ns": start_ns,
                 }
             )
@@ -1059,7 +1163,9 @@ def build_export_document(
                     "exclusion_id": str(item["id"]),
                     "reason": str(item["reason"]),
                     "source_id": str(identity["source_id"]),
-                    "source_sha256": str(identity["source_sha256"]),
+                    "source_sha256": str(
+                        identity.get("source_parent_sha256", identity["source_sha256"])
+                    ),
                     "start_ns": start_ns,
                 }
             )
@@ -1610,10 +1716,13 @@ def _validate_output_bytes(target: str, contents: bytes, binding: ReviewBinding)
             truth = _truth_document(candidate)
         if truth.dataset != binding.identity.get("dataset"):
             raise CivError("organizer-private output dataset does not match")
+        source_sha256 = binding.identity.get(
+            "source_parent_sha256", binding.identity.get("source_sha256")
+        )
         for interval in (*truth.intervals, *truth.gaps):
             if (
                 interval.source_id != binding.identity.get("source_id")
-                or interval.source_sha256 != binding.identity.get("source_sha256")
+                or interval.source_sha256 != source_sha256
                 or not binding.source_bounds[0]
                 <= interval.start_ns
                 < interval.end_ns
@@ -1860,6 +1969,7 @@ class ReviewApplication:
         if self.comparisons is not None:
             self.comparisons.recheck()
         self._recheck_signal_manifest()
+        self._recheck_camera_manifest()
         candidates = state.get("candidates")
         if not isinstance(candidates, list):
             raise CivError("review candidates are invalid")
@@ -1884,8 +1994,15 @@ class ReviewApplication:
         ):
             raise CivError("signal-product manifest changed during review")
 
+    def _recheck_camera_manifest(self) -> None:
+        if self.binding.camera_manifest_path is not None and file_sha256(
+            self.binding.camera_manifest_path
+        ) != self.binding.identity["camera_context_manifest_sha256"]:
+            raise CivError("camera-context approval changed during review")
+
     def recheck_inputs(self) -> None:
         self._recheck_signal_manifest()
+        self._recheck_camera_manifest()
         if file_sha256(self.binding.source_path) != self.binding.identity["source_sha256"]:
             raise CivError("source recording changed during review")
         if file_sha256(self.binding.spec_path) != self.binding.identity["spec_sha256"]:
@@ -1906,10 +2023,6 @@ class ReviewApplication:
             self.binding.camera_frames.product_path
         ) != self.binding.identity["camera_context_product_sha256"]:
             raise CivError("approved camera context changed during review")
-        if self.binding.camera_manifest_path is not None and file_sha256(
-            self.binding.camera_manifest_path
-        ) != self.binding.identity["camera_context_manifest_sha256"]:
-            raise CivError("camera-context approval changed during review")
 
     def export(self, target: str) -> dict[str, object]:
         self._recheck_active_outputs()
@@ -2122,7 +2235,15 @@ def _prepare_binding(
         args.source_id,
         camera_manifest,
         getattr(args, "signal_product_manifest", None),
+        getattr(args, "organizer_camera_manifest", None),
     )
+    if (
+        getattr(args, "organizer_camera_manifest", None) is not None
+        and args.practice_output is not None
+    ):
+        raise CivError(
+            "organizer-local camera context cannot authorize participant practice output"
+        )
     raw_active_paths = [
         path
         for path in (args.progress, args.practice_output, args.organizer_output)
@@ -2137,8 +2258,8 @@ def _prepare_binding(
     inputs = [binding.source_path, binding.spec_path, binding.events_path, binding.manifest_path]
     if binding.signal_product_manifest_path is not None:
         inputs.append(binding.signal_product_manifest_path)
-    if camera_manifest:
-        inputs.append(camera_manifest.resolve())
+    if binding.camera_manifest_path is not None:
+        inputs.append(binding.camera_manifest_path)
     if camera is not None:
         inputs.append(camera.product_path.resolve())
     outputs = [path for path in (practice_output, truth_output) if path is not None]
@@ -2161,7 +2282,7 @@ def _prepare_binding(
         events_path=binding.events_path,
         manifest_path=binding.manifest_path,
         progress_path=progress_path,
-        camera_manifest_path=camera_manifest.resolve() if camera_manifest else None,
+        camera_manifest_path=binding.camera_manifest_path,
         source_bounds=binding.source_bounds,
         identity=binding.identity,
         evidence_by_id=binding.evidence_by_id,
@@ -2260,6 +2381,11 @@ def add_label_review_command(
     review.add_argument("--practice-output", type=Path)
     review.add_argument("--organizer-output", type=Path)
     review.add_argument("--camera-context-manifest", type=Path)
+    review.add_argument(
+        "--organizer-camera-manifest",
+        type=Path,
+        help="private authorization binding a sealed product to its original camera recording",
+    )
     review.add_argument("--signal-product-manifest", type=Path)
     review.add_argument("--port", type=int, default=0)
     review.add_argument("--no-browser", action="store_true")
