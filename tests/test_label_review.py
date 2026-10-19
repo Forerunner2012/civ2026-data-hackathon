@@ -623,6 +623,17 @@ def test_local_browser_is_loopback_token_gated_and_uses_exact_integer_fields(
             html = response.read().decode("utf-8")
         assert 'id="start-ns"' in html
         assert "BigInt(candidate.start_ns)" in html
+        assert "function normalizeTimestampField(id)" in html
+        assert r'field.value = field.value.replace(/[ \t]+$/, "");' in html
+        for field_id in (
+            "start-ns",
+            "end-ns",
+            "missed-start",
+            "missed-end",
+            "window-start",
+            "window-end",
+        ):
+            assert f'normalizeTimestampField("{field_id}")' in html
         request = Request(f"http://{host}:{port}/api/state?token=wrong")
         with pytest.raises(HTTPError) as error:
             urlopen(request, timeout=5)

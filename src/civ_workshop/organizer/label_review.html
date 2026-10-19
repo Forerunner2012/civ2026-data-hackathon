@@ -209,6 +209,11 @@
     "use strict";
     const token = new URLSearchParams(window.location.search).get("token") || "";
     const $ = (id) => document.getElementById(id);
+    function normalizeTimestampField(id) {
+      const field = $(id);
+      field.value = field.value.replace(/[ \t]+$/, "");
+      return field.value;
+    }
     const svgNS = "http://www.w3.org/2000/svg";
     let review = null;
     let selectedId = null;
@@ -527,8 +532,8 @@
       act({type: "approve", candidate_id: selectedId, uncertainty_disposition: disposition, uncertainty_reason: $("uncertainty-reason").value});
     };
     $("adjust").onclick = () => act({
-      type: "edit", candidate_id: selectedId, start_ns: $("start-ns").value,
-      end_ns: $("end-ns").value, reason: $("reason").value
+      type: "edit", candidate_id: selectedId, start_ns: normalizeTimestampField("start-ns"),
+      end_ns: normalizeTimestampField("end-ns"), reason: $("reason").value
     });
     $("reject").onclick = () => act({
       type: "reject", candidate_id: selectedId, reason: $("reason").value,
@@ -542,7 +547,8 @@
       type: "set-practice", candidate_id: selectedId, selected: $("practice-selected").checked
     }));
     $("add-missed").onclick = () => act({
-      type: "add-missed", start_ns: $("missed-start").value, end_ns: $("missed-end").value,
+      type: "add-missed", start_ns: normalizeTimestampField("missed-start"),
+      end_ns: normalizeTimestampField("missed-end"),
       reason: $("missed-reason").value
     });
     $("coverage").addEventListener("change", () => act({type: "signoff", checked: $("coverage").checked}));
@@ -644,7 +650,9 @@
       $("window-open").disabled = true;
       $("window-check").disabled = true;
       try {
-        const value = await request("/api/window", {start_ns: $("window-start").value, end_ns: $("window-end").value});
+        const start_ns = normalizeTimestampField("window-start");
+        const end_ns = normalizeTimestampField("window-end");
+        const value = await request("/api/window", {start_ns, end_ns});
         if (revision !== windowRequestRevision) return;
         windowEvidence = value;
         windowCursorNs = BigInt(value.start_ns);
@@ -668,8 +676,8 @@
       try {
         const lower = BigInt(review.source_bounds.start_ns);
         const upper = BigInt(review.source_bounds.end_ns);
-        const start = BigInt($("window-start").value);
-        const end = BigInt($("window-end").value);
+        const start = BigInt(normalizeTimestampField("window-start"));
+        const end = BigInt(normalizeTimestampField("window-end"));
         const width = end - start;
         if (width <= 0n || start < lower || end > upper) throw new Error("Choose a positive window inside source bounds.");
         let next = start + BigInt(direction) * width;
