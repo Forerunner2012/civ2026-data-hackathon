@@ -39,12 +39,11 @@ one semantic failure inspectable.
 
 The participant-reproducible bounded command is:
 
-```sh
-civ detect examples/kashiwa/deceleration_timing.yaml \
+```powershell
+uv run civ detect examples/kashiwa/deceleration_timing.yaml `
   data/KSH-64ac27cd029b-signals.mcap --output work/timing-lesson --dry-run
 ```
 
-The recorded run used `uv run civ detect` from the source checkout with the same arguments.
 It returned `{"dry_run":true,"event_count":4}` on Windows 11 Pro amd64 with CPython 3.12.13 and
 `civ-workshop` 0.1.0.
 

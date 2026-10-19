@@ -35,10 +35,10 @@ name, encoding, and SHA-256. MCAP record ordering follows the source reader, sch
 registered on first message occurrence, compression is fixed to `NONE`, and the library marker is
 fixed to `civ-workshop/data-products-v1`. No build time or filesystem path enters an output.
 
-```sh
+```powershell
 uv run -m civ_workshop.data_products build SOURCE.mcap RECIPE.json --output OUTPUT_DIR
-uv run -m civ_workshop.data_products set OUTPUT_DIR/*.manifest.json \
-  --release-id civ-2026-phase3-participant-signals-v1 \
+uv run -m civ_workshop.data_products set OUTPUT_DIR/*.manifest.json `
+  --release-id civ-2026-phase3-participant-signals-v1 `
   --output OUTPUT_DIR/participant-products.json
 uv run -m civ_workshop.data_products audit OUTPUT_DIR/participant-products.json
 ```

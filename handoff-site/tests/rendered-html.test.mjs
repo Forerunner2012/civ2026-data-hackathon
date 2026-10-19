@@ -100,7 +100,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /55 points are machine-scored/i);
   assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
   assert.match(body, /one-page report/i);
-  assert.match(body, /civ submission-init working --shell posix/i);
+  assert.match(body, /civ submission-init working --shell powershell/i);
   assert.match(body, /same participant or team identity/i);
   assert.match(body, /server receipt time is authoritative/i);
   assert.match(body, /later valid on-time bundle for the same dataset is authoritative/i);

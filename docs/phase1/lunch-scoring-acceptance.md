@@ -8,11 +8,9 @@
 One unattended command turns the intake ledger into the ranked machine results used at the 13:15
 selection point:
 
-```sh
-civ score-batch --ledger /srv/civ-intake --labels /srv/civ-labels --output /srv/civ-results
+```powershell
+civ score-batch --ledger D:\civ-intake --labels D:\civ-labels --output D:\civ-results
 ```
-
-Use organizer-owned directories outside the repository in place of the `/srv/` example paths.
 
 The batch reads only the authoritative last-on-time bundle per identity, exactly as the intake
 contract selects it. Late responses stay quarantined and cannot enter ranking, and a superseded

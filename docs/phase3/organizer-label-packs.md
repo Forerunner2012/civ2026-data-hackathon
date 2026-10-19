@@ -12,10 +12,10 @@ truth, instantiated packs, reduced sealed recordings, and runtime output remain 
 The participant workflow and its stable `v1` contracts are unchanged. Organizers build and audit
 packs through the separate module:
 
-```sh
-uv run -m civ_workshop.label_packs build \
-  --truth KASHIWA_TRUTH.json REIMS_TRUTH.json \
-  --manifests SEALED_PRODUCT_MANIFESTS \
+```powershell
+uv run -m civ_workshop.label_packs build `
+  --truth KASHIWA_TRUTH.json REIMS_TRUTH.json `
+  --manifests SEALED_PRODUCT_MANIFESTS `
   --output ORGANIZER_OUTPUT
 uv run -m civ_workshop.label_packs audit ORGANIZER_OUTPUT/label-pack-set.json
 ```

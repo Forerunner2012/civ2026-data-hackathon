@@ -43,10 +43,10 @@ hash. The Phase 3 signals-only set cannot silently acquire camera or context pay
 
 Run from the repository, but place the output outside it:
 
-```sh
-uv run -m civ_workshop.kit_inventory build PARTICIPANT_SET_JSON \
-  --repository . \
-  --viewer PINNED_VIEWER_BINARY \
+```powershell
+uv run -m civ_workshop.kit_inventory build PARTICIPANT_SET_JSON `
+  --repository . `
+  --viewer PINNED_VIEWER_BINARY `
   --output EXTERNAL_KIT_ROOT/participant-kit.json
 uv run -m civ_workshop.kit_inventory audit EXTERNAL_KIT_ROOT/participant-kit.json
 ```
