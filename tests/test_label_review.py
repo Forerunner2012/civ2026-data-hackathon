@@ -1030,3 +1030,167 @@ def test_launch_hints_preserve_saved_review_and_consumer_output(tmp_path: Path) 
         source_bounds=original.binding.source_bounds,
     )
     assert "review_rule" not in document and "default_reviewer" not in document
+
+
+def _organizer_camera_case(root: Path) -> Namespace:
+    args, _, _ = _case(root, with_camera_context=True)
+    camera_manifest = json.loads(args.camera_context_manifest.read_text())
+    camera_path = root / camera_manifest["product"]["name"]
+    raw = root / "private-original.mcap"
+    from mcap.reader import make_reader
+
+    with raw.open("wb") as stream:
+        writer = Writer(stream, compression=CompressionType.NONE)
+        writer.start()
+        for part in (args.source, camera_path):
+            with part.open("rb") as source_stream:
+                reader = make_reader(source_stream)
+                channels = {}
+                for schema, channel, message in reader.iter_messages():
+                    if channel.id not in channels:
+                        assert schema is not None
+                        sid = writer.register_schema(schema.name, schema.encoding, schema.data)
+                        channels[channel.id] = writer.register_channel(
+                            channel.topic, channel.message_encoding, sid
+                        )
+                    timestamp = (
+                        EPOCH_NS + 2_000_000_000 if part == camera_path else message.log_time
+                    )
+                    writer.add_message(channels[channel.id], timestamp, message.data, timestamp)
+        writer.finish()
+    recipe = root / "sealed-recipe.json"
+    _write_json(
+        recipe,
+        {
+            "contract": "civ.data-product-recipe/v1",
+            "recipe_id": "private-test-v1",
+            "version": 1,
+            "product_name": "sealed-signals.mcap",
+            "source": {"id": "synthetic-source", "sha256": file_sha256(raw)},
+            "dataset": "kashiwa",
+            "split": "sealed",
+            "topics": ["/micro/signal"],
+            "license": {"name": "Synthetic fixture", "url": None},
+            "attribution": "Synthetic fixture",
+            "rights_scope": "Synthetic tests only",
+            "modifications": ["Signals only"],
+        },
+    )
+    result = build_data_product(raw, recipe, root / "sealed")
+    args.source = root / "sealed/sealed-signals.mcap"
+    args.signal_product_manifest = root / "sealed" / str(result["manifest"])
+    args.camera_context_manifest = None
+    args.practice_output = None
+    args.organizer_camera_manifest = root / "private-camera.json"
+    _write_json(
+        args.organizer_camera_manifest,
+        {
+            "contract": "civ.organizer-camera-context/v1",
+            "dataset": "kashiwa",
+            "source_id": "synthetic-source",
+            "source": {"path": str(raw.resolve()), "sha256": file_sha256(raw)},
+            "image_topic": CAMERA_TOPIC,
+            "authorization": {
+                "authority": "Synthetic owner",
+                "scope": "organizer-local-review",
+                "statement": "Synthetic fixture only",
+            },
+        },
+    )
+    detect_events(args.spec, args.source, root / "private-run")
+    args.events = root / "private-run/events.jsonl"
+    args.manifest = root / "private-run/run-manifest.json"
+    return args
+
+
+def test_private_sealed_camera_and_parent_bound_export(tmp_path: Path) -> None:
+    args = _organizer_camera_case(tmp_path)
+    binding, events, _, before, after = _prepare_binding(args)
+    app = ReviewApplication(
+        binding,
+        initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before,
+        after_ns=after,
+    )
+    assert binding.camera_frames is not None
+    assert app.frame(0)[0] == "image/png"
+    assert app.view()["outputs"] == {"organizer-private": True, "practice": False}
+    assert app.view()["gate"]
+    assert not args.organizer_output.exists()
+    app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    app.act(
+        {"type": "approve", "candidate_id": events[0].event_id, "uncertainty_disposition": "clear"}
+    )
+    app.act({"type": "signoff", "checked": True})
+    app.export("organizer-private")
+    truth = json.loads(args.organizer_output.read_text())
+    raw = json.loads(args.organizer_camera_manifest.read_text())["source"]
+    assert truth["intervals"][0]["source_sha256"] == raw["sha256"]
+    packs = tmp_path / "private-packs"
+    build_label_packs([args.organizer_output], [args.signal_product_manifest], packs)
+    assert audit_label_pack_set(packs / "label-pack-set.json")["valid"] is True
+    assert args.progress.exists()
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "scope",
+        "hash",
+        "source",
+        "dataset",
+        "topic",
+        "practice",
+        "no-manifest",
+        "mixed",
+        "nonsealed",
+    ],
+)
+def test_private_camera_rejects_unauthorized_or_mismatched_inputs(
+    tmp_path: Path, change: str
+) -> None:
+    args = _organizer_camera_case(tmp_path)
+    document = json.loads(args.organizer_camera_manifest.read_text())
+    if change == "scope":
+        document["authorization"]["scope"] = "participant-distribution"
+    elif change == "hash":
+        document["source"]["sha256"] = "0" * 64
+    elif change == "source":
+        document["source_id"] = "different-source"
+    elif change == "dataset":
+        document["dataset"] = "reims"
+    elif change == "topic":
+        document["image_topic"] = "/micro/signal"
+    elif change == "practice":
+        args.practice_output = tmp_path / "must-not-exist.json"
+    elif change == "no-manifest":
+        args.signal_product_manifest = None
+    elif change == "mixed":
+        args.camera_context_manifest = tmp_path / "approved-camera-context.manifest.json"
+    elif change == "nonsealed":
+        manifest = json.loads(args.signal_product_manifest.read_text())
+        manifest["provenance"]["split"] = "development"
+        _write_json(args.signal_product_manifest, manifest)
+    _write_json(args.organizer_camera_manifest, document)
+    with pytest.raises(CivError):
+        _prepare_binding(args)
+    assert not args.organizer_output.exists()
+
+
+def test_adding_private_camera_requires_new_progress_identity(tmp_path: Path) -> None:
+    args = _organizer_camera_case(tmp_path)
+    camera = args.organizer_camera_manifest
+    signal = args.signal_product_manifest
+    args.organizer_camera_manifest = None
+    args.signal_product_manifest = None
+    old, events, _, _, _ = _prepare_binding(args)
+    _write_atomic(
+        args.progress, canonical_json(initial_review_state(old, events, old.evidence_by_id))
+    )
+    original = args.progress.read_bytes()
+    args.organizer_camera_manifest = camera
+    args.signal_product_manifest = signal
+    current, _, _, _, _ = _prepare_binding(args)
+    with pytest.raises(CivError, match="identity"):
+        _read_progress(args.progress, current)
+    assert args.progress.read_bytes() == original
