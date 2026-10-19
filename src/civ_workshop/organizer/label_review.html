@@ -10,6 +10,7 @@
     header{padding-bottom:6px}h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.05rem;margin:0 0 12px}
     p{margin:8px 0}.muted{color:#536273;font-size:.9rem}.mono{font: .85rem ui-monospace,monospace;overflow-wrap:anywhere}
     section,.panel,aside{background:#fff;border:1px solid #d5dde5;border-radius:8px;padding:16px}
+    .warning{border:2px solid #a23b30;background:#fff6f3;color:#54251f}
     section{margin:12px 0}.topbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
     label{display:block;font-weight:600;margin:8px 0}input,select,textarea{display:block;width:100%;padding:8px;margin-top:4px;border:1px solid #9eacba;border-radius:5px;font:inherit}
     input[type=checkbox]{display:inline;width:auto;margin-right:7px}label.check{display:flex;align-items:center;font-weight:500}
@@ -50,6 +51,12 @@
     <p id="identity" class="muted mono"></p>
   </header>
   <main>
+    <section class="warning" role="note" aria-labelledby="live-review-warning">
+      <h2 id="live-review-warning">Live review and export warning</h2>
+      <p>This page edits the active review. Saving a change replaces the active progress file, and exporting replaces the active output. These edits can change the exported labels and scoring results.</p>
+      <p>Before replacement, the previous bytes of each active file are archived in a sibling directory named with that filename plus <code>.revisions</code>. Progress snapshots include decisions, approvals, completeness signoff, and audit history. Opening or inspecting a review does not change those records, and saving unchanged state keeps them intact.</p>
+      <p>A boundary edit clears approval for that interval. Adding a missed event or changing the accepted event set clears completeness signoff. Review the whole source, make the affected decisions again, and sign off before export.</p>
+    </section>
     <section aria-labelledby="review-rule-heading">
       <h2 id="review-rule-heading">Expected event rule</h2>
       <p id="review-rule" class="review-rule"></p>
@@ -209,6 +216,11 @@
     "use strict";
     const token = new URLSearchParams(window.location.search).get("token") || "";
     const $ = (id) => document.getElementById(id);
+    function normalizeTimestampField(id) {
+      const field = $(id);
+      field.value = field.value.replace(/[ \t]+$/, "");
+      return field.value;
+    }
     const svgNS = "http://www.w3.org/2000/svg";
     let review = null;
     let selectedId = null;
@@ -527,8 +539,8 @@
       act({type: "approve", candidate_id: selectedId, uncertainty_disposition: disposition, uncertainty_reason: $("uncertainty-reason").value});
     };
     $("adjust").onclick = () => act({
-      type: "edit", candidate_id: selectedId, start_ns: $("start-ns").value,
-      end_ns: $("end-ns").value, reason: $("reason").value
+      type: "edit", candidate_id: selectedId, start_ns: normalizeTimestampField("start-ns"),
+      end_ns: normalizeTimestampField("end-ns"), reason: $("reason").value
     });
     $("reject").onclick = () => act({
       type: "reject", candidate_id: selectedId, reason: $("reason").value,
@@ -542,7 +554,8 @@
       type: "set-practice", candidate_id: selectedId, selected: $("practice-selected").checked
     }));
     $("add-missed").onclick = () => act({
-      type: "add-missed", start_ns: $("missed-start").value, end_ns: $("missed-end").value,
+      type: "add-missed", start_ns: normalizeTimestampField("missed-start"),
+      end_ns: normalizeTimestampField("missed-end"),
       reason: $("missed-reason").value
     });
     $("coverage").addEventListener("change", () => act({type: "signoff", checked: $("coverage").checked}));
@@ -644,7 +657,9 @@
       $("window-open").disabled = true;
       $("window-check").disabled = true;
       try {
-        const value = await request("/api/window", {start_ns: $("window-start").value, end_ns: $("window-end").value});
+        const start_ns = normalizeTimestampField("window-start");
+        const end_ns = normalizeTimestampField("window-end");
+        const value = await request("/api/window", {start_ns, end_ns});
         if (revision !== windowRequestRevision) return;
         windowEvidence = value;
         windowCursorNs = BigInt(value.start_ns);
@@ -668,8 +683,8 @@
       try {
         const lower = BigInt(review.source_bounds.start_ns);
         const upper = BigInt(review.source_bounds.end_ns);
-        const start = BigInt($("window-start").value);
-        const end = BigInt($("window-end").value);
+        const start = BigInt(normalizeTimestampField("window-start"));
+        const end = BigInt(normalizeTimestampField("window-end"));
         const width = end - start;
         if (width <= 0n || start < lower || end > upper) throw new Error("Choose a positive window inside source bounds.");
         let next = start + BigInt(direction) * width;
