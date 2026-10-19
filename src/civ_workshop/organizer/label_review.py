@@ -6,10 +6,12 @@ import json
 import math
 import os
 import secrets
+import shutil
 import sys
 import tempfile
 import webbrowser
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -44,6 +46,7 @@ from civ_workshop.resources import load_point_resources
 from civ_workshop.score_reference import SCORING_POLICY, validate_score_reference
 
 PROGRESS_FORMAT = "civ.label-review-progress/v1"
+ARCHIVE_FORMAT = "civ.label-review-archive/v1"
 TRUTH_FORMAT = "civ.phase3.source-relative-truth/v1"
 EVENT_CONTRACT = "civ.event/v1"
 MAX_SIGNAL_POINTS = 500
@@ -221,6 +224,12 @@ def _advance_geometry_revision(state: dict[str, object]) -> None:
         raise CivError("review geometry revision is invalid")
     state["geometry_revision"] = revision + 1
     state["checked_windows"] = []
+
+
+def _invalidate_coverage(state: dict[str, object]) -> None:
+    state["coverage_reviewed"] = False
+    state["coverage_revision"] = -1
+    state["coverage_reviewer"] = None
 
 
 def _camera_frames(
@@ -557,12 +566,23 @@ def initial_review_state(
         "coverage_revision": -1,
         "coverage_reviewed": False,
         "coverage_reviewer": None,
+        "exports": {},
         "format": PROGRESS_FORMAT,
         "geometry_revision": 0,
         "identity": dict(binding.identity),
         "reviewer": "",
         "revision": 0,
+        "output_paths": _configured_output_paths(binding),
     }
+
+
+def _configured_output_paths(binding: ReviewBinding) -> dict[str, str]:
+    paths: dict[str, str] = {}
+    if binding.practice_output is not None:
+        paths["practice"] = str(binding.practice_output)
+    if binding.truth_output is not None:
+        paths["organizer-private"] = str(binding.truth_output)
+    return paths
 
 
 def _candidate(state: dict[str, object], candidate_id: object) -> dict[str, object]:
@@ -662,9 +682,7 @@ def transition_review(
             }
         )
         _advance_geometry_revision(state)
-        state["coverage_reviewed"] = False
-        state["coverage_revision"] = -1
-        state["coverage_reviewer"] = None
+        _invalidate_coverage(state)
         _audit(
             state,
             {
@@ -681,6 +699,7 @@ def transition_review(
     candidate = _candidate(state, action.get("candidate_id"))
     candidate_id = str(candidate["id"])
     reviewer = _reviewer(state)
+    was_accepted = candidate.get("decision") == "approved"
 
     if action_type == "edit":
         start_ns = _nonnegative_ns(action.get("start_ns"), "start_ns")
@@ -715,9 +734,7 @@ def transition_review(
             }
         )
         _advance_geometry_revision(state)
-        state["coverage_reviewed"] = False
-        state["coverage_revision"] = -1
-        state["coverage_reviewer"] = None
+        _invalidate_coverage(state)
         _audit(
             state,
             {
@@ -755,6 +772,8 @@ def transition_review(
                 "uncertainty_reason": uncertainty_reason,
             }
         )
+        if was_accepted != (candidate.get("decision") == "approved"):
+            _invalidate_coverage(state)
         _audit(
             state,
             {
@@ -785,6 +804,8 @@ def transition_review(
                 "uncertainty_reason": reason,
             }
         )
+        if was_accepted != (candidate.get("decision") == "approved"):
+            _invalidate_coverage(state)
         _audit(
             state,
             {
@@ -818,6 +839,8 @@ def transition_review(
                 "uncertainty_reason": reason,
             }
         )
+        if was_accepted != (candidate.get("decision") == "approved"):
+            _invalidate_coverage(state)
         _audit(
             state,
             {
@@ -1083,12 +1106,309 @@ def _write_atomic(path: Path, serialized: str) -> None:
         raise CivError(f"cannot save local review progress: {error}") from error
 
 
-def _read_progress(path: Path, binding: ReviewBinding) -> dict[str, object]:
-    state = read_json_file(path, "local review progress")
+def _archive_root(path: Path) -> Path:
+    return path.with_name(f"{path.name}.revisions")
+
+
+def _path_key(path: Path) -> str:
+    return os.path.normcase(str(path.resolve()))
+
+
+def _path_contains(parent: Path, child: Path) -> bool:
+    try:
+        common = Path(os.path.commonpath((str(parent), str(child))))
+    except ValueError:
+        return False
+    return os.path.normcase(str(common)) == os.path.normcase(str(parent))
+
+
+def _configured_archive_paths(binding: ReviewBinding) -> dict[str, Path]:
+    archives = {"progress": _archive_root(binding.progress_path)}
+    if binding.practice_output is not None:
+        archives["practice"] = _archive_root(binding.practice_output)
+    if binding.truth_output is not None:
+        archives["organizer-private"] = _archive_root(binding.truth_output)
+    return archives
+
+
+def _digest_bytes(contents: bytes) -> str:
+    return sha256(contents).hexdigest()
+
+
+def _read_active_file(path: Path) -> bytes | None:
+    if path.is_symlink():
+        raise CivError(f"review path is a symbolic link: {path.name}")
+    if not path.exists():
+        return None
+    if not path.is_file():
+        raise CivError(f"review path is not a file: {path.name}")
+    try:
+        return path.read_bytes()
+    except OSError as error:
+        raise CivError(f"cannot read review file {path.name}: {error}") from error
+
+
+def _stage_bytes(path: Path, contents: bytes) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            dir=path.parent,
+            delete=False,
+        ) as stream:
+            temporary = Path(stream.name)
+            stream.write(contents)
+            stream.flush()
+            os.fsync(stream.fileno())
+        return temporary
+    except OSError as error:
+        if "temporary" in locals():
+            temporary.unlink(missing_ok=True)
+        raise CivError(f"cannot stage review file {path.name}: {error}") from error
+
+
+def _archive_snapshot(
+    path: Path, contents: bytes, *, artifact: str, revision: int
+) -> None:
+    digest = _digest_bytes(contents)
+    root = _archive_root(path)
+    if root.is_symlink():
+        raise CivError(f"review archive path is a symbolic link: {root.name}")
+    metadata = {
+        "active_filename": path.name,
+        "artifact": artifact,
+        "format": ARCHIVE_FORMAT,
+        "revision": revision,
+        "sha256": digest,
+    }
+    destination = root / f"revision-{revision:08d}-{digest}"
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            if destination.is_symlink() or not destination.is_dir():
+                raise CivError(f"review archive revision is unsafe: {destination.name}")
+            content_path = destination / "content"
+            metadata_path = destination / "metadata.json"
+            if (
+                content_path.is_symlink()
+                or metadata_path.is_symlink()
+                or not content_path.is_file()
+                or not metadata_path.is_file()
+            ):
+                raise CivError(f"review archive revision is corrupted: {destination.name}")
+            archived = content_path.read_bytes()
+            archived_metadata = json.loads(
+                metadata_path.read_text(encoding="utf-8")
+            )
+            if archived != contents or archived_metadata != metadata:
+                raise CivError(f"review archive revision is corrupted: {destination.name}")
+            return
+
+        temporary = Path(tempfile.mkdtemp(prefix=".snapshot-", dir=root))
+        try:
+            with (temporary / "content").open("wb") as stream:
+                stream.write(contents)
+                stream.flush()
+                os.fsync(stream.fileno())
+            with (temporary / "metadata.json").open("wb") as stream:
+                stream.write(f"{canonical_json(metadata)}\n".encode())
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.rename(temporary, destination)
+        except Exception:
+            shutil.rmtree(temporary, ignore_errors=True)
+            raise
+    except CivError:
+        raise
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CivError(f"cannot archive review file {path.name}: {error}") from error
+
+
+def _writer_lock_path(progress_path: Path) -> Path:
+    return progress_path.with_name(f"{progress_path.name}.lock")
+
+
+def _transaction_write(
+    progress_path: Path,
+    changes: Mapping[Path, bytes],
+    expected_digests: Mapping[Path, str | None],
+    snapshots: Mapping[Path, tuple[str, int]],
+    *,
+    force_paths: frozenset[Path] = frozenset(),
+) -> dict[Path, str]:
+    lock_path = _writer_lock_path(progress_path)
+    if lock_path.is_symlink():
+        raise CivError(f"review writer lock path is a symbolic link: {lock_path.name}")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError as error:
+        raise CivError(
+            "another review writer holds the progress lock; reload before writing"
+        ) from error
+    except OSError as error:
+        raise CivError(f"cannot acquire review writer lock: {error}") from error
+
+    staged: dict[Path, Path] = {}
+    backups: dict[Path, Path] = {}
+    previous: dict[Path, bytes | None] = {}
+    modified: list[Path] = []
+    try:
+        with os.fdopen(descriptor, "w", encoding="ascii") as stream:
+            stream.write(f"{os.getpid()}\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+
+        for path in changes:
+            old_bytes = _read_active_file(path)
+            previous[path] = old_bytes
+            old_digest = _digest_bytes(old_bytes) if old_bytes is not None else None
+            if old_digest != expected_digests.get(path):
+                if path == progress_path:
+                    raise CivError(
+                        "saved review changed since this session opened; reload before writing"
+                    )
+                raise CivError(
+                    f"review output changed since this session opened: {path.name}"
+                )
+
+        actual_changes = {
+            path: contents
+            for path, contents in changes.items()
+            if path in force_paths or previous[path] != contents
+        }
+        if not actual_changes:
+            return {
+                path: _digest_bytes(contents)
+                for path, contents in changes.items()
+            }
+
+        for path, contents in actual_changes.items():
+            staged[path] = _stage_bytes(path, contents)
+        for path in actual_changes:
+            old_bytes = previous[path]
+            if old_bytes is not None:
+                artifact, revision = snapshots[path]
+                _archive_snapshot(path, old_bytes, artifact=artifact, revision=revision)
+
+        commit_order = [path for path in actual_changes if path != progress_path]
+        if progress_path in actual_changes:
+            commit_order.append(progress_path)
+        try:
+            for path in commit_order:
+                if previous[path] is not None:
+                    backups[path] = _stage_bytes(path, b"")
+                    os.replace(path, backups[path])
+                    modified.append(path)
+                os.replace(staged[path], path)
+                if path not in modified:
+                    modified.append(path)
+        except Exception as error:
+            rollback_error: Exception | None = None
+            for path in reversed(modified):
+                old_bytes = previous[path]
+                try:
+                    if old_bytes is None:
+                        path.unlink(missing_ok=True)
+                    else:
+                        backup = backups[path]
+                        os.replace(backup, path)
+                except Exception as rollback_failure:
+                    rollback_error = rollback_failure
+                    break
+            if rollback_error is not None:
+                raise CivError(
+                    "review write failed and active files could not be restored; "
+                    "use the archived revisions to recover"
+                ) from rollback_error
+            if isinstance(error, CivError):
+                raise
+            raise CivError(f"cannot replace review files: {error}") from error
+
+        return {
+            path: _digest_bytes(contents)
+            for path, contents in changes.items()
+        }
+    finally:
+        for temporary in staged.values():
+            temporary.unlink(missing_ok=True)
+        for backup in backups.values():
+            backup.unlink(missing_ok=True)
+        with suppress(OSError):
+            lock_path.unlink(missing_ok=True)
+
+
+def _read_progress_document(
+    path: Path, binding: ReviewBinding
+) -> tuple[dict[str, object], bytes]:
+    contents = _read_active_file(path)
+    if contents is None:
+        raise CivError(f"local review progress does not exist: {path}")
+    try:
+        state = require_mapping(json.loads(contents.decode("utf-8")), "local review progress")
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CivError(f"cannot read local review progress {path.name}: {error}") from error
     if state.get("format") != PROGRESS_FORMAT:
         raise CivError("saved progress has an unsupported format")
     if state.get("identity") != binding.identity:
         raise CivError("saved progress source or EventSpec identity does not match")
+    revision = state.get("revision")
+    geometry_revision = state.get("geometry_revision")
+    coverage_revision = state.get("coverage_revision")
+    if (
+        isinstance(revision, bool)
+        or not isinstance(revision, int)
+        or revision < 0
+        or isinstance(geometry_revision, bool)
+        or not isinstance(geometry_revision, int)
+        or geometry_revision < 0
+        or isinstance(coverage_revision, bool)
+        or not isinstance(coverage_revision, int)
+        or coverage_revision < -1
+    ):
+        raise CivError("saved progress revision metadata is invalid")
+    if not isinstance(state.get("reviewer"), str) or not isinstance(
+        state.get("coverage_reviewed"), bool
+    ):
+        raise CivError("saved progress review status is invalid")
+    coverage_reviewer = state.get("coverage_reviewer")
+    if coverage_reviewer is not None and not isinstance(coverage_reviewer, str):
+        raise CivError("saved progress coverage reviewer is invalid")
+    if state["coverage_reviewed"] and (
+        coverage_revision != geometry_revision
+        or not isinstance(coverage_reviewer, str)
+        or not coverage_reviewer.strip()
+    ):
+        raise CivError("saved progress completeness signoff is inconsistent")
+    if not state["coverage_reviewed"] and coverage_revision != -1:
+        raise CivError("saved progress completeness signoff is inconsistent")
+    audit = state.get("audit")
+    if not isinstance(audit, list) or len(audit) > revision:
+        raise CivError("saved progress audit history is invalid")
+    audit_actions = {
+        "add-missed",
+        "approve",
+        "check-window",
+        "data-gap",
+        "edit",
+        "reject",
+        "set-practice",
+        "set-reviewer",
+        "signoff",
+        "undo",
+    }
+    for record in audit:
+        entry = require_mapping(record, "saved review audit record")
+        action = require_string(entry.get("action"), "saved review audit action")
+        if action not in audit_actions:
+            raise CivError(f"saved review audit action is unsupported: {action}")
+        audit_reviewer = entry.get("reviewer")
+        if not isinstance(audit_reviewer, str) or (
+            action != "undo" and not audit_reviewer.strip()
+        ):
+            raise CivError("saved review audit reviewer is invalid")
     candidates = state.get("candidates")
     if not isinstance(candidates, list):
         raise CivError("saved progress candidates are invalid")
@@ -1133,21 +1453,126 @@ def _read_progress(path: Path, binding: ReviewBinding) -> dict[str, object]:
             "data_gap",
         }:
             raise CivError(f"unsupported saved review decision for {identifier}")
+        if candidate.get("uncertainty_disposition") not in {
+            "unresolved",
+            "clear",
+            "accept_event",
+            "reject_candidate",
+            "scoring_data_gap",
+        }:
+            raise CivError(f"saved uncertainty disposition is invalid for {identifier}")
+        expected_disposition = {
+            "pending": "unresolved",
+            "rejected": "reject_candidate",
+            "data_gap": "scoring_data_gap",
+        }.get(str(candidate["decision"]))
+        if expected_disposition is not None and candidate.get(
+            "uncertainty_disposition"
+        ) != expected_disposition:
+            raise CivError(f"saved decision disposition is inconsistent for {identifier}")
+        if candidate.get("decision") == "approved" and candidate.get(
+            "uncertainty_disposition"
+        ) not in {"clear", "accept_event"}:
+            raise CivError(f"saved approval disposition is inconsistent for {identifier}")
+        if not isinstance(candidate.get("practice_selected"), bool):
+            raise CivError(f"saved practice selection is invalid for {identifier}")
+        if not isinstance(candidate.get("reason"), str) or not isinstance(
+            candidate.get("uncertainty_reason"), str
+        ):
+            raise CivError(f"saved review reason is invalid for {identifier}")
+        if not isinstance(candidate.get("adjustment_history"), list):
+            raise CivError(f"saved adjustment history is invalid for {identifier}")
+        candidate_reviewer = candidate.get("reviewer")
+        if candidate_reviewer is not None and not isinstance(candidate_reviewer, str):
+            raise CivError(f"saved candidate reviewer is invalid for {identifier}")
+        if candidate.get("practice_selected") and candidate.get("decision") not in {
+            "approved",
+            "data_gap",
+        }:
+            raise CivError(f"saved practice selection is incompatible for {identifier}")
+        if candidate.get("decision") in {"approved", "rejected", "data_gap"} and (
+            not isinstance(candidate_reviewer, str) or not candidate_reviewer.strip()
+        ):
+            raise CivError(f"saved decision reviewer is missing for {identifier}")
+        if candidate.get("decision") in {"rejected", "data_gap"} and not str(
+            candidate.get("reason", "")
+        ).strip():
+            raise CivError(f"saved decision reason is missing for {identifier}")
+        for field in ("start_ns", "end_ns"):
+            if not isinstance(candidate.get(field), str):
+                raise CivError(f"saved {field} must be an exact integer string for {identifier}")
         start_ns = _nonnegative_ns(candidate.get("start_ns"), "saved candidate start_ns")
         end_ns = _nonnegative_ns(candidate.get("end_ns"), "saved candidate end_ns")
         if not binding.source_bounds[0] <= start_ns < end_ns <= binding.source_bounds[1]:
             raise CivError(f"saved review interval is outside source bounds: {identifier}")
+        for raw_adjustment in cast(list[object], candidate["adjustment_history"]):
+            adjustment = require_mapping(raw_adjustment, "saved adjustment history entry")
+            require_string(adjustment.get("reason"), "saved adjustment reason")
+            require_string(adjustment.get("reviewer"), "saved adjustment reviewer")
+            boundaries: dict[str, int] = {}
+            for field in ("start_ns", "end_ns", "new_start_ns", "new_end_ns"):
+                value = adjustment.get(field)
+                if not isinstance(value, str):
+                    raise CivError(f"saved adjustment {field} is invalid for {identifier}")
+                boundaries[field] = _nonnegative_ns(value, f"saved adjustment {field}")
+            for start_field, end_field in (
+                ("start_ns", "end_ns"),
+                ("new_start_ns", "new_end_ns"),
+            ):
+                if not binding.source_bounds[0] <= boundaries[start_field] < boundaries[
+                    end_field
+                ] <= binding.source_bounds[1]:
+                    raise CivError(f"saved adjustment is outside source bounds: {identifier}")
     if detected_ids != set(binding.event_ids):
         raise CivError("saved progress candidate set does not match the detected events")
+    exports = state.get("exports", {})
+    if not isinstance(exports, dict):
+        raise CivError("saved export metadata is invalid")
+    configured_outputs = _configured_output_paths(binding)
+    for target, raw_metadata in exports.items():
+        if target not in {"practice", "organizer-private"} or target not in configured_outputs:
+            raise CivError("saved export metadata does not match configured output paths")
+        metadata = require_mapping(raw_metadata, f"saved {target} export metadata")
+        export_revision = metadata.get("revision")
+        export_digest = metadata.get("sha256")
+        if (
+            isinstance(export_revision, bool)
+            or not isinstance(export_revision, int)
+            or export_revision < 1
+            or not isinstance(export_digest, str)
+            or len(export_digest) != 64
+            or any(character not in "0123456789abcdef" for character in export_digest)
+        ):
+            raise CivError(f"saved {target} export metadata is invalid")
+    output_paths = state.get("output_paths")
+    if exports and output_paths is None:
+        raise CivError("saved export metadata has no bound output paths")
+    if output_paths is not None:
+        if not isinstance(output_paths, dict) or any(
+            not isinstance(key, str) or not isinstance(value, str)
+            for key, value in output_paths.items()
+        ):
+            raise CivError("saved output paths are invalid")
+        normalized_saved = {key: os.path.normcase(value) for key, value in output_paths.items()}
+        normalized_configured = {
+            key: os.path.normcase(value) for key, value in configured_outputs.items()
+        }
+        if normalized_saved != normalized_configured:
+            raise CivError("configured output paths do not match saved review")
     windows = state.get("checked_windows", [])
     if not isinstance(windows, list):
         raise CivError("saved checked windows must be a list")
-    for raw in windows:
-        checked = require_mapping(raw, "saved checked window")
+    for raw_window in windows:
+        checked = require_mapping(raw_window, "saved checked window")
         _source_window(checked, binding.source_bounds)
         require_string(checked.get("reviewer"), "checked-window reviewer")
     state["checked_windows"] = windows
-    return cast(dict[str, object], state)
+    return cast(dict[str, object], state), contents
+
+
+def _read_progress(path: Path, binding: ReviewBinding) -> dict[str, object]:
+    state, _ = _read_progress_document(path, binding)
+    return state
 
 
 def _load_html() -> bytes:
@@ -1156,6 +1581,47 @@ def _load_html() -> bytes:
         return path.read_bytes()
     except OSError as error:
         raise CivError(f"cannot load the local review interface: {error}") from error
+
+
+def _validate_output_bytes(target: str, contents: bytes, binding: ReviewBinding) -> None:
+    try:
+        document = require_mapping(
+            json.loads(contents.decode("utf-8")), f"existing {target} output"
+        )
+        if target == "practice":
+            checked = validate_score_reference(document)
+            validate_label_pack(checked)
+            if (
+                checked.get("source_sha256") != binding.identity.get("source_sha256")
+                or checked.get("dataset") != binding.identity.get("dataset")
+            ):
+                raise CivError("practice output source identity does not match")
+            return
+        if target != "organizer-private":
+            raise CivError(f"unknown review output target '{target}'")
+        if (
+            document.get("target") != binding.spec_name
+            or document.get("quality") != {"global_completeness_approved": True}
+        ):
+            raise CivError("organizer-private output target does not match")
+        with tempfile.TemporaryDirectory(prefix="civ-label-review-output-") as directory:
+            candidate = Path(directory) / "truth.json"
+            candidate.write_bytes(contents)
+            truth = _truth_document(candidate)
+        if truth.dataset != binding.identity.get("dataset"):
+            raise CivError("organizer-private output dataset does not match")
+        for interval in (*truth.intervals, *truth.gaps):
+            if (
+                interval.source_id != binding.identity.get("source_id")
+                or interval.source_sha256 != binding.identity.get("source_sha256")
+                or not binding.source_bounds[0]
+                <= interval.start_ns
+                < interval.end_ns
+                <= binding.source_bounds[1]
+            ):
+                raise CivError("organizer-private output source identity does not match")
+    except (CivError, UnicodeDecodeError, json.JSONDecodeError, OSError) as error:
+        raise CivError(f"existing {target} output is invalid or mismatched") from error
 
 
 class ReviewApplication:
@@ -1169,6 +1635,7 @@ class ReviewApplication:
         comparisons: ProfileComparisons | None = None,
         review_rule: str | None = None,
         default_reviewer: str | None = None,
+        progress_digest: str | None = None,
     ) -> None:
         self.binding = binding
         self.comparisons = comparisons
@@ -1185,17 +1652,99 @@ class ReviewApplication:
         self.after_ns = after_ns
         self.history: list[dict[str, object]] = []
         self.frame_cache: dict[int, tuple[str, bytes]] = {}
+        progress_bytes = _read_active_file(binding.progress_path)
+        self._progress_digest = (
+            progress_digest
+            if progress_digest is not None
+            else _digest_bytes(progress_bytes)
+            if progress_bytes is not None
+            else None
+        )
+        self._output_digests: dict[str, str] = {}
+        self._output_revisions: dict[str, int] = {}
+        self._validate_active_outputs(state)
         self._refresh_context(self.state)
 
     def save(self) -> None:
         self._refresh_context(self.state)
-        _write_atomic(self.binding.progress_path, f"{canonical_json(self.state)}\n")
+        self._write_state(self.state)
 
     def reload(self) -> dict[str, object]:
-        self.state = _read_progress(self.binding.progress_path, self.binding)
-        self._refresh_context(self.state)
+        state, contents = _read_progress_document(self.binding.progress_path, self.binding)
+        self._validate_active_outputs(state)
+        self._refresh_context(state)
+        self.state = state
+        self._progress_digest = _digest_bytes(contents)
         self.history.clear()
         return self.view()
+
+    def _validate_active_outputs(self, state: Mapping[str, object]) -> None:
+        exports = state.get("exports", {})
+        if not isinstance(exports, Mapping):
+            raise CivError("saved export metadata is invalid")
+        output_digests: dict[str, str] = {}
+        output_revisions: dict[str, int] = {}
+        configured = {
+            "practice": self.binding.practice_output,
+            "organizer-private": self.binding.truth_output,
+        }
+        for target, output in configured.items():
+            metadata_value = exports.get(target)
+            metadata = (
+                require_mapping(metadata_value, f"saved {target} export metadata")
+                if metadata_value is not None
+                else None
+            )
+            if output is None:
+                if metadata is not None:
+                    raise CivError("saved export metadata does not match configured output paths")
+                continue
+            contents = _read_active_file(output)
+            if contents is None:
+                if metadata is not None:
+                    raise CivError(f"saved {target} output is missing")
+                continue
+            digest = _digest_bytes(contents)
+            if metadata is not None:
+                if metadata.get("sha256") != digest:
+                    raise CivError(f"saved {target} output digest does not match progress")
+                revision = metadata.get("revision")
+                if isinstance(revision, bool) or not isinstance(revision, int):
+                    raise CivError(f"saved {target} output revision is invalid")
+                output_revisions[target] = revision
+            else:
+                _validate_output_bytes(target, contents, self.binding)
+                output_revisions[target] = 1
+            output_digests[target] = digest
+        self._output_digests = output_digests
+        self._output_revisions = output_revisions
+
+    def _recheck_active_outputs(self) -> None:
+        configured = {
+            "practice": self.binding.practice_output,
+            "organizer-private": self.binding.truth_output,
+        }
+        for target, output in configured.items():
+            if output is None:
+                continue
+            contents = _read_active_file(output)
+            current = _digest_bytes(contents) if contents is not None else None
+            if current != self._output_digests.get(target):
+                raise CivError(f"review output changed since this session opened: {output.name}")
+
+    def _write_state(self, state: dict[str, object]) -> None:
+        self._recheck_active_outputs()
+        old_revision = self.state.get("revision", 0)
+        if isinstance(old_revision, bool) or not isinstance(old_revision, int):
+            raise CivError("review revision is invalid")
+        serialized = f"{canonical_json(state)}\n".encode()
+        result = _transaction_write(
+            self.binding.progress_path,
+            {self.binding.progress_path: serialized},
+            {self.binding.progress_path: self._progress_digest},
+            {self.binding.progress_path: ("review-progress", old_revision)},
+        )
+        self._progress_digest = result[self.binding.progress_path]
 
     def _evidence_for(self, candidate: Mapping[str, object]) -> dict[str, object]:
         candidate_id = str(candidate.get("id"))
@@ -1287,18 +1836,22 @@ class ReviewApplication:
                     "undid": undone,
                 }
             )
+            if "exports" in self.state:
+                previous["exports"] = copy.deepcopy(self.state["exports"])
+            if "output_paths" in self.state:
+                previous["output_paths"] = copy.deepcopy(self.state["output_paths"])
             revision = self.state.get("revision")
             if isinstance(revision, bool) or not isinstance(revision, int):
                 raise CivError("review revision is invalid")
             previous["revision"] = revision + 1
             self._refresh_context(previous)
-            _write_atomic(self.binding.progress_path, f"{canonical_json(previous)}\n")
+            self._write_state(previous)
             self.history.pop()
             self.state = previous
             return self.view()
         next_state = transition_review(self.state, action, self.binding.source_bounds)
         self._refresh_context(next_state)
-        _write_atomic(self.binding.progress_path, f"{canonical_json(next_state)}\n")
+        self._write_state(next_state)
         self.history.append(self.state)
         self.state = next_state
         return self.view()
@@ -1359,6 +1912,7 @@ class ReviewApplication:
             raise CivError("camera-context approval changed during review")
 
     def export(self, target: str) -> dict[str, object]:
+        self._recheck_active_outputs()
         self.recheck_inputs()
         self._refresh_context(self.state)
         output = (
@@ -1376,20 +1930,51 @@ class ReviewApplication:
             spec_name=self.binding.spec_name,
             source_bounds=self.binding.source_bounds,
         )
-        serialized = f"{canonical_json(document)}\n"
-        output.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            descriptor = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
-                stream.write(serialized)
-        except FileExistsError as error:
-            raise CivError(f"review output already exists: {output.name}") from error
-        except OSError as error:
-            output.unlink(missing_ok=True)
-            raise CivError(f"cannot write reviewed output: {error}") from error
+        output_bytes = f"{canonical_json(document)}\n".encode()
+        output_digest = _digest_bytes(output_bytes)
+        previous_output = _read_active_file(output)
+        old_output_revision = self._output_revisions.get(target, 1 if previous_output else 0)
+        if previous_output is not None:
+            _validate_output_bytes(target, previous_output, self.binding)
+
+        next_state = copy.deepcopy(self.state)
+        exports_value = next_state.get("exports", {})
+        if not isinstance(exports_value, dict):
+            raise CivError("saved export metadata is invalid")
+        exports = copy.deepcopy(exports_value)
+        exports[target] = {
+            "revision": old_output_revision + 1,
+            "sha256": output_digest,
+        }
+        next_state["exports"] = exports
+        next_state["output_paths"] = _configured_output_paths(self.binding)
+        review_revision = self.state.get("revision")
+        if isinstance(review_revision, bool) or not isinstance(review_revision, int):
+            raise CivError("review revision is invalid")
+        next_state["revision"] = review_revision + 1
+        progress_bytes = f"{canonical_json(next_state)}\n".encode()
+        snapshots: dict[Path, tuple[str, int]] = {
+            self.binding.progress_path: ("review-progress", review_revision),
+            output: (f"{target}-export", old_output_revision),
+        }
+        results = _transaction_write(
+            self.binding.progress_path,
+            {output: output_bytes, self.binding.progress_path: progress_bytes},
+            {
+                output: self._output_digests.get(target),
+                self.binding.progress_path: self._progress_digest,
+            },
+            snapshots,
+            force_paths=frozenset({output}),
+        )
+        self.state = next_state
+        self._progress_digest = results[self.binding.progress_path]
+        self._output_digests[target] = results[output]
+        self._output_revisions[target] = old_output_revision + 1
         return {
             "name": output.name,
-            "sha256": sha256(serialized.encode("utf-8")).hexdigest(),
+            "revision": old_output_revision + 1,
+            "sha256": output_digest,
             "target": target,
         }
 
@@ -1538,25 +2123,35 @@ def _prepare_binding(
         camera_manifest,
         getattr(args, "signal_product_manifest", None),
     )
+    raw_active_paths = [
+        path
+        for path in (args.progress, args.practice_output, args.organizer_output)
+        if path is not None
+    ]
+    for path in raw_active_paths:
+        if path.is_symlink():
+            raise CivError(f"review path is a symbolic link: {path.name}")
     progress_path = args.progress.resolve()
     practice_output = args.practice_output.resolve() if args.practice_output else None
     truth_output = args.organizer_output.resolve() if args.organizer_output else None
-    paths = [binding.source_path, binding.spec_path, binding.events_path, binding.manifest_path]
+    inputs = [binding.source_path, binding.spec_path, binding.events_path, binding.manifest_path]
     if binding.signal_product_manifest_path is not None:
-        paths.append(binding.signal_product_manifest_path)
+        inputs.append(binding.signal_product_manifest_path)
     if camera_manifest:
-        paths.append(camera_manifest.resolve())
+        inputs.append(camera_manifest.resolve())
     if camera is not None:
-        paths.append(camera.product_path.resolve())
-    paths.append(progress_path)
+        inputs.append(camera.product_path.resolve())
     outputs = [path for path in (practice_output, truth_output) if path is not None]
-    if len({str(path) for path in [*paths, *outputs]}) != len(paths) + len(outputs):
+    active_paths = [progress_path, *outputs]
+    if len({_path_key(path) for path in [*inputs, *active_paths]}) != len(inputs) + len(
+        active_paths
+    ):
         raise CivError("review inputs, progress, and outputs must use separate paths")
-    if len(set(map(str, outputs))) != len(outputs):
+    if len({_path_key(path) for path in outputs}) != len(outputs):
         raise CivError("practice and organizer-private outputs must use separate paths")
-    for output in outputs:
-        if output.exists():
-            raise CivError(f"review output already exists: {output.name}")
+    for path in active_paths:
+        if path.exists() and not path.is_file():
+            raise CivError(f"review path is not a file: {path.name}")
     if practice_output is None and truth_output is None:
         raise CivError("configure at least one distinct review output path")
 
@@ -1577,6 +2172,22 @@ def _prepare_binding(
         event_ids=binding.event_ids,
         signal_product_manifest_path=binding.signal_product_manifest_path,
     )
+    archives = _configured_archive_paths(binding)
+    archive_keys = {_path_key(path) for path in archives.values()}
+    if len(archive_keys) != len(archives):
+        raise CivError("review archive paths must be distinct")
+    lock_path = _writer_lock_path(progress_path)
+    if _path_key(lock_path) in {_path_key(path) for path in [*inputs, *active_paths]}:
+        raise CivError("review writer lock path collides with an input or active file")
+    guarded_paths = [*inputs, *active_paths, lock_path]
+    for archive in archives.values():
+        if archive.is_symlink() or (archive.exists() and not archive.is_dir()):
+            raise CivError(f"review archive path is unsafe: {archive.name}")
+        if any(
+            _path_contains(archive, path) or _path_contains(path, archive)
+            for path in guarded_paths
+        ):
+            raise CivError("review archive paths must not overlap inputs or active files")
     return binding, events, manifest, before_ns, after_ns
 
 
@@ -1584,11 +2195,18 @@ def review_command(args: argparse.Namespace) -> None:
     binding, events, _, before_ns, after_ns = _prepare_binding(args)
     inventory = getattr(args, "comparison_inventory", None)
     comparisons = load_profile_comparisons(inventory, binding) if inventory else None
-    if binding.progress_path.exists():
-        state = _read_progress(binding.progress_path, binding)
+    has_progress = binding.progress_path.exists()
+    if has_progress:
+        state, progress_bytes = _read_progress_document(binding.progress_path, binding)
+        progress_digest = _digest_bytes(progress_bytes)
     else:
+        if any(
+            path is not None and path.exists()
+            for path in (binding.practice_output, binding.truth_output)
+        ):
+            raise CivError("review outputs exist without compatible saved progress")
         state = initial_review_state(binding, events, binding.evidence_by_id)
-        _write_atomic(binding.progress_path, f"{canonical_json(state)}\n")
+        progress_digest = None
     app = ReviewApplication(
         binding,
         state,
@@ -1597,7 +2215,10 @@ def review_command(args: argparse.Namespace) -> None:
         comparisons=comparisons,
         review_rule=getattr(args, "review_rule", None),
         default_reviewer=getattr(args, "reviewer", None),
+        progress_digest=progress_digest,
     )
+    if not has_progress:
+        app.save()
     token = secrets.token_urlsafe(24)
     server = HTTPServer(("127.0.0.1", args.port), _create_handler(app, token))
     host, port = cast(tuple[str, int], server.server_address[:2])
