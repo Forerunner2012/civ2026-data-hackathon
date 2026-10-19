@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import struct
 import threading
 import zlib
@@ -15,6 +16,7 @@ from urllib.request import Request, urlopen
 import pytest
 from mcap.writer import CompressionType, Writer
 
+import civ_workshop.organizer.label_review as label_review_module
 from civ_workshop.artifacts import canonical_json, file_sha256
 from civ_workshop.data_products import build_data_product
 from civ_workshop.detection import detect_events
@@ -254,6 +256,7 @@ def _state_with_spoofed_context(
     candidate["missing_context"] = []
     if approved:
         candidate["decision"] = "approved"
+        candidate["reviewer"] = "Synthetic reviewer"
         candidate["uncertainty_disposition"] = "clear"
         candidate["uncertainty_reason"] = ""
         candidate["practice_selected"] = True
@@ -276,6 +279,350 @@ def _record_review(app: ReviewApplication, candidate_id: str) -> None:
     )
     app.act({"type": "set-practice", "candidate_id": candidate_id, "selected": True})
     app.act({"type": "signoff", "checked": True})
+
+
+def _reopen(args: Namespace) -> ReviewApplication:
+    binding, _, _, before_ns, after_ns = _prepare_binding(args)
+    return ReviewApplication(
+        binding,
+        _read_progress(args.progress, binding),
+        before_ns=before_ns,
+        after_ns=after_ns,
+    )
+
+
+def _archived_snapshot(active_path: Path, contents: bytes) -> tuple[Path, dict[str, object]]:
+    root = active_path.with_name(f"{active_path.name}.revisions")
+    for snapshot in root.iterdir():
+        content_path = snapshot / "content"
+        if content_path.is_file() and content_path.read_bytes() == contents:
+            metadata = _mapping(json.loads((snapshot / "metadata.json").read_text("utf-8")))
+            return snapshot, metadata
+    raise AssertionError(f"snapshot not found for {active_path.name}")
+
+
+def test_completed_review_reopens_and_saves_unchanged_at_same_paths(tmp_path: Path) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    _record_review(app, candidate_id)
+    app.export("practice")
+    progress_before = args.progress.read_bytes()
+    output_before = args.practice_output.read_bytes()
+    archive_entries_before = sorted(
+        path.name for path in Path(f"{args.progress}.revisions").iterdir()
+    )
+
+    reopened = _reopen(args)
+    view = reopened.view()
+    assert view["gate"] == []
+    candidate = _records(_mapping(view["state"])["candidates"])[0]
+    assert candidate["decision"] == "approved"
+    assert candidate["practice_selected"] is True
+    assert _records(_mapping(view["state"])["audit"])
+    assert _mapping(view["state"])["coverage_reviewed"] is True
+    reopened.save()
+    reopened.reload()
+    reopened.save()
+
+    assert args.progress.read_bytes() == progress_before
+    assert args.practice_output.read_bytes() == output_before
+    assert sorted(path.name for path in Path(f"{args.progress}.revisions").iterdir()) == (
+        archive_entries_before
+    )
+
+
+def test_refinement_and_reexport_archive_progress_and_both_output_revisions(
+    tmp_path: Path,
+) -> None:
+    args, app, first_id = _case(
+        tmp_path / "case", source_values=(0.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0)
+    )
+    candidates = _records(app.state["candidates"])
+    assert len(candidates) == 2
+    second_id = str(candidates[1]["id"])
+    _record_review(app, first_id)
+    app.act(
+        {
+            "type": "approve",
+            "candidate_id": second_id,
+            "uncertainty_disposition": "accept_event",
+            "uncertainty_reason": "Synthetic second event has no camera context.",
+        }
+    )
+    app.act({"type": "set-practice", "candidate_id": second_id, "selected": True})
+    app.act({"type": "signoff", "checked": True})
+    assert gate_review(app.state) == []
+    app.export("practice")
+    app.export("organizer-private")
+    old_outputs = {
+        "practice": args.practice_output.read_bytes(),
+        "organizer-private": args.organizer_output.read_bytes(),
+    }
+
+    first = next(item for item in _records(app.state["candidates"]) if item["id"] == first_id)
+    start_ns = int(str(first["start_ns"])) + 10
+    app.act(
+        {
+            "type": "edit",
+            "candidate_id": first_id,
+            "start_ns": str(start_ns),
+            "end_ns": first["end_ns"],
+            "reason": "Synthetic boundary refinement after reopening.",
+        }
+    )
+    app.act(
+        {
+            "type": "reject",
+            "candidate_id": second_id,
+            "reason": "Synthetic decision changed after contextual review.",
+            "uncertainty_disposition": "reject_candidate",
+        }
+    )
+    app.act(
+        {
+            "type": "add-missed",
+            "start_ns": str(EPOCH_NS + 3_500_000_000),
+            "end_ns": str(EPOCH_NS + 4_000_000_000),
+            "reason": "Synthetic missed event found during whole-source review.",
+        }
+    )
+    missed_id = str(_records(app.state["candidates"])[-1]["id"])
+    assert gate_review(app.state)
+    app.act(
+        {
+            "type": "approve",
+            "candidate_id": first_id,
+            "uncertainty_disposition": "accept_event",
+            "uncertainty_reason": "Synthetic refined event has no camera context.",
+        }
+    )
+    app.act({"type": "set-practice", "candidate_id": first_id, "selected": True})
+    app.act(
+        {
+            "type": "approve",
+            "candidate_id": missed_id,
+            "uncertainty_disposition": "accept_event",
+            "uncertainty_reason": "Synthetic missed event has no camera context.",
+        }
+    )
+    app.act({"type": "set-practice", "candidate_id": missed_id, "selected": True})
+    app.act({"type": "signoff", "checked": True})
+    assert gate_review(app.state) == []
+    progress_before_reexport = args.progress.read_bytes()
+    audit_before_reexport = _records(_mapping(json.loads(progress_before_reexport))["audit"])
+
+    practice_result = app.export("practice")
+    private_result = app.export("organizer-private")
+
+    for target, output in (
+        ("practice", args.practice_output),
+        ("organizer-private", args.organizer_output),
+    ):
+        snapshot, metadata = _archived_snapshot(output, old_outputs[target])
+        assert metadata["artifact"] == f"{target}-export"
+        assert metadata["revision"] == 1
+        assert metadata["sha256"] == file_sha256(snapshot / "content")
+        assert output.read_bytes() != old_outputs[target]
+    progress_snapshot, progress_metadata = _archived_snapshot(
+        args.progress, progress_before_reexport
+    )
+    archived_progress = json.loads((progress_snapshot / "content").read_text("utf-8"))
+    assert progress_metadata["artifact"] == "review-progress"
+    assert progress_metadata["sha256"] == file_sha256(progress_snapshot / "content")
+    assert _records(archived_progress["audit"]) == audit_before_reexport
+    active_progress = json.loads(args.progress.read_text(encoding="utf-8"))
+    assert active_progress["exports"]["practice"]["revision"] == 2
+    assert active_progress["exports"]["organizer-private"]["revision"] == 2
+    assert practice_result["revision"] == private_result["revision"] == 2
+    assert args.practice_output.read_bytes() != old_outputs["practice"]
+    assert args.organizer_output.read_bytes() != old_outputs["organizer-private"]
+
+
+def test_boundary_and_accepted_set_changes_invalidate_only_required_approvals(
+    tmp_path: Path,
+) -> None:
+    args, app, first_id = _case(
+        tmp_path / "case", source_values=(0.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0)
+    )
+    candidates = _records(app.state["candidates"])
+    assert len(candidates) == 2
+    second_id = str(candidates[1]["id"])
+    _record_review(app, first_id)
+    app.act(
+        {
+            "type": "approve",
+            "candidate_id": second_id,
+            "uncertainty_disposition": "accept_event",
+            "uncertainty_reason": "Synthetic event has no camera context.",
+        }
+    )
+    app.act({"type": "signoff", "checked": True})
+    first = next(item for item in _records(app.state["candidates"]) if item["id"] == first_id)
+
+    app.act(
+        {
+            "type": "edit",
+            "candidate_id": first_id,
+            "start_ns": str(int(str(first["start_ns"])) + 10),
+            "end_ns": first["end_ns"],
+            "reason": "Synthetic boundary correction.",
+        }
+    )
+    changed, unrelated = _records(app.state["candidates"])
+    assert changed["decision"] == "pending"
+    assert changed["reviewer"] is None
+    assert unrelated["decision"] == "approved"
+    assert app.state["coverage_reviewed"] is False
+
+    app.act(
+        {
+            "type": "approve",
+            "candidate_id": first_id,
+            "uncertainty_disposition": "accept_event",
+            "uncertainty_reason": "Synthetic corrected event has no camera context.",
+        }
+    )
+    app.act({"type": "signoff", "checked": True})
+    app.act(
+        {
+            "type": "reject",
+            "candidate_id": first_id,
+            "reason": "Synthetic reviewer changed the accepted-event decision.",
+            "uncertainty_disposition": "reject_candidate",
+        }
+    )
+    first, unrelated = _records(app.state["candidates"])
+    assert first["decision"] == "rejected"
+    assert unrelated["decision"] == "approved"
+    assert app.state["coverage_reviewed"] is False
+
+
+def test_identity_corruption_and_mismatched_output_refuse_without_writes(
+    tmp_path: Path,
+) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    _record_review(app, candidate_id)
+    app.save()
+    saved_progress = args.progress.read_bytes()
+    mismatched_binding = replace(
+        app.binding, identity={**app.binding.identity, "spec_sha256": "a" * 64}
+    )
+    with pytest.raises(CivError, match="identity does not match"):
+        _read_progress(args.progress, mismatched_binding)
+    assert args.progress.read_bytes() == saved_progress
+
+    corrupted_progress = b"{not valid json\n"
+    args.progress.write_bytes(corrupted_progress)
+    with pytest.raises(CivError, match="cannot read local review progress"):
+        _read_progress(args.progress, app.binding)
+    assert args.progress.read_bytes() == corrupted_progress
+    args.progress.write_bytes(saved_progress)
+
+    reopened = _reopen(args)
+    reopened.export("practice")
+    exported_progress = args.progress.read_bytes()
+    corrupted_output = b"{}\n"
+    args.practice_output.write_bytes(corrupted_output)
+    with pytest.raises(CivError, match="digest does not match progress"):
+        _reopen(args)
+    assert args.progress.read_bytes() == exported_progress
+    assert args.practice_output.read_bytes() == corrupted_output
+
+
+def test_archive_failure_and_stale_writer_preserve_active_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    args, app, _ = _case(tmp_path / "case")
+    app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    progress_before_failure = args.progress.read_bytes()
+    state_before_failure = canonical_json(app.state)
+    real_archive = label_review_module._archive_snapshot
+
+    def fail_archive(*args: object, **kwargs: object) -> None:
+        raise CivError("synthetic archive failure")
+
+    monkeypatch.setattr(label_review_module, "_archive_snapshot", fail_archive)
+    with pytest.raises(CivError, match="synthetic archive failure"):
+        app.act({"type": "set-reviewer", "name": "Changed reviewer"})
+    assert args.progress.read_bytes() == progress_before_failure
+    assert canonical_json(app.state) == state_before_failure
+
+    monkeypatch.setattr(label_review_module, "_archive_snapshot", real_archive)
+    stale = _reopen(args)
+    app.act({"type": "set-reviewer", "name": "Primary writer"})
+    progress_after_primary_write = args.progress.read_bytes()
+    stale_state = canonical_json(stale.state)
+    with pytest.raises(CivError, match="changed since this session opened"):
+        stale.act({"type": "set-reviewer", "name": "Stale writer"})
+    assert args.progress.read_bytes() == progress_after_primary_write
+    assert canonical_json(stale.state) == stale_state
+
+
+def test_new_review_refuses_progress_created_after_its_initial_read(tmp_path: Path) -> None:
+    args, app, _ = _case(tmp_path / "case")
+    initial_state = app.state
+    _write_atomic(args.progress, f"{canonical_json(initial_state)}\n")
+    progress_after_other_writer = args.progress.read_bytes()
+    stale = ReviewApplication(
+        app.binding,
+        initial_state,
+        before_ns=app.before_ns,
+        after_ns=app.after_ns,
+        progress_digest=None,
+        progress_digest_is_current=True,
+    )
+
+    with pytest.raises(CivError, match="changed since this session opened"):
+        stale.save()
+    assert args.progress.read_bytes() == progress_after_other_writer
+
+
+def test_export_write_failure_restores_progress_and_previous_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    _record_review(app, candidate_id)
+    app.export("practice")
+    progress_before = args.progress.read_bytes()
+    output_before = args.practice_output.read_bytes()
+    state_before = canonical_json(app.state)
+    real_replace = os.replace
+    failed = False
+
+    def fail_progress_commit(source: Any, destination: Any) -> None:
+        nonlocal failed
+        source_path = Path(source)
+        destination_path = Path(destination)
+        if (
+            not failed
+            and destination_path == args.progress
+            and source_path.is_file()
+            and source_path.read_bytes() != progress_before
+        ):
+            failed = True
+            raise OSError("synthetic progress replacement failure")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(os, "replace", fail_progress_commit)
+    with pytest.raises(CivError, match="cannot replace review files"):
+        app.export("practice")
+
+    assert failed
+    assert args.progress.read_bytes() == progress_before
+    assert args.practice_output.read_bytes() == output_before
+    assert canonical_json(app.state) == state_before
+
+
+def test_unsafe_review_path_collision_refuses_without_writes(tmp_path: Path) -> None:
+    args, _, _ = _case(tmp_path / "case")
+    source_before = args.source.read_bytes()
+    args.practice_output = args.source
+    with pytest.raises(CivError, match="separate paths"):
+        _prepare_binding(args)
+    args.practice_output = args.progress.with_name(f"{args.progress.name}.lock")
+    with pytest.raises(CivError, match="lock path collides"):
+        _prepare_binding(args)
+    assert args.source.read_bytes() == source_before
+    assert not args.progress.exists()
 
 
 def test_initial_saved_progress_refreshes_context_before_gate(tmp_path: Path) -> None:
@@ -982,7 +1329,8 @@ def test_nonsealed_product_refuses_private_export_and_preserves_practice(
     assert practice == build_export_document(
         app.state, "practice", spec_name=binding.spec_name, source_bounds=binding.source_bounds
     )
-    assert args.progress.read_bytes() == saved_progress
+    progress = json.loads(args.progress.read_text(encoding="utf-8"))
+    assert progress["exports"]["practice"]["sha256"] == file_sha256(args.practice_output)
 
 
 def test_launch_guidance_does_not_create_reviewer_or_decisions(tmp_path: Path) -> None:
@@ -1130,6 +1478,88 @@ def test_private_sealed_camera_and_parent_bound_export(tmp_path: Path) -> None:
     build_label_packs([args.organizer_output], [args.signal_product_manifest], packs)
     assert audit_label_pack_set(packs / "label-pack-set.json")["valid"] is True
     assert args.progress.exists()
+
+
+@pytest.mark.parametrize("completed", [False, True])
+def test_private_camera_review_reopens_revises_and_reexports(
+    tmp_path: Path, completed: bool,
+) -> None:
+    args = _organizer_camera_case(tmp_path)
+    binding, events, _, before, after = _prepare_binding(args)
+    app = ReviewApplication(
+        binding, initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before, after_ns=after,
+    )
+    app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    app.act({
+        "type": "approve", "candidate_id": events[0].event_id,
+        "uncertainty_disposition": "clear",
+    })
+    app.save()
+    if completed:
+        app.act({"type": "signoff", "checked": True})
+        app.export("organizer-private")
+    previous_progress = args.progress.read_bytes()
+    previous_truth = args.organizer_output.read_bytes() if completed else None
+    reopened = _reopen(args)
+    reopened.save()
+    assert args.progress.read_bytes() == previous_progress
+    if previous_truth is not None:
+        assert args.organizer_output.read_bytes() == previous_truth
+    candidate = _records(reopened.state["candidates"])[0]
+    assert candidate["decision"] == "approved"
+    assert reopened.state["coverage_reviewed"] is completed
+    start_ns = int(str(candidate["start_ns"])) + 10
+    reopened.act({
+        "type": "edit", "candidate_id": events[0].event_id,
+        "start_ns": str(start_ns), "end_ns": candidate["end_ns"],
+        "reason": "Synthetic boundary revision after reopening.",
+    })
+    assert gate_review(reopened.state)
+    reopened.act({
+        "type": "approve", "candidate_id": events[0].event_id,
+        "uncertainty_disposition": "clear",
+    })
+    reopened.act({"type": "signoff", "checked": True})
+    reopened.export("organizer-private")
+    truth = json.loads(args.organizer_output.read_text())
+    assert truth["intervals"][0]["start_ns"] == start_ns
+    assert truth["intervals"][0]["source_sha256"] == binding.identity["source_parent_sha256"]
+    _archived_snapshot(args.progress, previous_progress)
+    if previous_truth is not None:
+        _archived_snapshot(args.organizer_output, previous_truth)
+    assert gate_review(_reopen(args).state) == []
+    packs = tmp_path / "revised-packs"
+    build_label_packs([args.organizer_output], [args.signal_product_manifest], packs)
+    assert audit_label_pack_set(packs / "label-pack-set.json")["valid"] is True
+
+
+def test_private_camera_authorization_change_blocks_review_write(tmp_path: Path) -> None:
+    args = _organizer_camera_case(tmp_path)
+    binding, events, _, before, after = _prepare_binding(args)
+    app = ReviewApplication(
+        binding, initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before, after_ns=after,
+    )
+    app.save()
+    progress_before = args.progress.read_bytes()
+    document = json.loads(args.organizer_camera_manifest.read_text())
+    document["authorization"]["scope"] = "revoked"
+    _write_json(args.organizer_camera_manifest, document)
+    with pytest.raises(CivError, match="camera"):
+        app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    assert args.progress.read_bytes() == progress_before
+    assert not args.organizer_output.exists()
+
+
+@pytest.mark.parametrize("target", ["progress", "organizer_output"])
+def test_private_camera_authorization_cannot_be_overwritten(tmp_path: Path, target: str) -> None:
+    args = _organizer_camera_case(tmp_path)
+    original = args.organizer_camera_manifest.read_bytes()
+    setattr(args, target, args.organizer_camera_manifest)
+    with pytest.raises(CivError, match="separate paths"):
+        _prepare_binding(args)
+    assert args.organizer_camera_manifest.read_bytes() == original
 
 
 @pytest.mark.parametrize(

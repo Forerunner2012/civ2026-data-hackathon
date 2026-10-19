@@ -1,8 +1,8 @@
 # Local organizer label review
 
-civ labels review opens a loopback-only browser review for one stable civ detect run. It reads the
-source, EventSpec, event records, and run manifest as a bound set. It can show EventSpec signal
-samples and camera frames only when an approved camera-context manifest matches the same source.
+## Launch or resume a review
+
+Run this command to start a review. Run the same command with the same bound inputs and paths to reopen a partial or completed review; no additional resume flag is required. The review reads the source, EventSpec, event records, and run manifest as a bound set, and it shows camera frames only when an approved camera-context manifest matches the same source.
 
 ```sh
 uv run civ labels review \
@@ -21,18 +21,17 @@ uv run civ labels review \
 The camera-context option is optional. Keep progress and outputs in organizer-controlled local
 storage outside participant bundles. Press Ctrl+C in the terminal to stop the local server.
 
-Review every detected proposal, adjust exact integer nanosecond boundaries, reject non-events, and
-add missed events. Adjustments, rejections, and scoring data-gap exclusions require reasons. A
-missing signal or camera context is shown explicitly and needs a human uncertainty disposition.
-Only an explicitly selected scoring data gap can be excluded; other exclusion kinds fail. Any
-interval edit or missed-event addition clears the full-recording signoff.
+Review every detected proposal, adjust exact integer nanosecond boundaries, reject non-events, and add missed events. Adjustments, rejections, and scoring data-gap exclusions require reasons. A missing signal or camera context is shown explicitly and needs a human uncertainty disposition. Only an explicitly selected scoring data gap can be excluded; other exclusion kinds fail. A boundary edit clears approval for that interval and clears completeness signoff. Adding a missed event or changing the set of approved events also clears completeness signoff.
 
-Progress autosaves locally and can be reloaded. A progress file is reusable only with the same
-source, EventSpec, referenced resources, detected events, run manifest, and camera-context
-identities. On initial load, reload, each action (including edits and undo), gate checks, and
-export, interval context is refreshed from evidence bound to the source, EventSpec, and approved
-camera context; stored context fields cannot authorize a review decision. Label packs do not record
-an EventSpec hash, so they cannot safely seed a review on their own.
+Progress autosaves locally and can be reloaded. Resume a partial or completed review by running the same `civ labels review` command with the same source, EventSpec, events, run manifest, dataset, source ID, progress path, and output paths. The loader checks the source, EventSpec, referenced resources, detected events, run manifest, and camera-context identities before it accepts saved progress. It preserves decisions, approvals, audit history, checked windows, and completeness signoff when the saved review matches those inputs. Existing exports do not block a compatible review from opening. On initial load, reload, each action, gate checks, and export, the review refreshes interval context from evidence bound to the source, EventSpec, and approved camera context; saved context fields cannot authorize a decision. Label packs do not record an EventSpec hash, so they cannot seed a review on their own.
+
+The active progress file stays at the configured path. Each replacement archives the previous bytes in a sibling directory named `<progress filename>.revisions`. For `LOCAL/review-progress.json`, a snapshot lives at `LOCAL/review-progress.json.revisions/revision-<8-digit revision>-<sha256>/content`, with its revision and SHA-256 in `metadata.json`. A progress snapshot contains the saved decisions, approvals, signoff, and full audit. Each configured export uses the same layout beside its active file, such as `LOCAL/practice-label-pack.json.revisions/`. A new export revision replaces the active export only after all required decisions and the final missed-event signoff pass the export gate. Opening, inspecting, or saving unchanged progress does not replace active files.
+
+After a boundary edit, review the changed interval again. Keep unrelated approvals. After adding an event or changing which events are approved, review the whole source again and record a new completeness signoff. A missed event stays pending until a reviewer approves, rejects, or marks it as a supported scoring data gap. Export only after the review gate passes.
+
+The writer rejects incompatible or corrupted progress, output files whose saved digest does not match, output paths that differ from the saved paths, unsafe path collisions, and stale concurrent writers before replacing an active file. If two review sessions use the same progress file, reload the saved review before writing from the older session. Archive and replacement failures leave the previous active files in place.
+
+An abnormal exit can leave `<progress filename>.lock` behind. Confirm that no review process is active before removing a stale lock and reopening the review.
 
 Practice and organizer-private exports are separate buttons. Practice export requires explicit
 per-interval selection and contains only selected intervals in the existing label-pack contract.
@@ -114,13 +113,7 @@ names independent EventSpecs and run directories; relative paths resolve beside 
 {"profiles":[{"id":"alternative-v1","spec":"specs/alternative-v1.yaml","run":"runs/alternative-v1"}]}
 ```
 
-Create each variant as a new EventSpec file, validate it with the existing parser, and run civ detect
-into a new directory. Do not reuse an existing output directory: detection can overwrite files.
-Keep the baseline, old runs and bound progress unchanged. For a completed review, copy its progress
-into a new revision and configure fresh output paths before making new human decisions. Inspection
-alone leaves decisions unchanged, but the existing actions save to the configured progress file.
-This comparison feature does not scan,
-edit profiles, seed approvals or combine events. It refuses sealed or unverified product membership.
+Create each variant as a new EventSpec file, validate it with the existing parser, and run civ detect into a new directory. Do not reuse an existing output directory because detection can overwrite files. Keep the baseline, old runs, and bound progress unchanged while you evaluate a separate profile. Use that profile's own EventSpec, run, progress, and output paths. To refine the baseline review, rerun its original command with the existing paths; inspection and saving unchanged state preserve its decisions. The comparison feature does not scan or edit profiles, seed approvals, or combine events. It refuses sealed or unverified product membership.
 
 The comparison panel shows the declared condition, parsed timing values in nanoseconds, exact
 EventSpec text and bound spec/run identities. Alternative proposals occupy a separate timeline row.
