@@ -408,6 +408,8 @@ def test_summary_accounts_for_every_cohort_entry_exactly_once(cohort: Cohort) ->
     results = _results(cohort.output)
 
     assert summary["entries"] == 30
+    assert summary["official_score"] is False
+    assert all(record["official_score"] is False for record in results.values())
     assert len(results) == 30
     assert sum(summary["counts"].values()) == 30
     assert summary["counts"] == {"complete": 20, "incomplete": 10}

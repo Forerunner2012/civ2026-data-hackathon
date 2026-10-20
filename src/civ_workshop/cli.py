@@ -7,13 +7,16 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
 
+from civ_workshop.artifacts import read_json_file
 from civ_workshop.batch import run_batch
 from civ_workshop.errors import CivError
 from civ_workshop.intake import IntakeLedger, import_form_response
+from civ_workshop.organizer.decision_records import append_decision
 from civ_workshop.organizer.label_review import (
     add_label_review_command,
     dispatch_label_review_command,
 )
+from civ_workshop.organizer.scoring_readiness import check_readiness
 from civ_workshop.participant_commands import add_participant_commands, dispatch_participant_command
 from civ_workshop.tally import import_tally_csv
 
@@ -24,6 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_participant_commands(commands)
     add_label_review_command(commands)
+    decision_parser = commands.add_parser(
+        "record-decision", help="append an organizer decision with existing artifact evidence"
+    )
+    decision_parser.add_argument("record", type=Path, help="JSON record")
+    decision_parser.add_argument("--log", type=Path, required=True)
 
     form_parser = commands.add_parser(
         "intake-form", help="import one exported online form response"
@@ -53,6 +61,15 @@ def build_parser() -> argparse.ArgumentParser:
     batch_parser.add_argument("--ledger", type=Path, required=True)
     batch_parser.add_argument("--labels", type=Path, required=True)
     batch_parser.add_argument("--output", type=Path, required=True)
+    batch_parser.add_argument("--official", action="store_true", help="require official readiness")
+    readiness_parser = commands.add_parser(
+        "score-readiness", help="report unresolved official scoring prerequisites without writes"
+    )
+    readiness_parser.add_argument("--ledger", type=Path, required=True)
+    for command_parser in (batch_parser, readiness_parser):
+        command_parser.add_argument("--plan", type=Path)
+        command_parser.add_argument("--preflight", type=Path)
+        command_parser.add_argument("--review-status", type=Path)
     return parser
 
 
@@ -63,7 +80,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             return
         if dispatch_participant_command(args):
             return
-        if args.command == "intake-form":
+        if args.command == "record-decision":
+            append_decision(args.log, read_json_file(args.record, "decision record"))
+        elif args.command == "intake-form":
             receipt = import_form_response(args.response, args.ledger)
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
         elif args.command == "intake-tally":
@@ -78,8 +97,19 @@ def main(argv: Sequence[str] | None = None) -> None:
                 delivery_id=args.delivery_id,
             )
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
+        elif args.command == "score-readiness":
+            readiness = check_readiness(
+                args.ledger, plan_path=args.plan, preflight_path=args.preflight,
+                review_status_path=args.review_status,
+            )
+            print(json.dumps(readiness, sort_keys=True, separators=(",", ":")))
+            raise SystemExit(2)
         elif args.command == "score-batch":
-            batch_summary = run_batch(args.ledger, args.labels, args.output)
+            batch_summary = run_batch(
+                args.ledger, args.labels, args.output, official=args.official,
+                plan_path=args.plan, preflight_path=args.preflight,
+                review_status_path=args.review_status,
+            )
             print(json.dumps(batch_summary, sort_keys=True, separators=(",", ":")))
     except CivError as error:
         print(f"civ: {error}", file=sys.stderr)

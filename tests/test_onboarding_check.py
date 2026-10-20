@@ -5,6 +5,7 @@ import subprocess
 import sys
 from hashlib import sha256
 from pathlib import Path
+from typing import cast
 
 from tests.helpers import MicroCase, create_micro_case
 
@@ -41,12 +42,14 @@ def run_onboarding_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
 
 
 def summary(result: subprocess.CompletedProcess[str]) -> dict[str, object]:
-    return json.loads(result.stdout)
+    return cast(dict[str, object], json.loads(result.stdout))
 
 
 def input_hashes(case: MicroCase) -> tuple[str, str, str]:
-    return tuple(
-        sha256(path.read_bytes()).hexdigest() for path in (case.bag, case.spec, case.labels)
+    return (
+        sha256(case.bag.read_bytes()).hexdigest(),
+        sha256(case.spec.read_bytes()).hexdigest(),
+        sha256(case.labels.read_bytes()).hexdigest(),
     )
 
 
@@ -99,8 +102,9 @@ def test_onboarding_check_uses_score_consumer_to_reject_mismatched_pack(
     assert result.returncode != 0
     assert report["source_binding"] == "mismatch"
     assert report["detect"] == {"accepted": True}
-    assert report["score"]["accepted"] is False
-    assert report["score"]["diagnostic"] == (
+    score = cast(dict[str, object], report["score"])
+    assert score["accepted"] is False
+    assert score["diagnostic"] == (
         "label pack source_sha256 does not match submission source sha256"
     )
 

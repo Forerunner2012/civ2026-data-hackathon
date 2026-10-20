@@ -5,7 +5,7 @@ import shutil
 import sqlite3
 import zipfile
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -287,7 +287,31 @@ class IntakeLedger:
             if connection is not None:
                 connection.close()
 
-    def receipts(self) -> list[IntakeReceipt]:
+    def receipts(self, *, read_only: bool = False) -> list[IntakeReceipt]:
+        if read_only:
+            # Scoring must neither initialize nor migrate an intake ledger.
+            # mode=ro alone can still create WAL shared-memory sidecars. Require
+            # a closed snapshot, then make SQLite treat every source byte as immutable.
+            wal_path = self.database_path.with_name(self.database_path.name + "-wal")
+            if wal_path.exists():
+                raise CivError("read-only scoring requires a closed ledger snapshot without a WAL")
+            try:
+                with closing(sqlite3.connect(
+                    self.database_path.as_uri() + "?mode=ro&immutable=1", uri=True
+                )) as connection:
+                    connection.row_factory = sqlite3.Row
+                    columns = {
+                        row["name"] for row in connection.execute("PRAGMA table_info(receipts)")
+                    }
+                    source = "source_sha256" if "source_sha256" in columns else "NULL"
+                    rows = connection.execute(
+                        "SELECT delivery_id, identity, source, received_at_original, "
+                        "received_at_utc, bundle_sha256, "
+                        f"{source} AS source_sha256, status FROM receipts ORDER BY sequence"
+                    ).fetchall()
+                return [_receipt_from_row(row) for row in rows]
+            except sqlite3.Error as error:
+                raise CivError(f"cannot read existing intake ledger: {error}") from error
         with self._connection() as connection:
             rows = connection.execute(
                 """

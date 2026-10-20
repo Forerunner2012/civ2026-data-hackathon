@@ -15,9 +15,9 @@ Use the [issue-tracker instructions](docs/agents/issue-tracker.md) to describe t
 From the repository root, synchronize the existing Python project and run its checks:
 
 ```powershell
-uv sync
+uv sync --locked
 uv run ruff check src tests
-uv run mypy src
+uv run mypy src tests
 uv run pytest
 ```
 
@@ -28,6 +28,11 @@ of commits.
 For website changes, work in `handoff-site/` and follow the
 [site development guide](handoff-site/README.md) for `npm ci`, `npm run test` and `npm run lint`.
 Participant platform/install qualification is separate from this contributor project setup.
+
+GitHub Actions runs these checks for pull requests and pushes to `develop` and `main`.
+Tests are included in strict mypy checking. The website job uses `npm ci` and runs the
+configured tests and lint checks, then runs the navigation check with the runner's installed
+Chrome browser. These contributor checks do not establish release qualification.
 
 ## Optional onboarding check
 

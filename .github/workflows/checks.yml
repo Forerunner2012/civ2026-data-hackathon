@@ -1,0 +1,44 @@
+name: Contributor checks
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: '0.11.2'
+          python-version: '3.12.13'
+      - run: uv sync --locked
+      - run: uv run --locked ruff check src tests
+      - run: uv run --locked mypy src tests
+      - run: uv run --locked pytest
+  website:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: handoff-site
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.14.1'
+          cache: npm
+          cache-dependency-path: handoff-site/package-lock.json
+      - run: npm ci
+      # npm test builds internal and public audiences and verifies the static export.
+      - run: npm test
+      - run: npm run lint
+      - run: CIV_BROWSER_EXECUTABLE="$(command -v google-chrome)" npm run test:navigation

@@ -62,6 +62,8 @@ qualified inputs, machine checks and release approval.
    [scoring reference](../reference/scoring.md). Preserve authoritative intake, exact source
    bindings, matching semantics and the agreed rubric. Keep complete sealed truth and organizer
    audit in organizer-controlled storage. Development scores do not establish held-out results.
+   Run the [scoring readiness check](scoring-readiness.md) to report unresolved session gates.
+   Batch outputs are explicitly nonofficial; a complete diagnostic does not establish approval.
 2. Apply the recorded jury and feedback process from the
    [organizer operations reference](../phase4/organizer-ops-jury-acceptance.md). Retain the local
    operational audit, with only the approved participant-facing results released.
