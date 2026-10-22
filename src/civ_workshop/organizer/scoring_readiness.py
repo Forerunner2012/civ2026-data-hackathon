@@ -5,7 +5,7 @@ These checks expose prerequisites; they cannot create organizer authority.
 
 from __future__ import annotations
 
-import math
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -144,6 +144,7 @@ def _check_cohort_readiness(
 
     blockers: list[str] = []
     evidence: dict[str, object] = {}
+    artifact_hashes: dict[str, str | None] = {}
     receipts: list[IntakeReceipt] = []
     ledger_sha: str | None = None
     try:
@@ -193,6 +194,8 @@ def _check_cohort_readiness(
                     "ledger_designation",
                     "runtime_rehearsal",
                     "reference_reviews",
+                    # Read older records, but never use these reviewer-entered points to
+                    # complete the machine-scored Evidence or Reproducibility components.
                     "human_component_scores",
                     "official_blockers",
                 },
@@ -206,14 +209,6 @@ def _check_cohort_readiness(
                 blockers.append(
                     "preflight: input_fingerprint does not match current scoring inputs"
                 )
-            if plan is not None:
-                try:
-                    evidence["human_component_scores"] = _human_component_scores(
-                        preflight.get("human_component_scores"),
-                        _require_string_list(plan["participants"]),
-                    )
-                except CivError as error:
-                    blockers.append(f"human component scores: {error}")
             designation = require_mapping(preflight.get("ledger_designation"), "ledger designation")
             _closed_fields(
                 designation,
@@ -233,6 +228,8 @@ def _check_cohort_readiness(
                     preflight_path.parent,
                     "runtime rehearsal",
                     blockers,
+                    observed_artifacts=artifact_hashes,
+                    artifact_key="runtime_rehearsal",
                 )
                 if runtime_record is not None:
                     _closed_fields(
@@ -308,6 +305,8 @@ def _check_cohort_readiness(
                             preflight_path.parent,
                             f"reference review {key[0]}/{key[1]}",
                             blockers,
+                            observed_artifacts=artifact_hashes,
+                            artifact_key=f"reference_review:{key[0]}/{key[1]}",
                         )
                         if review_artifact is None:
                             continue
@@ -413,6 +412,11 @@ def _check_cohort_readiness(
         except CivError as error:
             blockers.append(f"review status: {error}")
 
+    evidence["referenced_artifact_sha256"] = dict(sorted(artifact_hashes.items()))
+    if approval_path is not None:
+        with suppress(CivError):
+            evidence["approval_sha256"] = file_sha256(approval_path)
+
     review_status_digest = evidence.get("review_status_sha256")
     if not isinstance(review_status_digest, str):
         review_status_digest = None
@@ -441,56 +445,6 @@ def _closed_fields(value: dict[str, Any], allowed: set[str], context: str) -> No
         raise CivError(f"{context} has unknown field '{unknown[0]}'")
 
 
-def _require_string_list(value: object) -> list[str]:
-    if not isinstance(value, list) or not value or any(
-        not isinstance(item, str) or not item for item in value
-    ):
-        raise CivError("evaluation plan participants must be a non-empty string list")
-    return [item for item in value if isinstance(item, str)]
-
-
-def _human_component_scores(
-    value: object, participants: list[str]
-) -> dict[str, dict[str, dict[str, object]]]:
-    rows = require_mapping(value, "human component scores")
-    if set(rows) != set(participants):
-        raise CivError("records must cover every registered participant exactly once")
-    normalized: dict[str, dict[str, dict[str, object]]] = {}
-    for identity in participants:
-        participant = require_mapping(rows[identity], f"scores for {identity}")
-        _closed_fields(participant, {"evidence", "reproducibility"}, f"scores for {identity}")
-        normalized[identity] = {}
-        for component in ("evidence", "reproducibility"):
-            score = require_mapping(participant.get(component), f"{identity} {component} score")
-            _closed_fields(
-                score,
-                {"points", "reviewer", "reviewed_at", "notation"},
-                f"{identity} {component} score",
-            )
-            points = score.get("points")
-            if isinstance(points, bool) or not isinstance(points, (int, float)):
-                raise CivError(f"{identity} {component} points must be between 0 and 15")
-            try:
-                finite_points = math.isfinite(float(points))
-            except OverflowError:
-                finite_points = False
-            if not finite_points or not 0 <= points <= 15:
-                raise CivError(f"{identity} {component} points must be between 0 and 15")
-            normalized[identity][component] = {
-                "points": points,
-                "reviewer": require_string(
-                    score.get("reviewer"), f"{identity} {component} reviewer"
-                ),
-                "reviewed_at": _timestamp(
-                    score.get("reviewed_at"), f"{identity} {component} reviewed_at"
-                ),
-                "notation": require_string(
-                    score.get("notation"), f"{identity} {component} notation"
-                ),
-            }
-    return normalized
-
-
 def _timestamp(value: object, context: str) -> str:
     text = require_string(value, context)
     try:
@@ -507,7 +461,11 @@ def _bound_artifact(
     base: Path,
     context: str,
     blockers: list[str],
+    *,
+    observed_artifacts: dict[str, str | None],
+    artifact_key: str,
 ) -> dict[str, Any] | None:
+    observed_artifacts[artifact_key] = None
     try:
         reference = require_mapping(value, f"{context} artifact reference")
         _closed_fields(reference, {"path", "sha256"}, f"{context} artifact reference")
@@ -515,7 +473,9 @@ def _bound_artifact(
         path = Path(path_text)
         path = path.resolve() if path.is_absolute() else (base / path).resolve()
         expected_hash = require_string(reference.get("sha256"), f"{context} artifact sha256")
-        if file_sha256(path) != expected_hash:
+        actual_hash = file_sha256(path)
+        observed_artifacts[artifact_key] = actual_hash
+        if actual_hash != expected_hash:
             raise CivError("artifact hash does not match")
         return read_json_file(path, context)
     except CivError as error:

@@ -867,18 +867,19 @@ def test_readiness_checks_hashed_runtime_and_reference_reviews(
         approval_path=approval_path,
     )
 
-    assert report["ready"] is True
+    assert report["ready"] is False
     blockers = str(report["blockers"])
     assert "approval:" not in blockers
     assert "preflight:" not in blockers
     assert "references:" not in blockers
     assert "review status:" not in blockers
+    assert "Evidence (15 machine points)" in blockers
+    assert "Reproducibility (15 machine points)" in blockers
 
     summary = run_batch(
         ledger.root,
         None,
         tmp_path / "approved-results",
-        official=True,
         plan_path=plan,
         preflight_path=preflight_path,
         review_status_path=review_path,
@@ -886,45 +887,71 @@ def test_readiness_checks_hashed_runtime_and_reference_reviews(
     )
     technical = cast(dict[str, Any], summary["technical_scores"])
     participant = cast(dict[str, Any], technical["participants"])["team-a"]
-    assert participant["status"] == "complete"
-    assert participant["evidence"]["points"] == 12.5
-    assert participant["reproducibility"]["points"] == 13.0
+    assert summary["official_score"] is False
+    assert participant["status"] == "pending_machine_components"
+    assert participant["evidence_points"] is None
+    assert participant["reproducibility_points"] is None
+    assert participant["pending_components"] == ["evidence", "reproducibility"]
+    assert participant["technical_total_points"] is None
     detection = cast(dict[str, Any], summary["computed_detection"])["participants"]["team-a"]
-    assert participant["technical_total_points"] == (
-        detection["total_detection_points"] + 25.5
+    assert participant["detection_points"] == detection["total_detection_points"]
+
+    # Ignore the unresolved machine calculations only in this synthetic test so
+    # approval revocation is tested independently from the scoring-policy blocker.
+    monkeypatch.setattr("civ_workshop.cohort_scoring.policy_blockers", lambda _plan: [])
+    approved_readiness = check_readiness(
+        ledger.root,
+        plan_path=plan,
+        preflight_path=preflight_path,
+        review_status_path=review_path,
+        approval_path=approval_path,
     )
+    assert approved_readiness["ready"] is True
+    output_root = tmp_path / "approved-results"
+    committed_before = {
+        path.relative_to(output_root).as_posix(): file_sha256(path)
+        for path in output_root.rglob("*")
+        if path.is_file()
+    }
+    original_approval = approval_path.read_text(encoding="utf-8")
 
-    original_preflight = preflight_path.read_text(encoding="utf-8")
-
-    def replay_then_change_preflight(
+    def replay_then_revoke_approval(
         *args: Any, **kwargs: Any
     ) -> tuple[bool, str | None, int]:
         result = _run_replay(*args, **kwargs)
-        preflight_path.write_text(original_preflight + "\n", encoding="utf-8")
+        approval_path.write_text(
+            json.dumps({"contract": "REVOKED-SYNTHETIC-APPROVAL"}), encoding="utf-8"
+        )
         return result
 
     monkeypatch.setattr(
-        "civ_workshop.cohort_scoring._run_replay", replay_then_change_preflight
+        "civ_workshop.cohort_scoring._run_replay", replay_then_revoke_approval
     )
-    changed_output = tmp_path / "changed-human-scores"
+    from civ_workshop.cohort_scoring import run_cohort_batch
+
     try:
-        with pytest.raises(CivError, match="changed during replay"):
-            run_batch(
+        with pytest.raises(CivError, match="readiness or approval chain changed"):
+            run_cohort_batch(
                 ledger.root,
-                None,
-                changed_output,
+                plan,
+                output_root,
                 official=True,
-                plan_path=plan,
+                readiness=approved_readiness,
                 preflight_path=preflight_path,
                 review_status_path=review_path,
                 approval_path=approval_path,
             )
-        assert not changed_output.exists()
+        committed_after = {
+            path.relative_to(output_root).as_posix(): file_sha256(path)
+            for path in output_root.rglob("*")
+            if path.is_file()
+        }
+        assert committed_after == committed_before
     finally:
-        preflight_path.write_text(original_preflight, encoding="utf-8")
+        approval_path.write_text(original_approval, encoding="utf-8")
 
 
-def test_readiness_requires_human_component_scores(tmp_path: Path) -> None:
+def test_legacy_human_scores_do_not_complete_machine_components(tmp_path: Path) -> None:
     case = create_micro_case(tmp_path / "sealed-product")
     plan = _plan_for_case(tmp_path, case)
     ledger = tmp_path / "ledger"
@@ -948,10 +975,10 @@ def test_readiness_requires_human_component_scores(tmp_path: Path) -> None:
     )
 
     assert report["ready"] is False
-    assert any(
-        "human component scores" in str(blocker)
-        for blocker in cast(list[object], report["blockers"])
-    )
+    blockers = str(report["blockers"])
+    assert "human component scores" not in blockers
+    assert "Evidence (15 machine points)" in blockers
+    assert "Reproducibility (15 machine points)" in blockers
 
 
 def test_official_cohort_scoring_writes_nothing_when_readiness_is_blocked(

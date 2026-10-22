@@ -314,6 +314,7 @@ def run_batch(
                 official=official,
                 approval_path=approval_path,
                 preflight_path=preflight_path,
+                review_status_path=review_status_path,
                 readiness=readiness,
             )
     if official:

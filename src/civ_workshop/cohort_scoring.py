@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
+from copy import deepcopy
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal
 from pathlib import Path
@@ -746,7 +747,15 @@ def input_fingerprint(
 def policy_blockers(plan: dict[str, Any]) -> list[str]:
     policy = plan.get("scoring_policy")
     if not isinstance(policy, dict):
-        return ["scoring policy: explicit aggregation and scoring decisions are required"]
+        return [
+            "scoring policy: explicit aggregation and scoring decisions are required",
+            "scoring policy: Evidence (15 machine points) lacks an approved deterministic "
+            "input-artifact list, criteria, and points mapping",
+            "scoring policy: Reproducibility (15 machine points) lacks approved deterministic "
+            "replay-artifact criteria and a points mapping",
+            "scoring policy: missing or invalid Evidence and Reproducibility inputs have no "
+            "approved outcome rule",
+        ]
     required = {
         "temporal_iou_threshold",
         "matching",
@@ -759,11 +768,19 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
         "rounding",
         "receipt_timestamp_ties",
         "detection_points",
-        "evidence_policy_id",
-        "reproducibility_policy_id",
     }
     missing = sorted(required - set(policy))
     blockers = [f"scoring policy: missing decision '{field}'" for field in missing]
+    blockers.extend(
+        [
+            "scoring policy: Evidence (15 machine points) lacks an approved deterministic "
+            "input-artifact list, criteria, and points mapping",
+            "scoring policy: Reproducibility (15 machine points) lacks approved deterministic "
+            "replay-artifact criteria and a points mapping",
+            "scoring policy: missing or invalid Evidence and Reproducibility inputs have no "
+            "approved outcome rule",
+        ]
+    )
     if policy.get("temporal_iou_threshold") != 0.5:
         blockers.append("scoring policy: temporal_iou_threshold must remain 0.5")
     if policy.get("matching") != "one_to_one_best":
@@ -804,9 +821,6 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
             or not 0 <= rounding["decimal_places"] <= 12
         ):
             blockers.append("scoring policy: rounding decimal_places must be from 0 to 12")
-    for name in ("evidence_policy_id", "reproducibility_policy_id"):
-        if not isinstance(policy.get(name), str) or not policy[name].strip():
-            blockers.append(f"scoring policy: {name} must name an approved human scoring rubric")
     if policy.get("detection_points") is not None:
         points = policy["detection_points"]
         if not isinstance(points, dict):
@@ -1212,8 +1226,20 @@ def run_cohort_batch(
     official: bool = False,
     approval_path: Path | None = None,
     preflight_path: Path | None = None,
+    review_status_path: Path | None = None,
     readiness: dict[str, object] | None = None,
 ) -> dict[str, object]:
+    from civ_workshop.organizer.scoring_readiness import check_readiness
+
+    if readiness is None:
+        readiness = check_readiness(
+            ledger_root,
+            plan_path=plan_path,
+            preflight_path=preflight_path,
+            review_status_path=review_status_path,
+            approval_path=approval_path,
+        )
+    initial_readiness = deepcopy(readiness)
     plan = load_evaluation_plan(plan_path)
     tracks = cast(list[dict[str, Any]], plan["tracks"])
     ledger = IntakeLedger(ledger_root)
@@ -1242,11 +1268,6 @@ def run_cohort_batch(
         if isinstance(readiness_evidence, dict)
         else None
     )
-    human_component_scores = (
-        readiness_evidence.get("human_component_scores")
-        if isinstance(readiness_evidence, dict)
-        else None
-    )
     if isinstance(preflight_sha, str) and (
         preflight_path is None or file_sha256(preflight_path) != preflight_sha
     ):
@@ -1256,6 +1277,17 @@ def run_cohort_batch(
         if isinstance(readiness_evidence, dict)
         else None
     )
+    approval_sha = (
+        readiness_evidence.get("approval_sha256")
+        if isinstance(readiness_evidence, dict)
+        else None
+    )
+    if isinstance(approval_sha, str) and (
+        approval_path is None or file_sha256(approval_path) != approval_sha
+    ):
+        raise CivError(
+            "computation approval changed after readiness; rerun readiness before scoring"
+        )
     blockers += check_computation_approval(
         approval_path,
         plan_path=plan_path,
@@ -1474,48 +1506,21 @@ def run_cohort_batch(
     computed_detection, aggregation_blockers = _aggregate_detection(result_records, plan)
     blockers.extend(aggregation_blockers)
     technical_scores: dict[str, dict[str, object]] = {}
-    score_rows = (
-        cast(dict[str, dict[str, dict[str, object]]], human_component_scores)
-        if isinstance(human_component_scores, dict)
-        else {}
-    )
     detection_rows = (
         cast(dict[str, Any], computed_detection["participants"])
         if isinstance(computed_detection, dict)
         else {}
     )
-    rounding_policy = (
-        scoring_policy.get("rounding") if isinstance(scoring_policy, dict) else None
-    )
     for identity in participants:
-        human_scores = score_rows.get(identity)
         detection_points = detection_rows.get(identity, {}).get("total_detection_points")
-        components: dict[str, object] = {
+        technical_scores[identity] = {
             "detection_points": detection_points,
-            "evidence": human_scores.get("evidence") if human_scores else None,
-            "reproducibility": human_scores.get("reproducibility") if human_scores else None,
+            "evidence_points": None,
+            "reproducibility_points": None,
             "technical_total_points": None,
+            "pending_components": ["evidence", "reproducibility"],
+            "status": "pending_machine_components",
         }
-        if (
-            isinstance(detection_points, (int, float))
-            and not isinstance(detection_points, bool)
-            and human_scores is not None
-            and isinstance(rounding_policy, dict)
-        ):
-            evidence_points = cast(dict[str, Any], human_scores["evidence"])["points"]
-            reproducibility_points = cast(dict[str, Any], human_scores["reproducibility"])["points"]
-            components["technical_total_points"] = _rounded(
-                float(Decimal(str(detection_points))
-                      + Decimal(str(evidence_points))
-                      + Decimal(str(reproducibility_points))),
-                rounding_policy,
-            )
-            components["status"] = "complete"
-        elif human_scores is None:
-            components["status"] = "pending_human_notation"
-        else:
-            components["status"] = "pending_detection_score"
-        technical_scores[identity] = components
     results_path = staging_root / "results.jsonl"
     results_path.write_text(
         "".join(f"{canonical_json(record)}\n" for record in result_records),
@@ -1547,15 +1552,8 @@ def run_cohort_batch(
                 )
                 else None
             ),
-            "status": "complete"
-            if technical_scores
-            and all(row.get("status") == "complete" for row in technical_scores.values())
-            else "human_notations_pending"
-            if any(
-                row.get("status") == "pending_human_notation"
-                for row in technical_scores.values()
-            )
-            else "detection_incomplete",
+            "status": "pending_machine_components",
+            "pending_components": ["evidence", "reproducibility"],
             "participants": technical_scores,
         },
         "counts": dict(sorted(counts.items())),
@@ -1578,17 +1576,45 @@ def run_cohort_batch(
         f"{canonical_json(summary)}\n", encoding="utf-8", newline="\n"
     )
     final_digest, final_diagnostics = input_fingerprint(ledger_root, plan_path)
-    if (
-        final_digest != input_digest
-        or final_diagnostics != fingerprint_diagnostics
-        or (
-            isinstance(preflight_sha, str)
-            and (preflight_path is None or file_sha256(preflight_path) != preflight_sha)
+    final_readiness = check_readiness(
+        ledger_root,
+        plan_path=plan_path,
+        preflight_path=preflight_path,
+        review_status_path=review_status_path,
+        approval_path=approval_path,
+    )
+    changed_reasons: list[str] = []
+    if final_digest != input_digest or final_diagnostics != fingerprint_diagnostics:
+        changed_reasons.append("scoring input fingerprint changed")
+    initial_evidence = initial_readiness.get("evidence")
+    final_evidence = final_readiness.get("evidence")
+    if initial_evidence != final_evidence:
+        before = initial_evidence if isinstance(initial_evidence, dict) else {}
+        after = final_evidence if isinstance(final_evidence, dict) else {}
+        changed_keys = sorted(
+            key for key in set(before) | set(after) if before.get(key) != after.get(key)
         )
+        changed_reasons.append(
+            "readiness evidence changed: " + ", ".join(changed_keys or ["unknown identity"])
+        )
+    if (
+        initial_readiness.get("ready") != final_readiness.get("ready")
+        or initial_readiness.get("blockers") != final_readiness.get("blockers")
     ):
+        final_blockers = final_readiness.get("blockers")
+        blocker_text = (
+            "; ".join(str(item) for item in final_blockers)
+            if isinstance(final_blockers, list)
+            else "readiness result changed"
+        )
+        changed_reasons.append(f"readiness or approval chain changed: {blocker_text}")
+    if initial_readiness.get("ready") is True and final_readiness.get("ready") is not True:
+        changed_reasons.append("the previously valid readiness is no longer valid")
+    if changed_reasons:
         staging_context.cleanup()
         raise CivError(
-            "scoring inputs changed during replay; no cohort scoring outputs were committed"
+            "cohort readiness changed during replay; no cohort scoring outputs were committed: "
+            + "; ".join(changed_reasons)
         )
     _publish_cohort_outputs(staging_root, output_root, artifact_namespace)
     staging_context.cleanup()
