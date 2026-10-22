@@ -15,6 +15,7 @@ from civ_workshop.tally import (
     MAX_TALLY_CSV_BYTES,
     MAX_TALLY_CSV_ROWS,
     TALLY_HEADERS,
+    TALLY_HEADERS_WITH_TRACK,
     import_tally_csv,
 )
 from tests.helpers import MicroCase, create_micro_case, prepare_scored_submission
@@ -37,9 +38,11 @@ def _bundle(
     return working / "submission.zip"
 
 
-def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:
+def _write_csv(
+    path: Path, rows: list[dict[str, str]], headers: tuple[str, ...] = TALLY_HEADERS
+) -> None:
     with path.open("w", encoding="utf-8-sig", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=TALLY_HEADERS)
+        writer = csv.DictWriter(stream, fieldnames=headers)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -99,6 +102,36 @@ def test_tally_csv_imports_bom_rows_and_normalizes_naive_utc(
         IntakeLedger(tmp_path / "ledger").scorer_input("team-001").read_bytes()
         == bundle.read_bytes()
     )
+
+
+def test_tally_csv_can_record_a_track_specific_delivery(
+    tmp_path: Path, micro_case: MicroCase
+) -> None:
+    bundle = _bundle(micro_case, tmp_path)
+    bundle_hash = sha256(bundle.read_bytes()).hexdigest()
+    row = _row(
+        "track-delivery",
+        "team-track",
+        "2026-09-03 03:00:00",
+        bundle_hash,
+        "https://storage.tally.so/uploads/track",
+    )
+    row["Track ID"] = "reims-cave"
+    csv_path = tmp_path / "track-tally.csv"
+    _write_csv(csv_path, [row], TALLY_HEADERS_WITH_TRACK)
+
+    def download(_url: str, destination: Path) -> None:
+        destination.write_bytes(bundle.read_bytes())
+
+    summary = import_tally_csv(
+        csv_path,
+        tmp_path / "ledger",
+        downloader=download,
+    )
+
+    assert summary["counts"]["imported"] == 1
+    assert summary["outcomes"][0]["receipt"]["track_id"] == "reims-cave"
+    assert IntakeLedger(tmp_path / "ledger").receipts()[0].track_id == "reims-cave"
 
 
 def test_tally_rows_are_isolated_and_last_on_time_receipt_wins(

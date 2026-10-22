@@ -283,16 +283,42 @@ def _write_json_lines(path: Path, records: list[dict[str, object]]) -> None:
 
 
 def run_batch(
-    ledger_root: Path, labels_root: Path, output_root: Path,
-    *, official: bool = False, plan_path: Path | None = None,
-    preflight_path: Path | None = None, review_status_path: Path | None = None,
+    ledger_root: Path,
+    labels_root: Path | None,
+    output_root: Path,
+    *,
+    official: bool = False,
+    plan_path: Path | None = None,
+    preflight_path: Path | None = None,
+    review_status_path: Path | None = None,
+    approval_path: Path | None = None,
 ) -> dict[str, object]:
     readiness = check_readiness(
-        ledger_root, plan_path=plan_path, preflight_path=preflight_path,
+        ledger_root,
+        plan_path=plan_path,
+        preflight_path=preflight_path,
         review_status_path=review_status_path,
+        approval_path=approval_path,
     )
+    if plan_path is not None:
+        declared_plan = read_json_file(plan_path, "evaluation plan")
+        if declared_plan.get("contract") == "civ.evaluation-plan/v1alpha2":
+            if official:
+                require_official_readiness(readiness)
+            from civ_workshop.cohort_scoring import run_cohort_batch
+
+            return run_cohort_batch(
+                ledger_root,
+                plan_path,
+                output_root,
+                official=official,
+                approval_path=approval_path,
+                readiness=readiness,
+            )
     if official:
         require_official_readiness(readiness)
+    if labels_root is None:
+        raise CivError("legacy diagnostic score-batch requires --labels")
     packs = _load_label_packs(labels_root)
     ledger = IntakeLedger(ledger_root)
     receipts = ledger.receipts(read_only=True)
@@ -340,9 +366,7 @@ def run_batch(
                 "contract": "civ.batch-result/v1alpha1",
                 "datasets": scored_datasets,
                 "deliveries": deliveries,
-                "diagnostics": [
-                    _redact(diagnostic, labels_root) for diagnostic in diagnostics
-                ],
+                "diagnostics": [_redact(diagnostic, labels_root) for diagnostic in diagnostics],
                 "identity": identity,
                 "official_score": False,
                 "scorer": SCORER_VERSIONS,

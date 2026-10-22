@@ -41,6 +41,7 @@ class IntakeReceipt:
     bundle_sha256: str
     source_sha256: str | None
     status: Literal["on_time", "late"]
+    track_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -50,12 +51,18 @@ class ValidatedSubmission:
 
 
 def latest_receipt(
-    receipts: Sequence[IntakeReceipt], identity: str, status: Literal["on_time", "late"]
+    receipts: Sequence[IntakeReceipt],
+    identity: str,
+    status: Literal["on_time", "late"],
+    *,
+    track_id: str | None = None,
 ) -> IntakeReceipt | None:
     candidates = [
         (index, receipt)
         for index, receipt in enumerate(receipts)
-        if receipt.identity == identity and receipt.status == status
+        if receipt.identity == identity
+        and receipt.status == status
+        and (track_id is None or receipt.track_id == track_id)
     ]
     if not candidates:
         return None
@@ -82,9 +89,7 @@ def _parse_received_at(value: str) -> tuple[str, datetime]:
 
 def _require_sha256(value: str) -> str:
     normalized = value.strip().lower()
-    invalid_characters = any(
-        character not in "0123456789abcdef" for character in normalized
-    )
+    invalid_characters = any(character not in "0123456789abcdef" for character in normalized)
     if len(normalized) != 64 or invalid_characters:
         raise CivError("pasted sha256 must be exactly 64 hexadecimal characters")
     return normalized
@@ -129,8 +134,7 @@ def _safe_archive_infos(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
         total_size += info.file_size
         if total_size > MAX_SUBMISSION_UNCOMPRESSED_BYTES:
             raise CivError(
-                "submission bundle expands beyond "
-                f"{MAX_SUBMISSION_UNCOMPRESSED_BYTES} bytes"
+                f"submission bundle expands beyond {MAX_SUBMISSION_UNCOMPRESSED_BYTES} bytes"
             )
     return infos
 
@@ -151,9 +155,7 @@ def _extract_validated_submission(bundle_path: Path, extracted: Path) -> None:
         raise CivError(f"submission bundle does not exist: {bundle_path}")
     try:
         if bundle_path.stat().st_size > MAX_SUBMISSION_BUNDLE_BYTES:
-            raise CivError(
-                f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes"
-            )
+            raise CivError(f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes")
     except OSError as error:
         raise CivError(f"cannot inspect submission bundle: {error}") from error
     try:
@@ -170,15 +172,11 @@ def _extract_validated_submission(bundle_path: Path, extracted: Path) -> None:
                 with archive.open(info) as source, destination.open("xb") as target:
                     shutil.copyfileobj(source, target, length=1024 * 1024)
                 if destination.stat().st_size != info.file_size:
-                    raise CivError(
-                        f"submission bundle artifact size changed while reading: {name}"
-                    )
+                    raise CivError(f"submission bundle artifact size changed while reading: {name}")
             expected_paths = validate_submission_directory(
                 extracted, require_local_evidence=False, require_submission=True
             )
-            expected = {
-                path.relative_to(extracted).as_posix() for path in expected_paths
-            }
+            expected = {path.relative_to(extracted).as_posix() for path in expected_paths}
             unexpected = sorted(set(names) - expected)
             missing = sorted(expected - set(names))
             if unexpected or missing:
@@ -187,17 +185,11 @@ def _extract_validated_submission(bundle_path: Path, extracted: Path) -> None:
                     details.append(f"unexpected: {', '.join(unexpected)}")
                 if missing:
                     details.append(f"missing: {', '.join(missing)}")
-                raise CivError(
-                    f"unexpected submission artifacts ({'; '.join(details)})"
-                )
+                raise CivError(f"unexpected submission artifacts ({'; '.join(details)})")
             canonical_bundle = extracted / ".canonical-submission.zip"
-            write_canonical_submission_bundle(
-                canonical_bundle, extracted, expected_paths
-            )
+            write_canonical_submission_bundle(canonical_bundle, extracted, expected_paths)
             if not _files_are_identical(bundle_path, canonical_bundle):
-                raise CivError(
-                    "submission bundle must be the unchanged ZIP emitted by civ report"
-                )
+                raise CivError("submission bundle must be the unchanged ZIP emitted by civ report")
             canonical_bundle.unlink()
     except (OSError, zipfile.BadZipFile, RuntimeError) as error:
         raise CivError(f"cannot read submission bundle: {error}") from error
@@ -219,9 +211,7 @@ def validated_submission(bundle_path: Path) -> ValidatedSubmission:
             require_mapping(manifest.get("source"), "run manifest source").get("sha256"),
             "run manifest source sha256",
         )
-    return ValidatedSubmission(
-        bundle_sha256=file_sha256(bundle_path), source_sha256=source_sha256
-    )
+    return ValidatedSubmission(bundle_sha256=file_sha256(bundle_path), source_sha256=source_sha256)
 
 
 def validate_submission_bundle(bundle_path: Path) -> str:
@@ -239,6 +229,7 @@ def _receipt_from_row(record: sqlite3.Row) -> IntakeReceipt:
         bundle_sha256=cast(str, record["bundle_sha256"]),
         source_sha256=cast(str | None, record["source_sha256"]),
         status=cast(Literal["on_time", "late"], record["status"]),
+        track_id=cast(str | None, record["track_id"]),
     )
 
 
@@ -268,6 +259,7 @@ class IntakeLedger:
                     received_at_utc TEXT NOT NULL,
                     bundle_sha256 TEXT NOT NULL,
                     source_sha256 TEXT,
+                    track_id TEXT,
                     status TEXT NOT NULL CHECK (status IN ('on_time', 'late'))
                 )
                 """
@@ -278,6 +270,8 @@ class IntakeLedger:
             }
             if "source_sha256" not in columns:
                 connection.execute("ALTER TABLE receipts ADD COLUMN source_sha256 TEXT")
+            if "track_id" not in columns:
+                connection.execute("ALTER TABLE receipts ADD COLUMN track_id TEXT")
             yield connection
         except OSError as error:
             raise CivError(f"cannot create intake ledger directory: {error}") from error
@@ -296,18 +290,20 @@ class IntakeLedger:
             if wal_path.exists():
                 raise CivError("read-only scoring requires a closed ledger snapshot without a WAL")
             try:
-                with closing(sqlite3.connect(
-                    self.database_path.as_uri() + "?mode=ro&immutable=1", uri=True
-                )) as connection:
+                with closing(
+                    sqlite3.connect(self.database_path.as_uri() + "?mode=ro&immutable=1", uri=True)
+                ) as connection:
                     connection.row_factory = sqlite3.Row
                     columns = {
                         row["name"] for row in connection.execute("PRAGMA table_info(receipts)")
                     }
                     source = "source_sha256" if "source_sha256" in columns else "NULL"
+                    track = "track_id" if "track_id" in columns else "NULL"
                     rows = connection.execute(
                         "SELECT delivery_id, identity, source, received_at_original, "
                         "received_at_utc, bundle_sha256, "
-                        f"{source} AS source_sha256, status FROM receipts ORDER BY sequence"
+                        f"{source} AS source_sha256, {track} AS track_id, status "
+                        "FROM receipts ORDER BY sequence"
                     ).fetchall()
                 return [_receipt_from_row(row) for row in rows]
             except sqlite3.Error as error:
@@ -316,7 +312,7 @@ class IntakeLedger:
             rows = connection.execute(
                 """
                 SELECT delivery_id, identity, source, received_at_original, received_at_utc,
-                       bundle_sha256, source_sha256, status
+                       bundle_sha256, source_sha256, track_id, status
                 FROM receipts
                 ORDER BY sequence
                 """
@@ -364,6 +360,7 @@ class IntakeLedger:
         submitted_sha256: str,
         bundle_path: Path,
         delivery_id: str,
+        track_id: str | None = None,
     ) -> IntakeReceipt:
         return self._accept(
             identity=identity,
@@ -372,6 +369,7 @@ class IntakeLedger:
             bundle_path=bundle_path,
             delivery_id=delivery_id,
             source="online",
+            track_id=track_id,
         )
 
     def accept_local(
@@ -382,6 +380,7 @@ class IntakeLedger:
         submitted_sha256: str,
         bundle_path: Path,
         delivery_id: str,
+        track_id: str | None = None,
     ) -> IntakeReceipt:
         return self._accept(
             identity=identity,
@@ -390,6 +389,7 @@ class IntakeLedger:
             bundle_path=bundle_path,
             delivery_id=delivery_id,
             source="local",
+            track_id=track_id,
         )
 
     @contextmanager
@@ -397,13 +397,16 @@ class IntakeLedger:
         snapshot_path: Path | None = None
         try:
             self.root.mkdir(parents=True, exist_ok=True)
-            with bundle_path.open("rb") as source, NamedTemporaryFile(
-                mode="wb",
-                prefix=".incoming-",
-                suffix=".zip",
-                dir=self.root,
-                delete=False,
-            ) as target:
+            with (
+                bundle_path.open("rb") as source,
+                NamedTemporaryFile(
+                    mode="wb",
+                    prefix=".incoming-",
+                    suffix=".zip",
+                    dir=self.root,
+                    delete=False,
+                ) as target,
+            ):
                 snapshot_path = Path(target.name)
                 copied = 0
                 while chunk := source.read(1024 * 1024):
@@ -436,28 +439,31 @@ class IntakeLedger:
         bundle_path: Path,
         delivery_id: str,
         source: Literal["online", "local"],
+        track_id: str | None = None,
     ) -> IntakeReceipt:
         normalized_identity = identity.strip()
         if not normalized_identity:
             raise CivError("participant identity is required")
         if len(normalized_identity) > MAX_IDENTITY_CHARACTERS:
-            raise CivError(
-                f"participant identity exceeds {MAX_IDENTITY_CHARACTERS} characters"
-            )
+            raise CivError(f"participant identity exceeds {MAX_IDENTITY_CHARACTERS} characters")
         normalized_delivery_id = delivery_id.strip()
         if not normalized_delivery_id:
             raise CivError("delivery id is required")
         if len(normalized_delivery_id) > MAX_DELIVERY_ID_CHARACTERS:
-            raise CivError(
-                f"delivery id exceeds {MAX_DELIVERY_ID_CHARACTERS} characters"
-            )
+            raise CivError(f"delivery id exceeds {MAX_DELIVERY_ID_CHARACTERS} characters")
+        normalized_track_id = track_id.strip() if track_id is not None else None
+        if normalized_track_id == "":
+            raise CivError("track id must not be empty")
+        if (
+            normalized_track_id is not None
+            and len(normalized_track_id) > MAX_DELIVERY_ID_CHARACTERS
+        ):
+            raise CivError(f"track id exceeds {MAX_DELIVERY_ID_CHARACTERS} characters")
         # Reject unsafe names before creating ledger or snapshot artifacts. The
         # immutable snapshot is validated again before a receipt is recorded.
         try:
             if bundle_path.stat().st_size > MAX_SUBMISSION_BUNDLE_BYTES:
-                raise CivError(
-                    f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes"
-                )
+                raise CivError(f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes")
             with zipfile.ZipFile(bundle_path) as archive:
                 _safe_archive_infos(archive)
         except (OSError, zipfile.BadZipFile, RuntimeError) as error:
@@ -474,9 +480,7 @@ class IntakeLedger:
             validated = validated_submission(snapshot)
             bundle_sha256 = validated.bundle_sha256
             if _require_sha256(submitted_sha256) != bundle_sha256:
-                raise CivError(
-                    f"pasted sha256 does not match the bundle: expected {bundle_sha256}"
-                )
+                raise CivError(f"pasted sha256 does not match the bundle: expected {bundle_sha256}")
 
             receipt = IntakeReceipt(
                 contract="civ.intake-receipt/v1alpha1",
@@ -488,6 +492,7 @@ class IntakeLedger:
                 bundle_sha256=bundle_sha256,
                 source_sha256=validated.source_sha256,
                 status="on_time" if received_utc <= TOKYO_CUTOFF else "late",
+                track_id=normalized_track_id,
             )
             try:
                 with self._connection() as connection, connection:
@@ -495,8 +500,8 @@ class IntakeLedger:
                         """
                         INSERT INTO receipts (
                             delivery_id, identity, source, received_at_original, received_at_utc,
-                            bundle_sha256, source_sha256, status
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            bundle_sha256, source_sha256, track_id, status
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             receipt.delivery_id,
@@ -506,6 +511,7 @@ class IntakeLedger:
                             receipt.received_at_utc,
                             receipt.bundle_sha256,
                             receipt.source_sha256,
+                            receipt.track_id,
                             receipt.status,
                         ),
                     )
@@ -518,9 +524,7 @@ class IntakeLedger:
                         ) from error
             except CivError as error:
                 if "UNIQUE constraint failed: receipts.delivery_id" in str(error):
-                    raise CivError(
-                        f"duplicate delivery id: {normalized_delivery_id}"
-                    ) from None
+                    raise CivError(f"duplicate delivery id: {normalized_delivery_id}") from None
                 raise
             return receipt
 
@@ -531,9 +535,16 @@ class IntakeLedger:
             self.bundles_path.mkdir(parents=True, exist_ok=True)
             if stored_bundle.is_file() and file_sha256(stored_bundle) == bundle_sha256:
                 return
-            with bundle_path.open("rb") as source, NamedTemporaryFile(
-                mode="wb", prefix=".pending-", suffix=".zip", dir=self.bundles_path, delete=False
-            ) as target:
+            with (
+                bundle_path.open("rb") as source,
+                NamedTemporaryFile(
+                    mode="wb",
+                    prefix=".pending-",
+                    suffix=".zip",
+                    dir=self.bundles_path,
+                    delete=False,
+                ) as target,
+            ):
                 temporary_path = Path(target.name)
                 shutil.copyfileobj(source, target, length=1024 * 1024)
                 target.flush()
@@ -584,14 +595,19 @@ def import_form_response(response_path: Path, ledger_root: Path) -> IntakeReceip
         identity=_bounded_string(
             response.get("identity"), "form response identity", MAX_IDENTITY_CHARACTERS
         ),
-        received_at=_bounded_string(
-            response.get("received_at"), "form response received_at", 64
-        ),
+        received_at=_bounded_string(response.get("received_at"), "form response received_at", 64),
         submitted_sha256=_bounded_string(response.get("sha256"), "form response sha256", 64),
         bundle_path=bundle_path,
         delivery_id=_bounded_string(
             response.get("delivery_id"),
             "form response delivery_id",
             MAX_DELIVERY_ID_CHARACTERS,
+        ),
+        track_id=(
+            _bounded_string(
+                response.get("track_id"), "form response track_id", MAX_DELIVERY_ID_CHARACTERS
+            )
+            if response.get("track_id") is not None
+            else None
         ),
     )

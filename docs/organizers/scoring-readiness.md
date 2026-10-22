@@ -1,5 +1,7 @@
 # Check organizer scoring readiness
 
+For the track-aware `civ.evaluation-plan/v1alpha2` cohort workflow, use [Score a full cohort](cohort-scoring.md). The rest of this page documents the older `v1alpha1` readiness and diagnostic path.
+
 Use the root organizer project to inspect the prerequisites before a batch diagnostic:
 
 ```sh

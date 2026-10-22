@@ -54,18 +54,23 @@ def build_parser() -> argparse.ArgumentParser:
     local_parser.add_argument("--received-at", required=True)
     local_parser.add_argument("--sha256", required=True)
     local_parser.add_argument("--delivery-id", required=True)
+    local_parser.add_argument("--track-id", help="track-specific submission identifier")
 
     batch_parser = commands.add_parser(
         "score-batch", help="score every authoritative submission in an intake ledger"
     )
     batch_parser.add_argument("--ledger", type=Path, required=True)
-    batch_parser.add_argument("--labels", type=Path, required=True)
+    batch_parser.add_argument("--labels", type=Path, help="legacy diagnostic label-pack directory")
     batch_parser.add_argument("--output", type=Path, required=True)
     batch_parser.add_argument("--official", action="store_true", help="require official readiness")
+    batch_parser.add_argument(
+        "--approval", type=Path, help="computation approval bound to exact inputs"
+    )
     readiness_parser = commands.add_parser(
         "score-readiness", help="report unresolved official scoring prerequisites without writes"
     )
     readiness_parser.add_argument("--ledger", type=Path, required=True)
+    readiness_parser.add_argument("--approval", type=Path)
     for command_parser in (batch_parser, readiness_parser):
         command_parser.add_argument("--plan", type=Path)
         command_parser.add_argument("--preflight", type=Path)
@@ -95,20 +100,29 @@ def main(argv: Sequence[str] | None = None) -> None:
                 submitted_sha256=args.sha256,
                 bundle_path=args.bundle,
                 delivery_id=args.delivery_id,
+                track_id=args.track_id,
             )
             print(json.dumps(asdict(receipt), sort_keys=True, separators=(",", ":")))
         elif args.command == "score-readiness":
             readiness = check_readiness(
-                args.ledger, plan_path=args.plan, preflight_path=args.preflight,
+                args.ledger,
+                plan_path=args.plan,
+                preflight_path=args.preflight,
                 review_status_path=args.review_status,
+                approval_path=args.approval,
             )
             print(json.dumps(readiness, sort_keys=True, separators=(",", ":")))
-            raise SystemExit(2)
+            raise SystemExit(0 if readiness.get("ready") is True else 2)
         elif args.command == "score-batch":
             batch_summary = run_batch(
-                args.ledger, args.labels, args.output, official=args.official,
-                plan_path=args.plan, preflight_path=args.preflight,
+                args.ledger,
+                args.labels,
+                args.output,
+                official=args.official,
+                plan_path=args.plan,
+                preflight_path=args.preflight,
                 review_status_path=args.review_status,
+                approval_path=args.approval,
             )
             print(json.dumps(batch_summary, sort_keys=True, separators=(",", ":")))
     except CivError as error:

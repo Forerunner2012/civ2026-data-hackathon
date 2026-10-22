@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civ.example/schemas/civ.evaluation-plan.v1alpha2.schema.json",
+  "title": "CIV cohort evaluation plan v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "session_id", "cutoff", "runtime", "tracks"],
+  "properties": {
+    "contract": {"const": "civ.evaluation-plan/v1alpha2"},
+    "session_id": {"type": "string", "minLength": 1},
+    "cutoff": {"type": "string", "format": "date-time"},
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "tool_version", "python_version"],
+      "properties": {
+        "identity": {"type": "string", "minLength": 1},
+        "tool_version": {"type": "string", "minLength": 1},
+        "python_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["track_id", "dataset", "target", "replay", "products"],
+        "properties": {
+          "track_id": {"$ref": "#/$defs/identifier"},
+          "dataset": {"type": "string", "minLength": 1},
+          "target": {"type": "string", "minLength": 1},
+          "replay": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["event_spec_contracts", "allowed_topics", "resource_limits", "timeout_seconds", "retries"],
+            "properties": {
+              "event_spec_contracts": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+              "allowed_topics": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+              "resource_limits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["max_files", "max_bytes"],
+                "properties": {
+                  "max_files": {"type": "integer", "minimum": 0},
+                  "max_bytes": {"type": "integer", "minimum": 0}
+                }
+              },
+              "timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+              "retries": {"type": "integer", "minimum": 0}
+            }
+          },
+          "products": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["product_id", "partition", "recording", "manifest", "truth", "input_contract"],
+              "properties": {
+                "product_id": {"$ref": "#/$defs/identifier"},
+                "partition": {"enum": ["warmup", "development", "sealed"]},
+                "recording": {"$ref": "#/$defs/fileReference"},
+                "manifest": {"$ref": "#/$defs/fileReference"},
+                "truth": {"$ref": "#/$defs/fileReference"},
+                "input_contract": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["topics", "schemas"],
+                  "properties": {
+                    "topics": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                    "schemas": {"type": "array", "items": {"$ref": "#/$defs/schemaBinding"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "scoring_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "temporal_iou_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "matching": {"type": "string"},
+        "product_weights": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}}},
+        "score_bearing_partitions": {"type": "array", "uniqueItems": true, "items": {"enum": ["warmup", "development", "sealed"]}},
+        "missing_track": {"enum": ["zero", "exclude"]},
+        "failed_run": {"enum": ["zero", "exclude"]},
+        "empty_truth": {"enum": ["zero", "perfect_empty", "exclude"]},
+        "cross_product_events": {"type": "string"},
+        "rounding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decimal_places", "mode"],
+          "properties": {
+            "decimal_places": {"type": "integer", "minimum": 0, "maximum": 12},
+            "mode": {"enum": ["half_even", "half_up"]}
+          }
+        },
+        "receipt_timestamp_ties": {"type": "string"},
+        "detection_points": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "evidence_policy_id": {"type": ["string", "null"]},
+        "reproducibility_policy_id": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "fileReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "schemaBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topic", "schema_name", "schema_encoding", "schema_sha256", "message_encoding"],
+      "properties": {
+        "topic": {"type": "string", "minLength": 1},
+        "schema_name": {"type": "string"},
+        "schema_encoding": {"type": "string"},
+        "schema_sha256": {"oneOf": [{"const": ""}, {"$ref": "#/$defs/sha256"}]},
+        "message_encoding": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
