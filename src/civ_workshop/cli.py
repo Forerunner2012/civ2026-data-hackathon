@@ -18,6 +18,7 @@ from civ_workshop.organizer.label_review import (
 )
 from civ_workshop.organizer.scoring_readiness import check_readiness
 from civ_workshop.participant_commands import add_participant_commands, dispatch_participant_command
+from civ_workshop.runtime_identity import verify_cohort_runtime_binding
 from civ_workshop.tally import import_tally_csv
 
 
@@ -81,6 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
     try:
+        verify_cohort_runtime_binding()
         if dispatch_label_review_command(args):
             return
         if dispatch_participant_command(args):

@@ -313,6 +313,7 @@ def run_batch(
                 output_root,
                 official=official,
                 approval_path=approval_path,
+                preflight_path=preflight_path,
                 readiness=readiness,
             )
     if official:

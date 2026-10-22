@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -29,6 +30,7 @@ from civ_workshop.event_spec import load_event_spec
 from civ_workshop.intake import IntakeLedger, IntakeReceipt, open_validated_submission
 from civ_workshop.label_packs import load_label_pack
 from civ_workshop.resources import load_point_resources
+from civ_workshop.runtime_identity import measured_runtime_identity
 from civ_workshop.scoring import score_submission
 
 PLAN_CONTRACT = "civ.evaluation-plan/v1alpha2"
@@ -82,13 +84,31 @@ def load_evaluation_plan(path: Path) -> dict[str, Any]:
         raise CivError(f"cohort replay requires contract '{PLAN_CONTRACT}'")
     _closed(
         plan,
-        {"contract", "session_id", "cutoff", "runtime", "tracks", "scoring_policy"},
+        {
+            "contract",
+            "session_id",
+            "cutoff",
+            "runtime",
+            "participants",
+            "tracks",
+            "scoring_policy",
+        },
         "evaluation plan",
     )
     require_string(plan.get("session_id"), "evaluation plan session_id")
     _parse_timestamp(plan.get("cutoff"), "evaluation plan cutoff")
     runtime = require_mapping(plan.get("runtime"), "evaluation plan runtime")
-    _closed(runtime, {"identity", "tool_version", "python_version"}, "evaluation plan runtime")
+    _closed(
+        runtime,
+        {
+            "identity",
+            "tool_version",
+            "python_version",
+            "implementation_sha256",
+            "environment_sha256",
+        },
+        "evaluation plan runtime",
+    )
     require_string(runtime.get("identity"), "evaluation plan runtime identity")
     if runtime.get("tool_version") != __version__:
         raise CivError(f"evaluation plan tool_version must match this runtime ({__version__})")
@@ -97,6 +117,16 @@ def load_evaluation_plan(path: Path) -> dict[str, Any]:
         != f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     ):
         raise CivError("evaluation plan python_version must match the active runtime")
+    measured_runtime = measured_runtime_identity()
+    for field in ("implementation_sha256", "environment_sha256"):
+        if _sha(runtime.get(field), f"evaluation plan runtime {field}") != measured_runtime[field]:
+            raise CivError(f"evaluation plan runtime {field} does not match the measured runtime")
+    participants_value = plan.get("participants")
+    if not isinstance(participants_value, list) or not participants_value:
+        raise CivError("evaluation plan participants must be a non-empty identity list")
+    participants = [_identifier(value, "participant identity") for value in participants_value]
+    if len(set(participants)) != len(participants):
+        raise CivError("evaluation plan participants must not repeat identities")
     tracks = plan.get("tracks")
     if not isinstance(tracks, list) or not tracks:
         raise CivError("evaluation plan tracks must be a non-empty list")
@@ -509,6 +539,7 @@ def _run_replay(
     *,
     timeout_seconds: float,
     retries: int,
+    runtime_binding: dict[str, str] | None = None,
 ) -> tuple[bool, str | None, int]:
     last_failure = "trusted replay process failed"
     attempts = 0
@@ -516,6 +547,14 @@ def _run_replay(
         attempts = attempt
         if output_path.exists():
             shutil.rmtree(output_path)
+        environment = os.environ.copy()
+        if runtime_binding is not None:
+            environment["CIV_COHORT_IMPLEMENTATION_SHA256"] = runtime_binding[
+                "implementation_sha256"
+            ]
+            environment["CIV_COHORT_ENVIRONMENT_SHA256"] = runtime_binding[
+                "environment_sha256"
+            ]
         try:
             completed = subprocess.run(
                 [
@@ -533,6 +572,7 @@ def _run_replay(
                 text=True,
                 timeout=timeout_seconds,
                 check=False,
+                env=environment,
             )
         except subprocess.TimeoutExpired:
             last_failure = f"trusted replay timed out after {timeout_seconds:g} seconds"
@@ -567,10 +607,32 @@ def _resource_fingerprint(
     base: Path,
     cutoff: datetime,
     timestamp_tie_break: str | None,
+    participants: list[str],
 ) -> tuple[dict[str, Any], list[str]]:
     diagnostics: list[str] = []
     selections: list[dict[str, Any]] = []
-    identities = sorted({receipt.identity for receipt in receipts})
+    track_ids = {str(track["track_id"]) for track in tracks}
+    participant_ids = set(participants)
+    receipt_identities = {receipt.identity for receipt in receipts}
+    for identity in sorted(receipt_identities - participant_ids):
+        deliveries = sorted(
+            receipt.delivery_id for receipt in receipts if receipt.identity == identity
+        )
+        diagnostics.append(
+            f"receipts for unregistered participant '{identity}' require reconciliation "
+            f"(deliveries: {', '.join(deliveries)})"
+        )
+    for receipt in receipts:
+        if receipt.track_id is None:
+            diagnostics.append(
+                f"delivery '{receipt.delivery_id}' has no track_id and requires reconciliation"
+            )
+        elif receipt.track_id not in track_ids:
+            diagnostics.append(
+                f"delivery '{receipt.delivery_id}' has unknown track_id '{receipt.track_id}' "
+                "and requires reconciliation"
+            )
+    identities = sorted(participant_ids)
     for identity in identities:
         for track in tracks:
             track_id = str(track["track_id"])
@@ -638,18 +700,29 @@ def _resource_fingerprint(
             "python_version": (
                 f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
             ),
+            **measured_runtime_identity(),
         },
     }
     return snapshot, diagnostics
 
 
-def input_fingerprint(ledger_root: Path, plan_path: Path) -> tuple[str | None, list[str]]:
+def input_fingerprint(
+    ledger_root: Path,
+    plan_path: Path,
+    *,
+    receipt_snapshot: list[IntakeReceipt] | None = None,
+) -> tuple[str | None, list[str]]:
     plan = load_evaluation_plan(plan_path)
     ledger = IntakeLedger(ledger_root)
-    try:
-        receipts = ledger.receipts(read_only=True)
-    except CivError as error:
-        return None, [f"ledger: {error}"]
+    if receipt_snapshot is not None:
+        receipts = list(receipt_snapshot)
+    elif ledger.database_path.is_file():
+        try:
+            receipts = ledger.receipts(read_only=True)
+        except CivError as error:
+            return None, [f"ledger: {error}"]
+    else:
+        receipts = []
     cutoff = _parse_timestamp(plan["cutoff"], "evaluation plan cutoff")
     policy = plan.get("scoring_policy")
     tie_break = policy.get("receipt_timestamp_ties") if isinstance(policy, dict) else None
@@ -662,13 +735,12 @@ def input_fingerprint(ledger_root: Path, plan_path: Path) -> tuple[str | None, l
         plan_path.parent,
         cutoff,
         cast(str, tie_break),
+        cast(list[str], plan["participants"]),
     )
     snapshot["plan_sha256"] = file_sha256(plan_path)
     if snapshot["ledger_sha256"] is None:
         diagnostics.append("ledger: intake database does not exist")
-    if diagnostics:
-        return None, diagnostics
-    return hashlib.sha256(canonical_json(snapshot).encode("utf-8")).hexdigest(), []
+    return hashlib.sha256(canonical_json(snapshot).encode("utf-8")).hexdigest(), diagnostics
 
 
 def policy_blockers(plan: dict[str, Any]) -> list[str]:
@@ -734,11 +806,7 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
             blockers.append("scoring policy: rounding decimal_places must be from 0 to 12")
     for name in ("evidence_policy_id", "reproducibility_policy_id"):
         if not isinstance(policy.get(name), str) or not policy[name].strip():
-            blockers.append(f"scoring policy: {name} must name an approved deterministic rubric")
-    blockers.append(
-        "machine scoring: deterministic Evidence and Reproducibility rubric calculations "
-        "are not implemented"
-    )
+            blockers.append(f"scoring policy: {name} must name an approved human scoring rubric")
     if policy.get("detection_points") is not None:
         points = policy["detection_points"]
         if not isinstance(points, dict):
@@ -986,12 +1054,8 @@ def _aggregate_detection(
         }
     return {
         "contract": "civ.detection-aggregation/v1alpha1",
+        "component": "Detection",
         "participants": participant_scores,
-        "complete_machine_score": None,
-        "complete_machine_score_reason": (
-            "Evidence and Reproducibility require separately approved rubrics. "
-            "Detection points are reported independently."
-        ),
     }, []
 
 
@@ -1043,10 +1107,11 @@ def check_computation_approval(
 def _selection_records(
     receipts: list[IntakeReceipt],
     tracks: list[dict[str, Any]],
+    participants: list[str],
     cutoff: datetime,
     timestamp_tie_break: str | None,
 ) -> tuple[list[str], dict[tuple[str, str], tuple[IntakeReceipt | None, bool]]]:
-    identities = sorted({receipt.identity for receipt in receipts})
+    identities = sorted(set(participants) | {receipt.identity for receipt in receipts})
     selected: dict[tuple[str, str], tuple[IntakeReceipt | None, bool]] = {}
     for identity in identities:
         for track in tracks:
@@ -1061,6 +1126,84 @@ def _selection_records(
     return identities, selected
 
 
+def _receipt_dispositions(
+    receipts: list[IntakeReceipt],
+    selections: dict[tuple[str, str], tuple[IntakeReceipt | None, bool]],
+    tracks: list[dict[str, Any]],
+    participants: list[str],
+    cutoff: datetime,
+) -> list[dict[str, Any]]:
+    registered = set(participants)
+    track_ids = {str(track["track_id"]) for track in tracks}
+    dispositions: list[dict[str, Any]] = []
+    for receipt in receipts:
+        if receipt.track_id is None:
+            track_disposition = "missing_track_id"
+        elif receipt.track_id not in track_ids:
+            track_disposition = "unknown_track_id"
+        elif _parse_timestamp(receipt.received_at_utc, "receipt received_at_utc") > cutoff:
+            track_disposition = "late"
+        else:
+            selected, _late = selections[(receipt.identity, receipt.track_id)]
+            track_disposition = (
+                "selected" if selected is not None and selected.delivery_id == receipt.delivery_id
+                else "superseded"
+            )
+        participant_disposition = (
+            "registered" if receipt.identity in registered else "unregistered_identity"
+        )
+        dispositions.append(
+            {
+                "delivery_id": receipt.delivery_id,
+                "identity": receipt.identity,
+                "track_id": receipt.track_id,
+                "participant_disposition": participant_disposition,
+                "track_disposition": track_disposition,
+                "reconciliation_required": (
+                    participant_disposition != "registered"
+                    or track_disposition in {"missing_track_id", "unknown_track_id"}
+                ),
+            }
+        )
+    return dispositions
+
+
+def _publish_cohort_outputs(
+    staging_root: Path, output_root: Path, artifact_namespace: str
+) -> None:
+    outputs = [Path("results.jsonl"), Path("summary.json")]
+    replay_output = Path("replays") / artifact_namespace
+    if (staging_root / replay_output).is_dir():
+        outputs.append(replay_output)
+    backup_root = staging_root / ".previous"
+    backed_up: list[tuple[Path, Path]] = []
+    published: list[Path] = []
+    try:
+        output_root.mkdir(parents=True, exist_ok=True)
+        for relative in outputs:
+            source = staging_root / relative
+            destination = output_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.exists():
+                backup = backup_root / relative
+                backup.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(destination, backup)
+                backed_up.append((destination, backup))
+            os.replace(source, destination)
+            published.append(destination)
+    except OSError as error:
+        for destination in reversed(published):
+            if destination.is_dir():
+                shutil.rmtree(destination, ignore_errors=True)
+            else:
+                destination.unlink(missing_ok=True)
+        for destination, backup in reversed(backed_up):
+            if backup.exists():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(backup, destination)
+        raise CivError(f"cannot commit cohort scoring outputs: {error}") from error
+
+
 def run_cohort_batch(
     ledger_root: Path,
     plan_path: Path,
@@ -1068,34 +1211,46 @@ def run_cohort_batch(
     *,
     official: bool = False,
     approval_path: Path | None = None,
+    preflight_path: Path | None = None,
     readiness: dict[str, object] | None = None,
 ) -> dict[str, object]:
     plan = load_evaluation_plan(plan_path)
     tracks = cast(list[dict[str, Any]], plan["tracks"])
     ledger = IntakeLedger(ledger_root)
-    receipts = ledger.receipts(read_only=True)
+    receipts = (
+        ledger.receipts(read_only=True) if ledger.database_path.is_file() else []
+    )
     cutoff = _parse_timestamp(plan["cutoff"], "evaluation plan cutoff")
-    input_digest: str | None = None
-    fingerprint_diagnostics: list[str] = []
+    current_digest, fingerprint_diagnostics = input_fingerprint(
+        ledger_root, plan_path, receipt_snapshot=receipts
+    )
+    input_digest = current_digest
     if readiness is not None:
         evidence = readiness.get("evidence")
         if isinstance(evidence, dict) and isinstance(evidence.get("input_fingerprint"), str):
-            input_digest = cast(str, evidence["input_fingerprint"])
-        else:
-            raw_blockers = readiness.get("blockers")
-            if isinstance(raw_blockers, list):
-                fingerprint_diagnostics = [
-                    str(item).removeprefix("inputs: ")
-                    for item in raw_blockers
-                    if isinstance(item, str) and item.startswith("inputs: ")
-                ]
-    else:
-        input_digest, fingerprint_diagnostics = input_fingerprint(ledger_root, plan_path)
+            readiness_digest = cast(str, evidence["input_fingerprint"])
+            if current_digest != readiness_digest:
+                raise CivError(
+                    "scoring inputs changed after readiness; rerun readiness against the "
+                    "current ledger and inputs"
+                )
+            input_digest = readiness_digest
     blockers = policy_blockers(plan) + [f"inputs: {item}" for item in fingerprint_diagnostics]
     readiness_evidence = readiness.get("evidence") if isinstance(readiness, dict) else None
     preflight_sha = (
-        readiness_evidence.get("preflight_sha256") if isinstance(readiness_evidence, dict) else None
+        readiness_evidence.get("preflight_sha256")
+        if isinstance(readiness_evidence, dict)
+        else None
     )
+    human_component_scores = (
+        readiness_evidence.get("human_component_scores")
+        if isinstance(readiness_evidence, dict)
+        else None
+    )
+    if isinstance(preflight_sha, str) and (
+        preflight_path is None or file_sha256(preflight_path) != preflight_sha
+    ):
+        raise CivError("preflight changed after readiness; rerun readiness before scoring")
     review_status_sha = (
         readiness_evidence.get("review_status_sha256")
         if isinstance(readiness_evidence, dict)
@@ -1111,19 +1266,23 @@ def run_cohort_batch(
     if official and (readiness is None or readiness.get("ready") is not True):
         raise CivError(f"official cohort scoring blocked (result remains nonofficial): {blockers}")
     official_score = official and readiness is not None and readiness.get("ready") is True
-    if not receipts:
-        raise CivError(f"intake ledger holds no submissions: {ledger_root}")
     scoring_policy = plan.get("scoring_policy")
     tie_break = (
         scoring_policy.get("receipt_timestamp_ties") if isinstance(scoring_policy, dict) else None
     )
     if not isinstance(tie_break, str):
         tie_break = None
-    identities, selections = _selection_records(receipts, tracks, cutoff, cast(str, tie_break))
+    participants = cast(list[str], plan["participants"])
+    identities, selections = _selection_records(
+        receipts, tracks, participants, cutoff, cast(str, tie_break)
+    )
+    receipt_dispositions = _receipt_dispositions(
+        receipts, selections, tracks, participants, cutoff
+    )
     result_records: list[dict[str, Any]] = []
     counts: dict[str, int] = {}
     plan_sha = file_sha256(plan_path)
-    ledger_sha = file_sha256(ledger.database_path)
+    ledger_sha = file_sha256(ledger.database_path) if ledger.database_path.is_file() else None
     artifact_namespace = (
         input_digest or hashlib.sha256(f"{plan_sha}:{ledger_sha}".encode("ascii")).hexdigest()
     )
@@ -1136,9 +1295,13 @@ def run_cohort_batch(
             except CivError as error:
                 product_cache[key] = (None, str(error))
     try:
-        output_root.mkdir(parents=True, exist_ok=True)
+        output_root.parent.mkdir(parents=True, exist_ok=True)
+        staging_context = TemporaryDirectory(
+            prefix=f".{output_root.name}.cohort-staging-", dir=output_root.parent
+        )
     except OSError as error:
-        raise CivError(f"cannot create cohort output directory: {error}") from error
+        raise CivError(f"cannot stage cohort scoring output: {error}") from error
+    staging_root = Path(staging_context.name)
     for identity in identities:
         for track in tracks:
             track_id = str(track["track_id"])
@@ -1226,6 +1389,7 @@ def run_cohort_batch(
                                 temp_output,
                                 timeout_seconds=float(replay["timeout_seconds"]),
                                 retries=int(replay["retries"]),
+                                runtime_binding=cast(dict[str, str], plan["runtime"]),
                             )
                             if succeeded:
                                 metrics = score_submission(
@@ -1247,7 +1411,7 @@ def run_cohort_batch(
                                     "metrics_sha256": file_sha256(temp_output / "metrics.json"),
                                 }
                                 artifact_path = _artifact_directory(
-                                    output_root,
+                                    staging_root,
                                     artifact_namespace,
                                     identity,
                                     track_id,
@@ -1258,7 +1422,7 @@ def run_cohort_batch(
                                     shutil.rmtree(artifact_path)
                                 shutil.copytree(temp_output, artifact_path)
                                 replay_record["artifact"] = artifact_path.relative_to(
-                                    output_root
+                                    staging_root
                                 ).as_posix()
                                 status = "scored"
                             else:
@@ -1309,7 +1473,50 @@ def run_cohort_batch(
                 counts[status] = counts.get(status, 0) + 1
     computed_detection, aggregation_blockers = _aggregate_detection(result_records, plan)
     blockers.extend(aggregation_blockers)
-    results_path = output_root / "results.jsonl"
+    technical_scores: dict[str, dict[str, object]] = {}
+    score_rows = (
+        cast(dict[str, dict[str, dict[str, object]]], human_component_scores)
+        if isinstance(human_component_scores, dict)
+        else {}
+    )
+    detection_rows = (
+        cast(dict[str, Any], computed_detection["participants"])
+        if isinstance(computed_detection, dict)
+        else {}
+    )
+    rounding_policy = (
+        scoring_policy.get("rounding") if isinstance(scoring_policy, dict) else None
+    )
+    for identity in participants:
+        human_scores = score_rows.get(identity)
+        detection_points = detection_rows.get(identity, {}).get("total_detection_points")
+        components: dict[str, object] = {
+            "detection_points": detection_points,
+            "evidence": human_scores.get("evidence") if human_scores else None,
+            "reproducibility": human_scores.get("reproducibility") if human_scores else None,
+            "technical_total_points": None,
+        }
+        if (
+            isinstance(detection_points, (int, float))
+            and not isinstance(detection_points, bool)
+            and human_scores is not None
+            and isinstance(rounding_policy, dict)
+        ):
+            evidence_points = cast(dict[str, Any], human_scores["evidence"])["points"]
+            reproducibility_points = cast(dict[str, Any], human_scores["reproducibility"])["points"]
+            components["technical_total_points"] = _rounded(
+                float(Decimal(str(detection_points))
+                      + Decimal(str(evidence_points))
+                      + Decimal(str(reproducibility_points))),
+                rounding_policy,
+            )
+            components["status"] = "complete"
+        elif human_scores is None:
+            components["status"] = "pending_human_notation"
+        else:
+            components["status"] = "pending_detection_score"
+        technical_scores[identity] = components
+    results_path = staging_root / "results.jsonl"
     results_path.write_text(
         "".join(f"{canonical_json(record)}\n" for record in result_records),
         encoding="utf-8",
@@ -1323,11 +1530,41 @@ def run_cohort_batch(
         "readiness": readiness or {"ready": False, "blockers": blockers, "official_score": False},
         "blockers": blockers,
         "computed_detection": computed_detection,
-        "machine_score_status": "partial_detection_only"
-        if computed_detection is not None
-        else "not_computed_policy_incomplete",
+        "technical_scores": {
+            "maximum_points": (
+                sum(
+                    float(value)
+                    for value in cast(dict[str, Any], scoring_policy)[
+                        "detection_points"
+                    ].values()
+                )
+                + 30.0
+                if isinstance(scoring_policy, dict)
+                and isinstance(scoring_policy.get("detection_points"), dict)
+                and all(
+                    _finite_number(value) and value >= 0
+                    for value in cast(dict[str, Any], scoring_policy["detection_points"]).values()
+                )
+                else None
+            ),
+            "status": "complete"
+            if technical_scores
+            and all(row.get("status") == "complete" for row in technical_scores.values())
+            else "human_notations_pending"
+            if any(
+                row.get("status") == "pending_human_notation"
+                for row in technical_scores.values()
+            )
+            else "detection_incomplete",
+            "participants": technical_scores,
+        },
         "counts": dict(sorted(counts.items())),
         "identities": len(identities),
+        "registered_participants": len(participants),
+        "unregistered_identities": sorted(
+            {receipt.identity for receipt in receipts} - set(participants)
+        ),
+        "receipt_dispositions": receipt_dispositions,
         "tracks": len(tracks),
         "products_per_track": {track["track_id"]: len(track["products"]) for track in tracks},
         "outcomes": len(result_records),
@@ -1337,7 +1574,22 @@ def run_cohort_batch(
             "selection": "latest eligible receipt per identity and track",
         },
     }
-    (output_root / "summary.json").write_text(
+    (staging_root / "summary.json").write_text(
         f"{canonical_json(summary)}\n", encoding="utf-8", newline="\n"
     )
+    final_digest, final_diagnostics = input_fingerprint(ledger_root, plan_path)
+    if (
+        final_digest != input_digest
+        or final_diagnostics != fingerprint_diagnostics
+        or (
+            isinstance(preflight_sha, str)
+            and (preflight_path is None or file_sha256(preflight_path) != preflight_sha)
+        )
+    ):
+        staging_context.cleanup()
+        raise CivError(
+            "scoring inputs changed during replay; no cohort scoring outputs were committed"
+        )
+    _publish_cohort_outputs(staging_root, output_root, artifact_namespace)
+    staging_context.cleanup()
     return summary

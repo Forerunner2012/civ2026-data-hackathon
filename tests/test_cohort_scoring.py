@@ -19,11 +19,13 @@ from civ_workshop.cohort_scoring import (
     _run_replay,
     _select_receipt,
     input_fingerprint,
+    load_evaluation_plan,
 )
 from civ_workshop.errors import CivError
 from civ_workshop.intake import IntakeLedger, IntakeReceipt
 from civ_workshop.organizer.scoring_readiness import check_readiness
 from civ_workshop.reporting import build_report_bundle
+from civ_workshop.runtime_identity import measured_runtime_identity
 from tests.helpers import MICRO_REPORT, create_micro_case, prepare_scored_submission
 
 ON_TIME = "2026-09-03T11:30:00+09:00"
@@ -101,6 +103,7 @@ def _plan_for_case(
     track_ids: tuple[str, ...] = ("micro-turn",),
     *,
     tie_break: str = "later_ledger_sequence",
+    participants: tuple[str, ...] = ("team-a",),
 ) -> Path:
     tracks: list[dict[str, Any]] = []
     for track_id in track_ids:
@@ -136,7 +139,9 @@ def _plan_for_case(
             "python_version": (
                 f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
             ),
+            **measured_runtime_identity(),
         },
+        "participants": list(participants),
         "tracks": tracks,
         "scoring_policy": {
             "temporal_iou_threshold": 0.5,
@@ -229,7 +234,7 @@ def test_score_batch_replays_event_spec_against_each_track_truth_and_never_runs_
 
 def test_successful_zero_event_replay_is_distinct_from_failure(tmp_path: Path) -> None:
     case = create_micro_case(tmp_path / "sealed-product", values=(0.0, 0.0, 0.0, 0.0, 0.0))
-    plan = _plan_for_case(tmp_path, case, ("micro-empty",))
+    plan = _plan_for_case(tmp_path, case, ("micro-empty",), participants=("team-quiet",))
     ledger = IntakeLedger(tmp_path / "ledger")
     bundle = _bundle(tmp_path, (0.0, 0.0, 0.0, 0.0, 0.0), marker="quiet-team")
     ledger.accept_local(
@@ -260,7 +265,7 @@ def test_score_batch_replays_all_assigned_partitions(tmp_path: Path) -> None:
         tmp_path / "development-product", values=(0.0, 3.0, 3.0, 0.0, 0.0)
     )
     sealed = create_micro_case(tmp_path / "sealed-product", values=(0.0, 2.0, 2.0, 0.0, 0.0))
-    plan = _plan_for_case(tmp_path, sealed)
+    plan = _plan_for_case(tmp_path, sealed, participants=("team-all",))
     plan_document = json.loads(plan.read_text())
     track = plan_document["tracks"][0]
     track["products"] = [
@@ -393,7 +398,9 @@ def test_latest_track_receipt_is_selected_and_corrupt_latest_does_not_fall_back(
 
 def test_equal_timestamp_tie_rule_is_plan_bound(tmp_path: Path) -> None:
     case = create_micro_case(tmp_path / "sealed-product")
-    plan = _plan_for_case(tmp_path, case, tie_break="earlier_ledger_sequence")
+    plan = _plan_for_case(
+        tmp_path, case, tie_break="earlier_ledger_sequence", participants=("team-tie",)
+    )
     ledger = IntakeLedger(tmp_path / "ledger")
     first = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="first-tie")
     second = _bundle(tmp_path, (0.0, 0.0, 0.0, 0.0, 0.0), marker="second-tie")
@@ -482,6 +489,136 @@ def test_track_selection_uses_track_id_and_plan_cutoff_not_legacy_status(
     assert record["selected_submission"]["delivery_id"] == "eligible-by-plan"
 
 
+def test_unknown_track_receipt_blocks_readiness_and_is_audited(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case)
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="misspelled-track")
+    ledger.accept_local(
+        identity="team-a",
+        track_id="micro-trun",
+        received_at=ON_TIME,
+        submitted_sha256=file_sha256(bundle),
+        bundle_path=bundle,
+        delivery_id="mistyped-track-delivery",
+    )
+
+    readiness = check_readiness(ledger.root, plan_path=plan)
+    summary = run_batch(ledger.root, None, tmp_path / "results", plan_path=plan)
+
+    assert readiness["ready"] is False
+    blockers = cast(list[object], readiness["blockers"])
+    assert any("mistyped-track-delivery" in str(item) for item in blockers)
+    dispositions = cast(list[dict[str, object]], summary["receipt_dispositions"])
+    disposition = dispositions[0]
+    assert disposition["delivery_id"] == "mistyped-track-delivery"
+    assert disposition["track_disposition"] == "unknown_track_id"
+    assert disposition["reconciliation_required"] is True
+
+
+def test_registered_participant_with_no_deliveries_gets_missing_track_results(
+    tmp_path: Path,
+) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case, participants=("team-no-deliveries", "team-zero"))
+    ledger = IntakeLedger(tmp_path / "empty-ledger")
+
+    summary = run_batch(ledger.root, None, tmp_path / "results", plan_path=plan)
+
+    records = _results(tmp_path / "results")
+    assert [record["identity"] for record in records] == ["team-no-deliveries", "team-zero"]
+    assert all(record["status"] == "missing-track" for record in records)
+    assert summary["registered_participants"] == 2
+    assert summary["receipt_dispositions"] == []
+
+
+def test_run_batch_rejects_receipt_added_after_readiness(tmp_path: Path, monkeypatch: Any) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case)
+    ledger = IntakeLedger(tmp_path / "ledger")
+    first = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="before-ready")
+    later = _bundle(tmp_path, (0.0, 0.0, 0.0, 0.0, 0.0), marker="after-ready")
+    ledger.accept_local(
+        identity="team-a",
+        track_id="micro-turn",
+        received_at=ON_TIME,
+        submitted_sha256=file_sha256(first),
+        bundle_path=first,
+        delivery_id="before-ready",
+    )
+    original_check = check_readiness
+
+    def check_then_accept(*args: Any, **kwargs: Any) -> dict[str, object]:
+        result = original_check(*args, **kwargs)
+        ledger.accept_local(
+            identity="team-a",
+            track_id="micro-turn",
+            received_at=ON_TIME,
+            submitted_sha256=file_sha256(later),
+            bundle_path=later,
+            delivery_id="after-ready",
+        )
+        return result
+
+    monkeypatch.setattr("civ_workshop.batch.check_readiness", check_then_accept)
+    output = tmp_path / "stale-readiness-results"
+
+    with pytest.raises(CivError, match="changed after readiness"):
+        run_batch(ledger.root, None, output, plan_path=plan)
+
+    assert not output.exists()
+
+
+def test_run_batch_rechecks_bound_inputs_before_publishing_outputs(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case)
+    ledger = IntakeLedger(tmp_path / "ledger")
+    first = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="during-replay")
+    later = _bundle(tmp_path, (0.0, 0.0, 0.0, 0.0, 0.0), marker="during-replay-new")
+    ledger.accept_local(
+        identity="team-a",
+        track_id="micro-turn",
+        received_at=ON_TIME,
+        submitted_sha256=file_sha256(first),
+        bundle_path=first,
+        delivery_id="during-replay-first",
+    )
+    original_replay = _run_replay
+
+    def replay_then_accept(*args: Any, **kwargs: Any) -> tuple[bool, str | None, int]:
+        result = original_replay(*args, **kwargs)
+        ledger.accept_local(
+            identity="team-a",
+            track_id="micro-turn",
+            received_at=ON_TIME,
+            submitted_sha256=file_sha256(later),
+            bundle_path=later,
+            delivery_id="during-replay-later",
+        )
+        return result
+
+    monkeypatch.setattr("civ_workshop.cohort_scoring._run_replay", replay_then_accept)
+    output = tmp_path / "changed-inputs-results"
+
+    with pytest.raises(CivError, match="changed during replay"):
+        run_batch(ledger.root, None, output, plan_path=plan)
+
+    assert not output.exists()
+
+
+def test_evaluation_plan_rejects_unmeasured_runtime_identity(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case)
+    plan_document = json.loads(plan.read_text())
+    plan_document["runtime"]["implementation_sha256"] = "0" * 64
+    plan.write_text(json.dumps(plan_document, sort_keys=True), encoding="utf-8")
+
+    with pytest.raises(CivError, match="implementation_sha256 does not match"):
+        load_evaluation_plan(plan)
+
+
 def test_cohort_readiness_fingerprint_binds_plan_ledger_bundle_product_and_truth(
     tmp_path: Path,
 ) -> None:
@@ -512,7 +649,7 @@ def test_cohort_readiness_fingerprint_binds_plan_ledger_bundle_product_and_truth
     truth_path = Path(plan_document["tracks"][0]["products"][0]["truth"]["path"])
     truth_path.write_text(truth_path.read_text() + "\n", encoding="utf-8")
     after, errors = input_fingerprint(ledger.root, plan)
-    assert after is None
+    assert after is not None
     assert any("truth hash does not match plan" in error for error in errors)
 
 
@@ -582,7 +719,9 @@ def test_computation_approval_goes_stale_when_receipt_snapshot_changes(tmp_path:
     )
 
 
-def test_readiness_checks_hashed_runtime_and_reference_reviews(tmp_path: Path) -> None:
+def test_readiness_checks_hashed_runtime_and_reference_reviews(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
     case = create_micro_case(tmp_path / "sealed-product")
     plan = _plan_for_case(tmp_path, case)
     ledger = IntakeLedger(tmp_path / "ledger")
@@ -611,6 +750,8 @@ def test_readiness_checks_hashed_runtime_and_reference_reviews(tmp_path: Path) -
                 "runtime_identity": plan_doc["runtime"]["identity"],
                 "tool_version": plan_doc["runtime"]["tool_version"],
                 "python_version": plan_doc["runtime"]["python_version"],
+                "implementation_sha256": plan_doc["runtime"]["implementation_sha256"],
+                "environment_sha256": plan_doc["runtime"]["environment_sha256"],
                 "outcome": "passed",
             }
         ),
@@ -659,6 +800,22 @@ def test_readiness_checks_hashed_runtime_and_reference_reviews(tmp_path: Path) -
                         },
                     }
                 ],
+                "human_component_scores": {
+                    "team-a": {
+                        "evidence": {
+                            "points": 12.5,
+                            "reviewer": "Synthetic evidence reviewer",
+                            "reviewed_at": ON_TIME,
+                            "notation": "Evidence is bound to the selected submission.",
+                        },
+                        "reproducibility": {
+                            "points": 13.0,
+                            "reviewer": "Synthetic reproducibility reviewer",
+                            "reviewed_at": ON_TIME,
+                            "notation": "Replay instructions are complete and reproducible.",
+                        },
+                    }
+                },
                 "official_blockers": [],
             }
         ),
@@ -710,13 +867,91 @@ def test_readiness_checks_hashed_runtime_and_reference_reviews(tmp_path: Path) -
         approval_path=approval_path,
     )
 
-    assert report["ready"] is False
+    assert report["ready"] is True
     blockers = str(report["blockers"])
     assert "approval:" not in blockers
     assert "preflight:" not in blockers
     assert "references:" not in blockers
     assert "review status:" not in blockers
-    assert "machine scoring" in blockers
+
+    summary = run_batch(
+        ledger.root,
+        None,
+        tmp_path / "approved-results",
+        official=True,
+        plan_path=plan,
+        preflight_path=preflight_path,
+        review_status_path=review_path,
+        approval_path=approval_path,
+    )
+    technical = cast(dict[str, Any], summary["technical_scores"])
+    participant = cast(dict[str, Any], technical["participants"])["team-a"]
+    assert participant["status"] == "complete"
+    assert participant["evidence"]["points"] == 12.5
+    assert participant["reproducibility"]["points"] == 13.0
+    detection = cast(dict[str, Any], summary["computed_detection"])["participants"]["team-a"]
+    assert participant["technical_total_points"] == (
+        detection["total_detection_points"] + 25.5
+    )
+
+    original_preflight = preflight_path.read_text(encoding="utf-8")
+
+    def replay_then_change_preflight(
+        *args: Any, **kwargs: Any
+    ) -> tuple[bool, str | None, int]:
+        result = _run_replay(*args, **kwargs)
+        preflight_path.write_text(original_preflight + "\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(
+        "civ_workshop.cohort_scoring._run_replay", replay_then_change_preflight
+    )
+    changed_output = tmp_path / "changed-human-scores"
+    try:
+        with pytest.raises(CivError, match="changed during replay"):
+            run_batch(
+                ledger.root,
+                None,
+                changed_output,
+                official=True,
+                plan_path=plan,
+                preflight_path=preflight_path,
+                review_status_path=review_path,
+                approval_path=approval_path,
+            )
+        assert not changed_output.exists()
+    finally:
+        preflight_path.write_text(original_preflight, encoding="utf-8")
+
+
+def test_readiness_requires_human_component_scores(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case)
+    ledger = tmp_path / "ledger"
+    fingerprint, _diagnostics = input_fingerprint(ledger, plan)
+    preflight_path = tmp_path / "preflight-without-human-scores.json"
+    preflight_path.write_text(
+        json.dumps(
+            {
+                "contract": "civ.cohort-preflight/v1alpha1",
+                "plan_sha256": file_sha256(plan),
+                "input_fingerprint": fingerprint,
+                "human_component_scores": None,
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = check_readiness(
+        ledger,
+        plan_path=plan,
+        preflight_path=preflight_path,
+    )
+
+    assert report["ready"] is False
+    assert any(
+        "human component scores" in str(blocker)
+        for blocker in cast(list[object], report["blockers"])
+    )
 
 
 def test_official_cohort_scoring_writes_nothing_when_readiness_is_blocked(

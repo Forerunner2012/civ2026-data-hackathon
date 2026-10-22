@@ -2,6 +2,8 @@
 
 Use `civ.evaluation-plan/v1alpha2` to replay every selected track submission against each product assigned to that track. The plan binds the participant cutoff, replay runtime, product and manifest hashes, topic and schema contracts, organizer truth, and scoring decisions. See the [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json).
 
+The plan's `participants` list is the organizer's complete registered-team roster. Include every team, including teams that submitted no tracks. The scorer emits `missing-track` outcomes for rostered teams without an eligible delivery. Receipts for unregistered identities, receipts without a track ID, and receipts with unknown track IDs block readiness and remain visible with delivery IDs and reconciliation dispositions in `summary.json`.
+
 `score-batch` keeps the `v1alpha1` diagnostic path for older two-dataset ledgers. For a `v1alpha2` plan, `--labels` is not used because each track and product names its own organizer truth pack.
 
 ## Record track-specific deliveries
@@ -19,6 +21,12 @@ The `intake-form` response can include a `track_id` field. Tally CSV exports can
 The ledger keeps every valid receipt. `score-batch` selects the latest receipt on or before the plan cutoff for each identity and track. When timestamps tie, the plan must choose either `earlier_ledger_sequence` or `later_ledger_sequence`. This sequence is the receipt order in the immutable ledger snapshot. A failed selected delivery stays failed. The scorer never substitutes an older delivery.
 
 The receipt `status` field still reflects the historical intake cutoff. Cohort selection uses the cutoff in the `v1alpha2` plan.
+
+## Bind the runtime actually used
+
+The `runtime` object includes measured `implementation_sha256` and `environment_sha256` values. The implementation hash covers the imported `civ_workshop` source tree, so editable-checkout changes alter the identity even when the package version and Git revision do not. The environment hash covers the active Python executable and version, installed distribution names and versions, and the checkout's `uv.lock` hash when present.
+
+The plan, preflight runtime rehearsal, and cohort input fingerprint bind both hashes. The trusted replay subprocess measures them again before running `civ detect` and stops if the implementation or environment differs from the plan.
 
 ## Bind products and replay inputs
 
@@ -38,7 +46,30 @@ Add `scoring_policy` to the plan before assigning points. The scorer keeps the e
 
 Set the Detection allocation for the Cave track explicitly. The existing rubric assigns 15 points to Kashiwa RT and 10 to Reims turns. It does not assign Cave Detection points. The scorer does not infer that allocation.
 
-`score-batch` can calculate participant Detection points when the plan supplies those decisions. For each participant and track, it computes product F1 from the exact TP, FP, and FN counts, applies the declared product weights to the included products, and uses that unrounded weighted mean for the Detection allocation. It rounds the displayed F1 and Detection points separately with the declared rounding mode and precision; the participant total is the sum of the rounded track allocations, rounded at the same precision. Evidence and Reproducibility remain uncomputed because their deterministic rubric calculations are not implemented yet. The full 55-point machine score and official scoring therefore remain blocked. Jury points, bonus points, and publication approval remain outside this command.
+`score-batch` calculates participant Detection points when the plan supplies those decisions. For each participant and track, it computes product F1 from the exact TP, FP, and FN counts, applies the declared product weights to the included products, and uses that unrounded weighted mean for the Detection allocation. It rounds the displayed F1 and Detection points separately with the declared rounding mode and precision; the participant total is the sum of the rounded track allocations, rounded at the same precision.
+
+Evidence and Reproducibility are human-scored components, each capped at 15 points. The plan's `evidence_policy_id` and `reproducibility_policy_id` name the approved human rubrics; they do not define automatic calculations. Record each participant's points, reviewer, review timestamp, and short notation in the preflight's `human_component_scores` object after reviewing the selected submissions. The preflight also binds the plan hash and cohort input fingerprint, so the notations are tied to those exact submissions. Provide one record for each registered participant, including a human decision for participants with missing tracks. Readiness blocks until the scores are present and valid. The cohort summary reports Detection, both human components, and their technical total separately. Jury points, bonus points, and publication approval remain outside this command.
+
+For example, add this mapping inside the preflight JSON (one participant entry per roster identity):
+
+```json
+"human_component_scores": {
+  "TEAM_ID": {
+    "evidence": {
+      "points": 12,
+      "reviewer": "Organizer name",
+      "reviewed_at": "2026-10-22T12:00:00+02:00",
+      "notation": "Short rationale tied to the reviewed submission."
+    },
+    "reproducibility": {
+      "points": 13,
+      "reviewer": "Organizer name",
+      "reviewed_at": "2026-10-22T12:05:00+02:00",
+      "notation": "Short rationale tied to the reviewed submission."
+    }
+  }
+}
+```
 
 ## Validate readiness and approvals
 
@@ -50,9 +81,9 @@ uv run civ score-readiness --ledger INTAKE_LEDGER --plan EVALUATION_PLAN.json \
   --approval COMPUTATION_APPROVAL.json
 ```
 
-The checker hashes the plan, immutable receipt database, selected bundles, EventSpecs and resources, products and manifests, truth packs, and runtime identity. The fingerprint changes if any bound input changes.
+The checker hashes the plan, immutable receipt database, selected bundles, EventSpecs and resources, products and manifests, truth packs, and measured runtime identity. It freezes the selected receipt set for one scoring run, compares it with the readiness fingerprint before replay, and rechecks every bound input before publishing output. Results and replay artifacts are staged until that final check passes; a changed input leaves no cohort outputs committed.
 
-The preflight record uses `civ.cohort-preflight/v1alpha1`. It contains `plan_sha256`, `input_fingerprint`, `ledger_designation`, a hashed `runtime_rehearsal` artifact, one hashed `reference_reviews` artifact for every track and product, and `official_blockers`. A ledger designation names the reviewer and exact ledger hash. A runtime rehearsal artifact uses `civ.runtime-rehearsal/v1alpha1` and records the exact plan, input fingerprint, runtime identity, tool and Python versions, and a passed outcome.
+The preflight record uses `civ.cohort-preflight/v1alpha1`. It contains `plan_sha256`, `input_fingerprint`, `ledger_designation`, a hashed `runtime_rehearsal` artifact, one hashed `reference_reviews` artifact for every track and product, `human_component_scores`, and `official_blockers`. Each human score entry records `points`, `reviewer`, `reviewed_at`, and `notation` for both `evidence` and `reproducibility`. A ledger designation names the reviewer and exact ledger hash. A runtime rehearsal artifact uses `civ.runtime-rehearsal/v1alpha1` and records the exact plan, input fingerprint, runtime identity, tool and Python versions, measured implementation and environment hashes, and a passed outcome.
 
 Each reference review artifact uses `civ.reference-review-approval/v1alpha1`. It names the exact track, product, target, and truth hash. It records an approved decision, complete coverage, a reviewer, and a timestamp. Reuse an existing review only when its target and bound truth match the plan. A review for left turns does not approve a right-or-left target.
 
@@ -72,5 +103,9 @@ The command writes `results.jsonl`, `summary.json`, and organizer-only replay ar
 ## Keep unresolved reference work open
 
 The current plan must not claim that Reims R&LT truth is complete from left-turn references alone. The Cave truth must come from recorded GNSS and the bound label evidence. Keep Cave locations, event times, truth intervals, sealed replay events, and organizer paths out of participant materials.
+
+The current evaluator accepts a prebuilt product-bound label pack; it does not extract Cave reference events. The missing extraction evidence is an organizer-only record that identifies the Cave-specific approved label IDs and intervals for each exact Reims source hash, the matching product manifest and timestamp mapping, and the recorded `/fix` latitude and longitude samples for those intervals. The record must establish how those samples yield reference locations and event intervals. The generic label-pack contract contains intervals but no Cave location provenance, so it cannot supply these facts by itself. Keep the Cave readiness gate blocked until the evidence and extraction rule are supplied and reviewed; do not substitute illustrative participant coordinates or turn labels.
+
+The current Reims evidence also does not establish both-direction sealed coverage for the R&LT target. The plan must identify the incompatible left-only references and retain that coverage decision as unresolved until an organizer approves compatible truth.
 
 Use the [organizer label-pack guide](../phase3/organizer-label-packs.md) to verify product-bound truth. Use the [scoring reference](../reference/scoring.md) for matching and the [readiness guide](scoring-readiness.md) for the legacy `v1alpha1` diagnostic path.

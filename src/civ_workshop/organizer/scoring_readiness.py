@@ -5,6 +5,7 @@ These checks expose prerequisites; they cannot create organizer authority.
 
 from __future__ import annotations
 
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -146,12 +147,14 @@ def _check_cohort_readiness(
     receipts: list[IntakeReceipt] = []
     ledger_sha: str | None = None
     try:
-        receipts = IntakeLedger(ledger_root).receipts(read_only=True)
+        ledger = IntakeLedger(ledger_root)
+        if ledger.database_path.is_file():
+            receipts = ledger.receipts(read_only=True)
+            ledger_sha = file_sha256(ledger.database_path)
+        else:
+            blockers.append("ledger: no intake ledger exists; no deliveries are recorded")
         evidence["receipts"] = len(receipts)
-        ledger_sha = file_sha256(IntakeLedger(ledger_root).database_path)
         evidence["ledger_sha256"] = ledger_sha
-        if not receipts:
-            blockers.append("ledger: intake ledger holds no submissions")
     except CivError as error:
         blockers.append(f"ledger: {error}")
 
@@ -190,6 +193,7 @@ def _check_cohort_readiness(
                     "ledger_designation",
                     "runtime_rehearsal",
                     "reference_reviews",
+                    "human_component_scores",
                     "official_blockers",
                 },
                 "cohort preflight",
@@ -202,6 +206,14 @@ def _check_cohort_readiness(
                 blockers.append(
                     "preflight: input_fingerprint does not match current scoring inputs"
                 )
+            if plan is not None:
+                try:
+                    evidence["human_component_scores"] = _human_component_scores(
+                        preflight.get("human_component_scores"),
+                        _require_string_list(plan["participants"]),
+                    )
+                except CivError as error:
+                    blockers.append(f"human component scores: {error}")
             designation = require_mapping(preflight.get("ledger_designation"), "ledger designation")
             _closed_fields(
                 designation,
@@ -232,6 +244,8 @@ def _check_cohort_readiness(
                             "runtime_identity",
                             "tool_version",
                             "python_version",
+                            "implementation_sha256",
+                            "environment_sha256",
                             "outcome",
                         },
                         "runtime rehearsal artifact",
@@ -252,9 +266,13 @@ def _check_cohort_readiness(
                     if (
                         runtime_record.get("tool_version") != plan["runtime"]["tool_version"]
                         or runtime_record.get("python_version") != plan["runtime"]["python_version"]
+                        or runtime_record.get("implementation_sha256")
+                        != plan["runtime"]["implementation_sha256"]
+                        or runtime_record.get("environment_sha256")
+                        != plan["runtime"]["environment_sha256"]
                     ):
                         blockers.append(
-                            "runtime rehearsal: runtime version does not match the plan"
+                            "runtime rehearsal: measured runtime does not match the plan"
                         )
                     if runtime_record.get("outcome") != "passed":
                         blockers.append("runtime rehearsal: outcome is not passed")
@@ -421,6 +439,56 @@ def _closed_fields(value: dict[str, Any], allowed: set[str], context: str) -> No
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise CivError(f"{context} has unknown field '{unknown[0]}'")
+
+
+def _require_string_list(value: object) -> list[str]:
+    if not isinstance(value, list) or not value or any(
+        not isinstance(item, str) or not item for item in value
+    ):
+        raise CivError("evaluation plan participants must be a non-empty string list")
+    return [item for item in value if isinstance(item, str)]
+
+
+def _human_component_scores(
+    value: object, participants: list[str]
+) -> dict[str, dict[str, dict[str, object]]]:
+    rows = require_mapping(value, "human component scores")
+    if set(rows) != set(participants):
+        raise CivError("records must cover every registered participant exactly once")
+    normalized: dict[str, dict[str, dict[str, object]]] = {}
+    for identity in participants:
+        participant = require_mapping(rows[identity], f"scores for {identity}")
+        _closed_fields(participant, {"evidence", "reproducibility"}, f"scores for {identity}")
+        normalized[identity] = {}
+        for component in ("evidence", "reproducibility"):
+            score = require_mapping(participant.get(component), f"{identity} {component} score")
+            _closed_fields(
+                score,
+                {"points", "reviewer", "reviewed_at", "notation"},
+                f"{identity} {component} score",
+            )
+            points = score.get("points")
+            if isinstance(points, bool) or not isinstance(points, (int, float)):
+                raise CivError(f"{identity} {component} points must be between 0 and 15")
+            try:
+                finite_points = math.isfinite(float(points))
+            except OverflowError:
+                finite_points = False
+            if not finite_points or not 0 <= points <= 15:
+                raise CivError(f"{identity} {component} points must be between 0 and 15")
+            normalized[identity][component] = {
+                "points": points,
+                "reviewer": require_string(
+                    score.get("reviewer"), f"{identity} {component} reviewer"
+                ),
+                "reviewed_at": _timestamp(
+                    score.get("reviewed_at"), f"{identity} {component} reviewed_at"
+                ),
+                "notation": require_string(
+                    score.get("notation"), f"{identity} {component} notation"
+                ),
+            }
+    return normalized
 
 
 def _timestamp(value: object, context: str) -> str:
