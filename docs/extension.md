@@ -2,7 +2,7 @@
 
 First reproduce the core workflow in the [QuickStart](quickstart.md). This optional exercise adds participant-sourced geographic points to a Reims EventSpec. Keep supplied kit files read-only. Run commands from the unpacked kit root after [installing civ](setup.md).
 
-The detector reads latitude and longitude from the recording's `/fix` GNSS messages, measures distance to the points in the configured resource, applies the EventSpec threshold, and uses its timing rules to form encounter intervals. Organizers use the same detection method with a private point resource when generating Cave references from assigned recordings. Those private points and the resulting occurrence times are not part of the participant kit. Use independently sourced points for this exercise; do not infer or reproduce organizer reference locations.
+The detector reads latitude and longitude from the recording's `/fix` GNSS messages, measures distance to the points in the configured resource, applies the EventSpec threshold, and uses its timing rules to form encounter intervals. Organizers review candidates generated with private points before exporting scoring references. Those private points and the resulting occurrence times are not part of the participant kit. Use independently sourced points for this exercise; do not infer or reproduce organizer reference locations.
 
 ## Prepare a separate workspace
 

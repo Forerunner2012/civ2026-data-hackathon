@@ -83,16 +83,18 @@ The command writes `results.jsonl`, `summary.json`, and organizer-only replay ar
 
 The historical selected label-pack set remains unchanged and contains left-turn-only Reims references. A separately audited both-direction candidate binds compatible Reims references to the four assigned R&LT products and covers the proposed right-or-left target. Recommend that candidate for a private R&LT plan entry; its validation does not authorize replacing the selected set or changing the official evaluation plan. No additional label review is needed for the candidate's product or target compatibility. An organizer must still authorize its selection into an official plan.
 
-The organizer-only Cave generator reuses trusted `civ detect`, the supplied Cave EventSpec and point resource, and product-bound label-pack validation. It reads each assigned product's actual `/fix` latitude and longitude trajectory and writes product-bound reference packs plus detection diagnostics and a generation index. The output directory must be outside the repository and participant outputs because diagnostics and references contain private evidence. The index binds each result to the source product, product manifest, EventSpec, location resource, detection events, and generated labels. Successful zero-encounter products produce valid empty references. Missing GNSS and invalid GNSS are reported separately. Generated references are algorithmic output; human review has not been performed.
+All three tracks use reviewed, source-bound `civ.label-pack/v1alpha1` references. Cave
+EventSpecs and private locations propose intervals for the existing label-review workflow;
+their detected events do not become scoring truth automatically. Review candidates with
+GNSS and camera context, resolve missed events, and sign off completeness before export.
 
-Use the generator only for the assigned Cave products:
-
-```sh
-uv run -m civ_workshop.organizer.cave_references \
-  --plan PRIVATE_EVALUATION_PLAN.json --track reims-caves-optional \
-  --event-spec PRIVATE_CAVE_EVENTSPEC.yaml --locations PRIVATE_CAVE_POINTS.json \
-  --output PRIVATE_OUTPUT_DIRECTORY
-```
+For reviewed development recordings, append `--export-reference PRIVATE_REFERENCE.json`
+to the same bound `civ labels review` command. This exports all approved intervals, including
+a valid empty pack when the completed review found no events. For sealed recordings, build
+the packs from the existing reviewed source-relative truth with `civ_workshop.label_packs`.
+See [reviewed reference export](../phase3/label-review.md#export-a-reviewed-organizer-reference).
+The scorer consumes these packs through the same track/product mapping used for turn truth;
+it does not generate Cave references during scoring.
 
 The current track-aware scorer can bind distinct references for Kashiwa RT, Reims R&LT, and Cave on the same product. Prepare proposed entries with exact product and reference hashes, while keeping them separate by track. Cave's Detection allocation and eligibility of public products for scoring remain pending organizer decisions. Do not take points from Reims turns or infer either decision from generated references. Keep the roster, receipt dispositions, and explicit missing-track outcomes supplied by the cohort workflow.
 

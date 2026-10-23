@@ -59,6 +59,19 @@ events.
 The local progress file is the complete review audit. Never put it in a participant bundle or
 submit it as participant work.
 
+## Export a reviewed organizer reference
+
+Append `--export-reference PRIVATE_REFERENCE.json` to the same bound `civ labels review`
+command to export all approved intervals and supported data gaps as a
+`civ.label-pack/v1alpha1` pack. The command checks saved progress, current inputs, and
+completeness signoff, then exits without opening the GUI. It supports reviewed recordings
+with zero events and does not require participant practice selection.
+
+This export leaves decisions, progress, and existing exports unchanged. An identical reference
+can be exported again; a destination with different content is refused. Keep the output in
+organizer-controlled storage. The sealed source-relative truth export and label-pack builder
+retain their existing partition restrictions.
+
 ## Catalog historical inputs
 
 Before reopening a review, declare each local artifact and its expected SHA-256 in an organizer-only inventory:

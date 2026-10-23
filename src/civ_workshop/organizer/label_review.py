@@ -1091,8 +1091,12 @@ def build_export_document(
         if candidate.get("exclusion_kind") not in {None, "scoring_data_gap"}:
             raise CivError(f"unsupported exclusion kind for {candidate.get('id')}")
 
-    if target == "practice":
-        selected = [item for item in candidates if item.get("practice_selected") is True]
+    if target in {"practice", "reference"}:
+        selected = (
+            candidates
+            if target == "reference"
+            else [item for item in candidates if item.get("practice_selected") is True]
+        )
         labels = [
             {
                 "end_ns": int(cast(str, item["end_ns"])),
@@ -1102,7 +1106,7 @@ def build_export_document(
             for item in selected
             if item.get("decision") == "approved"
         ]
-        if not labels:
+        if not labels and target == "practice":
             raise CivError(
                 "practice export needs at least one explicitly selected approved interval"
             )
@@ -2317,6 +2321,9 @@ def review_command(args: argparse.Namespace) -> None:
     inventory = getattr(args, "comparison_inventory", None)
     comparisons = load_profile_comparisons(inventory, binding) if inventory else None
     has_progress = binding.progress_path.exists()
+    reference_output = getattr(args, "export_reference", None)
+    if reference_output is not None and not has_progress:
+        raise CivError("reference export requires an existing completed review")
     if has_progress:
         state, progress_bytes = _read_progress_document(binding.progress_path, binding)
         progress_digest = _digest_bytes(progress_bytes)
@@ -2339,6 +2346,24 @@ def review_command(args: argparse.Namespace) -> None:
         progress_digest=progress_digest,
         progress_digest_is_current=True,
     )
+    if reference_output is not None:
+        app.recheck_inputs()
+        document = build_export_document(
+            app.state, "reference", spec_name=binding.spec_name,
+            source_bounds=binding.source_bounds,
+        )
+        serialized = f"{canonical_json(document)}\n"
+        existing = _read_active_file(reference_output)
+        if existing is not None and existing != serialized.encode("utf-8"):
+            raise CivError("reference output already exists with different content")
+        if existing is None:
+            _write_atomic(reference_output, serialized)
+        print(canonical_json({
+            "reference": str(reference_output),
+            "label_count": len(document["labels"]),
+            "sha256": file_sha256(reference_output),
+        }))
+        return
     if not has_progress:
         app.save()
     token = secrets.token_urlsafe(24)
@@ -2380,6 +2405,10 @@ def add_label_review_command(
     review.add_argument("--progress", type=Path, required=True)
     review.add_argument("--practice-output", type=Path)
     review.add_argument("--organizer-output", type=Path)
+    review.add_argument(
+        "--export-reference", type=Path,
+        help="export all reviewed labels as an organizer label pack and exit",
+    )
     review.add_argument("--camera-context-manifest", type=Path)
     review.add_argument(
         "--organizer-camera-manifest",
