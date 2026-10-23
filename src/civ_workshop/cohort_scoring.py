@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
-from copy import deepcopy
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal
 from pathlib import Path
@@ -18,7 +17,6 @@ from typing import Any, TypeGuard, cast
 from mcap.exceptions import McapError
 from mcap.reader import make_reader
 
-from civ_workshop import __version__
 from civ_workshop.artifacts import (
     canonical_json,
     file_sha256,
@@ -31,13 +29,12 @@ from civ_workshop.event_spec import load_event_spec
 from civ_workshop.intake import IntakeLedger, IntakeReceipt, open_validated_submission
 from civ_workshop.label_packs import load_label_pack
 from civ_workshop.resources import load_point_resources
-from civ_workshop.runtime_identity import measured_runtime_identity
+from civ_workshop.runtime_identity import runtime_metadata
 from civ_workshop.scoring import score_submission
 
 PLAN_CONTRACT = "civ.evaluation-plan/v1alpha2"
 RESULTS_CONTRACT = "civ.cohort-results/v1alpha1"
 SUMMARY_CONTRACT = "civ.cohort-summary/v1alpha1"
-APPROVAL_CONTRACT = "civ.computation-approval/v1alpha1"
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 PARTITIONS = frozenset({"warmup", "development", "sealed"})
@@ -89,7 +86,6 @@ def load_evaluation_plan(path: Path) -> dict[str, Any]:
             "contract",
             "session_id",
             "cutoff",
-            "runtime",
             "participants",
             "tracks",
             "scoring_policy",
@@ -98,30 +94,6 @@ def load_evaluation_plan(path: Path) -> dict[str, Any]:
     )
     require_string(plan.get("session_id"), "evaluation plan session_id")
     _parse_timestamp(plan.get("cutoff"), "evaluation plan cutoff")
-    runtime = require_mapping(plan.get("runtime"), "evaluation plan runtime")
-    _closed(
-        runtime,
-        {
-            "identity",
-            "tool_version",
-            "python_version",
-            "implementation_sha256",
-            "environment_sha256",
-        },
-        "evaluation plan runtime",
-    )
-    require_string(runtime.get("identity"), "evaluation plan runtime identity")
-    if runtime.get("tool_version") != __version__:
-        raise CivError(f"evaluation plan tool_version must match this runtime ({__version__})")
-    if (
-        runtime.get("python_version")
-        != f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    ):
-        raise CivError("evaluation plan python_version must match the active runtime")
-    measured_runtime = measured_runtime_identity()
-    for field in ("implementation_sha256", "environment_sha256"):
-        if _sha(runtime.get(field), f"evaluation plan runtime {field}") != measured_runtime[field]:
-            raise CivError(f"evaluation plan runtime {field} does not match the measured runtime")
     participants_value = plan.get("participants")
     if not isinstance(participants_value, list) or not participants_value:
         raise CivError("evaluation plan participants must be a non-empty identity list")
@@ -540,7 +512,6 @@ def _run_replay(
     *,
     timeout_seconds: float,
     retries: int,
-    runtime_binding: dict[str, str] | None = None,
 ) -> tuple[bool, str | None, int]:
     last_failure = "trusted replay process failed"
     attempts = 0
@@ -548,14 +519,6 @@ def _run_replay(
         attempts = attempt
         if output_path.exists():
             shutil.rmtree(output_path)
-        environment = os.environ.copy()
-        if runtime_binding is not None:
-            environment["CIV_COHORT_IMPLEMENTATION_SHA256"] = runtime_binding[
-                "implementation_sha256"
-            ]
-            environment["CIV_COHORT_ENVIRONMENT_SHA256"] = runtime_binding[
-                "environment_sha256"
-            ]
         try:
             completed = subprocess.run(
                 [
@@ -573,7 +536,6 @@ def _run_replay(
                 text=True,
                 timeout=timeout_seconds,
                 check=False,
-                env=environment,
             )
         except subprocess.TimeoutExpired:
             last_failure = f"trusted replay timed out after {timeout_seconds:g} seconds"
@@ -696,13 +658,6 @@ def _resource_fingerprint(
         "ledger_sha256": ledger_digest,
         "selected_submissions": selections,
         "products": product_inputs,
-        "runtime": {
-            "identity": f"civ-workshop/{__version__}",
-            "python_version": (
-                f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-            ),
-            **measured_runtime_identity(),
-        },
     }
     return snapshot, diagnostics
 
@@ -1073,51 +1028,6 @@ def _aggregate_detection(
     }, []
 
 
-def check_computation_approval(
-    approval_path: Path | None,
-    *,
-    plan_path: Path,
-    input_digest: str | None,
-    preflight_sha256: str | None = None,
-    review_status_sha256: str | None = None,
-) -> list[str]:
-    if approval_path is None:
-        return ["approval: computation approval bound to the exact plan and inputs is required"]
-    try:
-        approval = read_json_file(approval_path, "computation approval")
-        _closed(
-            approval,
-            {
-                "contract",
-                "plan_sha256",
-                "input_fingerprint",
-                "preflight_sha256",
-                "review_status_sha256",
-                "approved_by",
-                "approved_at",
-            },
-            "computation approval",
-        )
-        if approval.get("contract") != APPROVAL_CONTRACT:
-            raise CivError(f"computation approval contract must be '{APPROVAL_CONTRACT}'")
-        if approval.get("plan_sha256") != file_sha256(plan_path):
-            raise CivError("approval plan_sha256 does not match the selected plan")
-        if input_digest is None or approval.get("input_fingerprint") != input_digest:
-            raise CivError("approval input_fingerprint does not match current scoring inputs")
-        if preflight_sha256 is None or approval.get("preflight_sha256") != preflight_sha256:
-            raise CivError("approval preflight_sha256 does not match the current preflight")
-        if (
-            review_status_sha256 is None
-            or approval.get("review_status_sha256") != review_status_sha256
-        ):
-            raise CivError("approval review_status_sha256 does not match the current review status")
-        require_string(approval.get("approved_by"), "computation approval approved_by")
-        _parse_timestamp(approval.get("approved_at"), "computation approval approved_at")
-    except CivError as error:
-        return [f"approval: {error}"]
-    return []
-
-
 def _selection_records(
     receipts: list[IntakeReceipt],
     tracks: list[dict[str, Any]],
@@ -1160,7 +1070,8 @@ def _receipt_dispositions(
         else:
             selected, _late = selections[(receipt.identity, receipt.track_id)]
             track_disposition = (
-                "selected" if selected is not None and selected.delivery_id == receipt.delivery_id
+                "selected"
+                if selected is not None and selected.delivery_id == receipt.delivery_id
                 else "superseded"
             )
         participant_disposition = (
@@ -1182,9 +1093,7 @@ def _receipt_dispositions(
     return dispositions
 
 
-def _publish_cohort_outputs(
-    staging_root: Path, output_root: Path, artifact_namespace: str
-) -> None:
+def _publish_cohort_outputs(staging_root: Path, output_root: Path, artifact_namespace: str) -> None:
     outputs = [Path("results.jsonl"), Path("summary.json")]
     replay_output = Path("replays") / artifact_namespace
     if (staging_root / replay_output).is_dir():
@@ -1224,80 +1133,23 @@ def run_cohort_batch(
     output_root: Path,
     *,
     official: bool = False,
-    approval_path: Path | None = None,
-    preflight_path: Path | None = None,
-    review_status_path: Path | None = None,
-    readiness: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    from civ_workshop.organizer.scoring_readiness import check_readiness
-
-    if readiness is None:
-        readiness = check_readiness(
-            ledger_root,
-            plan_path=plan_path,
-            preflight_path=preflight_path,
-            review_status_path=review_status_path,
-            approval_path=approval_path,
-        )
-    initial_readiness = deepcopy(readiness)
     plan = load_evaluation_plan(plan_path)
     tracks = cast(list[dict[str, Any]], plan["tracks"])
     ledger = IntakeLedger(ledger_root)
-    receipts = (
-        ledger.receipts(read_only=True) if ledger.database_path.is_file() else []
-    )
+    receipts = ledger.receipts(read_only=True) if ledger.database_path.is_file() else []
     cutoff = _parse_timestamp(plan["cutoff"], "evaluation plan cutoff")
-    current_digest, fingerprint_diagnostics = input_fingerprint(
+    if official:
+        raise CivError(
+            "official scoring blocked: cohort machine scoring policies remain incomplete; "
+            "run without --official to replay and compare references"
+        )
+    official_score = False
+    input_digest, fingerprint_diagnostics = input_fingerprint(
         ledger_root, plan_path, receipt_snapshot=receipts
     )
-    input_digest = current_digest
-    if readiness is not None:
-        evidence = readiness.get("evidence")
-        if isinstance(evidence, dict) and isinstance(evidence.get("input_fingerprint"), str):
-            readiness_digest = cast(str, evidence["input_fingerprint"])
-            if current_digest != readiness_digest:
-                raise CivError(
-                    "scoring inputs changed after readiness; rerun readiness against the "
-                    "current ledger and inputs"
-                )
-            input_digest = readiness_digest
     blockers = policy_blockers(plan) + [f"inputs: {item}" for item in fingerprint_diagnostics]
-    readiness_evidence = readiness.get("evidence") if isinstance(readiness, dict) else None
-    preflight_sha = (
-        readiness_evidence.get("preflight_sha256")
-        if isinstance(readiness_evidence, dict)
-        else None
-    )
-    if isinstance(preflight_sha, str) and (
-        preflight_path is None or file_sha256(preflight_path) != preflight_sha
-    ):
-        raise CivError("preflight changed after readiness; rerun readiness before scoring")
-    review_status_sha = (
-        readiness_evidence.get("review_status_sha256")
-        if isinstance(readiness_evidence, dict)
-        else None
-    )
-    approval_sha = (
-        readiness_evidence.get("approval_sha256")
-        if isinstance(readiness_evidence, dict)
-        else None
-    )
-    if isinstance(approval_sha, str) and (
-        approval_path is None or file_sha256(approval_path) != approval_sha
-    ):
-        raise CivError(
-            "computation approval changed after readiness; rerun readiness before scoring"
-        )
-    blockers += check_computation_approval(
-        approval_path,
-        plan_path=plan_path,
-        input_digest=input_digest,
-        preflight_sha256=preflight_sha if isinstance(preflight_sha, str) else None,
-        review_status_sha256=review_status_sha if isinstance(review_status_sha, str) else None,
-    )
-    if official and (readiness is None or readiness.get("ready") is not True):
-        raise CivError(f"official cohort scoring blocked (result remains nonofficial): {blockers}")
-    official_score = official and readiness is not None and readiness.get("ready") is True
+    runtime = runtime_metadata()
     scoring_policy = plan.get("scoring_policy")
     tie_break = (
         scoring_policy.get("receipt_timestamp_ties") if isinstance(scoring_policy, dict) else None
@@ -1308,9 +1160,7 @@ def run_cohort_batch(
     identities, selections = _selection_records(
         receipts, tracks, participants, cutoff, cast(str, tie_break)
     )
-    receipt_dispositions = _receipt_dispositions(
-        receipts, selections, tracks, participants, cutoff
-    )
+    receipt_dispositions = _receipt_dispositions(receipts, selections, tracks, participants, cutoff)
     result_records: list[dict[str, Any]] = []
     counts: dict[str, int] = {}
     plan_sha = file_sha256(plan_path)
@@ -1421,7 +1271,6 @@ def run_cohort_batch(
                                 temp_output,
                                 timeout_seconds=float(replay["timeout_seconds"]),
                                 retries=int(replay["retries"]),
-                                runtime_binding=cast(dict[str, str], plan["runtime"]),
                             )
                             if succeeded:
                                 metrics = score_submission(
@@ -1532,16 +1381,14 @@ def run_cohort_batch(
         "official_score": official_score,
         "plan_sha256": plan_sha,
         "input_fingerprint": input_digest,
-        "readiness": readiness or {"ready": False, "blockers": blockers, "official_score": False},
+        "runtime": runtime,
         "blockers": blockers,
         "computed_detection": computed_detection,
         "technical_scores": {
             "maximum_points": (
                 sum(
                     float(value)
-                    for value in cast(dict[str, Any], scoring_policy)[
-                        "detection_points"
-                    ].values()
+                    for value in cast(dict[str, Any], scoring_policy)["detection_points"].values()
                 )
                 + 30.0
                 if isinstance(scoring_policy, dict)
@@ -1576,45 +1423,10 @@ def run_cohort_batch(
         f"{canonical_json(summary)}\n", encoding="utf-8", newline="\n"
     )
     final_digest, final_diagnostics = input_fingerprint(ledger_root, plan_path)
-    final_readiness = check_readiness(
-        ledger_root,
-        plan_path=plan_path,
-        preflight_path=preflight_path,
-        review_status_path=review_status_path,
-        approval_path=approval_path,
-    )
-    changed_reasons: list[str] = []
     if final_digest != input_digest or final_diagnostics != fingerprint_diagnostics:
-        changed_reasons.append("scoring input fingerprint changed")
-    initial_evidence = initial_readiness.get("evidence")
-    final_evidence = final_readiness.get("evidence")
-    if initial_evidence != final_evidence:
-        before = initial_evidence if isinstance(initial_evidence, dict) else {}
-        after = final_evidence if isinstance(final_evidence, dict) else {}
-        changed_keys = sorted(
-            key for key in set(before) | set(after) if before.get(key) != after.get(key)
-        )
-        changed_reasons.append(
-            "readiness evidence changed: " + ", ".join(changed_keys or ["unknown identity"])
-        )
-    if (
-        initial_readiness.get("ready") != final_readiness.get("ready")
-        or initial_readiness.get("blockers") != final_readiness.get("blockers")
-    ):
-        final_blockers = final_readiness.get("blockers")
-        blocker_text = (
-            "; ".join(str(item) for item in final_blockers)
-            if isinstance(final_blockers, list)
-            else "readiness result changed"
-        )
-        changed_reasons.append(f"readiness or approval chain changed: {blocker_text}")
-    if initial_readiness.get("ready") is True and final_readiness.get("ready") is not True:
-        changed_reasons.append("the previously valid readiness is no longer valid")
-    if changed_reasons:
         staging_context.cleanup()
         raise CivError(
-            "cohort readiness changed during replay; no cohort scoring outputs were committed: "
-            + "; ".join(changed_reasons)
+            "scoring inputs changed during replay; no cohort scoring outputs were committed"
         )
     _publish_cohort_outputs(staging_root, output_root, artifact_namespace)
     staging_context.cleanup()

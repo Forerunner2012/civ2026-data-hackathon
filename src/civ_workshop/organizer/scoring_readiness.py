@@ -5,7 +5,6 @@ These checks expose prerequisites; they cannot create organizer authority.
 
 from __future__ import annotations
 
-from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -33,9 +32,6 @@ def check_readiness(
             return _check_cohort_readiness(
                 ledger_root,
                 plan_path=plan_path,
-                preflight_path=preflight_path,
-                review_status_path=review_status_path,
-                approval_path=approval_path,
             )
     blockers: list[str] = []
     evidence: dict[str, object] = {}
@@ -127,309 +123,20 @@ def check_readiness(
     }
 
 
-def _check_cohort_readiness(
-    ledger_root: Path,
-    *,
-    plan_path: Path,
-    preflight_path: Path | None,
-    review_status_path: Path | None,
-    approval_path: Path | None,
-) -> dict[str, object]:
-    from civ_workshop.cohort_scoring import (
-        check_computation_approval,
-        input_fingerprint,
-        load_evaluation_plan,
-        policy_blockers,
-    )
+def _check_cohort_readiness(ledger_root: Path, *, plan_path: Path) -> dict[str, object]:
+    from civ_workshop.cohort_scoring import input_fingerprint, load_evaluation_plan, policy_blockers
 
     blockers: list[str] = []
     evidence: dict[str, object] = {}
-    artifact_hashes: dict[str, str | None] = {}
-    receipts: list[IntakeReceipt] = []
-    ledger_sha: str | None = None
-    try:
-        ledger = IntakeLedger(ledger_root)
-        if ledger.database_path.is_file():
-            receipts = ledger.receipts(read_only=True)
-            ledger_sha = file_sha256(ledger.database_path)
-        else:
-            blockers.append("ledger: no intake ledger exists; no deliveries are recorded")
-        evidence["receipts"] = len(receipts)
-        evidence["ledger_sha256"] = ledger_sha
-    except CivError as error:
-        blockers.append(f"ledger: {error}")
-
-    plan: dict[str, Any] | None = None
     try:
         plan = load_evaluation_plan(plan_path)
+        digest, diagnostics = input_fingerprint(ledger_root, plan_path)
         evidence["plan_sha256"] = file_sha256(plan_path)
-        evidence["runtime"] = plan["runtime"]
-        evidence["tracks"] = [track["track_id"] for track in plan["tracks"]]
+        evidence["input_fingerprint"] = digest
+        blockers.extend(diagnostics)
         blockers.extend(policy_blockers(plan))
     except CivError as error:
-        blockers.append(f"plan: {error}")
-
-    input_digest: str | None = None
-    try:
-        input_digest, fingerprint_diagnostics = input_fingerprint(ledger_root, plan_path)
-        if input_digest is not None:
-            evidence["input_fingerprint"] = input_digest
-        blockers.extend(f"inputs: {item}" for item in fingerprint_diagnostics)
-    except CivError as error:
-        blockers.append(f"inputs: {error}")
-    preflight_digest: str | None = None
-    if preflight_path is None:
-        blockers.append("preflight: an explicit cohort preflight record is required")
-    else:
-        try:
-            preflight = read_json_file(preflight_path, "preflight")
-            preflight_digest = file_sha256(preflight_path)
-            evidence["preflight_sha256"] = preflight_digest
-            _closed_fields(
-                preflight,
-                {
-                    "contract",
-                    "plan_sha256",
-                    "input_fingerprint",
-                    "ledger_designation",
-                    "runtime_rehearsal",
-                    "reference_reviews",
-                    # Read older records, but never use these reviewer-entered points to
-                    # complete the machine-scored Evidence or Reproducibility components.
-                    "human_component_scores",
-                    "official_blockers",
-                },
-                "cohort preflight",
-            )
-            if preflight.get("contract") != "civ.cohort-preflight/v1alpha1":
-                raise CivError("unsupported cohort preflight contract")
-            if preflight.get("plan_sha256") != evidence.get("plan_sha256"):
-                blockers.append("preflight: plan_sha256 does not match the selected plan")
-            if preflight.get("input_fingerprint") != input_digest or input_digest is None:
-                blockers.append(
-                    "preflight: input_fingerprint does not match current scoring inputs"
-                )
-            designation = require_mapping(preflight.get("ledger_designation"), "ledger designation")
-            _closed_fields(
-                designation,
-                {"ledger_sha256", "designated_by", "designated_at"},
-                "ledger designation",
-            )
-            if designation.get("ledger_sha256") != ledger_sha:
-                blockers.append(
-                    "ledger designation: ledger_sha256 does not match the current ledger"
-                )
-            require_string(designation.get("designated_by"), "ledger designation designated_by")
-            _timestamp(designation.get("designated_at"), "ledger designation designated_at")
-
-            if plan is not None:
-                runtime_record = _bound_artifact(
-                    preflight.get("runtime_rehearsal"),
-                    preflight_path.parent,
-                    "runtime rehearsal",
-                    blockers,
-                    observed_artifacts=artifact_hashes,
-                    artifact_key="runtime_rehearsal",
-                )
-                if runtime_record is not None:
-                    _closed_fields(
-                        runtime_record,
-                        {
-                            "contract",
-                            "plan_sha256",
-                            "input_fingerprint",
-                            "runtime_identity",
-                            "tool_version",
-                            "python_version",
-                            "implementation_sha256",
-                            "environment_sha256",
-                            "outcome",
-                        },
-                        "runtime rehearsal artifact",
-                    )
-                    if runtime_record.get("contract") != "civ.runtime-rehearsal/v1alpha1":
-                        blockers.append("runtime rehearsal: unsupported evidence contract")
-                    if (
-                        runtime_record.get("plan_sha256") != evidence.get("plan_sha256")
-                        or runtime_record.get("input_fingerprint") != input_digest
-                    ):
-                        blockers.append(
-                            "runtime rehearsal: plan or input fingerprint does not match"
-                        )
-                    if runtime_record.get("runtime_identity") != plan["runtime"]["identity"]:
-                        blockers.append(
-                            "runtime rehearsal: runtime identity does not match the plan"
-                        )
-                    if (
-                        runtime_record.get("tool_version") != plan["runtime"]["tool_version"]
-                        or runtime_record.get("python_version") != plan["runtime"]["python_version"]
-                        or runtime_record.get("implementation_sha256")
-                        != plan["runtime"]["implementation_sha256"]
-                        or runtime_record.get("environment_sha256")
-                        != plan["runtime"]["environment_sha256"]
-                    ):
-                        blockers.append(
-                            "runtime rehearsal: measured runtime does not match the plan"
-                        )
-                    if runtime_record.get("outcome") != "passed":
-                        blockers.append("runtime rehearsal: outcome is not passed")
-
-                reviews = preflight.get("reference_reviews")
-                expected_reviews = {
-                    (str(track["track_id"]), str(product["product_id"])): (track, product)
-                    for track in plan["tracks"]
-                    for product in track["products"]
-                }
-                if not isinstance(reviews, list):
-                    blockers.append("references: reference_reviews must be a list")
-                else:
-                    seen_reviews: set[tuple[str, str]] = set()
-                    for index, item in enumerate(reviews):
-                        row = require_mapping(item, f"reference review {index}")
-                        _closed_fields(
-                            row, {"track_id", "product_id", "artifact"}, "reference review"
-                        )
-                        key = (
-                            require_string(row.get("track_id"), "reference review track_id"),
-                            require_string(row.get("product_id"), "reference review product_id"),
-                        )
-                        if key not in expected_reviews:
-                            blockers.append(f"references: unexpected review for {key[0]}/{key[1]}")
-                            continue
-                        if key in seen_reviews:
-                            blockers.append(f"references: duplicate review for {key[0]}/{key[1]}")
-                            continue
-                        seen_reviews.add(key)
-                        review_artifact = _bound_artifact(
-                            row.get("artifact"),
-                            preflight_path.parent,
-                            f"reference review {key[0]}/{key[1]}",
-                            blockers,
-                            observed_artifacts=artifact_hashes,
-                            artifact_key=f"reference_review:{key[0]}/{key[1]}",
-                        )
-                        if review_artifact is None:
-                            continue
-                        _closed_fields(
-                            review_artifact,
-                            {
-                                "contract",
-                                "track_id",
-                                "product_id",
-                                "target",
-                                "truth_sha256",
-                                "decision",
-                                "coverage",
-                                "reviewer",
-                                "reviewed_at",
-                            },
-                            "reference review artifact",
-                        )
-                        track, product = expected_reviews[key]
-                        for field, expected in (
-                            ("contract", "civ.reference-review-approval/v1alpha1"),
-                            ("track_id", key[0]),
-                            ("product_id", key[1]),
-                            ("target", track["target"]),
-                            ("truth_sha256", product["truth"]["sha256"]),
-                            ("decision", "approved"),
-                            ("coverage", "complete"),
-                        ):
-                            if review_artifact.get(field) != expected:
-                                blockers.append(
-                                    "references: review evidence does not approve the "
-                                    f"configured {field} for {key[0]}/{key[1]}"
-                                )
-                        require_string(review_artifact.get("reviewer"), "reference review reviewer")
-                        _timestamp(
-                            review_artifact.get("reviewed_at"), "reference review reviewed_at"
-                        )
-                    missing_reviews = sorted(set(expected_reviews) - seen_reviews)
-                    blockers.extend(
-                        f"references: missing review for {track_id}/{product_id}"
-                        for track_id, product_id in missing_reviews
-                    )
-            recorded = preflight.get("official_blockers")
-            if not isinstance(recorded, list) or any(
-                not isinstance(item, str) for item in recorded
-            ):
-                blockers.append("preflight: official_blockers must be a list of strings")
-            else:
-                blockers.extend(f"preflight unresolved: {item}" for item in recorded)
-        except CivError as error:
-            blockers.append(f"preflight: {error}")
-    if review_status_path is None:
-        blockers.append("review status: an explicit cohort review-status record is required")
-    else:
-        try:
-            review_digest = file_sha256(review_status_path)
-            evidence["review_status_sha256"] = review_digest
-            review_status = read_json_file(review_status_path, "cohort review status")
-            _closed_fields(
-                review_status,
-                {
-                    "contract",
-                    "plan_sha256",
-                    "input_fingerprint",
-                    "preflight_sha256",
-                    "decision",
-                    "reviewer",
-                    "reviewed_at",
-                    "confirmations",
-                },
-                "cohort review status",
-            )
-            if review_status.get("contract") != "civ.cohort-review-status/v1alpha1":
-                blockers.append("review status: unsupported cohort review-status contract")
-            if review_status.get("plan_sha256") != evidence.get("plan_sha256"):
-                blockers.append("review status: plan_sha256 does not match the selected plan")
-            if review_status.get("input_fingerprint") != input_digest or input_digest is None:
-                blockers.append(
-                    "review status: input_fingerprint does not match current scoring inputs"
-                )
-            if (
-                review_status.get("preflight_sha256") != preflight_digest
-                or preflight_digest is None
-            ):
-                blockers.append(
-                    "review status: preflight_sha256 does not match the current preflight"
-                )
-            if review_status.get("decision") != "approved":
-                blockers.append("review status: decision is not approved")
-            require_string(review_status.get("reviewer"), "review status reviewer")
-            _timestamp(review_status.get("reviewed_at"), "review status reviewed_at")
-            confirmations = require_mapping(
-                review_status.get("confirmations"), "review confirmations"
-            )
-            _closed_fields(
-                confirmations,
-                {"cutoff", "runtime", "ledger", "references", "scoring_policy"},
-                "review confirmations",
-            )
-            for name in ("cutoff", "runtime", "ledger", "references", "scoring_policy"):
-                if confirmations.get(name) is not True:
-                    blockers.append(f"review status: confirmation '{name}' is not true")
-        except CivError as error:
-            blockers.append(f"review status: {error}")
-
-    evidence["referenced_artifact_sha256"] = dict(sorted(artifact_hashes.items()))
-    if approval_path is not None:
-        with suppress(CivError):
-            evidence["approval_sha256"] = file_sha256(approval_path)
-
-    review_status_digest = evidence.get("review_status_sha256")
-    if not isinstance(review_status_digest, str):
-        review_status_digest = None
-    blockers.extend(
-        check_computation_approval(
-            approval_path,
-            plan_path=plan_path,
-            input_digest=input_digest,
-            preflight_sha256=preflight_digest,
-            review_status_sha256=review_status_digest,
-        )
-    )
-
+        blockers.append(str(error))
     return {
         "contract": "civ.scoring-readiness/v1alpha2",
         "official_score": False,
@@ -437,50 +144,6 @@ def _check_cohort_readiness(
         "blockers": blockers,
         "evidence": evidence,
     }
-
-
-def _closed_fields(value: dict[str, Any], allowed: set[str], context: str) -> None:
-    unknown = sorted(set(value) - allowed)
-    if unknown:
-        raise CivError(f"{context} has unknown field '{unknown[0]}'")
-
-
-def _timestamp(value: object, context: str) -> str:
-    text = require_string(value, context)
-    try:
-        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise CivError(f"{context} must be an ISO-8601 timestamp") from error
-    if parsed.tzinfo is None:
-        raise CivError(f"{context} must include a timezone")
-    return parsed.isoformat()
-
-
-def _bound_artifact(
-    value: object,
-    base: Path,
-    context: str,
-    blockers: list[str],
-    *,
-    observed_artifacts: dict[str, str | None],
-    artifact_key: str,
-) -> dict[str, Any] | None:
-    observed_artifacts[artifact_key] = None
-    try:
-        reference = require_mapping(value, f"{context} artifact reference")
-        _closed_fields(reference, {"path", "sha256"}, f"{context} artifact reference")
-        path_text = require_string(reference.get("path"), f"{context} artifact path")
-        path = Path(path_text)
-        path = path.resolve() if path.is_absolute() else (base / path).resolve()
-        expected_hash = require_string(reference.get("sha256"), f"{context} artifact sha256")
-        actual_hash = file_sha256(path)
-        observed_artifacts[artifact_key] = actual_hash
-        if actual_hash != expected_hash:
-            raise CivError("artifact hash does not match")
-        return read_json_file(path, context)
-    except CivError as error:
-        blockers.append(f"{context}: {error}")
-        return None
 
 
 def _check_tracks(

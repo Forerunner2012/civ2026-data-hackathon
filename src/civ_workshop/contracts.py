@@ -58,7 +58,6 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
             "contract",
             "session_id",
             "cutoff",
-            "runtime",
             "participants",
             "tracks",
             "scoring_policy",

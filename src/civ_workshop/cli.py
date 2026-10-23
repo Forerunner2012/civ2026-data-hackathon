@@ -18,7 +18,6 @@ from civ_workshop.organizer.label_review import (
 )
 from civ_workshop.organizer.scoring_readiness import check_readiness
 from civ_workshop.participant_commands import add_participant_commands, dispatch_participant_command
-from civ_workshop.runtime_identity import verify_cohort_runtime_binding
 from civ_workshop.tally import import_tally_csv
 
 
@@ -65,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     batch_parser.add_argument("--output", type=Path, required=True)
     batch_parser.add_argument("--official", action="store_true", help="require official readiness")
     batch_parser.add_argument(
-        "--approval", type=Path, help="computation approval bound to exact inputs"
+        "--approval", type=Path, help="legacy readiness input; not used for cohort replay"
     )
     readiness_parser = commands.add_parser(
         "score-readiness", help="report unresolved official scoring prerequisites without writes"
@@ -74,15 +73,14 @@ def build_parser() -> argparse.ArgumentParser:
     readiness_parser.add_argument("--approval", type=Path)
     for command_parser in (batch_parser, readiness_parser):
         command_parser.add_argument("--plan", type=Path)
-        command_parser.add_argument("--preflight", type=Path)
-        command_parser.add_argument("--review-status", type=Path)
+        command_parser.add_argument("--preflight", type=Path, help="legacy readiness input")
+        command_parser.add_argument("--review-status", type=Path, help="legacy readiness input")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
     try:
-        verify_cohort_runtime_binding()
         if dispatch_label_review_command(args):
             return
         if dispatch_participant_command(args):

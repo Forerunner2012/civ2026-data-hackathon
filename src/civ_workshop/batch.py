@@ -293,6 +293,19 @@ def run_batch(
     review_status_path: Path | None = None,
     approval_path: Path | None = None,
 ) -> dict[str, object]:
+    if plan_path is not None:
+        declared_plan = read_json_file(plan_path, "evaluation plan")
+        if declared_plan.get("contract") == "civ.evaluation-plan/v1alpha2":
+            if any(
+                path is not None for path in (preflight_path, review_status_path, approval_path)
+            ):
+                raise CivError(
+                    "cohort scoring uses only --plan and --ledger; remove --preflight, "
+                    "--review-status, and --approval"
+                )
+            from civ_workshop.cohort_scoring import run_cohort_batch
+
+            return run_cohort_batch(ledger_root, plan_path, output_root, official=official)
     readiness = check_readiness(
         ledger_root,
         plan_path=plan_path,
@@ -300,23 +313,6 @@ def run_batch(
         review_status_path=review_status_path,
         approval_path=approval_path,
     )
-    if plan_path is not None:
-        declared_plan = read_json_file(plan_path, "evaluation plan")
-        if declared_plan.get("contract") == "civ.evaluation-plan/v1alpha2":
-            if official:
-                require_official_readiness(readiness)
-            from civ_workshop.cohort_scoring import run_cohort_batch
-
-            return run_cohort_batch(
-                ledger_root,
-                plan_path,
-                output_root,
-                official=official,
-                approval_path=approval_path,
-                preflight_path=preflight_path,
-                review_status_path=review_status_path,
-                readiness=readiness,
-            )
     if official:
         require_official_readiness(readiness)
     if labels_root is None:

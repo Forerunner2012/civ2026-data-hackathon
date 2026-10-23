@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -11,7 +10,6 @@ from typing import Any, cast
 import pytest
 from mcap.reader import make_reader
 
-from civ_workshop import __version__
 from civ_workshop.artifacts import file_sha256
 from civ_workshop.batch import run_batch
 from civ_workshop.cohort_scoring import (
@@ -19,13 +17,12 @@ from civ_workshop.cohort_scoring import (
     _run_replay,
     _select_receipt,
     input_fingerprint,
-    load_evaluation_plan,
 )
 from civ_workshop.errors import CivError
 from civ_workshop.intake import IntakeLedger, IntakeReceipt
 from civ_workshop.organizer.scoring_readiness import check_readiness
 from civ_workshop.reporting import build_report_bundle
-from civ_workshop.runtime_identity import measured_runtime_identity
+from civ_workshop.runtime_identity import runtime_metadata
 from tests.helpers import MICRO_REPORT, create_micro_case, prepare_scored_submission
 
 ON_TIME = "2026-09-03T11:30:00+09:00"
@@ -133,14 +130,6 @@ def _plan_for_case(
         "contract": "civ.evaluation-plan/v1alpha2",
         "session_id": "synthetic-cohort",
         "cutoff": "2026-09-03T12:30:00+09:00",
-        "runtime": {
-            "identity": "synthetic-local-runtime",
-            "tool_version": __version__,
-            "python_version": (
-                f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-            ),
-            **measured_runtime_identity(),
-        },
         "participants": list(participants),
         "tracks": tracks,
         "scoring_policy": {
@@ -186,7 +175,12 @@ def _results(path: Path) -> list[dict[str, Any]]:
 
 def test_score_batch_replays_event_spec_against_each_track_truth_and_never_runs_script(
     tmp_path: Path,
+    monkeypatch: Any,
 ) -> None:
+    def unexpected_readiness(*_args: Any, **_kwargs: Any) -> None:
+        pytest.fail("cohort replay must not depend on readiness records")
+
+    monkeypatch.setattr("civ_workshop.batch.check_readiness", unexpected_readiness)
     product_case = create_micro_case(tmp_path / "sealed-product")
     plan = _plan_for_case(tmp_path, product_case, ("micro-turn", "micro-empty"))
     ledger = IntakeLedger(tmp_path / "ledger")
@@ -532,43 +526,6 @@ def test_registered_participant_with_no_deliveries_gets_missing_track_results(
     assert summary["receipt_dispositions"] == []
 
 
-def test_run_batch_rejects_receipt_added_after_readiness(tmp_path: Path, monkeypatch: Any) -> None:
-    case = create_micro_case(tmp_path / "sealed-product")
-    plan = _plan_for_case(tmp_path, case)
-    ledger = IntakeLedger(tmp_path / "ledger")
-    first = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="before-ready")
-    later = _bundle(tmp_path, (0.0, 0.0, 0.0, 0.0, 0.0), marker="after-ready")
-    ledger.accept_local(
-        identity="team-a",
-        track_id="micro-turn",
-        received_at=ON_TIME,
-        submitted_sha256=file_sha256(first),
-        bundle_path=first,
-        delivery_id="before-ready",
-    )
-    original_check = check_readiness
-
-    def check_then_accept(*args: Any, **kwargs: Any) -> dict[str, object]:
-        result = original_check(*args, **kwargs)
-        ledger.accept_local(
-            identity="team-a",
-            track_id="micro-turn",
-            received_at=ON_TIME,
-            submitted_sha256=file_sha256(later),
-            bundle_path=later,
-            delivery_id="after-ready",
-        )
-        return result
-
-    monkeypatch.setattr("civ_workshop.batch.check_readiness", check_then_accept)
-    output = tmp_path / "stale-readiness-results"
-
-    with pytest.raises(CivError, match="changed after readiness"):
-        run_batch(ledger.root, None, output, plan_path=plan)
-
-    assert not output.exists()
-
-
 def test_run_batch_rechecks_bound_inputs_before_publishing_outputs(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
@@ -608,17 +565,6 @@ def test_run_batch_rechecks_bound_inputs_before_publishing_outputs(
     assert not output.exists()
 
 
-def test_evaluation_plan_rejects_unmeasured_runtime_identity(tmp_path: Path) -> None:
-    case = create_micro_case(tmp_path / "sealed-product")
-    plan = _plan_for_case(tmp_path, case)
-    plan_document = json.loads(plan.read_text())
-    plan_document["runtime"]["implementation_sha256"] = "0" * 64
-    plan.write_text(json.dumps(plan_document, sort_keys=True), encoding="utf-8")
-
-    with pytest.raises(CivError, match="implementation_sha256 does not match"):
-        load_evaluation_plan(plan)
-
-
 def test_cohort_readiness_fingerprint_binds_plan_ledger_bundle_product_and_truth(
     tmp_path: Path,
 ) -> None:
@@ -643,7 +589,7 @@ def test_cohort_readiness_fingerprint_binds_plan_ledger_bundle_product_and_truth
     evidence = cast(dict[str, Any], readiness["evidence"])
     blockers = cast(list[str], readiness["blockers"])
     assert evidence["input_fingerprint"] == before
-    assert any("approval" in blocker for blocker in blockers)
+    assert all("approval" not in blocker and "preflight" not in blocker for blocker in blockers)
 
     plan_document = json.loads(plan.read_text())
     truth_path = Path(plan_document["tracks"][0]["products"][0]["truth"]["path"])
@@ -651,334 +597,6 @@ def test_cohort_readiness_fingerprint_binds_plan_ledger_bundle_product_and_truth
     after, errors = input_fingerprint(ledger.root, plan)
     assert after is not None
     assert any("truth hash does not match plan" in error for error in errors)
-
-
-def test_computation_approval_goes_stale_when_receipt_snapshot_changes(tmp_path: Path) -> None:
-    from civ_workshop.cohort_scoring import check_computation_approval
-
-    case = create_micro_case(tmp_path / "sealed-product")
-    plan = _plan_for_case(tmp_path, case)
-    ledger = IntakeLedger(tmp_path / "ledger")
-    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="approval")
-    ledger.accept_local(
-        identity="team-a",
-        track_id="micro-turn",
-        received_at=ON_TIME,
-        submitted_sha256=file_sha256(bundle),
-        bundle_path=bundle,
-        delivery_id="approval-first",
-    )
-    fingerprint, diagnostics = input_fingerprint(ledger.root, plan)
-    assert fingerprint is not None and diagnostics == []
-    approval = tmp_path / "approval.json"
-    preflight_sha = "a" * 64
-    review_status_sha = "b" * 64
-    approval.write_text(
-        json.dumps(
-            {
-                "contract": "civ.computation-approval/v1alpha1",
-                "plan_sha256": file_sha256(plan),
-                "input_fingerprint": fingerprint,
-                "preflight_sha256": preflight_sha,
-                "review_status_sha256": review_status_sha,
-                "approved_by": "Synthetic reviewer",
-                "approved_at": ON_TIME,
-            }
-        ),
-        encoding="utf-8",
-    )
-    assert (
-        check_computation_approval(
-            approval,
-            plan_path=plan,
-            input_digest=fingerprint,
-            preflight_sha256=preflight_sha,
-            review_status_sha256=review_status_sha,
-        )
-        == []
-    )
-
-    ledger.accept_local(
-        identity="team-a",
-        track_id="micro-turn",
-        received_at=ON_TIME,
-        submitted_sha256=file_sha256(bundle),
-        bundle_path=bundle,
-        delivery_id="approval-second",
-    )
-    changed, diagnostics = input_fingerprint(ledger.root, plan)
-    assert changed is not None and diagnostics == [] and changed != fingerprint
-    assert "input_fingerprint does not match current scoring inputs" in str(
-        check_computation_approval(
-            approval,
-            plan_path=plan,
-            input_digest=changed,
-            preflight_sha256=preflight_sha,
-            review_status_sha256=review_status_sha,
-        )
-    )
-
-
-def test_readiness_checks_hashed_runtime_and_reference_reviews(
-    tmp_path: Path, monkeypatch: Any
-) -> None:
-    case = create_micro_case(tmp_path / "sealed-product")
-    plan = _plan_for_case(tmp_path, case)
-    ledger = IntakeLedger(tmp_path / "ledger")
-    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="reviewed")
-    ledger.accept_local(
-        identity="team-a",
-        track_id="micro-turn",
-        received_at=ON_TIME,
-        submitted_sha256=file_sha256(bundle),
-        bundle_path=bundle,
-        delivery_id="reviewed-delivery",
-    )
-    plan_doc = json.loads(plan.read_text())
-    track = plan_doc["tracks"][0]
-    product = track["products"][0]
-    fingerprint, errors = input_fingerprint(ledger.root, plan)
-    assert fingerprint is not None and errors == []
-
-    runtime_path = tmp_path / "runtime-rehearsal.json"
-    runtime_path.write_text(
-        json.dumps(
-            {
-                "contract": "civ.runtime-rehearsal/v1alpha1",
-                "plan_sha256": file_sha256(plan),
-                "input_fingerprint": fingerprint,
-                "runtime_identity": plan_doc["runtime"]["identity"],
-                "tool_version": plan_doc["runtime"]["tool_version"],
-                "python_version": plan_doc["runtime"]["python_version"],
-                "implementation_sha256": plan_doc["runtime"]["implementation_sha256"],
-                "environment_sha256": plan_doc["runtime"]["environment_sha256"],
-                "outcome": "passed",
-            }
-        ),
-        encoding="utf-8",
-    )
-    reference_path = tmp_path / "reference-review.json"
-    reference_path.write_text(
-        json.dumps(
-            {
-                "contract": "civ.reference-review-approval/v1alpha1",
-                "track_id": track["track_id"],
-                "product_id": product["product_id"],
-                "target": track["target"],
-                "truth_sha256": product["truth"]["sha256"],
-                "decision": "approved",
-                "coverage": "complete",
-                "reviewer": "Synthetic reference reviewer",
-                "reviewed_at": ON_TIME,
-            }
-        ),
-        encoding="utf-8",
-    )
-    preflight_path = tmp_path / "preflight.json"
-    preflight_path.write_text(
-        json.dumps(
-            {
-                "contract": "civ.cohort-preflight/v1alpha1",
-                "plan_sha256": file_sha256(plan),
-                "input_fingerprint": fingerprint,
-                "ledger_designation": {
-                    "ledger_sha256": file_sha256(ledger.database_path),
-                    "designated_by": "Synthetic ledger owner",
-                    "designated_at": ON_TIME,
-                },
-                "runtime_rehearsal": {
-                    "path": runtime_path.name,
-                    "sha256": file_sha256(runtime_path),
-                },
-                "reference_reviews": [
-                    {
-                        "track_id": track["track_id"],
-                        "product_id": product["product_id"],
-                        "artifact": {
-                            "path": reference_path.name,
-                            "sha256": file_sha256(reference_path),
-                        },
-                    }
-                ],
-                "human_component_scores": {
-                    "team-a": {
-                        "evidence": {
-                            "points": 12.5,
-                            "reviewer": "Synthetic evidence reviewer",
-                            "reviewed_at": ON_TIME,
-                            "notation": "Evidence is bound to the selected submission.",
-                        },
-                        "reproducibility": {
-                            "points": 13.0,
-                            "reviewer": "Synthetic reproducibility reviewer",
-                            "reviewed_at": ON_TIME,
-                            "notation": "Replay instructions are complete and reproducible.",
-                        },
-                    }
-                },
-                "official_blockers": [],
-            }
-        ),
-        encoding="utf-8",
-    )
-    review_path = tmp_path / "review-status.json"
-    review_path.write_text(
-        json.dumps(
-            {
-                "contract": "civ.cohort-review-status/v1alpha1",
-                "plan_sha256": file_sha256(plan),
-                "input_fingerprint": fingerprint,
-                "preflight_sha256": file_sha256(preflight_path),
-                "decision": "approved",
-                "reviewer": "Synthetic organizer",
-                "reviewed_at": ON_TIME,
-                "confirmations": {
-                    "cutoff": True,
-                    "runtime": True,
-                    "ledger": True,
-                    "references": True,
-                    "scoring_policy": True,
-                },
-            }
-        ),
-        encoding="utf-8",
-    )
-    approval_path = tmp_path / "approval.json"
-    approval_path.write_text(
-        json.dumps(
-            {
-                "contract": "civ.computation-approval/v1alpha1",
-                "plan_sha256": file_sha256(plan),
-                "input_fingerprint": fingerprint,
-                "preflight_sha256": file_sha256(preflight_path),
-                "review_status_sha256": file_sha256(review_path),
-                "approved_by": "Synthetic computation approver",
-                "approved_at": ON_TIME,
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    report = check_readiness(
-        ledger.root,
-        plan_path=plan,
-        preflight_path=preflight_path,
-        review_status_path=review_path,
-        approval_path=approval_path,
-    )
-
-    assert report["ready"] is False
-    blockers = str(report["blockers"])
-    assert "approval:" not in blockers
-    assert "preflight:" not in blockers
-    assert "references:" not in blockers
-    assert "review status:" not in blockers
-    assert "Evidence (15 machine points)" in blockers
-    assert "Reproducibility (15 machine points)" in blockers
-
-    summary = run_batch(
-        ledger.root,
-        None,
-        tmp_path / "approved-results",
-        plan_path=plan,
-        preflight_path=preflight_path,
-        review_status_path=review_path,
-        approval_path=approval_path,
-    )
-    technical = cast(dict[str, Any], summary["technical_scores"])
-    participant = cast(dict[str, Any], technical["participants"])["team-a"]
-    assert summary["official_score"] is False
-    assert participant["status"] == "pending_machine_components"
-    assert participant["evidence_points"] is None
-    assert participant["reproducibility_points"] is None
-    assert participant["pending_components"] == ["evidence", "reproducibility"]
-    assert participant["technical_total_points"] is None
-    detection = cast(dict[str, Any], summary["computed_detection"])["participants"]["team-a"]
-    assert participant["detection_points"] == detection["total_detection_points"]
-
-    # Ignore the unresolved machine calculations only in this synthetic test so
-    # approval revocation is tested independently from the scoring-policy blocker.
-    monkeypatch.setattr("civ_workshop.cohort_scoring.policy_blockers", lambda _plan: [])
-    approved_readiness = check_readiness(
-        ledger.root,
-        plan_path=plan,
-        preflight_path=preflight_path,
-        review_status_path=review_path,
-        approval_path=approval_path,
-    )
-    assert approved_readiness["ready"] is True
-    output_root = tmp_path / "approved-results"
-    committed_before = {
-        path.relative_to(output_root).as_posix(): file_sha256(path)
-        for path in output_root.rglob("*")
-        if path.is_file()
-    }
-    original_approval = approval_path.read_text(encoding="utf-8")
-
-    def replay_then_revoke_approval(
-        *args: Any, **kwargs: Any
-    ) -> tuple[bool, str | None, int]:
-        result = _run_replay(*args, **kwargs)
-        approval_path.write_text(
-            json.dumps({"contract": "REVOKED-SYNTHETIC-APPROVAL"}), encoding="utf-8"
-        )
-        return result
-
-    monkeypatch.setattr(
-        "civ_workshop.cohort_scoring._run_replay", replay_then_revoke_approval
-    )
-    from civ_workshop.cohort_scoring import run_cohort_batch
-
-    try:
-        with pytest.raises(CivError, match="readiness or approval chain changed"):
-            run_cohort_batch(
-                ledger.root,
-                plan,
-                output_root,
-                official=True,
-                readiness=approved_readiness,
-                preflight_path=preflight_path,
-                review_status_path=review_path,
-                approval_path=approval_path,
-            )
-        committed_after = {
-            path.relative_to(output_root).as_posix(): file_sha256(path)
-            for path in output_root.rglob("*")
-            if path.is_file()
-        }
-        assert committed_after == committed_before
-    finally:
-        approval_path.write_text(original_approval, encoding="utf-8")
-
-
-def test_legacy_human_scores_do_not_complete_machine_components(tmp_path: Path) -> None:
-    case = create_micro_case(tmp_path / "sealed-product")
-    plan = _plan_for_case(tmp_path, case)
-    ledger = tmp_path / "ledger"
-    fingerprint, _diagnostics = input_fingerprint(ledger, plan)
-    preflight_path = tmp_path / "preflight-without-human-scores.json"
-    preflight_path.write_text(
-        json.dumps(
-            {
-                "contract": "civ.cohort-preflight/v1alpha1",
-                "plan_sha256": file_sha256(plan),
-                "input_fingerprint": fingerprint,
-                "human_component_scores": None,
-            }
-        ),
-        encoding="utf-8",
-    )
-    report = check_readiness(
-        ledger,
-        plan_path=plan,
-        preflight_path=preflight_path,
-    )
-
-    assert report["ready"] is False
-    blockers = str(report["blockers"])
-    assert "human component scores" not in blockers
-    assert "Evidence (15 machine points)" in blockers
-    assert "Reproducibility (15 machine points)" in blockers
 
 
 def test_official_cohort_scoring_writes_nothing_when_readiness_is_blocked(
@@ -1002,3 +620,33 @@ def test_official_cohort_scoring_writes_nothing_when_readiness_is_blocked(
         run_batch(ledger.root, None, output, official=True, plan_path=plan)
 
     assert not output.exists()
+
+
+def test_cohort_rejects_obsolete_approval_flags(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case)
+    output = tmp_path / "results"
+    with pytest.raises(CivError, match="remove --preflight"):
+        run_batch(
+            tmp_path / "ledger",
+            None,
+            output,
+            plan_path=plan,
+            approval_path=tmp_path / "obsolete-approval.json",
+        )
+    assert not output.exists()
+
+
+def test_cohort_runtime_metadata_without_git(monkeypatch: Any) -> None:
+    def no_git(*_args: Any, **_kwargs: Any) -> None:
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr("civ_workshop.runtime_identity.subprocess.run", no_git)
+    metadata = runtime_metadata()
+    assert metadata["code_revision"] is None
+    assert metadata["working_tree_dirty"] is None
+    assert metadata["uv_lock_sha256"] == file_sha256(
+        Path(__file__).resolve().parents[1] / "uv.lock"
+    )
+    assert metadata["tool_version"]
+    assert metadata["python_version"]
