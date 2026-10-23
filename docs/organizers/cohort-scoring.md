@@ -48,13 +48,37 @@ The evaluator writes one result for every identity, track, and assigned product.
 
 ## Declare scoring decisions
 
-Add `scoring_policy` to the plan before assigning points. The scorer keeps the existing temporal IoU threshold of `0.5` and one-to-one best matching. It requires explicit product weights, score-bearing partitions, handling for missing tracks, failed runs, and empty truth, a rule for receipt timestamp ties, cross-product handling, rounding, and Detection points for every track.
+Add `scoring_policy` to the plan before assigning points. The scorer keeps the existing temporal IoU threshold of `0.5` and one-to-one best matching. Points require explicit product weights, score-bearing partitions, handling for missing tracks, failed runs, and empty truth, a rule for receipt timestamp ties, cross-product handling, rounding, and a Detection allocation for the track.
 
 Set the Detection allocation for the Cave track explicitly. The existing rubric assigns 15 points to Kashiwa RT and 10 to Reims turns. It does not assign Cave Detection points. The scorer does not infer that allocation.
+
+To leave Cave points pending, omit the Cave entry from `detection_points`. You can also omit
+its `product_weights` entry while those weights are undecided. Configured turn tracks still
+calculate points. The Cave track reports `detection_points: null` and a `pending_reason`.
+The participant Detection total remains `null` until every assigned track has a point result.
+The technical maximum is also `null` when any track allocation is missing.
 
 `score-batch` calculates participant Detection points when the plan supplies those decisions. For each participant and track, it computes product F1 from the exact TP, FP, and FN counts, applies the declared product weights to the included products, and uses that unrounded weighted mean for the Detection allocation. It rounds the displayed F1 and Detection points separately with the declared rounding mode and precision; the participant total is the sum of the rounded track allocations, rounded at the same precision.
 
 Evidence and Reproducibility are machine-scored categories worth 15 points each under issue #168. That issue does not define the eligible validated artifacts, deterministic criteria, point mappings, or outcomes for missing and invalid inputs. No approved deterministic mapping exists in the current rubric or implementation, so both components remain pending: `score-batch` reports their points and the technical total as `null`. Do not execute submitted reproduction scripts. Jury and bonus decisions remain separate from these machine calculations.
+
+## Read detection metrics before assigning points
+
+Use `summary.json` → `detection_metrics.participants` to compare replay outcomes without
+a points policy. Each participant has metrics by track, with separate partition summaries.
+The track aggregate includes all assigned partitions. Each product's original metrics remain
+in `results.jsonl`.
+
+The summary adds TP, FP, and FN counts across successful products, then calculates precision,
+recall, and F1 from those pooled counts. It does not average product F1 values or apply point
+weights. These diagnostic metrics do not choose which partitions count toward points.
+
+Check `outcomes` and `status` alongside each metric. `complete` means all products in that
+group were scored. `partial` means some products failed or had no eligible submission.
+`unavailable` means none were scored, and the counts and ratios are `null`. Missing and failed
+products do not contribute invented event counts. Ratios with a zero denominator are `null`,
+including F1 for a successful replay with both zero predictions and zero truth events.
+Any empty-truth point award still follows the plan's explicit `empty_truth` rule.
 
 ## Run the cohort comparison
 

@@ -14,6 +14,7 @@ from civ_workshop.artifacts import file_sha256
 from civ_workshop.batch import run_batch
 from civ_workshop.cohort_scoring import (
     _aggregate_detection,
+    _detection_metrics,
     _run_replay,
     _select_receipt,
     input_fingerprint,
@@ -299,6 +300,16 @@ def test_score_batch_replays_all_assigned_partitions(tmp_path: Path) -> None:
     }
     assert all(record["status"] == "scored" for record in records)
     assert sum(record["replay"]["event_count"] for record in records) == 2
+    metrics = cast(dict[str, Any], summary["detection_metrics"])
+    track_metrics = metrics["participants"]["team-all"]["tracks"]["micro-turn"]
+    assert track_metrics["aggregate"]["counts"] == {
+        "true_positive": 2,
+        "false_positive": 0,
+        "false_negative": 1,
+    }
+    assert track_metrics["aggregate"]["f1"] == 0.8
+    assert track_metrics["partitions"]["warmup"]["counts"]["false_negative"] == 1
+    assert track_metrics["partitions"]["sealed"]["f1"] == 1.0
 
 
 def test_replay_failure_reports_attempts_and_stable_diagnostics(
@@ -650,3 +661,136 @@ def test_cohort_runtime_metadata_without_git(monkeypatch: Any) -> None:
     )
     assert metadata["tool_version"]
     assert metadata["python_version"]
+
+
+def test_pooled_detection_metrics_preserve_failed_and_missing_products() -> None:
+    def record(
+        product: str, partition: str, status: str, tp: int, fp: int, fn: int
+    ) -> dict[str, Any]:
+        return {
+            "identity": "team-a",
+            "track_id": "turn",
+            "product_id": product,
+            "partition": partition,
+            "status": status,
+            "metrics": {
+                "aggregate": {
+                    "counts": {
+                        "true_positive": tp,
+                        "false_positive": fp,
+                        "false_negative": fn,
+                    }
+                }
+            }
+            if status == "scored"
+            else None,
+        }
+
+    records = [
+        record("dev", "development", "scored", 1, 0, 0),
+        record("sealed-a", "sealed", "scored", 0, 3, 1),
+        record("sealed-b", "sealed", "failed", 0, 0, 0),
+        record("missing", "warmup", "missing-track", 0, 0, 0),
+    ]
+    metrics = _detection_metrics(records)["participants"]["team-a"]["tracks"]["turn"]
+    aggregate = metrics["aggregate"]
+    assert aggregate["counts"] == {"true_positive": 1, "false_positive": 3, "false_negative": 1}
+    assert aggregate["precision"] == 0.25
+    assert aggregate["recall"] == 0.5
+    assert aggregate["f1"] == pytest.approx(1 / 3)
+    assert aggregate["status"] == "partial"
+    assert aggregate["outcomes"] == {"scored": 2, "failed": 1, "missing-track": 1}
+    assert metrics["partitions"]["sealed"]["f1"] == 0.0
+    assert metrics["partitions"]["warmup"]["counts"] is None
+    assert metrics["partitions"]["warmup"]["f1"] is None
+    assert metrics["partitions"]["warmup"]["status"] == "unavailable"
+
+
+@pytest.mark.parametrize("missing_weights", [False, True])
+def test_pending_cave_points_preserve_turn_points(tmp_path: Path, missing_weights: bool) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan = _plan_for_case(tmp_path, case, ("micro-turn", "micro-cave"))
+    document = json.loads(plan.read_text())
+    del document["scoring_policy"]["detection_points"]["micro-cave"]
+    if missing_weights:
+        del document["scoring_policy"]["product_weights"]["micro-cave"]
+    plan.write_text(json.dumps(document), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="pending-cave")
+    for track_id in ("micro-turn", "micro-cave"):
+        ledger.accept_local(
+            identity="team-a",
+            track_id=track_id,
+            received_at=ON_TIME,
+            submitted_sha256=file_sha256(bundle),
+            bundle_path=bundle,
+            delivery_id=track_id,
+        )
+
+    summary = run_batch(ledger.root, None, tmp_path / "results", plan_path=plan)
+    computed = cast(dict[str, Any], summary["computed_detection"])["participants"]["team-a"]
+    assert computed["tracks"]["micro-turn"]["detection_points"] == 15.0
+    assert computed["tracks"]["micro-cave"]["detection_points"] is None
+    assert computed["total_detection_points"] is None
+    assert computed["tracks"]["micro-cave"]["pending_reason"]
+    raw = cast(dict[str, Any], summary["detection_metrics"])["participants"]["team-a"]["tracks"]
+    assert raw["micro-cave"]["aggregate"]["f1"] == 1.0
+    assert raw["micro-cave"]["aggregate"]["status"] == "complete"
+    technical = cast(dict[str, Any], summary["technical_scores"])
+    assert technical["maximum_points"] is None
+    assert technical["participants"]["team-a"]["pending_components"] == [
+        "detection",
+        "evidence",
+        "reproducibility",
+    ]
+    assert technical["participants"]["team-a"]["technical_total_points"] is None
+
+
+def test_detection_metrics_without_any_points_policy(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "sealed-product", values=(0.0,) * 5)
+    plan = _plan_for_case(tmp_path, case, ("micro-empty",))
+    document = json.loads(plan.read_text())
+    del document["scoring_policy"]
+    plan.write_text(json.dumps(document), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0,) * 5, marker="no-policy")
+    ledger.accept_local(
+        identity="team-a",
+        track_id="micro-empty",
+        received_at=ON_TIME,
+        submitted_sha256=file_sha256(bundle),
+        bundle_path=bundle,
+        delivery_id="no-policy",
+    )
+
+    summary = run_batch(ledger.root, None, tmp_path / "results", plan_path=plan)
+    assert summary["computed_detection"] is None
+    metrics = cast(dict[str, Any], summary["detection_metrics"])
+    aggregate = metrics["participants"]["team-a"]["tracks"]["micro-empty"]["aggregate"]
+    assert aggregate["counts"] == {"true_positive": 0, "false_positive": 0, "false_negative": 0}
+    assert aggregate["status"] == "complete"
+    assert aggregate["precision"] is None
+    assert aggregate["recall"] is None
+    assert aggregate["f1"] is None
+
+
+def test_excluded_products_leave_detection_total_pending(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "sealed-product")
+    plan_path = _plan_for_case(tmp_path, case)
+    plan = json.loads(plan_path.read_text())
+    plan["scoring_policy"]["failed_run"] = "exclude"
+    records = [
+        {
+            "identity": "team-a",
+            "track_id": "micro-turn",
+            "product_id": "micro-sealed",
+            "status": "failed",
+            "metrics": None,
+        }
+    ]
+    computed, blockers = _aggregate_detection(records, plan)
+    assert blockers == []
+    assert computed is not None
+    participant = computed["participants"]["team-a"]
+    assert participant["tracks"]["micro-turn"]["detection_points"] is None
+    assert participant["total_detection_points"] is None

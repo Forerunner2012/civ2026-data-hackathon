@@ -832,6 +832,52 @@ def _rounded(value: float, rounding: dict[str, Any]) -> float:
     return float(Decimal(str(value)).quantize(Decimal(1).scaleb(-places), rounding=mode))
 
 
+def _pooled_detection_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
+    counts = {"true_positive": 0, "false_positive": 0, "false_negative": 0}
+    outcomes: dict[str, int] = {}
+    for record in records:
+        status = str(record["status"])
+        outcomes[status] = outcomes.get(status, 0) + 1
+        if status == "scored":
+            for name in counts:
+                counts[name] += int(record["metrics"]["aggregate"]["counts"][name])
+    tp, fp, fn = (counts[name] for name in ("true_positive", "false_positive", "false_negative"))
+    scored = outcomes.get("scored", 0)
+    return {
+        "counts": counts if scored else None,
+        "precision": round(tp / (tp + fp), 12) if scored and tp + fp else None,
+        "recall": round(tp / (tp + fn), 12) if scored and tp + fn else None,
+        "f1": round(2 * tp / (2 * tp + fp + fn), 12) if scored and 2 * tp + fp + fn else None,
+        "products": len(records),
+        "outcomes": dict(sorted(outcomes.items())),
+        "status": "complete" if scored == len(records) else "partial" if scored else "unavailable",
+    }
+
+
+def _detection_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for record in records:
+        grouped.setdefault(str(record["identity"]), {}).setdefault(
+            str(record["track_id"]), []
+        ).append(record)
+    participants: dict[str, Any] = {}
+    for identity, tracks in sorted(grouped.items()):
+        track_metrics = {}
+        for track_id, track_records in sorted(tracks.items()):
+            partitions = sorted({str(record["partition"]) for record in track_records})
+            track_metrics[track_id] = {
+                "aggregate": _pooled_detection_metrics(track_records),
+                "partitions": {
+                    partition: _pooled_detection_metrics(
+                        [record for record in track_records if record["partition"] == partition]
+                    )
+                    for partition in partitions
+                },
+            }
+        participants[identity] = {"tracks": track_metrics}
+    return {"aggregation": "pooled_counts", "participants": participants}
+
+
 def _aggregate_detection(
     records: list[dict[str, Any]], plan: dict[str, Any]
 ) -> tuple[dict[str, Any] | None, list[str]]:
@@ -851,19 +897,17 @@ def _aggregate_detection(
             "scoring policy: receipt tie or product-boundary policy is not supported by this scorer"
         ]
     needed = (
-        "product_weights",
         "score_bearing_partitions",
         "missing_track",
         "failed_run",
         "empty_truth",
         "rounding",
-        "detection_points",
     )
     if any(name not in policy for name in needed):
         return None, ["scoring policy: detection aggregation decisions are incomplete"]
-    weights_all = policy["product_weights"]
+    weights_all = policy.get("product_weights", {})
     partitions = policy["score_bearing_partitions"]
-    points_all = policy["detection_points"]
+    points_all = policy.get("detection_points", {})
     rounding = policy["rounding"]
     if (
         not isinstance(weights_all, dict)
@@ -896,30 +940,35 @@ def _aggregate_detection(
 
     plan_tracks = cast(list[dict[str, Any]], plan["tracks"])
     known_tracks = {str(track["track_id"]) for track in plan_tracks}
-    if set(weights_all) != known_tracks or set(points_all) != known_tracks:
-        return None, ["scoring policy: weights and Detection allocations must cover every track"]
+    if set(weights_all) - known_tracks or set(points_all) - known_tracks:
+        return None, ["scoring policy: weights and Detection allocations name unknown tracks"]
+    track_errors: dict[str, str] = {}
+    allocation_errors: dict[str, str] = {}
     for track in plan_tracks:
         track_id = str(track["track_id"])
         track_weights = weights_all.get(track_id)
         if not isinstance(track_weights, dict):
-            return None, [f"scoring policy: product weights are missing for '{track_id}'"]
+            track_errors[track_id] = f"scoring policy: product weights are missing for '{track_id}'"
+            continue
         expected_products = {
             str(product["product_id"])
             for product in track["products"]
             if product["partition"] in partitions
         }
         if set(track_weights) != expected_products:
-            return None, [
+            track_errors[track_id] = (
                 f"scoring policy: product weights for '{track_id}' do not match "
                 "score-bearing products"
-            ]
-        if any(not _finite_number(weight) or weight < 0 for weight in track_weights.values()):
-            return None, [f"scoring policy: product weights for '{track_id}' are invalid"]
-        if expected_products and sum(track_weights.values()) <= 0:
-            return None, [f"scoring policy: product weights for '{track_id}' sum to zero"]
+            )
+        elif any(not _finite_number(weight) or weight < 0 for weight in track_weights.values()):
+            track_errors[track_id] = f"scoring policy: product weights for '{track_id}' are invalid"
+        elif expected_products and sum(track_weights.values()) <= 0:
+            track_errors[track_id] = f"scoring policy: product weights for '{track_id}' sum to zero"
         allocation = points_all.get(track_id)
         if not _finite_number(allocation) or allocation < 0:
-            return None, [f"scoring policy: Detection points for '{track_id}' are invalid"]
+            allocation_errors[track_id] = (
+                f"scoring policy: Detection points for '{track_id}' are missing or invalid"
+            )
 
     outcome_map = {
         (str(record["identity"]), str(record["track_id"]), str(record["product_id"])): record
@@ -933,15 +982,15 @@ def _aggregate_detection(
             track_id = str(track["track_id"])
             track_weights = weights_all.get(track_id)
             point_allocation = points_all.get(track_id)
-            if (
-                not isinstance(track_weights, dict)
-                or isinstance(point_allocation, bool)
-                or not isinstance(point_allocation, (int, float))
-            ):
-                return None, [
-                    f"scoring policy: complete weights and detection point allocation for "
-                    f"'{track_id}' are required"
-                ]
+            if track_id in track_errors:
+                track_scores[track_id] = {
+                    "f1": None,
+                    "detection_points": None,
+                    "products": [],
+                    "pending_reason": track_errors[track_id],
+                }
+                continue
+            track_weights = cast(dict[str, Any], track_weights)
             weighted_f1 = Decimal(0)
             used_weight = Decimal(0)
             product_audit: list[dict[str, Any]] = []
@@ -1004,28 +1053,34 @@ def _aggregate_detection(
             else:
                 exact_f1 = weighted_f1 / used_weight
                 f1 = _rounded(float(exact_f1), rounding)
-                score = _rounded(float(Decimal(str(point_allocation)) * exact_f1), rounding)
+                score = (
+                    _rounded(float(Decimal(str(point_allocation)) * exact_f1), rounding)
+                    if track_id not in allocation_errors
+                    else None
+                )
                 track_scores[track_id] = {
                     "f1": f1,
                     "detection_points": score,
                     "products": product_audit,
                 }
+            if track_id in allocation_errors:
+                track_scores[track_id]["pending_reason"] = allocation_errors[track_id]
         participant_scores[identity] = {
             "tracks": track_scores,
-            "total_detection_points": _rounded(
-                sum(
-                    float(score["detection_points"])
-                    for score in track_scores.values()
-                    if score["detection_points"] is not None
-                ),
-                rounding,
+            "total_detection_points": (
+                _rounded(
+                    sum(float(score["detection_points"]) for score in track_scores.values()),
+                    rounding,
+                )
+                if all(score["detection_points"] is not None for score in track_scores.values())
+                else None
             ),
         }
     return {
         "contract": "civ.detection-aggregation/v1alpha1",
         "component": "Detection",
         "participants": participant_scores,
-    }, []
+    }, list(track_errors.values()) + list(allocation_errors.values())
 
 
 def _selection_records(
@@ -1367,7 +1422,10 @@ def run_cohort_batch(
             "evidence_points": None,
             "reproducibility_points": None,
             "technical_total_points": None,
-            "pending_components": ["evidence", "reproducibility"],
+            "pending_components": (
+                (["detection"] if detection_points is None else [])
+                + ["evidence", "reproducibility"]
+            ),
             "status": "pending_machine_components",
         }
     results_path = staging_root / "results.jsonl"
@@ -1383,6 +1441,7 @@ def run_cohort_batch(
         "input_fingerprint": input_digest,
         "runtime": runtime,
         "blockers": blockers,
+        "detection_metrics": _detection_metrics(result_records),
         "computed_detection": computed_detection,
         "technical_scores": {
             "maximum_points": (
@@ -1393,6 +1452,8 @@ def run_cohort_batch(
                 + 30.0
                 if isinstance(scoring_policy, dict)
                 and isinstance(scoring_policy.get("detection_points"), dict)
+                and set(scoring_policy["detection_points"])
+                == {track["track_id"] for track in tracks}
                 and all(
                     _finite_number(value) and value >= 0
                     for value in cast(dict[str, Any], scoring_policy["detection_points"]).values()
@@ -1400,7 +1461,12 @@ def run_cohort_batch(
                 else None
             ),
             "status": "pending_machine_components",
-            "pending_components": ["evidence", "reproducibility"],
+            "pending_components": (
+                ["detection"]
+                if any(row["detection_points"] is None for row in technical_scores.values())
+                else []
+            )
+            + ["evidence", "reproducibility"],
             "participants": technical_scores,
         },
         "counts": dict(sorted(counts.items())),
