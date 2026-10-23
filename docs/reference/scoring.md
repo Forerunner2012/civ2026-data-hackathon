@@ -27,6 +27,8 @@ For example, the synthetic `highest-iou-duplicate` fixture has one label `[0,100
 
 An omitted valid event in an incomplete practice pack can count as a false positive. Treat precision, recall, and F1 as complete-reference results only after every relevant event for that source or chunk is reviewed and included. Adjustments, rejections, and genuine data-gap exclusions need reasons; uncertain intervals and missing context need a human disposition, and export requires missed-event signoff. See the [local review guide](../phase3/label-review.md).
 
+The existing participant rubric uses the fixed 55 machine / 45 jury rubric; up to 20 optional bonus points remain separate. See the [Detection allocation](../phase3/detector-calibration.md#approved-point-allocation) and [accepted jury rubric](../phase4/organizer-ops-jury-acceptance.md#draft-gate). The cohort runner's implementation limits are listed below.
+
 ## Cohort aggregation
 
 `summary.json` → `detection_metrics.participants` contains metrics by track and partition. The track aggregate includes all assigned partitions. Counts pool TP, FP, and FN across successful products, then calculate precision, recall, and F1. This calculation does not average product F1 or apply point weights.
