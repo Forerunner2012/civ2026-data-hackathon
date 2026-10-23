@@ -1,0 +1,173 @@
+{
+  "contract": "civ.evaluation-plan/v1alpha2",
+  "session_id": "replace-with-session-id",
+  "cutoff": "2026-11-01T12:30:00+01:00",
+  "participants": [
+    "team-a",
+    "team-b"
+  ],
+  "tracks": [
+    {
+      "track_id": "kashiwa-rt",
+      "dataset": "kashiwa",
+      "target": "right-turn",
+      "replay": {
+        "event_spec_contracts": [
+          "civ.eventspec/v1"
+        ],
+        "allowed_topics": [
+          "/pix_hooke/v2a_steerstafb"
+        ],
+        "resource_limits": {
+          "max_files": 4,
+          "max_bytes": 1048576
+        },
+        "timeout_seconds": 120,
+        "retries": 0
+      },
+      "products": [
+        {
+          "product_id": "kashiwa-example",
+          "partition": "development",
+          "recording": {
+            "path": "recordings/kashiwa-example.mcap",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "manifest": {
+            "path": "manifests/kashiwa-example.json",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "truth": {
+            "path": "label-packs/kashiwa-rt/kashiwa-example.json",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "input_contract": {
+            "topics": [
+              "/pix_hooke/v2a_steerstafb"
+            ],
+            "schemas": [
+              {
+                "topic": "/pix_hooke/v2a_steerstafb",
+                "schema_name": "REPLACE_FROM_MANIFEST",
+                "schema_encoding": "REPLACE_FROM_MANIFEST",
+                "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "message_encoding": "REPLACE_FROM_MANIFEST"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "track_id": "reims-rlt",
+      "dataset": "reims",
+      "target": "right-or-left-turn",
+      "replay": {
+        "event_spec_contracts": [
+          "civ.eventspec/v1"
+        ],
+        "allowed_topics": [
+          "/zed/zed_node/imu/data",
+          "/fix_velocity"
+        ],
+        "resource_limits": {
+          "max_files": 4,
+          "max_bytes": 1048576
+        },
+        "timeout_seconds": 120,
+        "retries": 0
+      },
+      "products": [
+        {
+          "product_id": "reims-example",
+          "partition": "development",
+          "recording": {
+            "path": "recordings/reims-example.mcap",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "manifest": {
+            "path": "manifests/reims-example.json",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "truth": {
+            "path": "label-packs/reims-rlt/reims-example.json",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "input_contract": {
+            "topics": [
+              "/zed/zed_node/imu/data",
+              "/fix_velocity"
+            ],
+            "schemas": [
+              {
+                "topic": "/zed/zed_node/imu/data",
+                "schema_name": "REPLACE_FROM_MANIFEST",
+                "schema_encoding": "REPLACE_FROM_MANIFEST",
+                "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "message_encoding": "REPLACE_FROM_MANIFEST"
+              },
+              {
+                "topic": "/fix_velocity",
+                "schema_name": "REPLACE_FROM_MANIFEST",
+                "schema_encoding": "REPLACE_FROM_MANIFEST",
+                "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "message_encoding": "REPLACE_FROM_MANIFEST"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "track_id": "reims-caves-optional",
+      "dataset": "reims",
+      "target": "cave-encounter",
+      "replay": {
+        "event_spec_contracts": [
+          "civ.eventspec/v1"
+        ],
+        "allowed_topics": [
+          "/fix"
+        ],
+        "resource_limits": {
+          "max_files": 4,
+          "max_bytes": 1048576
+        },
+        "timeout_seconds": 120,
+        "retries": 0
+      },
+      "products": [
+        {
+          "product_id": "reims-example",
+          "partition": "development",
+          "recording": {
+            "path": "recordings/reims-example.mcap",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "manifest": {
+            "path": "manifests/reims-example.json",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "truth": {
+            "path": "label-packs/reims-caves-optional/reims-example.json",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "input_contract": {
+            "topics": [
+              "/fix"
+            ],
+            "schemas": [
+              {
+                "topic": "/fix",
+                "schema_name": "REPLACE_FROM_MANIFEST",
+                "schema_encoding": "REPLACE_FROM_MANIFEST",
+                "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "message_encoding": "REPLACE_FROM_MANIFEST"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

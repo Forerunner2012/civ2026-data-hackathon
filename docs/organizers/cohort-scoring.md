@@ -1,134 +1,134 @@
 # Score a full cohort
 
-Use `civ.evaluation-plan/v1alpha2` to replay every selected track submission against each product assigned to that track. The plan binds the participant cutoff, product and manifest hashes, topic and schema contracts, organizer truth, and scoring decisions. See the [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json).
+Use this procedure to collect track submissions, replay their detectors against assigned recordings, and compare results with reviewed organizer truth. All three tracks use `civ.evaluation-plan/v1alpha2` and source-bound `civ.label-pack/v1alpha1` references.
 
-The plan's `participants` list is the organizer's complete registered-team roster. Include every team, including teams that submitted no tracks. The scorer emits `missing-track` outcomes for rostered teams without an eligible delivery. Receipts for unregistered identities, receipts without a track ID, and receipts with unknown track IDs remain visible with delivery IDs and reconciliation dispositions in `summary.json`.
+The runner produces detection metrics and, with an explicit policy, Detection points. Evidence and Reproducibility points remain pending. Outputs have `official_score: false`, and `--official` rejects the run. See the [scoring rules and limits](../reference/scoring.md).
 
-`score-batch` keeps the `v1alpha1` diagnostic path for older two-dataset ledgers. For a `v1alpha2` plan, `--labels` is not used because each track and product names its own organizer truth pack.
+## 1. Gather the required inputs
 
-## Record track-specific deliveries
+Confirm that you have the following inputs:
 
-Use one stable track ID for each submission. For a local delivery, run:
+- [ ] The organizer checkout, `uv`, and access to its locked dependencies.
+- [ ] Every assigned MCAP recording, including sealed products, and its `civ.data-product-manifest/v1` manifest.
+- [ ] One reviewed truth pack for each assigned track and exact recording. An approved empty pack is valid.
+- [ ] The complete team roster, stable team IDs, and cutoff with a time zone.
+- [ ] Submitted metadata-only ZIPs, with each delivery's team, track, receipt time, SHA-256, and unique delivery ID.
+- [ ] A private directory for the plan, ledger, and results.
 
-```sh
-uv run civ intake-local SUBMISSION.zip --ledger INTAKE_LEDGER \
-  --identity TEAM_ID --track-id TRACK_ID --received-at ISO8601_TIMESTAMP \
-  --sha256 BUNDLE_SHA256 --delivery-id DELIVERY_ID
-```
+Use consistent track IDs in the plan and intake:
 
-The `intake-form` response can include a `track_id` field. Tally CSV exports can add a `Track ID` column before `Your submission.zip`. The importer accepts both the original and track-aware header sets.
+| Track ID | Target |
+| --- | --- |
+| `kashiwa-rt` | Kashiwa right turns |
+| `reims-rlt` | Reims right or left turns |
+| `reims-caves-optional` | Reims Cave encounters |
 
-The ledger keeps every valid receipt. `score-batch` selects the latest receipt on or before the plan cutoff for each identity and track. When timestamps tie, the plan must choose either `earlier_ledger_sequence` or `later_ledger_sequence`. This sequence is the receipt order in the immutable ledger snapshot. A failed selected delivery stays failed. The scorer never substitutes an older delivery.
+Labels alone are insufficient because scoring replays detectors against recordings. Review images, GUIs, and previous rehearsal results are unnecessary once reviewed references are ready. Prepare missing references through the [label-review procedure](../phase3/label-review.md#export-a-reviewed-organizer-reference) before scoring.
 
-The receipt `status` field still reflects the historical intake cutoff. Cohort selection uses the cutoff in the `v1alpha2` plan.
+## 2. Set up the environment and session directory
 
-## Use the pinned environment
-
-Run `uv sync --locked` in the organizer checkout before scoring. Run scoring with
-`uv run --locked civ score-batch` to use that environment.
-Remove the `runtime` object from earlier `v1alpha2` plans. The runner records runtime
-metadata in the summary instead of requiring hashes in the plan.
-
-The summary records the code revision, whether tracked runtime files have local changes,
-the tool and Python versions, and the `uv.lock` hash. Git or lock metadata is `null` when
-unavailable. These values describe the run; they do not prove that an environment was synced.
-The runner does not hash Python executables or installed dependency files.
-
-## Bind products and replay inputs
-
-Create one track entry for each target. Add every assigned warm-up, development, and sealed product. A product reference contains paths and SHA-256 values for the MCAP, its `civ.data-product-manifest/v1`, and its `civ.label-pack/v1alpha1` truth pack.
-
-Set `partition` to `warmup`, `development`, or `sealed`. Set `dataset` to the source family. Use a distinct `product_id` within each track. The same product can appear on two tracks with different truth packs.
-
-Each product's `input_contract` names its configured topics and exact schema identities. Schema records use `topic`, `schema_name`, `schema_encoding`, `schema_sha256`, and `message_encoding`. The scorer checks the plan against the product manifest and the MCAP itself.
-
-Each track's `replay` record sets accepted EventSpec contracts, allowed signal topics, resource file and byte limits, a timeout, and a retry count. The timeout applies to each trusted replay attempt. `retries` counts attempts after the first. The scorer validates the ZIP, loads only `detector/detector.yaml` and its declared resources, then invokes `civ detect` on every assigned product. It does not run the submitted reproduction script or use submitted `events.jsonl` and `metrics.json` as predictions.
-
-The evaluator writes one result for every identity, track, and assigned product. A successful replay with zero events has `status: "scored"` and `replay.zero_events: true`. Invalid submissions, products, or replay runs have an explicit failure result. Results and replay events belong in organizer-controlled storage.
-
-## Declare scoring decisions
-
-Add `scoring_policy` to the plan before assigning points. The scorer keeps the existing temporal IoU threshold of `0.5` and one-to-one best matching. Points require explicit product weights, score-bearing partitions, handling for missing tracks, failed runs, and empty truth, a rule for receipt timestamp ties, cross-product handling, rounding, and a Detection allocation for the track.
-
-Set the Detection allocation for the Cave track explicitly. The existing rubric assigns 15 points to Kashiwa RT and 10 to Reims turns. It does not assign Cave Detection points. The scorer does not infer that allocation.
-
-To leave Cave points pending, omit the Cave entry from `detection_points`. You can also omit
-its `product_weights` entry while those weights are undecided. Configured turn tracks still
-calculate points. The Cave track reports `detection_points: null` and a `pending_reason`.
-The participant Detection total remains `null` until every assigned track has a point result.
-The technical maximum is also `null` when any track allocation is missing.
-
-`score-batch` calculates participant Detection points when the plan supplies those decisions. For each participant and track, it computes product F1 from the exact TP, FP, and FN counts, applies the declared product weights to the included products, and uses that unrounded weighted mean for the Detection allocation. It rounds the displayed F1 and Detection points separately with the declared rounding mode and precision; the participant total is the sum of the rounded track allocations, rounded at the same precision.
-
-Evidence and Reproducibility are machine-scored categories worth 15 points each under issue #168. That issue does not define the eligible validated artifacts, deterministic criteria, point mappings, or outcomes for missing and invalid inputs. No approved deterministic mapping exists in the current rubric or implementation, so both components remain pending: `score-batch` reports their points and the technical total as `null`. Do not execute submitted reproduction scripts. Jury and bonus decisions remain separate from these machine calculations.
-
-## Read detection metrics before assigning points
-
-Use `summary.json` → `detection_metrics.participants` to compare replay outcomes without
-a points policy. Each participant has metrics by track, with separate partition summaries.
-The track aggregate includes all assigned partitions. Each product's original metrics remain
-in `results.jsonl`.
-
-The summary adds TP, FP, and FN counts across successful products, then calculates precision,
-recall, and F1 from those pooled counts. It does not average product F1 values or apply point
-weights. These diagnostic metrics do not choose which partitions count toward points.
-
-Check `outcomes` and `status` alongside each metric. `complete` means all products in that
-group were scored. `partial` means some products failed or had no eligible submission.
-`unavailable` means none were scored, and the counts and ratios are `null`. Missing and failed
-products do not contribute invented event counts. Ratios with a zero denominator are `null`,
-including F1 for a successful replay with both zero predictions and zero truth events.
-Any empty-truth point award still follows the plan's explicit `empty_truth` rule.
-
-## Run the cohort comparison
-
-Close intake writers before scoring. Read-only scoring rejects a ledger with a WAL sidecar.
-Run the batch with the plan, ledger, and private output directory:
+From the repository root, run:
 
 ```sh
-uv run --locked civ score-batch --ledger INTAKE_LEDGER --plan EVALUATION_PLAN.json \
-  --output ORGANIZER_RESULTS
+uv sync --locked
+SESSION="$HOME/civ-organizer/scoring-session"
+mkdir -p "$SESSION"
+cp docs/organizers/examples/cohort-plan.example.json "$SESSION/plan.json"
 ```
 
-The command writes `results.jsonl`, `summary.json`, and organizer-only replay artifacts
-under `replays/`. It requires no separate preflight, rehearsal, review-status, or computation
-approval records. Existing label-review signoffs remain part of reference preparation.
-Legacy readiness flags are rejected for cohort batches so stale approval records cannot
-appear to control a run.
+Use a private session path outside Git:
 
-The runner freezes receipt selection at the start. Before publishing, it checks that the
-plan, ledger, selected submission inputs, products, and references still match.
-If those inputs changed during replay, it discards staged output and preserves previous results.
+```text
+scoring-session/
+  plan.json
+  incoming/    # Delivered ZIPs, if stored here
+  ledger/      # Intake creates the database and stored bundles
+  results/     # Scoring creates summaries and replay artifacts
+```
 
-Each replay reports its attempts; failures include a failure stage. The summary records
-input diagnostics, pending scoring decisions, and any computed Detection points.
-Pending Evidence and Reproducibility policies do not block replay or reference comparison.
-The optional `score-readiness --ledger INTAKE_LEDGER --plan EVALUATION_PLAN.json` command
-reports input and scoring-policy problems without writing files. A batch runs its own checks.
+## 3. Bind the plan to the session inputs
 
-Cohort outputs have `official_score: false`. `--official` rejects cohort scoring before
-writing output while machine scoring policies remain incomplete. Publication remains a
-separate organizer decision.
+Edit the copied [example plan](examples/cohort-plan.example.json). It contains three tracks and one placeholder product per track. Its paths, zero hashes, schema names, roster, and cutoff must be replaced before scoring.
 
-## Keep unresolved reference work open
+1. Set `session_id`, `cutoff`, and `participants`. Include registered teams that submitted nothing, so missing tracks remain visible.
+2. Add every assigned product to each track. Set its unique `product_id` and `partition` to `warmup`, `development`, or `sealed`.
+3. Set each product's `recording`, `manifest`, and `truth` paths and SHA-256 values. Relative paths resolve from `plan.json`. The truth pack's `source_sha256` must identify the exact recording.
+4. Copy the required schema bindings from the manifest's `product.topics` into `input_contract.schemas`. Retain `topic`, `schema_name`, `schema_encoding`, `schema_sha256`, and `message_encoding`. Set `input_contract.topics` to those same topics.
+5. Set each track's accepted EventSpec contracts, allowed signal topics, resource limits, timeout, and retries. Include the signal topics that accepted participant detectors need. Check these settings against the assigned recordings.
 
-The historical selected label-pack set remains unchanged and contains left-turn-only Reims references. A separately audited both-direction candidate binds compatible Reims references to the four assigned R&LT products and covers the proposed right-or-left target. Recommend that candidate for a private R&LT plan entry; its validation does not authorize replacing the selected set or changing the official evaluation plan. No additional label review is needed for the candidate's product or target compatibility. An organizer must still authorize its selection into an official plan.
+Calculate a file hash with:
 
-All three tracks use reviewed, source-bound `civ.label-pack/v1alpha1` references. Cave
-EventSpecs and private locations propose intervals for the existing label-review workflow;
-their detected events do not become scoring truth automatically. Review candidates with
-GNSS and camera context, resolve missed events, and sign off completeness before export.
+```sh
+sha256sum /path/to/recording.mcap
+```
 
-For reviewed development recordings, append `--export-reference PRIVATE_REFERENCE.json`
-to the same bound `civ labels review` command. This exports all approved intervals, including
-a valid empty pack when the completed review found no events. For sealed recordings, build
-the packs from the existing reviewed source-relative truth with `civ_workshop.label_packs`.
-See [reviewed reference export](../phase3/label-review.md#export-a-reviewed-organizer-reference).
-The scorer consumes these packs through the same track/product mapping used for turn truth;
-it does not generate Cave references during scoring.
+The same Reims recording can appear in both Reims tracks, with different truth packs. Never substitute turn labels for Cave truth. The scorer consumes reviewed Cave packs through the same mapping as turn packs. It does not generate truth during scoring.
 
-The current track-aware scorer can bind distinct references for Kashiwa RT, Reims R&LT, and Cave on the same product. Prepare proposed entries with exact product and reference hashes, while keeping them separate by track. Cave's Detection allocation and eligibility of public products for scoring remain pending organizer decisions. Do not take points from Reims turns or infer either decision from generated references. Keep the roster, receipt dispositions, and explicit missing-track outcomes supplied by the cohort workflow.
+The example omits `scoring_policy` to request diagnostic metrics without points. To calculate Detection points, add the session's explicit [points policy](../reference/scoring.md#detection-points). Choose a receipt timestamp tie rule if deliveries can have equal timestamps. The [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json) lists the supported fields.
 
-Keep Cave locations, event times, truth intervals, sealed replay events, generated references, and organizer paths out of participant materials. Participant instructions may describe the `/fix` GNSS, point-distance, threshold, and event-timing method without disclosing private locations or occurrence times.
+## 4. Record each track delivery
 
-Use the [organizer label-pack guide](../phase3/organizer-label-packs.md) to verify product-bound truth. Use the [scoring reference](../reference/scoring.md) for matching and the [readiness guide](scoring-readiness.md) for the legacy `v1alpha1` diagnostic path.
+Set these values from the actual delivery, then run intake:
+
+```sh
+BUNDLE="$SESSION/incoming/team-a-kashiwa.zip"
+TEAM_ID='team-a'
+TRACK_ID='kashiwa-rt'
+RECEIVED_AT='2026-11-01T12:00:00+01:00' # Replace with the actual receipt time
+SUBMITTED_SHA256='REPLACE_WITH_SUBMITTED_SHA256'
+DELIVERY_ID='team-a-kashiwa-delivery-1'
+uv run --locked civ intake-local "$BUNDLE" \
+	--ledger "$SESSION/ledger" \
+	--identity "$TEAM_ID" --track-id "$TRACK_ID" \
+	--received-at "$RECEIVED_AT" --sha256 "$SUBMITTED_SHA256" \
+	--delivery-id "$DELIVERY_ID"
+```
+
+The first accepted delivery creates `ledger/intake.sqlite3` and stores the validated bundle. No separate ledger initialization is needed. Preserve the printed receipt and repeat intake for every delivery and track. Use the SHA-256 supplied with the delivery. Check that each receipt identifies the intended team and track.
+
+For exported online deliveries, use `civ intake-form` with a `track_id`, or `civ intake-tally` with the `Track ID` CSV column. See each command's `--help` for arguments.
+
+The runner selects the latest eligible receipt on or before the plan cutoff for each team and track. A selected delivery that fails replay stays failed. The runner does not substitute an older delivery. Equal timestamps require `scoring_policy.receipt_timestamp_ties` to select `earlier_ledger_sequence` or `later_ledger_sequence`.
+
+Cohort selection uses the cutoff in this plan. The receipt's historical intake `status` does not determine cohort eligibility.
+
+## 5. Run the cohort
+
+Stop intake writers and keep scoring inputs unchanged during replay. Read-only scoring rejects a ledger with a SQLite WAL sidecar.
+
+```sh
+uv run --locked civ score-batch \
+	--ledger "$SESSION/ledger" \
+	--plan "$SESSION/plan.json" \
+	--output "$SESSION/results"
+```
+
+The runner checks product hashes and schema bindings, validates selected bundles, and runs their EventSpecs and resources on every assigned recording. It does not execute submitted reproduction scripts or use submitted events and metrics as predictions. No separate detector-run command or rehearsal wrapper is needed.
+
+The runner records one outcome per registered team, track, and assigned product. Before committing outputs, it checks that the inputs still match. If inputs changed during replay, it discards staged output and preserves previous results.
+
+No separate preflight, review-status, runtime, or computation-approval file is required. The batch runs its own checks. An [optional input diagnostic](scoring-readiness.md) is available before replay.
+
+## 6. Check completeness and read results
+
+Inspect the private outputs:
+
+| Output | What to check |
+| --- | --- |
+| `summary.json` | Outcome counts, receipt dispositions, unregistered identities, runtime, and pending scoring decisions |
+| `summary.json` → `detection_metrics.participants` | Track metrics and separate partition metrics, including sealed products |
+| `results.jsonl` | Individual outcomes, metrics, selected submissions, replay attempts, and failure stages |
+| `replays/` | Generated events, metrics, and source-bound replay artifacts |
+
+Complete these checks before using the comparison:
+
+- [ ] Confirm the roster, cutoff, and selected deliveries match the session.
+- [ ] Confirm the outcome count equals `summary.identities` multiplied by the sum of assigned product counts across tracks. This identity count includes rostered teams and any additional identities found in receipts. Reconcile `unregistered_identities` before interpreting the comparison.
+- [ ] Investigate missing tracks, invalid inputs, and failed replays. A successful command does not mean every assignment scored.
+- [ ] Read `complete`, `partial`, or `unavailable` alongside each metric. Successful zero-event runs still count as scored outcomes.
+- [ ] Compare sealed metrics separately from development and warm-up metrics.
+- [ ] Check pending point components before interpreting totals. Do not replace `null` with zero.
+
+Pooled metrics sum TP, FP, and FN across successful products. They do not average product F1 or apply point weights. Missing and failed products contribute no invented counts. See the [scoring reference](../reference/scoring.md) for matching and point calculations.
+
+Keep plans, ledgers, truth, Cave locations, event times, and replay artifacts in organizer-controlled storage. Share only authorized participant results. Publication remains a separate decision.

@@ -14,7 +14,7 @@ Use the [issue-tracker instructions](docs/agents/issue-tracker.md) to describe t
 
 From the repository root, synchronize the existing Python project and run its checks:
 
-```powershell
+```sh
 uv sync --locked
 uv run ruff check src tests
 uv run mypy src tests
@@ -38,12 +38,12 @@ Chrome browser. These contributor checks do not establish release qualification.
 
 For an authorized chunk folder or a direct MCAP path, run this command:
 
-```powershell
-uv run python scripts/onboarding_check.py `
-  --source AUTHORIZED_CHUNK_OR_MCAP `
-  --eventspec MATCHING_EVENTSPEC `
-  --labels REVIEWED_PRACTICE_PACK `
-  --output FRESH_OUTPUT_FOLDER
+```sh
+uv run python scripts/onboarding_check.py \
+	--source AUTHORIZED_CHUNK_OR_MCAP \
+	--eventspec MATCHING_EVENTSPEC \
+	--labels REVIEWED_PRACTICE_PACK \
+	--output FRESH_OUTPUT_FOLDER
 ```
 
 The folder must contain exactly one top-level MCAP file. Pass the MCAP path directly when a folder contains more than one. The helper calls the detector and scorer functions used by `civ detect` and `civ score --labels`. It validates the pack and source hash. Choose an authorized source, a matching EventSpec, and a complete human-reviewed practice pack before you run the helper. The helper does not establish authorization, human review, or label coverage. It writes to a new output folder outside the input folders.

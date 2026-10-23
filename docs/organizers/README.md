@@ -58,13 +58,11 @@ qualified inputs, machine checks and release approval.
 
 ## Evaluate and finish
 
-1. Use the [intake and scoring procedure](../phase1/lunch-scoring-acceptance.md) and
-   [scoring reference](../reference/scoring.md). Preserve authoritative intake, exact source
-   bindings, matching semantics and the agreed rubric. Keep complete sealed truth and organizer
-   audit in organizer-controlled storage. Development scores do not establish held-out results.
-   Use [Score a full cohort](cohort-scoring.md) for track-aware replay and comparison.
-   The [scoring readiness check](scoring-readiness.md) documents the older diagnostic path.
-   Batch outputs are explicitly nonofficial; a complete diagnostic does not establish approval.
+1. Follow [Score a full cohort](cohort-scoring.md) from its required-input checklist through
+   plan setup, track-specific intake, replay, and result checks. Use its three-track example
+   plan as the starting point for the session. Read the [scoring reference](../reference/scoring.md)
+   for matching, aggregation, and pending point components. Keep truth and replay artifacts
+   private, and inspect sealed metrics separately. Cohort outputs are nonofficial.
 2. Apply the recorded jury and feedback process from the
    [organizer operations reference](../phase4/organizer-ops-jury-acceptance.md). Retain the local
    operational audit, with only the approved participant-facing results released.
@@ -80,7 +78,7 @@ qualified inputs, machine checks and release approval.
 From the repository root, use project mode:
 
 ```sh
-uv sync
+uv sync --locked
 ```
 
 The implemented loopback review interface supports exact interval edits, undo, save/reload,
