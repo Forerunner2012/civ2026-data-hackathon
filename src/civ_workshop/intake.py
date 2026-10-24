@@ -45,6 +45,7 @@ class IntakeReceipt:
     track_id: str | None = None
     cutoff: str | None = None
     evaluation_plan_sha256: str | None = None
+    validation_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -235,6 +236,7 @@ def _receipt_from_row(record: sqlite3.Row) -> IntakeReceipt:
         track_id=cast(str | None, record["track_id"]),
         cutoff=cast(str | None, record["cutoff"]),
         evaluation_plan_sha256=cast(str | None, record["evaluation_plan_sha256"]),
+        validation_error=cast(str | None, record["validation_error"]),
     )
 
 
@@ -283,7 +285,7 @@ class IntakeLedger:
                 connection.execute("ALTER TABLE receipts ADD COLUMN source_sha256 TEXT")
             if "track_id" not in columns:
                 connection.execute("ALTER TABLE receipts ADD COLUMN track_id TEXT")
-            for column in ("cutoff", "evaluation_plan_sha256"):
+            for column in ("cutoff", "evaluation_plan_sha256", "validation_error"):
                 if column not in columns:
                     connection.execute(f"ALTER TABLE receipts ADD COLUMN {column} TEXT")
             yield connection
@@ -317,11 +319,15 @@ class IntakeLedger:
                     plan = (
                         "evaluation_plan_sha256" if "evaluation_plan_sha256" in columns else "NULL"
                     )
+                    validation_error = (
+                        "validation_error" if "validation_error" in columns else "NULL"
+                    )
                     rows = connection.execute(
                         "SELECT delivery_id, identity, source, received_at_original, "
                         "received_at_utc, bundle_sha256, "
                         f"{source} AS source_sha256, {track} AS track_id, status, "
-                        f"{cutoff} AS cutoff, {plan} AS evaluation_plan_sha256 "
+                        f"{cutoff} AS cutoff, {plan} AS evaluation_plan_sha256, "
+                        f"{validation_error} AS validation_error "
                         "FROM receipts ORDER BY sequence"
                     ).fetchall()
                 return [_receipt_from_row(row) for row in rows]
@@ -332,7 +338,7 @@ class IntakeLedger:
                 """
                 SELECT delivery_id, identity, source, received_at_original, received_at_utc,
                        bundle_sha256, source_sha256, track_id, status, cutoff,
-                       evaluation_plan_sha256
+                       evaluation_plan_sha256, validation_error
                 FROM receipts
                 ORDER BY sequence
                 """
@@ -362,6 +368,10 @@ class IntakeLedger:
         return [receipt for receipt in self.receipts() if receipt.status == "late"]
 
     def bundle_for(self, receipt: IntakeReceipt) -> Path:
+        if receipt.validation_error is not None:
+            raise CivError(
+                f"delivery '{receipt.delivery_id}' is invalid: {receipt.validation_error}"
+            )
         path = self.bundles_path / f"{receipt.bundle_sha256}.zip"
         if not path.is_file() or file_sha256(path) != receipt.bundle_sha256:
             raise CivError(
@@ -479,15 +489,15 @@ class IntakeLedger:
             and len(normalized_track_id) > MAX_DELIVERY_ID_CHARACTERS
         ):
             raise CivError(f"track id exceeds {MAX_DELIVERY_ID_CHARACTERS} characters")
-        # Reject unsafe names before creating ledger or snapshot artifacts. The
-        # immutable snapshot is validated again before a receipt is recorded.
-        try:
-            if bundle_path.stat().st_size > MAX_SUBMISSION_BUNDLE_BYTES:
-                raise CivError(f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes")
-            with zipfile.ZipFile(bundle_path) as archive:
-                _safe_archive_infos(archive)
-        except (OSError, zipfile.BadZipFile, RuntimeError) as error:
-            raise CivError(f"cannot read submission bundle: {error}") from error
+        if normalized_track_id is None:
+            # Preserve legacy intake's rejection before creating ledger artifacts.
+            try:
+                if bundle_path.stat().st_size > MAX_SUBMISSION_BUNDLE_BYTES:
+                    raise CivError(f"submission bundle exceeds {MAX_SUBMISSION_BUNDLE_BYTES} bytes")
+                with zipfile.ZipFile(bundle_path) as archive:
+                    _safe_archive_infos(archive)
+            except (OSError, zipfile.BadZipFile, RuntimeError) as error:
+                raise CivError(f"cannot read submission bundle: {error}") from error
         with self._connection() as connection:
             duplicate = connection.execute(
                 "SELECT 1 FROM receipts WHERE delivery_id = ?", (normalized_delivery_id,)
@@ -497,10 +507,25 @@ class IntakeLedger:
 
         original_timestamp, received_utc = _parse_received_at(received_at)
         with self._snapshot_bundle(bundle_path) as snapshot:
-            validated = validated_submission(snapshot)
-            bundle_sha256 = validated.bundle_sha256
-            if _require_sha256(submitted_sha256) != bundle_sha256:
-                raise CivError(f"pasted sha256 does not match the bundle: expected {bundle_sha256}")
+            bundle_sha256 = file_sha256(snapshot)
+            validated: ValidatedSubmission | None = None
+            validation_error = None
+            try:
+                validated = validated_submission(snapshot)
+                if _require_sha256(submitted_sha256) != bundle_sha256:
+                    raise CivError(
+                        f"pasted sha256 does not match the bundle: expected {bundle_sha256}"
+                    )
+            except CivError as error:
+                if normalized_track_id is None:
+                    raise
+                cause: BaseException | None = error
+                while cause is not None:
+                    if isinstance(cause, OSError):
+                        raise error
+                    cause = cause.__cause__
+                validation_error = str(error).replace(str(snapshot), "<bundle>")
+                validation_error = validation_error.replace(str(bundle_path), "<bundle>")[:1000]
 
             receipt = IntakeReceipt(
                 contract="civ.intake-receipt/v1alpha1",
@@ -510,11 +535,14 @@ class IntakeLedger:
                 received_at_original=original_timestamp,
                 received_at_utc=received_utc.isoformat(),
                 bundle_sha256=bundle_sha256,
-                source_sha256=validated.source_sha256,
+                source_sha256=validated.source_sha256
+                if validated is not None and validation_error is None
+                else None,
                 status="on_time" if received_utc <= self.cutoff_utc else "late",
                 track_id=normalized_track_id,
                 cutoff=self.cutoff_original,
                 evaluation_plan_sha256=self.evaluation_plan_sha256,
+                validation_error=validation_error,
             )
             try:
                 with self._connection() as connection, connection:
@@ -523,8 +551,8 @@ class IntakeLedger:
                         INSERT INTO receipts (
                             delivery_id, identity, source, received_at_original, received_at_utc,
                             bundle_sha256, source_sha256, track_id, status, cutoff,
-                            evaluation_plan_sha256
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            evaluation_plan_sha256, validation_error
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             receipt.delivery_id,
@@ -538,9 +566,11 @@ class IntakeLedger:
                             receipt.status,
                             receipt.cutoff,
                             receipt.evaluation_plan_sha256,
+                            receipt.validation_error,
                         ),
                     )
-                    self._publish_bundle(snapshot, bundle_sha256)
+                    if validation_error is None:
+                        self._publish_bundle(snapshot, bundle_sha256)
                     try:
                         snapshot.unlink()
                     except OSError as error:
@@ -551,6 +581,10 @@ class IntakeLedger:
                 if "UNIQUE constraint failed: receipts.delivery_id" in str(error):
                     raise CivError(f"duplicate delivery id: {normalized_delivery_id}") from None
                 raise
+            if validation_error is not None:
+                raise CivError(
+                    f"delivery '{normalized_delivery_id}' recorded as invalid: {validation_error}"
+                )
             return receipt
 
     def _publish_bundle(self, bundle_path: Path, bundle_sha256: str) -> None:

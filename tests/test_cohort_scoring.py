@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import zipfile
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -267,6 +268,94 @@ def test_official_refuses_unresolved_automatic_tracks(
     computed = cast(dict[str, Any], diagnostic["computed_detection"])
     assert computed["participants"]["team-a"][f"total_{allocation}_points"] is None
     assert "no scored product weight" in str(diagnostic["blockers"])
+
+
+@pytest.mark.parametrize("invalid", ["incomplete", "not_zip", "unsafe", "hash"])
+def test_invalid_track_delivery_is_retained_without_scoring_an_older_bundle(
+    tmp_path: Path, invalid: str,
+) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case)
+    plan = json.loads(plan_path.read_text())
+    plan["scoring_policy"]["manual_review"] = "organizer_or_agent"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="old-valid")
+    accepted = ledger.accept_local(
+        identity="team-a", track_id="micro-turn", received_at=ON_TIME,
+        submitted_sha256=file_sha256(bundle), bundle_path=bundle, delivery_id="old-valid",
+    )
+    rejected = tmp_path / "invalid.zip"
+    if invalid == "not_zip":
+        rejected.write_bytes(b"not a ZIP")
+    elif invalid == "hash":
+        rejected.write_bytes(bundle.read_bytes())
+    else:
+        with zipfile.ZipFile(rejected, "w") as archive:
+            archive.writestr("../unsafe" if invalid == "unsafe" else "README.md", "incomplete")
+    digest = file_sha256(rejected)
+    with pytest.raises(CivError):
+        ledger.accept_local(
+            identity="team-a", track_id="micro-turn",
+            received_at="2026-09-03T12:00:00+09:00",
+            submitted_sha256="0" * 64 if invalid == "hash" else digest,
+            bundle_path=rejected, delivery_id="new-invalid",
+        )
+    receipts = ledger.receipts(read_only=True)
+    assert [receipt.delivery_id for receipt in receipts] == ["old-valid", "new-invalid"]
+    assert receipts[0] == accepted
+    assert receipts[1].bundle_sha256 == digest
+    assert receipts[1].validation_error
+    assert receipts[1].source_sha256 is None
+    summary = run_batch(ledger.root, None, tmp_path / "results", plan_path=plan_path, official=True)
+    record = _results(tmp_path / "results")[0]
+    assert record["selected_submission"]["delivery_id"] == "new-invalid"
+    assert record["status"] == "failed"
+    assert record["failure_origin"] == "submission"
+    assert record["replay"]["attempts"] == 0
+    assert record["replay"]["failure_stage"] == "submission_validation"
+    computed = cast(dict[str, Any], summary["computed_detection"])
+    assert computed["participants"]["team-a"]["total_detection_points"] == 0
+    assert not (tmp_path / "unsafe").exists()
+    assert not list(ledger.root.glob(".incoming-*"))
+    if invalid != "hash":
+        assert not (ledger.bundles_path / f"{digest}.zip").exists()
+
+
+def test_invalid_track_receipts_preserve_cutoff_and_allow_new_deliveries(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case, ("micro-turn", "micro-other"))
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="resubmission")
+    for track in ("micro-turn", "micro-other"):
+        ledger.accept_local(
+            identity="team-a", track_id=track, received_at=ON_TIME,
+            submitted_sha256=file_sha256(bundle), bundle_path=bundle, delivery_id=track,
+        )
+    invalid = tmp_path / "invalid.zip"
+    invalid.write_bytes(b"not a ZIP")
+    for delivery, timestamp in (
+        ("on-time-invalid", "2026-09-03T12:00:00+09:00"),
+        ("late-invalid", "2026-09-03T12:31:00+09:00"),
+    ):
+        with pytest.raises(CivError, match="recorded as invalid"):
+            ledger.accept_online(
+                identity="team-a", track_id="micro-turn", received_at=timestamp,
+                submitted_sha256=file_sha256(invalid), bundle_path=invalid, delivery_id=delivery,
+            )
+    run_batch(ledger.root, None, tmp_path / "results", plan_path=plan_path)
+    records = {row["track_id"]: row for row in _results(tmp_path / "results")}
+    assert records["micro-turn"]["selected_submission"]["delivery_id"] == "on-time-invalid"
+    assert records["micro-other"]["status"] == "scored"
+    ledger.accept_local(
+        identity="team-a", track_id="micro-turn", received_at="2026-09-03T12:15:00+09:00",
+        submitted_sha256=file_sha256(bundle), bundle_path=bundle, delivery_id="corrected",
+    )
+    run_batch(ledger.root, None, tmp_path / "corrected", plan_path=plan_path)
+    records = {row["track_id"]: row for row in _results(tmp_path / "corrected")}
+    assert records["micro-turn"]["selected_submission"]["delivery_id"] == "corrected"
+    assert records["micro-turn"]["status"] == "scored"
+    assert len(ledger.receipts(read_only=True)) == 5
 
 
 def test_score_batch_replays_event_spec_against_each_track_truth_and_never_runs_script(

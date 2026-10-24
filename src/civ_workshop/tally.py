@@ -63,6 +63,7 @@ class TallyReceiptPayload(TypedDict):
     track_id: str | None
     cutoff: str | None
     evaluation_plan_sha256: str | None
+    validation_error: str | None
 
 
 class TallyOutcome(TypedDict, total=False):
@@ -261,6 +262,7 @@ def _receipt_payload(receipt: IntakeReceipt) -> TallyReceiptPayload:
         "track_id": receipt.track_id,
         "cutoff": receipt.cutoff,
         "evaluation_plan_sha256": receipt.evaluation_plan_sha256,
+        "validation_error": receipt.validation_error,
     }
 
 
@@ -288,6 +290,13 @@ def _process_tally_row(
                 and existing.bundle_sha256 == row.submitted_sha256
                 and existing.track_id == row.track_id
             ):
+                if existing.validation_error is not None:
+                    return {
+                        **base,
+                        "outcome": "invalid",
+                        "receipt": _receipt_payload(existing),
+                        "diagnostic": _redact_diagnostic(existing.validation_error),
+                    }
                 return {
                     **base,
                     "delivery_id": row.delivery_id,

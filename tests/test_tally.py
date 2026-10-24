@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import civ_workshop.cli as cli_module
+from civ_workshop.artifacts import file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.intake import IntakeLedger
 from civ_workshop.reporting import build_report_bundle
@@ -102,6 +103,36 @@ def test_tally_csv_imports_bom_rows_and_normalizes_naive_utc(
         IntakeLedger(tmp_path / "ledger").scorer_input("team-001").read_bytes()
         == bundle.read_bytes()
     )
+
+
+def test_tally_retains_invalid_track_receipts_on_reimport(tmp_path: Path) -> None:
+    invalid = b"not a ZIP"
+    bundle = tmp_path / "invalid.zip"
+    bundle.write_bytes(invalid)
+    row = _row(
+        "invalid-track", "team-a", "2026-09-03 03:00:00", file_sha256(bundle),
+        "https://storage.tally.so/uploads/invalid",
+    )
+    row["Track ID"] = "micro-turn"
+    csv_path = tmp_path / "deliveries.csv"
+    _write_csv(csv_path, [row], TALLY_HEADERS_WITH_TRACK)
+    ledger = IntakeLedger(tmp_path / "ledger")
+    downloads = 0
+
+    def download(_url: str, destination: Path) -> None:
+        nonlocal downloads
+        downloads += 1
+        destination.write_bytes(invalid)
+
+    for _attempt in range(2):
+        result = import_tally_csv(csv_path, ledger.root, downloader=download)
+        assert result["counts"] == {"already_imported": 0, "imported": 0, "invalid": 1}
+        assert "zip" in result["outcomes"][0]["diagnostic"].lower()
+    receipts = ledger.receipts(read_only=True)
+    assert len(receipts) == 1
+    assert receipts[0].delivery_id == "invalid-track"
+    assert receipts[0].validation_error
+    assert downloads == 1
 
 
 def test_tally_csv_can_record_a_track_specific_delivery(

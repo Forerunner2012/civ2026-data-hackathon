@@ -626,6 +626,13 @@ def _resource_fingerprint(
                 "received_at_utc": selected.received_at_utc,
                 "bundle_sha256": selected.bundle_sha256,
             }
+            if selected.validation_error is not None:
+                item["validation_error"] = selected.validation_error
+                diagnostics.append(
+                    f"submission: {identity}/{track_id}: {selected.validation_error}"
+                )
+                selections.append(item)
+                continue
             try:
                 bundle = ledger.bundle_for(selected)
             except CivError as error:
@@ -1204,6 +1211,7 @@ def _receipt_dispositions(
                 "track_id": receipt.track_id,
                 "participant_disposition": participant_disposition,
                 "track_disposition": track_disposition,
+                "validation_error": receipt.validation_error,
                 "reconciliation_required": (
                     participant_disposition != "registered"
                     or track_disposition in {"missing_track_id", "unknown_track_id"}
@@ -1339,20 +1347,21 @@ def run_cohort_batch(
                 "bundle_sha256": selected.bundle_sha256,
                 "track_id": selected.track_id,
             }
-            submission_error: str | None = None
+            submission_error = selected.validation_error
             storage_error: str | None = None
             submission_metadata: dict[str, Any] = {}
-            try:
-                bundle = ledger.bundle_for(selected)
-            except CivError as error:
-                storage_error = str(error)
-            else:
+            if submission_error is None:
                 try:
-                    submission_metadata, _spec_path_unused, _resource_records_unused = (
-                        _submission_inputs(track, bundle)
-                    )
+                    bundle = ledger.bundle_for(selected)
                 except CivError as error:
-                    submission_error = str(error)
+                    storage_error = str(error)
+                else:
+                    try:
+                        submission_metadata, _spec_path_unused, _resource_records_unused = (
+                            _submission_inputs(track, bundle)
+                        )
+                    except CivError as error:
+                        submission_error = str(error)
             for product in track["products"]:
                 product_valid, product_error = product_cache[(track_id, str(product["product_id"]))]
                 assignment_submission_error = submission_error

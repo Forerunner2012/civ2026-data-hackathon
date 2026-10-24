@@ -106,6 +106,8 @@ New receipts record their classification cutoff and evaluation-plan SHA-256. Exi
 
 The runner selects the latest eligible receipt on or before the plan cutoff for each team and track. A selected delivery that fails replay stays failed. The runner does not substitute an older delivery. Equal timestamps require `scoring_policy.receipt_timestamp_ties` to select `earlier_ledger_sequence` or `later_ledger_sequence`.
 
+Track-specific intake retains a receipt with `validation_error` when a received bundle fails validation or its submitted hash does not match. Intake still reports the error and discards the invalid bundle bytes. If that receipt is selected, cohort scoring records a submission failure and applies `failed_run`; it never falls back to an older delivery. Late invalid receipts remain excluded by the cutoff. Corrected submissions need a new delivery ID. Legacy intake without a track ID retains its last-valid-submission behavior.
+
 Cohort selection uses the cutoff in this plan. The receipt's historical intake `status` does not determine cohort eligibility.
 
 ## 5. Run the cohort
