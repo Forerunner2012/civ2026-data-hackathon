@@ -174,6 +174,41 @@ def _results(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in (path / "results.jsonl").read_text().splitlines()]
 
 
+@pytest.mark.parametrize(
+    "rounding",
+    [None, [], "half_up", {}, {"mode": "half_up", "decimal_places": True}],
+)
+def test_invalid_rounding_blocks_readiness_and_official_replay(
+    tmp_path: Path, monkeypatch: Any, rounding: object,
+) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case)
+    plan = json.loads(plan_path.read_text())
+    plan["scoring_policy"]["manual_review"] = "organizer_or_agent"
+    plan["scoring_policy"]["rounding"] = rounding
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="rounding")
+    ledger.accept_local(
+        identity="team-a", track_id="micro-turn", received_at=ON_TIME,
+        submitted_sha256=file_sha256(bundle), bundle_path=bundle, delivery_id="rounding",
+    )
+
+    def unexpected_replay(*_args: Any, **_kwargs: Any) -> None:
+        pytest.fail("an invalid rounding policy must block before replay")
+
+    monkeypatch.setattr("civ_workshop.cohort_scoring._run_replay", unexpected_replay)
+    readiness = check_readiness(ledger.root, plan_path=plan_path)
+    assert readiness["ready"] is False
+    assert "rounding" in str(readiness["blockers"])
+    with pytest.raises(CivError, match="official scoring blocked.*rounding"):
+        run_batch(ledger.root, None, tmp_path / "official", plan_path=plan_path, official=True)
+    assert not (tmp_path / "official").exists()
+    computed, blockers = _aggregate_detection([], plan)
+    assert computed is None
+    assert "rounding" in str(blockers)
+
+
 def test_score_batch_replays_event_spec_against_each_track_truth_and_never_runs_script(
     tmp_path: Path,
     monkeypatch: Any,

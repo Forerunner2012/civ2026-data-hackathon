@@ -717,6 +717,18 @@ def input_fingerprint(
     return hashlib.sha256(canonical_json(snapshot).encode("utf-8")).hexdigest(), diagnostics
 
 
+def _rounding_blockers(rounding: object) -> list[str]:
+    if not isinstance(rounding, dict):
+        return ["scoring policy: rounding must define mode and decimal_places"]
+    blockers = []
+    if rounding.get("mode") not in ("half_even", "half_up"):
+        blockers.append("scoring policy: rounding mode must be half_even or half_up")
+    places = rounding.get("decimal_places")
+    if isinstance(places, bool) or not isinstance(places, int) or not 0 <= places <= 12:
+        blockers.append("scoring policy: rounding decimal_places must be from 0 to 12")
+    return blockers
+
+
 def policy_blockers(plan: dict[str, Any]) -> list[str]:
     policy = plan.get("scoring_policy")
     if not isinstance(policy, dict):
@@ -775,16 +787,7 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
         blockers.append("scoring policy: failed_run must be zero or exclude")
     if policy.get("empty_truth") not in ("zero", "perfect_empty", "exclude"):
         blockers.append("scoring policy: empty_truth must be zero, perfect_empty, or exclude")
-    rounding = policy.get("rounding")
-    if isinstance(rounding, dict):
-        if rounding.get("mode") not in ("half_even", "half_up"):
-            blockers.append("scoring policy: rounding mode must be half_even or half_up")
-        if (
-            isinstance(rounding.get("decimal_places"), bool)
-            or not isinstance(rounding.get("decimal_places"), int)
-            or not 0 <= rounding["decimal_places"] <= 12
-        ):
-            blockers.append("scoring policy: rounding decimal_places must be from 0 to 12")
+    blockers.extend(_rounding_blockers(policy.get("rounding")))
     if policy.get("detection_points") is not None:
         points = policy["detection_points"]
         if not isinstance(points, dict):
@@ -926,6 +929,9 @@ def _aggregate_detection(
     points_all = policy.get("detection_points", {})
     bonus_all = policy.get("bonus_points", {})
     rounding = policy["rounding"]
+    rounding_errors = _rounding_blockers(rounding)
+    if rounding_errors:
+        return None, rounding_errors
     if (
         not isinstance(weights_all, dict)
         or not isinstance(partitions, list)
@@ -939,13 +945,6 @@ def _aggregate_detection(
             return None, [f"scoring policy: {name} must be zero or exclude"]
     if policy["empty_truth"] not in ("zero", "perfect_empty", "exclude"):
         return None, ["scoring policy: empty_truth must be zero, perfect_empty, or exclude"]
-    if (
-        rounding.get("mode") not in ("half_even", "half_up")
-        or isinstance(rounding.get("decimal_places"), bool)
-        or not isinstance(rounding.get("decimal_places"), int)
-        or not 0 <= rounding.get("decimal_places", -1) <= 12
-    ):
-        return None, ["scoring policy: rounding is incomplete"]
     if (
         not partitions
         or any(
