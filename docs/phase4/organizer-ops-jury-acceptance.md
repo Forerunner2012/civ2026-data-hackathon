@@ -1,5 +1,9 @@
 # Phase 4 organizer operations and jury-pack acceptance
 
+> **Historical acceptance record.** The schedule, scoring wording, and executed evidence below
+> describe the original event. Current intake and replay use [the saved-plan procedure](../organizers/cohort-scoring.md).
+> Current automatic allocations and manual criteria are in [the scoring reference](../reference/scoring.md).
+
 Status: **accepted**
 
 Recorded: 2026-08-29

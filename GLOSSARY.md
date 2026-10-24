@@ -92,6 +92,6 @@ plan.
 _Avoid_: Product score
 
 **Computation approval**:
-A human approval bound to the exact plan and scoring-input fingerprint; it does not approve
-publication.
+A historical human approval record bound to an evaluation plan and scoring-input fingerprint;
+it does not grant publication authority.
 _Avoid_: Publication approval

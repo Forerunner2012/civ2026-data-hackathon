@@ -59,6 +59,9 @@ test("organizer pack preserves fixed evaluator and authority semantics", async (
   assert.match(body, /Kashiwa __\/15, Reims __\/10/);
   assert.match(body, /jury never changes submission authority/i);
   assert.match(body, /Later valid on-time hash.*replace authority/);
+  assert.match(body, /same team and track/);
+  assert.match(body, /Eligibility uses the plan cutoff/);
+  assert.match(body, /fails replay never falls back/);
   assert.match(body, /Late: quarantine and never replace an on-time authority/);
 });
 

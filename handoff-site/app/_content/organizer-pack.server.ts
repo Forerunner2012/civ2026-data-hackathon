@@ -28,8 +28,8 @@ export const troubleshooting = [
   ["Schema or topic mismatch", "Run civ doctor and civ inspect against the named participant product. If the product hash differs, replace it from tracked event media; do not patch the spec with private knowledge."],
   ["Internet or hosted page lost", "Hand out the static participant export from event media. Keep the same beat, expectation, hint, and tip; coaches become the distribution channel."],
   ["Historical form outage fallback", "The former event route accepted the unchanged metadata-only ZIP by local or USB intake and recorded team identity, dataset, organizer receipt time, SHA-256, and reference. It is retired for this event. No collection route or recipient is active. The CLI validator and receipt rules remain available for a future authorized workflow."],
-  ["Future authorized intake: invalid or incomplete", "Return the exact validation failure. Keep the receipt as rejected and ask for a corrected resubmission; never repair participant artifacts."],
-  ["Future authorized intake: duplicate, replacement, or late receipt", "Duplicate hash: retain one reference. Later valid on-time hash for the same team and dataset: replace authority. Late: quarantine and never replace an on-time authority."],
+  ["Future authorized intake: invalid or incomplete", "Return the exact validation failure. Record the rejection and ask for a corrected resubmission; never repair participant artifacts or invent an accepted receipt."],
+  ["Future authorized intake: duplicate, replacement, or late receipt", "Use one saved session plan for intake and scoring. Retain each accepted delivery and its original timestamp and hash. Later valid on-time hash for the same team and track: replace authority. Eligibility uses the plan cutoff; equal timestamps select the later ledger entry. Late: quarantine and never replace an on-time authority. A selected submission that fails replay never falls back to an older delivery. Follow docs/organizers/cohort-scoring.md."],
 ] as const;
 
 export const juryCategories = [
