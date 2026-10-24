@@ -827,6 +827,10 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
                     for product in track["products"]
                     if product["partition"] in selected_partitions
                 }
+                if not expected_products:
+                    blockers.append(
+                        f"scoring policy: track '{track_id}' has no score-bearing products"
+                    )
                 if set(track_weights) != expected_products:
                     blockers.append(
                         f"scoring policy: product_weights for '{track_id}' must match its "
@@ -978,7 +982,11 @@ def _aggregate_detection(
             for product in track["products"]
             if product["partition"] in partitions
         }
-        if set(track_weights) != expected_products:
+        if not expected_products:
+            track_errors[track_id] = (
+                f"scoring policy: track '{track_id}' has no score-bearing products"
+            )
+        elif set(track_weights) != expected_products:
             track_errors[track_id] = (
                 f"scoring policy: product weights for '{track_id}' do not match "
                 "score-bearing products"
@@ -1079,10 +1087,13 @@ def _aggregate_detection(
                     points_field: None,
                     "products": product_audit,
                 }
-                if organizer_failure:
-                    reason = f"organizer failure requires rerun for '{track_id}'"
-                    track_scores[track_id]["pending_reason"] = reason
-                    outcome_blockers.append(f"{identity}: {reason}")
+                reason = (
+                    f"organizer failure requires rerun for '{track_id}'"
+                    if organizer_failure
+                    else f"no scored product weight remains for '{track_id}'"
+                )
+                track_scores[track_id]["pending_reason"] = reason
+                outcome_blockers.append(f"{identity}: {reason}")
             else:
                 exact_f1 = weighted_f1 / used_weight
                 f1 = _rounded(exact_f1, rounding)

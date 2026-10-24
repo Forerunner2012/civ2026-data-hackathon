@@ -209,6 +209,66 @@ def test_invalid_rounding_blocks_readiness_and_official_replay(
     assert "rounding" in str(blockers)
 
 
+def test_official_rejects_tracks_without_score_bearing_products(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case)
+    plan = json.loads(plan_path.read_text())
+    policy = plan["scoring_policy"]
+    policy["manual_review"] = "organizer_or_agent"
+    policy["score_bearing_partitions"] = ["warmup"]
+    policy["product_weights"] = {"micro-turn": {}}
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    ledger.receipts()
+    readiness = check_readiness(ledger.root, plan_path=plan_path)
+    assert readiness["ready"] is False
+    assert "no score-bearing products" in str(readiness["blockers"])
+    with pytest.raises(CivError, match="official scoring blocked.*no score-bearing products"):
+        run_batch(ledger.root, None, tmp_path / "official", plan_path=plan_path, official=True)
+    assert not (tmp_path / "official").exists()
+
+
+@pytest.mark.parametrize("excluded", ["missing_track", "failed_run", "empty_truth"])
+@pytest.mark.parametrize("allocation", ["detection", "bonus"])
+def test_official_refuses_unresolved_automatic_tracks(
+    tmp_path: Path, monkeypatch: Any, excluded: str, allocation: str,
+) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case, ("micro-empty",))
+    plan = json.loads(plan_path.read_text())
+    policy = plan["scoring_policy"]
+    policy["manual_review"] = "organizer_or_agent"
+    policy[excluded] = "exclude"
+    if allocation == "bonus":
+        policy["detection_points"] = {}
+        policy["bonus_points"] = {"micro-empty": 10}
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    ledger.receipts()
+    if excluded != "missing_track":
+        bundle = _bundle(tmp_path, (0.0, 0.0, 0.0, 0.0, 0.0), marker="excluded")
+        ledger.accept_local(
+            identity="team-a", track_id="micro-empty", received_at=ON_TIME,
+            submitted_sha256=file_sha256(bundle), bundle_path=bundle, delivery_id="excluded",
+        )
+    if excluded == "failed_run":
+        monkeypatch.setattr(
+            "civ_workshop.cohort_scoring._run_replay",
+            lambda *_args, **_kwargs: (False, "invalid detector", 1, "submission"),
+        )
+    output = tmp_path / "official"
+    output.mkdir()
+    (output / "summary.json").write_text("previous results", encoding="utf-8")
+    with pytest.raises(CivError, match="official scoring blocked.*no scored product weight"):
+        run_batch(ledger.root, None, output, plan_path=plan_path, official=True)
+    assert (output / "summary.json").read_text() == "previous results"
+    assert not (output / "results.jsonl").exists()
+    diagnostic = run_batch(ledger.root, None, tmp_path / "diagnostic", plan_path=plan_path)
+    computed = cast(dict[str, Any], diagnostic["computed_detection"])
+    assert computed["participants"]["team-a"][f"total_{allocation}_points"] is None
+    assert "no scored product weight" in str(diagnostic["blockers"])
+
+
 def test_score_batch_replays_event_spec_against_each_track_truth_and_never_runs_script(
     tmp_path: Path,
     monkeypatch: Any,
@@ -1044,7 +1104,7 @@ def test_excluded_products_leave_detection_total_pending(tmp_path: Path) -> None
         }
     ]
     computed, blockers = _aggregate_detection(records, plan)
-    assert blockers == []
+    assert blockers == ["team-a: no scored product weight remains for 'micro-turn'"]
     assert computed is not None
     participant = computed["participants"]["team-a"]
     assert participant["tracks"]["micro-turn"]["detection_points"] is None
