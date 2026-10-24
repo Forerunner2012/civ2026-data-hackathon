@@ -20,14 +20,18 @@ test("desk commands and eight-step pipeline match the canonical quickstart", asy
 
 test("published score totals match the canonical scoring reference", async () => {
   const reference = await canonical("reference/scoring.md");
-  const split = reference.match(/fixed (\d+) machine \/ (\d+) jury rubric; up to (\d+) optional bonus points/);
-  assert.ok(split, "canonical reference must state its approved point allocation");
+  const allocation = new Map([...reference.matchAll(/^\| (Detection|Evidence|Reproducibility|Jury|Existing bonus|Cave bonus) \| (\d+) \|/gm)]
+    .map((match) => [match[1], Number(match[2])]));
+  assert.equal(allocation.size, 6, "canonical reference must state each point allocation");
   const document = await exported("participants/index.html");
   const totals = [...document.querySelectorAll("#scoring tr.score-total .score-points")].map((entry) => Number(entry.textContent));
-  assert.deepEqual(totals, [Number(split[1]) + Number(split[2]), Number(split[3])]);
+  assert.deepEqual(totals, [
+    ["Detection", "Evidence", "Reproducibility", "Jury"].reduce((sum, name) => sum + allocation.get(name), 0),
+    allocation.get("Existing bonus") + allocation.get("Cave bonus"),
+  ]);
   const brief = await exported("desk/brief.html");
-  assert.match(brief.body.textContent, new RegExp(`${split[1]} points are machine-scored`));
-  assert.match(brief.body.textContent, new RegExp(`AI agents score the ${split[2]} report points`));
+  assert.match(brief.body.textContent, new RegExp(`${allocation.get("Detection")} Detection points are automatic`));
+  assert.match(brief.body.textContent, new RegExp(`AI agents score the ${allocation.get("Jury")} report points`));
 });
 
 test("static participant guidance does not promise live state or a partial scoring key", async () => {

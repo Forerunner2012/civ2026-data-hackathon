@@ -85,7 +85,16 @@ def test_existing_intake_ledger_adds_nullable_source_provenance_column(
             ),
         )
 
+    original_bytes = database.read_bytes()
+    old_receipts = IntakeLedger(root).receipts(read_only=True)
+    assert database.read_bytes() == original_bytes
+    assert old_receipts[0].cutoff is None
+    assert old_receipts[0].evaluation_plan_sha256 is None
+    assert old_receipts[0].validation_error is None
+    assert old_receipts[0].received_at_original == "2026-09-03T12:00:00+09:00"
+    assert old_receipts[0].bundle_sha256 == "0" * 64
     receipts = IntakeLedger(root).receipts()
+    assert receipts == old_receipts
 
     assert len(receipts) == 1
     assert receipts[0].source_sha256 is None
@@ -256,6 +265,27 @@ def test_invalid_and_duplicate_deliveries_do_not_replace_an_earlier_valid_submis
 
     assert ledger.receipts() == [accepted]
     assert ledger.authoritative("team-1") == accepted
+
+
+def test_track_intake_io_errors_do_not_become_participant_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bundle = tmp_path / "submission.zip"
+    bundle.write_bytes(b"fixture")
+    ledger = IntakeLedger(tmp_path / "ledger")
+
+    def fail_validation(_bundle: Path) -> None:
+        raise CivError("temporary storage failure") from OSError("disk unavailable")
+
+    monkeypatch.setattr(intake_module, "validated_submission", fail_validation)
+    with pytest.raises(CivError, match="temporary storage failure"):
+        ledger.accept_local(
+            identity="team-a", track_id="micro-turn", received_at="2026-09-03T03:00:00Z",
+            submitted_sha256=sha256(bundle.read_bytes()).hexdigest(),
+            bundle_path=bundle, delivery_id="storage-failure",
+        )
+    assert ledger.receipts(read_only=True) == []
+    assert not list(ledger.root.glob(".incoming-*"))
 
 
 def test_cli_imports_form_export_and_usb_bundle_through_the_same_contract(

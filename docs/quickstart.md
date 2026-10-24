@@ -131,7 +131,9 @@ civ score working --labels PRACTICE_LABELS.json
 
 The Kashiwa warm-up is the first practice target. Organizers are encouraged to share complete, source-bound practice labels in the same space as participant kits, at a time they choose. Use practice labels for learning and self-evaluation. Development metrics do not guarantee results on sealed evaluation, whose truth remains organizer-only.
 
-Replace `PRACTICE_LABELS.json` with the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. If labels are unavailable, ask a coach before scoring. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
+Replace `PRACTICE_LABELS.json` with the complete practice pack matched to the exact source and event definition announced for your kit. Do not substitute organizer truth, a partial answer key, or labels for a different event. The repository's reserved practice-labels folder contains no real label JSON; use the pack supplied for your session. Expected result: `working/metrics.json` plus its hash in the updated run manifest. Inspect at least one false positive, false negative, boundary error, or ambiguity and record what you changed in `working/report.md`.
+
+When no matching practice labels are supplied, run `civ score working` without `--labels`. It writes `civ.metrics/v2` with `status: "not_evaluated"` and null metrics. Continue to `civ report`; packaging does not require truth access. Explain your manual inspection and uncertainty in the report. A supplied missing or invalid label file remains an error and never silently becomes an unevaluated run.
 
 ## 8. Validate and keep the metadata-only ZIP
 

@@ -25,31 +25,47 @@ def _temporal_iou(left: Interval, right: Interval) -> float:
 
 def _overlaps_gap(interval: Interval, gaps: list[Interval]) -> bool:
     return any(
-        min(interval.end_ns, gap.end_ns) > max(interval.start_ns, gap.start_ns)
-        for gap in gaps
+        min(interval.end_ns, gap.end_ns) > max(interval.start_ns, gap.start_ns) for gap in gaps
     )
 
 
-def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
+def score_submission(working: Path, labels_path: Path | None = None) -> dict[str, object]:
     if not working.is_dir():
         raise CivError(f"submission working directory does not exist: {working}")
     events = read_events(working / "events.jsonl")
     manifest = read_json_file(working / "run-manifest.json", "run manifest")
     require_run_contracts(manifest, [event.contract for event in events])
     source = require_mapping(manifest.get("source"), "run manifest source")
-    submission_source_sha256 = require_string(
-        source.get("sha256"), "run manifest source sha256"
-    )
-    label_pack = load_score_reference(labels_path)
-    dataset = str(label_pack["dataset"])
-    source_sha256 = str(label_pack["source_sha256"])
-    if source_sha256 != submission_source_sha256:
-        raise CivError("label pack source_sha256 does not match submission source sha256")
+    submission_source_sha256 = require_string(source.get("sha256"), "run manifest source sha256")
     for event in events:
         if event.bag_sha256 != submission_source_sha256:
             raise CivError(
                 f"event {event.event_id} source does not match the submission source sha256"
             )
+    if labels_path is None:
+        unevaluated = {
+            "counts": None,
+            "precision": None,
+            "recall": None,
+            "f1": None,
+            "match_quality": None,
+        }
+        metrics: dict[str, object] = {
+            "contract": "civ.metrics/v2",
+            "status": "not_evaluated",
+            "reason": "No practice reference supplied; organizer evaluation remains separate.",
+            "aggregate": unevaluated,
+            "datasets": [{**unevaluated, "source_sha256": submission_source_sha256}],
+            "label_pack_sha256": None,
+            "matching": None,
+        }
+        _write_metrics(working, manifest, metrics)
+        return metrics
+    label_pack = load_score_reference(labels_path)
+    dataset = str(label_pack["dataset"])
+    source_sha256 = str(label_pack["source_sha256"])
+    if source_sha256 != submission_source_sha256:
+        raise CivError("label pack source_sha256 does not match submission source sha256")
     raw_labels = label_pack.get("labels")
     if not isinstance(raw_labels, list):
         raise CivError("label pack labels must be a list")
@@ -67,9 +83,7 @@ def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
         for index, gap in enumerate(raw_gaps)
     ]
     predictions = [
-        prediction
-        for prediction in all_predictions
-        if not _overlaps_gap(prediction, gaps)
+        prediction for prediction in all_predictions if not _overlaps_gap(prediction, gaps)
     ]
     expected = [label for label in all_expected if not _overlaps_gap(label, gaps)]
     candidates: list[tuple[float, int, int]] = []
@@ -112,7 +126,7 @@ def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
         "precision": round(precision, 12),
         "recall": round(recall, 12),
     }
-    metrics: dict[str, object] = {
+    metrics = {
         "aggregate": aggregate,
         "contract": "civ.metrics/v1",
         "datasets": [
@@ -133,10 +147,14 @@ def score_submission(working: Path, labels_path: Path) -> dict[str, object]:
             "temporal_iou_threshold": TEMPORAL_IOU_THRESHOLD,
         },
     }
+    _write_metrics(working, manifest, metrics)
+    return metrics
+
+
+def _write_metrics(working: Path, manifest: dict[str, object], metrics: dict[str, object]) -> None:
     metrics_path = working / "metrics.json"
     metrics_path.write_text(f"{canonical_json(metrics)}\n", encoding="utf-8", newline="\n")
 
     manifest_path = working / "run-manifest.json"
     manifest["metrics"] = {"name": "metrics.json", "sha256": file_sha256(metrics_path)}
     manifest_path.write_text(f"{canonical_json(manifest)}\n", encoding="utf-8", newline="\n")
-    return metrics

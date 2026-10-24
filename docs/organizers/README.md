@@ -13,7 +13,7 @@ qualified inputs, machine checks and release approval.
    for the existing edit locations.
 2. Verify recording and image permissions, attribution, retention and deletion requirements for
    the intended audience. Record exact source hashes and approved products. Use the
-   [dataset authority record](../phase3/two-dataset-authority.md),
+   [track and product bindings](cohort-scoring.md#3-bind-the-plan-to-the-session-inputs),
    [camera-context procedure](../phase5/camera-context-candidate.md) and
    [legal qualification procedure](../phase5/legal-risk-acceptance.md) as references. Historical
    permissions do not authorize another session or public imagery.
@@ -49,8 +49,8 @@ qualified inputs, machine checks and release approval.
    public participant build. Keep private material off participant screens.
 2. Let participants own their hypotheses and EventSpecs. Coach through evidence inspection and
    failure analysis; do not replace their decisions with an organizer solution. Use the
-   [original facilitation and recovery runbook](../phase4/organizer-ops-jury-acceptance.md) as a
-   reference, with the current session's recorded schedule and qualified recovery options.
+   [historical facilitation and recovery record](../phase4/organizer-ops-jury-acceptance.md) as
+   context. Use the current session's recorded schedule and qualified recovery options.
 3. Release only the authorized practice references at the recorded checkpoint. Participants
    score the exact matching source, explain false positives and missed events, and submit the
    [participant contract](../reference/participant-contracts.md). Recordings, evidence clips,
@@ -58,12 +58,15 @@ qualified inputs, machine checks and release approval.
 
 ## Evaluate and finish
 
-1. Use the [intake and scoring procedure](../phase1/lunch-scoring-acceptance.md) and
-   [scoring reference](../reference/scoring.md). Preserve authoritative intake, exact source
-   bindings, matching semantics and the agreed rubric. Keep complete sealed truth and organizer
-   audit in organizer-controlled storage. Development scores do not establish held-out results.
-2. Apply the recorded jury and feedback process from the
-   [organizer operations reference](../phase4/organizer-ops-jury-acceptance.md). Retain the local
+1. Follow [Score a full cohort](cohort-scoring.md) from its required-input checklist through
+   plan setup, track-specific intake, replay, and result checks. Use its three-track example
+   plan as the starting point for the session. Read the [scoring reference](../reference/scoring.md)
+   for matching, aggregation, and pending point components. Keep truth and replay artifacts
+   private, and inspect sealed metrics separately. Diagnostic runs are nonofficial. An explicit
+   `--official` run covers automatic components; final totals still need manual review.
+2. Apply the current manual criteria in the [scoring reference](../reference/scoring.md#manual-technical-criteria)
+   and the organizer-only operations pack. The [original jury acceptance](../phase4/organizer-ops-jury-acceptance.md)
+   records historical evidence. Retain the local
    operational audit, with only the approved participant-facing results released.
 3. Check the current release evidence, permissions and notice requirements before any handout,
    hosted preview or public release. Dataset qualification does not authorize deployment,
@@ -77,7 +80,7 @@ qualified inputs, machine checks and release approval.
 From the repository root, use project mode:
 
 ```sh
-uv sync
+uv sync --locked
 ```
 
 The implemented loopback review interface supports exact interval edits, undo, save/reload,

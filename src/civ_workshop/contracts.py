@@ -5,9 +5,9 @@ from collections.abc import Iterable, Mapping
 
 from civ_workshop.errors import CivError
 
-# Top-level fields of each stable participant artifact. Stable schemas are closed by
-# default, so anything else is rejected. tests/test_stable_contracts.py pins these to the
-# published schemas/civ.*.v1.schema.json properties.
+# Top-level fields of each stable participant or organizer artifact. Stable schemas are
+# closed by default, so anything else is rejected. tests/test_stable_contracts.py pins
+# these to the published schemas/civ.*.schema.json properties.
 STABLE_FIELDS: dict[str, frozenset[str]] = {
     "civ.eventspec/v1": frozenset(
         {"spec", "name", "signals", "resources", "derive", "condition", "timing", "evidence"}
@@ -52,6 +52,19 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
     ),
     "civ.metrics/v1": frozenset(
         {"contract", "aggregate", "datasets", "label_pack_sha256", "matching"}
+    ),
+    "civ.metrics/v2": frozenset(
+        {"contract", "status", "reason", "aggregate", "datasets", "label_pack_sha256", "matching"}
+    ),
+    "civ.evaluation-plan/v1alpha2": frozenset(
+        {
+            "contract",
+            "session_id",
+            "cutoff",
+            "participants",
+            "tracks",
+            "scoring_policy",
+        }
     ),
     "civ.submission-bundle/v1": frozenset({"contract", "reproduction"}),
     "civ.submission-bundle/v2": frozenset({"contract", "extension", "reproduction"}),

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { rm } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const testEnvironment = {
@@ -47,6 +47,8 @@ await run(
 );
 await run(["scripts/build-audience.mjs", "public"]);
 const staticExport = fileURLToPath(new URL("../tmp/participant-static", import.meta.url));
+// A fresh checkout has no ignored tmp directory.
+await mkdir(fileURLToPath(new URL("../tmp/", import.meta.url)), { recursive: true });
 await rm(staticExport, { recursive: true, force: true });
 await run(["scripts/export-public-static.mjs", "tmp/participant-static"]);
 await run([

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import civ_workshop.cli as cli_module
+from civ_workshop.artifacts import file_sha256
 from civ_workshop.errors import CivError
 from civ_workshop.intake import IntakeLedger
 from civ_workshop.reporting import build_report_bundle
@@ -15,6 +16,7 @@ from civ_workshop.tally import (
     MAX_TALLY_CSV_BYTES,
     MAX_TALLY_CSV_ROWS,
     TALLY_HEADERS,
+    TALLY_HEADERS_WITH_TRACK,
     import_tally_csv,
 )
 from tests.helpers import MicroCase, create_micro_case, prepare_scored_submission
@@ -37,9 +39,11 @@ def _bundle(
     return working / "submission.zip"
 
 
-def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:
+def _write_csv(
+    path: Path, rows: list[dict[str, str]], headers: tuple[str, ...] = TALLY_HEADERS
+) -> None:
     with path.open("w", encoding="utf-8-sig", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=TALLY_HEADERS)
+        writer = csv.DictWriter(stream, fieldnames=headers)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -99,6 +103,66 @@ def test_tally_csv_imports_bom_rows_and_normalizes_naive_utc(
         IntakeLedger(tmp_path / "ledger").scorer_input("team-001").read_bytes()
         == bundle.read_bytes()
     )
+
+
+def test_tally_retains_invalid_track_receipts_on_reimport(tmp_path: Path) -> None:
+    invalid = b"not a ZIP"
+    bundle = tmp_path / "invalid.zip"
+    bundle.write_bytes(invalid)
+    row = _row(
+        "invalid-track", "team-a", "2026-09-03 03:00:00", file_sha256(bundle),
+        "https://storage.tally.so/uploads/invalid",
+    )
+    row["Track ID"] = "micro-turn"
+    csv_path = tmp_path / "deliveries.csv"
+    _write_csv(csv_path, [row], TALLY_HEADERS_WITH_TRACK)
+    ledger = IntakeLedger(tmp_path / "ledger")
+    downloads = 0
+
+    def download(_url: str, destination: Path) -> None:
+        nonlocal downloads
+        downloads += 1
+        destination.write_bytes(invalid)
+
+    for _attempt in range(2):
+        result = import_tally_csv(csv_path, ledger.root, downloader=download)
+        assert result["counts"] == {"already_imported": 0, "imported": 0, "invalid": 1}
+        assert "zip" in result["outcomes"][0]["diagnostic"].lower()
+    receipts = ledger.receipts(read_only=True)
+    assert len(receipts) == 1
+    assert receipts[0].delivery_id == "invalid-track"
+    assert receipts[0].validation_error
+    assert downloads == 1
+
+
+def test_tally_csv_can_record_a_track_specific_delivery(
+    tmp_path: Path, micro_case: MicroCase
+) -> None:
+    bundle = _bundle(micro_case, tmp_path)
+    bundle_hash = sha256(bundle.read_bytes()).hexdigest()
+    row = _row(
+        "track-delivery",
+        "team-track",
+        "2026-09-03 03:00:00",
+        bundle_hash,
+        "https://storage.tally.so/uploads/track",
+    )
+    row["Track ID"] = "reims-cave"
+    csv_path = tmp_path / "track-tally.csv"
+    _write_csv(csv_path, [row], TALLY_HEADERS_WITH_TRACK)
+
+    def download(_url: str, destination: Path) -> None:
+        destination.write_bytes(bundle.read_bytes())
+
+    summary = import_tally_csv(
+        csv_path,
+        tmp_path / "ledger",
+        downloader=download,
+    )
+
+    assert summary["counts"]["imported"] == 1
+    assert summary["outcomes"][0]["receipt"]["track_id"] == "reims-cave"
+    assert IntakeLedger(tmp_path / "ledger").receipts()[0].track_id == "reims-cave"
 
 
 def test_tally_rows_are_isolated_and_last_on_time_receipt_wins(
@@ -347,9 +411,17 @@ def test_intake_tally_cli_dispatches_the_manual_csv_path(
         "outcomes": [],
     }
 
-    def fake_import(csv_path: Path, ledger_root: Path) -> dict[str, object]:
+    def fake_import(
+        csv_path: Path,
+        ledger_root: Path,
+        *,
+        cutoff: str | None = None,
+        evaluation_plan_sha256: str | None = None,
+    ) -> dict[str, object]:
         assert csv_path == tmp_path / "submissions.csv"
         assert ledger_root == tmp_path / "ledger"
+        assert cutoff is None
+        assert evaluation_plan_sha256 is None
         return expected
 
     monkeypatch.setattr(cli_module, "import_tally_csv", fake_import)

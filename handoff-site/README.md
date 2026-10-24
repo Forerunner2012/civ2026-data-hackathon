@@ -7,7 +7,7 @@ audience views so organizer material is never shown to participants.
 | --- | --- | --- |
 | `/` | attendees in public builds; entry door in local/internal builds | Public participant page, equivalent to `/participants`; the local/internal entry door links audience views. |
 | `/participants` | attendees | Brief, the three-hour ladder, ownership boundary, deliverables, the published rubric, toolkit and CLI, submission layout, what to come ready with. |
-| `/organizers` | **internal** | Strategy/tactics/operations, success criteria and non-goals, the six preparation phases and gates, readiness workstreams, evaluation internals, facilitation mechanics, the seven driving forces, the open decision queue, source precedence. |
+| `/organizers` | **internal, historical** | The original CIV 2026 design, decisions, and source context. Its historical labels and scoring language are not current operating instructions. Current operations use the organizer guide and saved-plan cohort procedure. |
 | `/organizers/pack` | organizers and jury, **internal** | Day-of coach, recovery, scoring, feedback, and results runbook; absent from the public production artifact. |
 | `/live` | attendees, **local only** | Current session beat, cumulative unlocked guidance, countdown, and static fallback. |
 | `/live/coach` | coach, **local only** | One authorized, next-only advance action. |

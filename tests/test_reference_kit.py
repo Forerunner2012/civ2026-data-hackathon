@@ -19,7 +19,10 @@ PARTICIPANT_COMMANDS = {
     "score",
     "submission-init",
 }
-ORGANIZER_COMMANDS = ("intake-form", "intake-tally", "intake-local", "score-batch")
+ORGANIZER_COMMANDS = (
+    "intake-form", "intake-tally", "intake-local", "score-batch",
+    "score-readiness", "record-decision",
+)
 REFERENCE_PATHS = [
     ("layouts/kashiwa-right-turn.pj4.xml", "examples/kashiwa/right_turn.yaml"),
     ("layouts/reims-left-turn.pj4.xml", "examples/reims/left_turn.yaml"),
@@ -115,8 +118,8 @@ def test_quickstart_covers_every_golden_path_step_and_product() -> None:
         "Create your working submission once",
         "Detect intervals",
         "Extract local evidence",
-        "Score against the supplied development labels",
-        "Validate, package, and submit",
+        "Score against the supplied practice labels",
+        "Validate and keep the metadata-only ZIP",
     ]
     for product in (
         "events.jsonl",

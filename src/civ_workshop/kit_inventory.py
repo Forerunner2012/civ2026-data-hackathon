@@ -83,6 +83,7 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("schema", "schemas/civ.run-manifest.v1.schema.json"),
     ("schema", "schemas/civ.run-manifest.v2.schema.json"),
     ("schema", "schemas/civ.metrics.v1.schema.json"),
+    ("schema", "schemas/civ.metrics.v2.schema.json"),
     ("schema", "schemas/civ.submission-bundle.v1.schema.json"),
     ("schema", "schemas/civ.submission-bundle.v2.schema.json"),
     ("schema", "schemas/civ.submission-extension.v1.schema.json"),

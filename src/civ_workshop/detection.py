@@ -15,7 +15,7 @@ from mcap.exceptions import McapError
 from mcap.reader import make_reader
 
 from civ_workshop.artifacts import canonical_json, file_sha256
-from civ_workshop.errors import CivError
+from civ_workshop.errors import CivError, SourceDataError
 from civ_workshop.event_spec import load_event_spec
 from civ_workshop.inspection import MessageDecoder, extract_field
 from civ_workshop.models import EventRecord, EventSpec, Interval, SignalBinding
@@ -321,7 +321,7 @@ def detect_events(
     spec = load_event_spec(spec_path)
     resources = load_point_resources(spec_path, spec.resources)
     if not bag_path.is_file():
-        raise CivError(f"bag does not exist: {bag_path}")
+        raise SourceDataError(f"bag does not exist: {bag_path}")
     bag_hash = file_sha256(bag_path)
     spec_hash = file_sha256(spec_path)
     events = _event_records(

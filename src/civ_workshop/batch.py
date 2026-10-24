@@ -23,6 +23,7 @@ from civ_workshop.intake import (
     open_validated_submission,
 )
 from civ_workshop.label_packs import TEMPORAL_IOU_THRESHOLD, load_label_pack
+from civ_workshop.organizer.scoring_readiness import check_readiness, require_official_readiness
 from civ_workshop.scoring import score_submission
 
 BATCH_BUDGET_SECONDS = 45 * 60
@@ -281,10 +282,44 @@ def _write_json_lines(path: Path, records: list[dict[str, object]]) -> None:
         raise CivError(f"cannot write batch result {path}: {error}") from error
 
 
-def run_batch(ledger_root: Path, labels_root: Path, output_root: Path) -> dict[str, object]:
+def run_batch(
+    ledger_root: Path,
+    labels_root: Path | None,
+    output_root: Path,
+    *,
+    official: bool = False,
+    plan_path: Path | None = None,
+    preflight_path: Path | None = None,
+    review_status_path: Path | None = None,
+    approval_path: Path | None = None,
+) -> dict[str, object]:
+    if plan_path is not None:
+        declared_plan = read_json_file(plan_path, "evaluation plan")
+        if declared_plan.get("contract") == "civ.evaluation-plan/v1alpha2":
+            if any(
+                path is not None for path in (preflight_path, review_status_path, approval_path)
+            ):
+                raise CivError(
+                    "cohort scoring uses only --plan and --ledger; remove --preflight, "
+                    "--review-status, and --approval"
+                )
+            from civ_workshop.cohort_scoring import run_cohort_batch
+
+            return run_cohort_batch(ledger_root, plan_path, output_root, official=official)
+    readiness = check_readiness(
+        ledger_root,
+        plan_path=plan_path,
+        preflight_path=preflight_path,
+        review_status_path=review_status_path,
+        approval_path=approval_path,
+    )
+    if official:
+        require_official_readiness(readiness)
+    if labels_root is None:
+        raise CivError("legacy diagnostic score-batch requires --labels")
     packs = _load_label_packs(labels_root)
     ledger = IntakeLedger(ledger_root)
-    receipts = ledger.receipts()
+    receipts = ledger.receipts(read_only=True)
     identities = sorted({receipt.identity for receipt in receipts})
     if not identities:
         raise CivError(f"intake ledger holds no submissions: {ledger_root}")
@@ -329,10 +364,9 @@ def run_batch(ledger_root: Path, labels_root: Path, output_root: Path) -> dict[s
                 "contract": "civ.batch-result/v1alpha1",
                 "datasets": scored_datasets,
                 "deliveries": deliveries,
-                "diagnostics": [
-                    _redact(diagnostic, labels_root) for diagnostic in diagnostics
-                ],
+                "diagnostics": [_redact(diagnostic, labels_root) for diagnostic in diagnostics],
                 "identity": identity,
+                "official_score": False,
                 "scorer": SCORER_VERSIONS,
                 "status": "complete" if complete else "incomplete",
             }
@@ -363,6 +397,8 @@ def run_batch(ledger_root: Path, labels_root: Path, output_root: Path) -> dict[s
         "cutoff_utc": TOKYO_CUTOFF.isoformat(),
         "datasets": dict(sorted(dataset_counts.items())),
         "entries": len(entries),
+        "official_score": False,
+        "readiness": readiness,
         "label_packs": [
             {"dataset": pack.dataset, "sha256": pack.sha256, "source_sha256": source_sha256}
             for source_sha256, pack in sorted(packs.items(), key=lambda item: item[1].dataset)

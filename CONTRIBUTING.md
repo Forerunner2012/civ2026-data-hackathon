@@ -14,10 +14,10 @@ Use the [issue-tracker instructions](docs/agents/issue-tracker.md) to describe t
 
 From the repository root, synchronize the existing Python project and run its checks:
 
-```powershell
-uv sync
+```sh
+uv sync --locked
 uv run ruff check src tests
-uv run mypy src
+uv run mypy src tests
 uv run pytest
 ```
 
@@ -29,16 +29,21 @@ For website changes, work in `handoff-site/` and follow the
 [site development guide](handoff-site/README.md) for `npm ci`, `npm run test` and `npm run lint`.
 Participant platform/install qualification is separate from this contributor project setup.
 
+GitHub Actions runs these checks for pull requests and pushes to `develop` and `main`.
+Tests are included in strict mypy checking. The website job uses `npm ci` and runs the
+configured tests and lint checks, then runs the navigation check with the runner's installed
+Chrome browser. These contributor checks do not establish release qualification.
+
 ## Optional onboarding check
 
 For an authorized chunk folder or a direct MCAP path, run this command:
 
-```powershell
-uv run python scripts/onboarding_check.py `
-  --source AUTHORIZED_CHUNK_OR_MCAP `
-  --eventspec MATCHING_EVENTSPEC `
-  --labels REVIEWED_PRACTICE_PACK `
-  --output FRESH_OUTPUT_FOLDER
+```sh
+uv run python scripts/onboarding_check.py \
+	--source AUTHORIZED_CHUNK_OR_MCAP \
+	--eventspec MATCHING_EVENTSPEC \
+	--labels REVIEWED_PRACTICE_PACK \
+	--output FRESH_OUTPUT_FOLDER
 ```
 
 The folder must contain exactly one top-level MCAP file. Pass the MCAP path directly when a folder contains more than one. The helper calls the detector and scorer functions used by `civ detect` and `civ score --labels`. It validates the pack and source hash. Choose an authorized source, a matching EventSpec, and a complete human-reviewed practice pack before you run the helper. The helper does not establish authorization, human review, or label coverage. It writes to a new output folder outside the input folders.

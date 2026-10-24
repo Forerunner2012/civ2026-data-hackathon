@@ -85,7 +85,10 @@ def test_both_entry_points_reproduce_complete_workflow(tmp_path: Path) -> None:
     assert results[0] == results[1]
 
 
-@pytest.mark.parametrize("command", ["intake-form", "intake-local", "intake-tally", "score-batch"])
+@pytest.mark.parametrize("command", [
+    "intake-form", "intake-local", "intake-tally", "score-batch",
+    "score-readiness", "record-decision",
+])
 def test_participant_rejects_organizer_commands(command: str) -> None:
     with pytest.raises(SystemExit) as result:
         participant_parser().parse_args([command])

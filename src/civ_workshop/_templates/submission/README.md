@@ -6,8 +6,10 @@ This workspace is deliberately incomplete. It supplies the stable shape, not a d
    `figure.svg` with your own participant-safe work.
 2. Run your selected `reproduce.ps1 DATASET` or `./reproduce.sh DATASET` entry point. It invokes
    `civ detect` and rebuilds the normalized `events.jsonl` and `run-manifest.json` in this directory.
-3. Run `civ clip events.jsonl DATASET`, then the supplied development `civ score` path. These update
-   the manifest and create `metrics.json`; evidence clips remain under `evidence/` on your machine.
+3. Run `civ clip events.jsonl DATASET`, then `civ score . --labels PRACTICE_LABELS.json` with a
+   supplied matching reference. Without practice truth, run `civ score .` to record
+   `not_evaluated` metrics with null scores and continue packaging. These commands update the
+   manifest and create `metrics.json`; evidence clips remain under `evidence/` on your machine.
 4. Complete the five fixed report headings and replace the single figure placeholder.
 5. Run `civ report .`. Submit only the unchanged `submission.zip`, the printed SHA-256, and the same
    participant or team identity you used for earlier submissions.

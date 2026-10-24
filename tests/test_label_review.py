@@ -330,6 +330,79 @@ def test_completed_review_reopens_and_saves_unchanged_at_same_paths(tmp_path: Pa
     )
 
 
+@pytest.mark.parametrize("split", ["warmup", "development"])
+def test_reference_export_includes_approved_events_without_practice_selection(
+    tmp_path: Path, split: str,
+) -> None:
+    args = _reduced_case(tmp_path / "case", split=split)
+    binding, events, _, before, after = _prepare_binding(args)
+    app = ReviewApplication(
+        binding, initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before, after_ns=after,
+    )
+    app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    app.act({
+        "type": "approve", "candidate_id": events[0].event_id,
+        "uncertainty_disposition": "accept_event",
+        "uncertainty_reason": "Synthetic camera coverage is limited.",
+    })
+    app.act({"type": "signoff", "checked": True})
+    before_progress = args.progress.read_bytes()
+    args.export_reference = tmp_path / "private-reference.json"
+
+    label_review_module.review_command(args)
+
+    pack = load_label_pack(args.export_reference)
+    assert len(pack["labels"]) == 1
+    assert pack["source_sha256"] == file_sha256(args.source)
+    assert args.progress.read_bytes() == before_progress
+    assert not args.practice_output.exists()
+    assert not args.organizer_output.exists()
+    label_review_module.review_command(args)
+    args.export_reference.write_text("existing unrelated content", encoding="utf-8")
+    with pytest.raises(CivError, match="different content"):
+        label_review_module.review_command(args)
+    assert args.export_reference.read_text() == "existing unrelated content"
+
+
+def test_reference_export_preserves_a_reviewed_zero_event_result(tmp_path: Path) -> None:
+    args, _, _ = _case(tmp_path / "case")
+    args.spec.write_text(MICRO_SPEC.replace("signal > 1.0", "signal > 999.0"))
+    run = tmp_path / "zero-run"
+    detect_events(args.spec, args.source, run)
+    args.events, args.manifest = run / "events.jsonl", run / "run-manifest.json"
+    binding, events, _, before, after = _prepare_binding(args)
+    assert events == []
+    app = ReviewApplication(
+        binding, initial_review_state(binding, events, binding.evidence_by_id),
+        before_ns=before, after_ns=after,
+    )
+    app.act({"type": "set-reviewer", "name": "Synthetic reviewer"})
+    app.act({"type": "signoff", "checked": True})
+    before_progress = args.progress.read_bytes()
+    args.export_reference = tmp_path / "empty-reference.json"
+
+    label_review_module.review_command(args)
+
+    assert load_label_pack(args.export_reference)["labels"] == []
+    assert args.progress.read_bytes() == before_progress
+
+
+def test_reference_export_requires_current_inputs_and_complete_review(tmp_path: Path) -> None:
+    args, app, candidate_id = _case(tmp_path / "case")
+    app.save()
+    args.export_reference = tmp_path / "reference.json"
+    with pytest.raises(CivError, match="review is incomplete"):
+        label_review_module.review_command(args)
+    assert not args.export_reference.exists()
+
+    _record_review(app, candidate_id)
+    args.source.write_bytes(args.source.read_bytes() + b"changed source")
+    with pytest.raises(CivError, match="source recording SHA-256"):
+        label_review_module.review_command(args)
+    assert not args.export_reference.exists()
+
+
 def test_refinement_and_reexport_archive_progress_and_both_output_revisions(
     tmp_path: Path,
 ) -> None:
