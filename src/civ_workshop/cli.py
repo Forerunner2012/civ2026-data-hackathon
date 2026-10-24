@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from dataclasses import asdict
@@ -9,7 +10,7 @@ from pathlib import Path
 
 from civ_workshop.artifacts import read_json_file
 from civ_workshop.batch import run_batch
-from civ_workshop.errors import CivError
+from civ_workshop.errors import CivError, SourceDataError
 from civ_workshop.intake import IntakeLedger, import_form_response
 from civ_workshop.organizer.decision_records import append_decision
 from civ_workshop.organizer.label_review import (
@@ -62,7 +63,11 @@ def build_parser() -> argparse.ArgumentParser:
     batch_parser.add_argument("--ledger", type=Path, required=True)
     batch_parser.add_argument("--labels", type=Path, help="legacy diagnostic label-pack directory")
     batch_parser.add_argument("--output", type=Path, required=True)
-    batch_parser.add_argument("--official", action="store_true", help="require official readiness")
+    batch_parser.add_argument(
+        "--official",
+        action="store_true",
+        help="require official automatic scoring readiness; final totals need manual review",
+    )
     batch_parser.add_argument(
         "--approval", type=Path, help="legacy readiness input; not used for cohort replay"
     )
@@ -127,6 +132,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(json.dumps(batch_summary, sort_keys=True, separators=(",", ":")))
     except CivError as error:
         print(f"civ: {error}", file=sys.stderr)
+        if os.environ.get("CIV_REPLAY_ERROR_CODES") == "1":
+            from mcap.exceptions import McapError
+
+            cause: BaseException | None = error
+            while cause is not None:
+                if isinstance(cause, (OSError, McapError, SourceDataError)):
+                    raise SystemExit(3) from None
+                cause = cause.__cause__
         raise SystemExit(2) from None
 
 

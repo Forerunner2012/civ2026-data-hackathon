@@ -2,7 +2,7 @@
 
 Use this procedure to collect track submissions, replay their detectors against assigned recordings, and compare results with reviewed organizer truth. All three tracks use `civ.evaluation-plan/v1alpha2` and source-bound `civ.label-pack/v1alpha1` references.
 
-The runner produces detection metrics and, with an explicit policy, Detection points. Evidence and Reproducibility points remain pending. Outputs have `official_score: false`, and `--official` rejects the run. See the [scoring rules and limits](../reference/scoring.md).
+The runner produces metrics and, with an explicit policy, the 25 Detection points and a separate Cave bonus of up to 10 points. Evidence and Reproducibility retain 15 points each for organizer or agent review. See the [current scoring policy and manual subcriteria](../reference/scoring.md).
 
 ## 1. Gather the required inputs
 
@@ -64,7 +64,7 @@ sha256sum /path/to/recording.mcap
 
 The same Reims recording can appear in both Reims tracks, with different truth packs. Never substitute turn labels for Cave truth. The scorer consumes reviewed Cave packs through the same mapping as turn packs. It does not generate truth during scoring.
 
-The example omits `scoring_policy` to request diagnostic metrics without points. To calculate Detection points, add the session's explicit [points policy](../reference/scoring.md#detection-points). Choose a receipt timestamp tie rule if deliveries can have equal timestamps. The [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json) lists the supported fields.
+The example includes the agreed event policy. Replace its placeholder product weights with weights for every assigned recording. Use equal turn-track weights, and limit empty Cave recordings collectively to 10% of its weight. Check duration ranges, event counts, and the score of an always-silent detector before freezing weights. These are private checks, not participant hints. The [points policy](../reference/scoring.md#event-policy) and [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json) describe the fields.
 
 ## 4. Record each track delivery
 
@@ -109,6 +109,8 @@ The runner records one outcome per registered team, track, and assigned product.
 
 No separate preflight, review-status, runtime, or computation-approval file is required. The batch runs its own checks. An [optional input diagnostic](scoring-readiness.md) is available before replay.
 
+To request official automatic components after session inputs and policy are settled, add `--official` to the same command. Its scope is automatic Detection and Cave points. The final total stays pending manual review; this option creates no manual awards or publication permission. Participant submission errors receive the configured zero without falling back. Organizer failures leave points pending and require repair and rerun.
+
 ## 6. Check completeness and read results
 
 Inspect the private outputs:
@@ -119,6 +121,7 @@ Inspect the private outputs:
 | `summary.json` → `detection_metrics.participants` | Track metrics and separate partition metrics, including sealed products |
 | `results.jsonl` | Individual outcomes, metrics, selected submissions, replay attempts, and failure stages |
 | `replays/` | Generated events, metrics, and source-bound replay artifacts |
+| `manual-review-template.json` | Unawarded Evidence and Reproducibility worksheet, with subcriteria and input identities; copy it before recording awards |
 
 Complete these checks before using the comparison:
 
@@ -127,7 +130,7 @@ Complete these checks before using the comparison:
 - [ ] Investigate missing tracks, invalid inputs, and failed replays. A successful command does not mean every assignment scored.
 - [ ] Read `complete`, `partial`, or `unavailable` alongside each metric. Successful zero-event runs still count as scored outcomes.
 - [ ] Compare sealed metrics separately from development and warm-up metrics.
-- [ ] Check pending point components before interpreting totals. Do not replace `null` with zero.
+- [ ] Check pending point components before interpreting totals. Do not replace `null` with zero. Complete the manual technical, jury, and existing bonus awards separately before calculating final totals. Cave points require no manual award.
 
 Pooled metrics sum TP, FP, and FN across successful products. They do not average product F1 or apply point weights. Missing and failed products contribute no invented counts. See the [scoring reference](../reference/scoring.md) for matching and point calculations.
 

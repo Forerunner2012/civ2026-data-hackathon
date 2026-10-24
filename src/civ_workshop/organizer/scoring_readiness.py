@@ -133,7 +133,7 @@ def _check_cohort_readiness(ledger_root: Path, *, plan_path: Path) -> dict[str, 
         digest, diagnostics = input_fingerprint(ledger_root, plan_path)
         evidence["plan_sha256"] = file_sha256(plan_path)
         evidence["input_fingerprint"] = digest
-        blockers.extend(diagnostics)
+        blockers.extend(item for item in diagnostics if not item.startswith("submission:"))
         blockers.extend(policy_blockers(plan))
     except CivError as error:
         blockers.append(str(error))

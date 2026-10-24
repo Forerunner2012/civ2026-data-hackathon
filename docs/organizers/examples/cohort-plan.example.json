@@ -169,5 +169,24 @@
         }
       ]
     }
-  ]
+  ],
+  "scoring_policy": {
+    "temporal_iou_threshold": 0.5,
+    "matching": "one_to_one_best",
+    "product_weights": {
+      "kashiwa-rt": {"kashiwa-example": 1},
+      "reims-rlt": {"reims-example": 1},
+      "reims-caves-optional": {"reims-example": 1}
+    },
+    "score_bearing_partitions": ["warmup", "development", "sealed"],
+    "missing_track": "zero",
+    "failed_run": "zero",
+    "empty_truth": "perfect_empty",
+    "cross_product_events": "score_within_product",
+    "rounding": {"decimal_places": 2, "mode": "half_up"},
+    "receipt_timestamp_ties": "later_ledger_sequence",
+    "detection_points": {"kashiwa-rt": 15, "reims-rlt": 10},
+    "bonus_points": {"reims-caves-optional": 10},
+    "manual_review": "organizer_or_agent"
+  }
 }

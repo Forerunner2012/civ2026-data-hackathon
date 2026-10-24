@@ -1,6 +1,6 @@
 # Scoring references
 
-Practice scores are participant self-evaluation against a designated source-bound reference, not official results or access to held-out truth. `civ score` requires `civ.label-pack/v1alpha1`.
+Practice scores are participant self-evaluation against a designated source-bound reference. A supplied reference must use `civ.label-pack/v1alpha1`. Without a reference, `civ score WORKING_DIR` records `not_evaluated` metrics and permits packaging. Precision, recall, F1, counts, and reference identity are `null`, not zero. This does not evaluate the detector.
 
 ## Practice and organizer references
 
@@ -27,7 +27,33 @@ For example, the synthetic `highest-iou-duplicate` fixture has one label `[0,100
 
 An omitted valid event in an incomplete practice pack can count as a false positive. Treat precision, recall, and F1 as complete-reference results only after every relevant event for that source or chunk is reviewed and included. Adjustments, rejections, and genuine data-gap exclusions need reasons; uncertain intervals and missing context need a human disposition, and export requires missed-event signoff. See the [local review guide](../phase3/label-review.md).
 
-The existing participant rubric uses the fixed 55 machine / 45 jury rubric; up to 20 optional bonus points remain separate. See the [Detection allocation](../phase3/detector-calibration.md#approved-point-allocation) and [accepted jury rubric](../phase4/organizer-ops-jury-acceptance.md#draft-gate). The cohort runner's implementation limits are listed below.
+## Point allocation
+
+| Component | Maximum points | Evaluation |
+| --- | ---: | --- |
+| Detection | 25 | Automatic: Kashiwa RT 15, Reims R&LT 10 |
+| Evidence | 15 | Organizer or agent review |
+| Reproducibility | 15 | Organizer or agent review |
+| Jury | 45 | Investigation, Quality, and Visualization, 15 each |
+| Existing bonus | 20 | Agent trace 10, advanced method 5, regression test 5 |
+| Cave bonus | 10 | Automatic: weighted recording F1 multiplied by 10 |
+
+The base remains 100 points. Bonuses add up to 30, for a maximum of 130. Cave is separate from the 25 Detection points and needs no manual or Evidence award. Its detector and participant-sourced locations are replayed on the same Reims recordings as the turn track. It uses the same interval matcher, duplicate handling, and F1 calculation. Organizers retain all truth locations and intervals privately.
+
+### Manual technical criteria
+
+Evidence and Reproducibility retain 15 points each. An organizer or agent studies the accepted artifacts and records a score, reason, and artifact references for each subcriterion. Each subcriterion has a maximum of five points. Use 0 for absent or contradictory support, 1–2 for incomplete support, 3–4 for supported work with material limitations, and 5 for complete, inspectable support. Do not award points for claims alone.
+
+| Criterion | Subcriterion, five points each | What to inspect |
+| --- | --- | --- |
+| Evidence | Relevant synchronized topics | Events, declared evidence topics, signal units, and the submitted figure support the stated event. |
+| Evidence | Bounded windows and event coverage | Clip facts in the manifest show useful context and bounded windows. Explain zero-event runs and any missing or invalid evidence. |
+| Evidence | Measured extraction and limitations | Manifest byte counts support the claimed reduction; the report explains lost context, ambiguity, and limitations. Smaller output alone earns no points. |
+| Reproducibility | One documented reproduction command | The supplied script and instructions reproduce the declared workflow. The scorer never executes submitted scripts. |
+| Reproducibility | Exact inputs, resources, and environment | Recording, EventSpec, resource, and manifest identities are consistent; required tools and versions are recorded. |
+| Reproducibility | Repeatable outputs and explained differences | Repeated trusted runs produce matching events and metrics, or the reviewer identifies and explains a material difference. |
+
+The batch emits a private `manual-review-template.json` worksheet with these criteria and unawarded scores. Copy it to a separate review file before filling it in; rerunning scoring replaces generated templates. Generating it creates no review or approval. Jury and the existing bonus awards remain separate. Complete the final total after those reviews.
 
 ## Cohort aggregation
 
@@ -37,18 +63,29 @@ Each group reports `complete`, `partial`, or `unavailable` alongside its outcome
 
 ## Detection points
 
-The optional plan `scoring_policy` controls points. Diagnostic replay and pooled metrics work without it. Points require explicit product weights, score-bearing partitions, missing-track and failed-run handling, empty-truth handling, receipt timestamp ties, rounding, and track Detection allocations.
+The optional plan `scoring_policy` controls points. Diagnostic replay and pooled metrics work without it. `detection_points` and `bonus_points` assign tracks to separate totals, with each track in exactly one allocation. Set `manual_review` to `organizer_or_agent` for the manual technical categories.
 
 The implemented matching settings are `temporal_iou_threshold: 0.5`, `matching: "one_to_one_best"`, and `cross_product_events: "score_within_product"`. See the [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json) for policy fields.
 
-For each track, the runner weights product F1 across the declared score-bearing products and applies the track's Detection allocation. It calculates the weighted mean before rounding. It rounds displayed F1 and Detection points separately, then sums rounded track allocations for the participant total.
+For each track, the runner calculates F1 from each recording's event counts, takes the weighted mean, and applies that track's allocation. It retains precision through the calculation. Displayed F1 is informational; points never use rounded F1. With two-decimal `half_up` rounding, round each track's points and then add those displayed points. Pooled precision, recall, and F1 remain separate diagnostics and do not determine points.
 
-The existing rubric allocates 15 Detection points to Kashiwa RT and 10 to Reims turns. Cave has no assigned allocation. The runner does not infer Cave points or which partitions count toward points. Omitting Cave from `detection_points` leaves Cave points pending. Its `product_weights` entry can also be omitted while undecided. Configured turn tracks can still calculate points, but the combined Detection total remains `null` until every assigned track has a result.
+### Event policy
 
-## Current limits
+- All assigned warm-up, development, and sealed recordings earn points.
+- Give recordings equal weight within each turn track. Review durations and reference event counts before reusing this choice with a different product set; these indicators do not establish equal difficulty.
+- For Cave, empty recordings collectively receive at most 10% of its weight. Split the remaining weight equally across nonempty recordings and the empty share equally across empty recordings. Never choose weights from participant predictions. If all assigned recordings are empty, revise the product selection before scoring.
+- A missing track earns zero. A submission-caused failure earns zero for the affected recording; it never selects an older delivery instead.
+- Organizer input, equipment, or software failures leave the affected track pending. Repair the cause and rerun; never charge those failures to participants. Unexpected replay crashes need organizer investigation. A declared replay timeout is a submission limit unless organizer investigation establishes an equipment failure.
+- Empty truth earns full recording credit when predictions are also empty, and zero when any prediction remains after gap exclusions.
+- Calculate a weighted mean of recording F1, round track points to two decimal places with `half_up`, then sum rounded track points.
+- Equal receipt timestamps select `later_ledger_sequence`.
 
-Evidence and Reproducibility have no implemented deterministic point mapping. Their points and the technical total remain `null`. The technical maximum is also `null` when a track allocation is missing. Jury and bonus decisions remain separate.
+The [example plan](../organizers/examples/cohort-plan.example.json) shows this policy with placeholder products. Replace its paths, hashes, products, roster, cutoff, and weights with the actual session inputs. Keep duration, event-count, and empty-share checks private.
 
-All cohort outputs have `official_score: false`. `score-batch --official` rejects cohort scoring while machine policies remain incomplete. A complete replay does not establish an official score or authorize publication.
+## Official automatic components and final review
+
+`score-batch --official` requires a complete automatic scoring policy and valid organizer inputs. It refuses publication of its outputs if an organizer failure or unresolved allocation remains. A zero for an invalid participant submission is a scored policy outcome, not an organizer failure.
+
+For this mode, `official_score: true` has `official_scope: "automatic_components"`: it covers Detection and the Cave bonus. Evidence, Reproducibility, jury, and other bonus awards are completed outside the scoring engine. The technical and final totals remain `null` and `final_score_status` remains `pending_manual_review`. Without `--official`, outputs remain diagnostic. Neither mode authorizes participant-facing publication.
 
 For the artifact versions and submission boundary, see [participant contracts](participant-contracts.md), the [practice-labels README](../../practice-labels/README.md), the [organizer label-pack contract](../phase3/organizer-label-packs.md), and the [stable contract inventory](../phase2/stable-contracts-and-compatibility.md#organizer-only-exclusions).

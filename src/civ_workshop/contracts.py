@@ -53,6 +53,9 @@ STABLE_FIELDS: dict[str, frozenset[str]] = {
     "civ.metrics/v1": frozenset(
         {"contract", "aggregate", "datasets", "label_pack_sha256", "matching"}
     ),
+    "civ.metrics/v2": frozenset(
+        {"contract", "status", "reason", "aggregate", "datasets", "label_pack_sha256", "matching"}
+    ),
     "civ.evaluation-plan/v1alpha2": frozenset(
         {
             "contract",

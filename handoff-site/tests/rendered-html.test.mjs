@@ -101,8 +101,8 @@ test("participant view states the contract", async () => {
   assert.match(body, /events\.jsonl/);
   assert.match(body, /solo or duo/i);
   assert.match(body, /different sensor stack/i);
-  assert.match(body, /55 points are machine-scored/i);
-  assert.match(body, /15 points on the first held-back set and 10 on the transfer set/i);
+  assert.match(body, /25 Detection points are automatic/i);
+  assert.match(body, /15 Kashiwa RT points and 10 Reims right-or-left-turn points/i);
   assert.match(body, /one-page report/i);
   assert.match(body, /civ submission-init working --shell posix/i);
   assert.match(body, /historical form and USB intake route are retired/i);
@@ -127,7 +127,7 @@ test("participant view states the contract", async () => {
   assert.match(body, /validates their declarations but never runs them/i);
   assert.match(body, /evidence\/\s+no\s+your clips stay on your machine/i);
   // Historical scoring and receipt rules remain explicit without inviting a current hand-in.
-  assert.match(body, /held-back test set/i);
+  assert.match(body, /weighted mean of recording F1/i);
   assert.match(body, /During the event, participants could submit multiple versions by 12:30/i);
   assert.match(body, /The event team used the latest valid on-time receipt for each participant or duo on each dataset/i);
   assert.match(body, /The team retained late receipts separately/i);

@@ -227,6 +227,31 @@ def test_score_batch_replays_event_spec_against_each_track_truth_and_never_runs_
     assert [path.read_bytes() for path in replay_files] == first_replays
 
 
+def test_replay_uses_the_spec_path_accepted_by_packaging(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan = _plan_for_case(tmp_path, case)
+    working = tmp_path / "submission"
+    prepare_scored_submission(case, working)
+    (working / "detector/detector.yaml").rename(working / "detector/my-places.yml")
+    (working / "reproduce.ps1").write_text(
+        "civ detect detector/my-places.yml DATASET\n",
+        encoding="utf-8",
+    )
+    build_report_bundle(working)
+    ledger = IntakeLedger(tmp_path / "ledger")
+    ledger.accept_local(
+        identity="team-a",
+        track_id="micro-turn",
+        received_at=ON_TIME,
+        submitted_sha256=file_sha256(working / "submission.zip"),
+        bundle_path=working / "submission.zip",
+        delivery_id="custom-spec-name",
+    )
+    summary = run_batch(ledger.root, None, tmp_path / "results", plan_path=plan)
+    assert summary["counts"] == {"scored": 1}
+    assert _results(tmp_path / "results")[0]["metrics"]["aggregate"]["f1"] == 1.0
+
+
 def test_successful_zero_event_replay_is_distinct_from_failure(tmp_path: Path) -> None:
     case = create_micro_case(tmp_path / "sealed-product", values=(0.0, 0.0, 0.0, 0.0, 0.0))
     plan = _plan_for_case(tmp_path, case, ("micro-empty",), participants=("team-quiet",))
@@ -331,7 +356,7 @@ def test_replay_failure_reports_attempts_and_stable_diagnostics(
 
     monkeypatch.setattr("civ_workshop.cohort_scoring.subprocess.run", fail_replay)
 
-    succeeded, failure, attempts = _run_replay(
+    succeeded, failure, attempts, origin = _run_replay(
         spec_path,
         product_path,
         output_path,
@@ -340,6 +365,7 @@ def test_replay_failure_reports_attempts_and_stable_diagnostics(
     )
 
     assert succeeded is False
+    assert origin == "organizer"
     assert attempts == calls == 3
     assert failure is not None
     assert failure.startswith("failed <submission>")
@@ -371,6 +397,199 @@ def test_detection_points_use_unrounded_weighted_f1(tmp_path: Path) -> None:
     assert track_score["detection_points"] == 10.0
 
 
+@pytest.mark.parametrize("mutation", ["condition", "field", "source", "missing_source"])
+def test_real_replay_distinguishes_participant_errors_from_source_errors(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    case = create_micro_case(tmp_path / "product")
+    text = case.spec.read_text()
+    if mutation == "condition":
+        case.spec.write_text(text.replace("signal > 1.0", "signal >"), encoding="utf-8")
+    elif mutation == "field":
+        case.spec.write_text(text.replace("field: value", "field: absent_field"), encoding="utf-8")
+    elif mutation == "source":
+        case.bag.write_bytes(b"not an MCAP recording")
+    else:
+        case.bag.unlink()
+    succeeded, _failure, _attempts, origin = _run_replay(
+        case.spec,
+        case.bag,
+        tmp_path / "output",
+        timeout_seconds=30,
+        retries=0,
+    )
+    assert succeeded is False
+    assert origin == ("organizer" if mutation in ("source", "missing_source") else "submission")
+
+
+def test_corrupt_accepted_storage_is_organizer_failure_without_fallback(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case)
+    plan = json.loads(plan_path.read_text())
+    plan["scoring_policy"]["manual_review"] = "organizer_or_agent"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="storage")
+    receipt = ledger.accept_local(
+        identity="team-a",
+        track_id="micro-turn",
+        received_at=ON_TIME,
+        submitted_sha256=file_sha256(bundle),
+        bundle_path=bundle,
+        delivery_id="storage",
+    )
+    ledger.bundle_for(receipt).write_bytes(b"organizer storage damaged")
+    output = tmp_path / "official"
+    with pytest.raises(CivError, match="official scoring blocked.*ledger:"):
+        run_batch(ledger.root, None, output, official=True, plan_path=plan_path)
+    assert not output.exists()
+    summary = run_batch(ledger.root, None, tmp_path / "diagnostic", plan_path=plan_path)
+    record = _results(tmp_path / "diagnostic")[0]
+    assert record["failure_origin"] == "organizer"
+    assert record["selected_submission"]["delivery_id"] == "storage"
+    points = cast(dict[str, Any], summary["computed_detection"])["participants"]["team-a"]
+    assert points["total_detection_points"] is None
+
+
+def test_bonus_uses_common_f1_without_changing_detection_allocation(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case, ("micro-turn", "micro-cave"))
+    plan = json.loads(plan_path.read_text())
+    policy = plan["scoring_policy"]
+    policy["detection_points"] = {"micro-turn": 15}
+    policy["bonus_points"] = {"micro-cave": 10}
+    policy["rounding"] = {"decimal_places": 2, "mode": "half_up"}
+    records = [
+        {
+            "identity": "team-a",
+            "track_id": track,
+            "product_id": "micro-sealed",
+            "status": "scored",
+            "metrics": {
+                "aggregate": {
+                    "counts": {
+                        "true_positive": 1,
+                        "false_positive": 1,
+                        "false_negative": 0,
+                    }
+                }
+            },
+        }
+        for track in ("micro-turn", "micro-cave")
+    ]
+    computed, blockers = _aggregate_detection(records, plan)
+    assert blockers == []
+    assert computed is not None
+    team = computed["participants"]["team-a"]
+    assert team["total_detection_points"] == 10.0
+    assert team["total_bonus_points"] == 6.67
+    assert team["tracks"]["micro-cave"]["bonus_points"] == 6.67
+    assert "detection_points" not in team["tracks"]["micro-cave"]
+
+
+def test_equal_weights_and_limited_empty_share_do_not_reward_silence(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case, ("micro-cave",))
+    plan = json.loads(plan_path.read_text())
+    track = plan["tracks"][0]
+    track["products"] = [{**track["products"][0], "product_id": str(index)} for index in range(9)]
+    policy = plan["scoring_policy"]
+    policy["detection_points"] = {}
+    policy["bonus_points"] = {"micro-cave": 10}
+    # Five event-bearing recordings split 90%; four empty recordings split 10%.
+    policy["product_weights"] = {
+        "micro-cave": {str(index): 18 if index < 5 else 2.5 for index in range(9)}
+    }
+    policy["rounding"] = {"decimal_places": 2, "mode": "half_up"}
+    records = [
+        {
+            "identity": "silent",
+            "track_id": "micro-cave",
+            "product_id": str(index),
+            "status": "scored",
+            "metrics": {
+                "aggregate": {
+                    "counts": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 1 if index < 5 else 0,
+                    }
+                }
+            },
+        }
+        for index in range(9)
+    ]
+    computed, blockers = _aggregate_detection(records, plan)
+    assert blockers == []
+    assert computed is not None
+    assert computed["participants"]["silent"]["total_bonus_points"] == 1.0
+
+
+@pytest.mark.parametrize("origin,expected", [("submission", 0.0), ("organizer", None)])
+def test_only_submission_failures_lose_points(
+    tmp_path: Path,
+    origin: str,
+    expected: float | None,
+) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case)
+    plan = json.loads(plan_path.read_text())
+    computed, blockers = _aggregate_detection(
+        [
+            {
+                "identity": "team-a",
+                "track_id": "micro-turn",
+                "product_id": "micro-sealed",
+                "status": "failed",
+                "failure_origin": origin,
+            }
+        ],
+        plan,
+    )
+    assert computed is not None
+    assert computed["participants"]["team-a"]["total_detection_points"] == expected
+    assert bool(blockers) == (origin == "organizer")
+
+
+def test_official_automatic_components_leave_manual_points_unawarded(tmp_path: Path) -> None:
+    case = create_micro_case(tmp_path / "product")
+    plan_path = _plan_for_case(tmp_path, case, ("micro-turn", "micro-cave"))
+    plan = json.loads(plan_path.read_text())
+    policy = plan["scoring_policy"]
+    policy["manual_review"] = "organizer_or_agent"
+    policy["detection_points"] = {"micro-turn": 15}
+    policy["bonus_points"] = {"micro-cave": 10}
+    policy["rounding"] = {"decimal_places": 2, "mode": "half_up"}
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    ledger = IntakeLedger(tmp_path / "ledger")
+    bundle = _bundle(tmp_path, (0.0, 2.0, 2.0, 0.0, 0.0), marker="automatic-components")
+    for track_id in ("micro-turn", "micro-cave"):
+        ledger.accept_local(
+            identity="team-a",
+            track_id=track_id,
+            received_at=ON_TIME,
+            submitted_sha256=file_sha256(bundle),
+            bundle_path=bundle,
+            delivery_id=track_id,
+        )
+    output = tmp_path / "results"
+    summary = run_batch(ledger.root, None, output, official=True, plan_path=plan_path)
+    assert summary["official_score"] is True
+    assert summary["official_scope"] == "automatic_components"
+    assert summary["final_total_points"] is None
+    assert summary["final_score_status"] == "pending_manual_review"
+    automatic = cast(dict[str, Any], summary["computed_detection"])["participants"]["team-a"]
+    assert automatic["total_detection_points"] == 15.0
+    assert automatic["total_bonus_points"] == 10.0
+    technical = cast(dict[str, Any], summary["technical_scores"])
+    assert technical["maximum_points"] == 45.0  # Synthetic 15 Detection + 30 manual.
+    assert technical["participants"]["team-a"]["evidence_points"] is None
+    worksheet = json.loads((output / "manual-review-template.json").read_text())
+    assert worksheet["participants"]["team-a"]["reviewer"] is None
+    assert sum(worksheet["criteria"]["evidence"]["subcriteria"].values()) == 15
+
+
 def test_latest_track_receipt_is_selected_and_corrupt_latest_does_not_fall_back(
     tmp_path: Path,
 ) -> None:
@@ -397,7 +616,8 @@ def test_latest_track_receipt_is_selected_and_corrupt_latest_does_not_fall_back(
     assert record["selected_submission"]["delivery_id"] == "latest"
     assert record["status"] == "failed"
     assert record["replay"]["attempts"] == 0
-    assert record["replay"]["failure_stage"] == "submission_validation"
+    assert record["replay"]["failure_stage"] == "ledger_storage"
+    assert record["failure_origin"] == "organizer"
     assert "missing or corrupt" in record["failure"]
 
 
@@ -555,7 +775,7 @@ def test_run_batch_rechecks_bound_inputs_before_publishing_outputs(
     )
     original_replay = _run_replay
 
-    def replay_then_accept(*args: Any, **kwargs: Any) -> tuple[bool, str | None, int]:
+    def replay_then_accept(*args: Any, **kwargs: Any) -> tuple[bool, str | None, int, str | None]:
         result = original_replay(*args, **kwargs)
         ledger.accept_local(
             identity="team-a",

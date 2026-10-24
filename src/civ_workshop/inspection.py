@@ -14,7 +14,7 @@ from mcap.reader import make_reader
 from mcap_ros2.decoder import DecoderFactory, McapROS2DecodeError
 
 from civ_workshop.artifacts import require_mapping
-from civ_workshop.errors import CivError
+from civ_workshop.errors import CivError, SourceDataError
 from civ_workshop.schema_pins import golden_schema_diagnostic
 
 
@@ -36,9 +36,9 @@ class MessageDecoder:
             try:
                 return json.loads(data)
             except (UnicodeDecodeError, json.JSONDecodeError) as error:
-                raise CivError(f"topic {channel.topic} contains invalid JSON") from error
+                raise SourceDataError(f"topic {channel.topic} contains invalid JSON") from error
         if channel.message_encoding != "cdr":
-            raise CivError(
+            raise SourceDataError(
                 f"topic {channel.topic} uses unsupported message encoding: "
                 f"{channel.message_encoding}"
             )
@@ -50,13 +50,13 @@ class MessageDecoder:
             except Exception as error:
                 # The third-party parser raises public, built-in, and private
                 # vendored exceptions for malformed schemas.
-                raise CivError(
+                raise SourceDataError(
                     f"topic {channel.topic} has invalid ROS 2 schema; "
                     f"provide a valid embedded ros2msg definition: {error}"
                 ) from error
             if decoder is None:
                 schema_encoding = schema.encoding if schema is not None else "missing"
-                raise CivError(
+                raise SourceDataError(
                     f"topic {channel.topic} uses unsupported CDR schema encoding: "
                     f"{schema_encoding}"
                 )
@@ -64,7 +64,7 @@ class MessageDecoder:
         try:
             return decoder(data)
         except McapROS2DecodeError as error:
-            raise CivError(
+            raise SourceDataError(
                 f"topic {channel.topic} contains invalid ROS 2 CDR data: {error}"
             ) from error
 

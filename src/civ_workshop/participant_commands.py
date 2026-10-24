@@ -52,7 +52,11 @@ def add_participant_commands(commands: argparse._SubParsersAction[argparse.Argum
 
     score_parser = commands.add_parser("score", help="score normalized event intervals")
     score_parser.add_argument("submission", type=Path)
-    score_parser.add_argument("--labels", type=Path, required=True)
+    score_parser.add_argument(
+        "--labels",
+        type=Path,
+        help="matching practice pack; omit to record unevaluated metrics and continue packaging",
+    )
 
     report_parser = commands.add_parser("report", help="validate and bundle a submission")
     report_parser.add_argument("submission", type=Path)
@@ -99,9 +103,7 @@ def dispatch_participant_command(args: argparse.Namespace) -> bool:
         else:
             print(render_samples(samples), end="")
     elif args.command == "detect":
-        detect_result = detect_events(
-            args.spec, args.dataset, args.output, dry_run=args.dry_run
-        )
+        detect_result = detect_events(args.spec, args.dataset, args.output, dry_run=args.dry_run)
         print(json.dumps(detect_result, sort_keys=True, separators=(",", ":")))
     elif args.command == "clip":
         clip_result = clip_events(args.events, args.dataset)

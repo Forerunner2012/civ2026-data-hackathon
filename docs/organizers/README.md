@@ -62,7 +62,8 @@ qualified inputs, machine checks and release approval.
    plan setup, track-specific intake, replay, and result checks. Use its three-track example
    plan as the starting point for the session. Read the [scoring reference](../reference/scoring.md)
    for matching, aggregation, and pending point components. Keep truth and replay artifacts
-   private, and inspect sealed metrics separately. Cohort outputs are nonofficial.
+   private, and inspect sealed metrics separately. Diagnostic runs are nonofficial. An explicit
+   `--official` run covers automatic components; final totals still need manual review.
 2. Apply the recorded jury and feedback process from the
    [organizer operations reference](../phase4/organizer-ops-jury-acceptance.md). Retain the local
    operational audit, with only the approved participant-facing results released.

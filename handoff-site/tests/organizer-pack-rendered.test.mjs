@@ -46,7 +46,7 @@ test("organizer pack renders the complete operations contract", async () => {
   assert.match(body, /Grounded agent trace __\/10; advanced method __\/5; failure-derived regression test __\/5/);
   assert.match(body, /same accepted metadata-only bundle/);
   assert.match(body, /Never average away a disagreement/);
-  assert.match(body, /Final total __\/120/);
+  assert.match(body, /Final total __\/130/);
   assert.match(body, /Seven approved worked approaches/);
   assert.match(body, /14:54–14:57/);
   assert.match(body, /No is completely fine/);
@@ -54,8 +54,8 @@ test("organizer pack renders the complete operations contract", async () => {
 
 test("organizer pack preserves fixed evaluator and authority semantics", async () => {
   const body = await html("/organizers/pack");
-  assert.match(body, /55 machine points stay deterministic/);
-  assert.match(body, /45 jury points and up to 20 bonus/);
+  assert.match(body, /25 Detection points and the separate 10-point Cave bonus are automatic/);
+  assert.match(body, /45 jury points and up to 20 other bonus points/);
   assert.match(body, /Kashiwa __\/15, Reims __\/10/);
   assert.match(body, /jury never changes submission authority/i);
   assert.match(body, /Later valid on-time hash.*replace authority/);

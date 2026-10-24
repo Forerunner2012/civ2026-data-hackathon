@@ -2,7 +2,7 @@
 
 First reproduce the core workflow in the [QuickStart](quickstart.md). This optional exercise adds participant-sourced geographic points to a Reims EventSpec. Keep supplied kit files read-only. Run commands from the unpacked kit root after [installing civ](setup.md).
 
-The detector reads latitude and longitude from the recording's `/fix` GNSS messages, measures distance to the points in the configured resource, applies the EventSpec threshold, and uses its timing rules to form encounter intervals. Organizers review candidates generated with private points before exporting scoring references. Those private points and the resulting occurrence times are not part of the participant kit. Use independently sourced points for this exercise; do not infer or reproduce organizer reference locations.
+The detector reads latitude and longitude from the recording's `/fix` GNSS messages, measures distance to the points in the configured resource, applies the EventSpec threshold, and uses its timing rules to form encounter intervals. The Cave track covers champagne caves and their associated headquarters, venues, visitor sites, and showrooms. Use the same supplied Reims recordings as the turn track and independently source your points. Organizer locations, truth intervals, hints identifying them, and practice labels for those locations are not supplied. The example JSON shows the format with illustrative coordinates; it does not solve the task.
 
 ## Prepare a separate workspace
 
@@ -57,15 +57,13 @@ Expect `events.jsonl`, `run-manifest.json`, the exact resource copy under `detec
 
 Inspect detected intervals and their `cave_distance_m` trigger values. Open local clips in a supplied viewer or sample the same GNSS interval. Zero events can be valid, especially with illustrative points. Check locations, coordinate units, timing and the distance threshold before changing them. Clips remain local.
 
-Use a complete, matching practice pack for this geographic-point event only if one is explicitly supplied. Turn labels measure a different event and cannot validate geographic encounters. Otherwise inspect events manually and follow the coach's scoring instructions before packaging. Do not substitute turn labels or create a reference from your detections. The [scoring reference](https://github.com/Forerunner2012/civ2026-data-hackathon/blob/develop/docs/reference/scoring.md) explains the existing policy. Online reference lookup needs connectivity; detection uses local files.
-
-With an explicitly supplied, matching geographic-point practice pack, run:
+Record the practice evaluation state without accessing truth:
 
 ```text
-civ score working-points --labels PRACTICE_POINTS_LABELS.json
+civ score working-points
 ```
 
-Expect `working-points/metrics.json` and its hash in the run manifest. Replace the placeholder with the supplied local pack path.
+Expect `working-points/metrics.json` with `status: "not_evaluated"`, null metrics, and its hash in the run manifest. These are unknown scores, not a failure or zero performance. Continue to reporting. Do not substitute turn labels, invent an empty truth pack, or make a reference from your detections. Organizers replay your submitted EventSpec and locations privately and use the common temporal IoU matcher and F1 to calculate the separate bonus of up to 10 points. See the [scoring reference](https://github.com/Forerunner2012/civ2026-data-hackathon/blob/develop/docs/reference/scoring.md).
 
 ## Declare provenance and package
 
@@ -98,4 +96,4 @@ civ report working-points
 
 Expect `working-points/submission.zip` and its SHA-256. An undeclared, changed, missing or oversized payload causes validation to fail. Submit only the validated ZIP and its printed hash. Recordings, clips, labels, caches and credentials stay out of the bundle.
 
-The core must reproduce before bonus evidence can count. This exercise alone does not earn every bonus award. See the [approved bonus anchors](https://github.com/Forerunner2012/civ2026-data-hackathon/blob/develop/docs/phase5/extension-aware-submission-v2.md#bonus-anchors).
+The Cave bonus is automatic and separate from manual Evidence and other bonus awards. The existing agent-trace, advanced-method, and regression-test bonuses remain available under their own criteria; Cave participation alone does not earn them. See the [current point allocation](https://github.com/Forerunner2012/civ2026-data-hackathon/blob/develop/docs/reference/scoring.md#point-allocation).

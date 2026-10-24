@@ -132,32 +132,35 @@ export const deliverables = [
 export const scoring: { category: string; points: number; looksFor: string }[] = [
   { category: "Investigation and hypothesis", points: 15, looksFor: "Deliberate signal choice, inspection, physical reasoning" },
   { category: "Detection", points: 25, looksFor: "15 points on the first set, 10 on transfer; timing, duplicates, robustness" },
-  { category: "Evidence and extraction", points: 15, looksFor: "Read from your run manifest: correct topics, sane windows, real volume reduction" },
+  { category: "Evidence and extraction", points: 15, looksFor: "Event team or agent review: relevant topics, bounded windows, measured extraction and limitations; 5 points each" },
   { category: "Quality and evaluation", points: 15, looksFor: "Metrics, failure analysis, missing and bad data handling" },
   { category: "Visualization and explanation", points: 15, looksFor: "Synchronized, legible proof and careful claims" },
-  { category: "Reproducibility", points: 15, looksFor: "One command, pinned inputs, manifest, stable output" },
+  { category: "Reproducibility", points: 15, looksFor: "Event team or agent review: one command, exact inputs and environment, repeatable outputs; 5 points each" },
 ];
 
 export const bonus = [
   { label: "Bounded agent with a useful trace", points: 10 },
   { label: "Advanced multimodal, data-quality or external-resource method", points: 5 },
   { label: "Regression test built from a failure you found", points: 5 },
+  { label: "Cave encounters, automatic F1 bonus", points: 10 },
 ];
 
 /** Published scoring and judging rules; the answer key itself stays private. */
 export const scoringRules = [
-  "The common score is 100 points, with up to 20 bonus points on top.",
-  "Detection is split 15 points on the first held-back set and 10 on the transfer set.",
-  "At 12:30, 55 points are machine-scored; the jury reads the one-page report for the other 45 over lunch.",
+  "The common score is 100 points, with up to 30 bonus points on top, including a separate Cave bonus of up to 10.",
+  "Detection is split 15 Kashiwa RT points and 10 Reims right-or-left-turn points. All assigned warm-up, development and sealed recordings count.",
+  "25 Detection points are automatic. The event team or agents review 30 Evidence and Reproducibility points; the jury reviews the other 45.",
   "Practice labels support learning and self-evaluation.",
   "Development metrics do not guarantee results on sealed evaluation.",
   "Sealed evaluation truth is visible only to the event team.",
-  "The final ranking runs on a held-back test set.",
+  "Points use the weighted mean of recording F1. Turn recordings have equal weight; empty Cave recordings collectively count for at most 10% of its bonus. Pooled metrics are additional diagnostics.",
+  "Missing tracks and submission errors receive zero. Event equipment or software failures are repaired and rerun. Empty truth earns full recording credit only when the detector stays silent. Track points round half up to two decimals before addition; matching receipt times select the later ledger entry.",
   "During the event, participants could submit multiple versions by 12:30. The event team used the latest valid on-time receipt for each participant or duo on each dataset. The team retained late receipts separately. A late receipt did not replace an on-time receipt. For a score tie, the team ranked the entry with the earliest receipt for that score first.",
   "Solo and duo entries share one leaderboard; the selected afternoon walkthroughs do not change the score.",
   "The 45 report points are scored by AI agents against anchors written by a human, with a human resolving any disagreement between them. You are told this because you should know it.",
   "Every entry gets written feedback at 15:00 — not just the ones shown.",
-  "Bonus points cannot compensate for a core result that does not reproduce.",
+  "The existing 20 manual bonus points cannot compensate for a core result that does not reproduce.",
+  "The automatic Cave bonus is separate from that manual bonus condition and needs no Evidence award. Submit your own locations for caves, headquarters, venues, visitor sites or showrooms. Truth locations and occurrence times remain private. Run civ score without --labels to record unevaluated practice metrics and continue to reporting.",
   "Prompt style is not graded. Executed evidence is.",
 ];
 

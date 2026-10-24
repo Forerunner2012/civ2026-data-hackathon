@@ -408,6 +408,7 @@ export default function Participants() {
           Get the core submission reproducing first. There is no reserved session time; you can
           continue afterwards. See <a href="#scoring">Scoring</a> for bonus evidence requirements.
           Completing this exercise does not automatically earn all bonus points.
+          The separate Cave F1 bonus needs no manual Evidence award or turn-track submission.
         </p>
       </section>
 

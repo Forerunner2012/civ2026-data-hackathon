@@ -97,6 +97,8 @@
         },
         "receipt_timestamp_ties": {"type": "string"},
         "detection_points": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "bonus_points": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "manual_review": {"const": "organizer_or_agent"},
         "evidence_policy_id": {"type": ["string", "null"]},
         "reproducibility_policy_id": {"type": ["string", "null"]}
       }

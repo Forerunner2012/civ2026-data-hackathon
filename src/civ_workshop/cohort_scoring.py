@@ -28,6 +28,7 @@ from civ_workshop.errors import CivError
 from civ_workshop.event_spec import load_event_spec
 from civ_workshop.intake import IntakeLedger, IntakeReceipt, open_validated_submission
 from civ_workshop.label_packs import load_label_pack
+from civ_workshop.reporting import submission_spec_path
 from civ_workshop.resources import load_point_resources
 from civ_workshop.runtime_identity import runtime_metadata
 from civ_workshop.scoring import score_submission
@@ -245,6 +246,8 @@ def load_evaluation_plan(path: Path) -> dict[str, Any]:
                 "rounding",
                 "receipt_timestamp_ties",
                 "detection_points",
+                "bonus_points",
+                "manual_review",
                 "evidence_policy_id",
                 "reproducibility_policy_id",
             },
@@ -450,7 +453,7 @@ def _submission_inputs(
 def _inspect_submission_inputs(
     track: dict[str, Any], working: Path
 ) -> tuple[dict[str, Any], str, list[dict[str, str]]]:
-    spec_path = working / "detector" / "detector.yaml"
+    spec_path = submission_spec_path(working)
     spec = load_event_spec(spec_path)
     replay = require_mapping(track["replay"], "track replay")
     if spec.contract not in replay["event_spec_contracts"]:
@@ -512,8 +515,9 @@ def _run_replay(
     *,
     timeout_seconds: float,
     retries: int,
-) -> tuple[bool, str | None, int]:
+) -> tuple[bool, str | None, int, str | None]:
     last_failure = "trusted replay process failed"
+    failure_origin = "organizer"
     attempts = 0
     for attempt in range(1, retries + 2):
         attempts = attempt
@@ -536,15 +540,19 @@ def _run_replay(
                 text=True,
                 timeout=timeout_seconds,
                 check=False,
+                env={**os.environ, "CIV_REPLAY_ERROR_CODES": "1"},
             )
         except subprocess.TimeoutExpired:
             last_failure = f"trusted replay timed out after {timeout_seconds:g} seconds"
+            failure_origin = "submission"
             continue
         except OSError as error:
             last_failure = f"trusted replay could not start: {error.__class__.__name__}"
+            failure_origin = "organizer"
             continue
         if completed.returncode == 0 and (output_path / "events.jsonl").is_file():
-            return True, None, attempts
+            return True, None, attempts, None
+        failure_origin = "submission" if completed.returncode == 2 else "organizer"
         last_failure = _stable_failure(
             completed.stderr,
             [
@@ -553,7 +561,7 @@ def _run_replay(
                 (product_path, "<product>"),
             ],
         )
-    return False, last_failure, attempts
+    return False, last_failure, attempts, failure_origin
 
 
 def _artifact_directory(
@@ -617,6 +625,11 @@ def _resource_fingerprint(
             }
             try:
                 bundle = ledger.bundle_for(selected)
+            except CivError as error:
+                diagnostics.append(f"ledger: {identity}/{track_id}: {error}")
+                selections.append(item)
+                continue
+            try:
                 details, _spec_path_unused, _resource_records_unused = _submission_inputs(
                     track, bundle
                 )
@@ -626,12 +639,14 @@ def _resource_fingerprint(
                     configured_topics = set(product["input_contract"]["topics"])
                     if not used_topics.issubset(configured_topics):
                         diagnostics.append(
-                            f"{identity}/{track_id}/{product['product_id']}: EventSpec topics are "
+                            f"submission: {identity}/{track_id}/{product['product_id']}: "
+                            "EventSpec topics are "
                             "not present in the product input contract"
                         )
             except CivError as error:
                 diagnostics.append(
-                    f"{identity}/{track_id}: selected submission cannot be fingerprinted: {error}"
+                    f"submission: {identity}/{track_id}: selected submission cannot be "
+                    f"fingerprinted: {error}"
                 )
             selections.append(item)
     product_inputs: list[dict[str, Any]] = []
@@ -704,12 +719,8 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
     if not isinstance(policy, dict):
         return [
             "scoring policy: explicit aggregation and scoring decisions are required",
-            "scoring policy: Evidence (15 machine points) lacks an approved deterministic "
-            "input-artifact list, criteria, and points mapping",
-            "scoring policy: Reproducibility (15 machine points) lacks approved deterministic "
-            "replay-artifact criteria and a points mapping",
-            "scoring policy: missing or invalid Evidence and Reproducibility inputs have no "
-            "approved outcome rule",
+            "scoring policy: set manual_review to organizer_or_agent for Evidence and "
+            "Reproducibility",
         ]
     required = {
         "temporal_iou_threshold",
@@ -726,16 +737,11 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
     }
     missing = sorted(required - set(policy))
     blockers = [f"scoring policy: missing decision '{field}'" for field in missing]
-    blockers.extend(
-        [
-            "scoring policy: Evidence (15 machine points) lacks an approved deterministic "
-            "input-artifact list, criteria, and points mapping",
-            "scoring policy: Reproducibility (15 machine points) lacks approved deterministic "
-            "replay-artifact criteria and a points mapping",
-            "scoring policy: missing or invalid Evidence and Reproducibility inputs have no "
-            "approved outcome rule",
-        ]
-    )
+    if policy.get("manual_review") != "organizer_or_agent":
+        blockers.append(
+            "scoring policy: set manual_review to organizer_or_agent for Evidence and "
+            "Reproducibility"
+        )
     if policy.get("temporal_iou_threshold") != 0.5:
         blockers.append("scoring policy: temporal_iou_threshold must remain 0.5")
     if policy.get("matching") != "one_to_one_best":
@@ -782,12 +788,19 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
             blockers.append("scoring policy: detection_points must map track IDs to allocations")
         else:
             known = {str(track["track_id"]) for track in cast(list[dict[str, Any]], plan["tracks"])}
-            if set(points) != known or any(
-                not _finite_number(value) or value < 0 for value in points.values()
+            bonus = policy.get("bonus_points", {})
+            if not isinstance(bonus, dict):
+                blockers.append("scoring policy: bonus_points must map track IDs to allocations")
+                bonus = {}
+            if (
+                set(points) & set(bonus)
+                or set(points) | set(bonus) != known
+                or any(not _finite_number(value) or value < 0 for value in bonus.values())
+                or any(not _finite_number(value) or value < 0 for value in points.values())
             ):
                 blockers.append(
-                    "scoring policy: detection_points must assign a non-negative allocation "
-                    "to every track"
+                    "scoring policy: detection_points and bonus_points must assign each track "
+                    "one non-negative allocation"
                 )
     weights = policy.get("product_weights")
     if not isinstance(weights, dict):
@@ -826,7 +839,7 @@ def policy_blockers(plan: dict[str, Any]) -> list[str]:
     return blockers
 
 
-def _rounded(value: float, rounding: dict[str, Any]) -> float:
+def _rounded(value: float | Decimal, rounding: dict[str, Any]) -> float:
     places = int(rounding["decimal_places"])
     mode = ROUND_HALF_EVEN if rounding["mode"] == "half_even" else ROUND_HALF_UP
     return float(Decimal(str(value)).quantize(Decimal(1).scaleb(-places), rounding=mode))
@@ -908,11 +921,13 @@ def _aggregate_detection(
     weights_all = policy.get("product_weights", {})
     partitions = policy["score_bearing_partitions"]
     points_all = policy.get("detection_points", {})
+    bonus_all = policy.get("bonus_points", {})
     rounding = policy["rounding"]
     if (
         not isinstance(weights_all, dict)
         or not isinstance(partitions, list)
         or not isinstance(points_all, dict)
+        or not isinstance(bonus_all, dict)
         or not isinstance(rounding, dict)
     ):
         return None, ["scoring policy: detection aggregation fields have invalid shapes"]
@@ -940,10 +955,16 @@ def _aggregate_detection(
 
     plan_tracks = cast(list[dict[str, Any]], plan["tracks"])
     known_tracks = {str(track["track_id"]) for track in plan_tracks}
-    if set(weights_all) - known_tracks or set(points_all) - known_tracks:
+    if (
+        set(weights_all) - known_tracks
+        or (set(points_all) | set(bonus_all)) - known_tracks
+        or set(points_all) & set(bonus_all)
+    ):
         return None, ["scoring policy: weights and Detection allocations name unknown tracks"]
+    allocations = {**points_all, **bonus_all}
     track_errors: dict[str, str] = {}
     allocation_errors: dict[str, str] = {}
+    outcome_blockers: list[str] = []
     for track in plan_tracks:
         track_id = str(track["track_id"])
         track_weights = weights_all.get(track_id)
@@ -964,7 +985,7 @@ def _aggregate_detection(
             track_errors[track_id] = f"scoring policy: product weights for '{track_id}' are invalid"
         elif expected_products and sum(track_weights.values()) <= 0:
             track_errors[track_id] = f"scoring policy: product weights for '{track_id}' sum to zero"
-        allocation = points_all.get(track_id)
+        allocation = allocations.get(track_id)
         if not _finite_number(allocation) or allocation < 0:
             allocation_errors[track_id] = (
                 f"scoring policy: Detection points for '{track_id}' are missing or invalid"
@@ -981,11 +1002,12 @@ def _aggregate_detection(
         for track in plan_tracks:
             track_id = str(track["track_id"])
             track_weights = weights_all.get(track_id)
-            point_allocation = points_all.get(track_id)
+            point_allocation = allocations.get(track_id)
+            points_field = "bonus_points" if track_id in bonus_all else "detection_points"
             if track_id in track_errors:
                 track_scores[track_id] = {
                     "f1": None,
-                    "detection_points": None,
+                    points_field: None,
                     "products": [],
                     "pending_reason": track_errors[track_id],
                 }
@@ -1006,16 +1028,18 @@ def _aggregate_detection(
                     ]
                 weight = Decimal(str(weight_value))
                 record = outcome_map.get((identity, track_id, product_id))
-                value: float | None = None
+                value: Decimal | None = None
                 disposition = "scored"
                 if record is None or record["status"] in ("missing-track", "late-only"):
                     disposition = "missing-track"
                     if policy["missing_track"] == "zero":
-                        value = 0.0
+                        value = Decimal(0)
                 elif record["status"] != "scored":
                     disposition = "failed-run"
-                    if policy["failed_run"] == "zero":
-                        value = 0.0
+                    if record.get("failure_origin") == "organizer":
+                        disposition = "organizer-failure-rerun-required"
+                    elif policy["failed_run"] == "zero":
+                        value = Decimal(0)
                 else:
                     metrics = require_mapping(record["metrics"], "cohort product metrics")
                     aggregate = require_mapping(
@@ -1026,41 +1050,48 @@ def _aggregate_detection(
                     fp = int(counts["false_positive"])
                     fn = int(counts["false_negative"])
                     denominator = 2 * tp + fp + fn
-                    value = float(Decimal(2 * tp) / Decimal(denominator)) if denominator else 0.0
+                    value = Decimal(2 * tp) / Decimal(denominator) if denominator else Decimal(0)
                     if tp + fn == 0:
                         disposition = "empty-truth"
                         if policy["empty_truth"] == "exclude":
                             value = None
                         elif policy["empty_truth"] == "perfect_empty":
-                            value = 1.0 if counts.get("false_positive") == 0 else 0.0
+                            value = Decimal(1) if counts.get("false_positive") == 0 else Decimal(0)
                 if value is not None:
-                    weighted_f1 += Decimal(str(value)) * weight
+                    weighted_f1 += value * weight
                     used_weight += weight
                 product_audit.append(
                     {
                         "product_id": product_id,
                         "weight": float(weight),
-                        "f1": value,
+                        "f1": float(value) if value is not None else None,
                         "disposition": disposition,
                     }
                 )
-            if used_weight == 0:
+            organizer_failure = any(
+                item["disposition"] == "organizer-failure-rerun-required" for item in product_audit
+            )
+            if used_weight == 0 or organizer_failure:
                 track_scores[track_id] = {
                     "f1": None,
-                    "detection_points": None,
+                    points_field: None,
                     "products": product_audit,
                 }
+                if organizer_failure:
+                    reason = f"organizer failure requires rerun for '{track_id}'"
+                    track_scores[track_id]["pending_reason"] = reason
+                    outcome_blockers.append(f"{identity}: {reason}")
             else:
                 exact_f1 = weighted_f1 / used_weight
-                f1 = _rounded(float(exact_f1), rounding)
+                f1 = _rounded(exact_f1, rounding)
                 score = (
-                    _rounded(float(Decimal(str(point_allocation)) * exact_f1), rounding)
+                    _rounded(Decimal(str(point_allocation)) * exact_f1, rounding)
                     if track_id not in allocation_errors
                     else None
                 )
                 track_scores[track_id] = {
                     "f1": f1,
-                    "detection_points": score,
+                    points_field: score,
                     "products": product_audit,
                 }
             if track_id in allocation_errors:
@@ -1069,10 +1100,31 @@ def _aggregate_detection(
             "tracks": track_scores,
             "total_detection_points": (
                 _rounded(
-                    sum(float(score["detection_points"]) for score in track_scores.values()),
+                    sum(
+                        Decimal(str(score["detection_points"]))
+                        for track_id, score in track_scores.items()
+                        if track_id not in bonus_all
+                    ),
                     rounding,
                 )
-                if all(score["detection_points"] is not None for score in track_scores.values())
+                if all(
+                    score.get("detection_points") is not None
+                    for track_id, score in track_scores.items()
+                    if track_id not in bonus_all
+                )
+                else None
+            ),
+            "total_bonus_points": (
+                _rounded(
+                    sum(
+                        Decimal(str(track_scores[track_id]["bonus_points"]))
+                        for track_id in bonus_all
+                    ),
+                    rounding,
+                )
+                if all(
+                    track_scores[track_id].get("bonus_points") is not None for track_id in bonus_all
+                )
                 else None
             ),
         }
@@ -1080,7 +1132,7 @@ def _aggregate_detection(
         "contract": "civ.detection-aggregation/v1alpha1",
         "component": "Detection",
         "participants": participant_scores,
-    }, list(track_errors.values()) + list(allocation_errors.values())
+    }, list(track_errors.values()) + list(allocation_errors.values()) + outcome_blockers
 
 
 def _selection_records(
@@ -1149,7 +1201,7 @@ def _receipt_dispositions(
 
 
 def _publish_cohort_outputs(staging_root: Path, output_root: Path, artifact_namespace: str) -> None:
-    outputs = [Path("results.jsonl"), Path("summary.json")]
+    outputs = [Path("results.jsonl"), Path("summary.json"), Path("manual-review-template.json")]
     replay_output = Path("replays") / artifact_namespace
     if (staging_root / replay_output).is_dir():
         outputs.append(replay_output)
@@ -1194,16 +1246,15 @@ def run_cohort_batch(
     ledger = IntakeLedger(ledger_root)
     receipts = ledger.receipts(read_only=True) if ledger.database_path.is_file() else []
     cutoff = _parse_timestamp(plan["cutoff"], "evaluation plan cutoff")
-    if official:
-        raise CivError(
-            "official scoring blocked: cohort machine scoring policies remain incomplete; "
-            "run without --official to replay and compare references"
-        )
-    official_score = False
+    official_score = official
     input_digest, fingerprint_diagnostics = input_fingerprint(
         ledger_root, plan_path, receipt_snapshot=receipts
     )
-    blockers = policy_blockers(plan) + [f"inputs: {item}" for item in fingerprint_diagnostics]
+    blockers = policy_blockers(plan) + [
+        f"inputs: {item}" for item in fingerprint_diagnostics if not item.startswith("submission:")
+    ]
+    if official and blockers:
+        raise CivError(f"official scoring blocked: {'; '.join(blockers)}")
     runtime = runtime_metadata()
     scoring_policy = plan.get("scoring_policy")
     tie_break = (
@@ -1249,6 +1300,7 @@ def run_cohort_batch(
                     record = {
                         "contract": RESULTS_CONTRACT,
                         "official_score": official_score,
+                        "official_scope": "automatic_components" if official else None,
                         "identity": identity,
                         "track_id": track_id,
                         "product_id": product["product_id"],
@@ -1275,30 +1327,42 @@ def run_cohort_batch(
                 "track_id": selected.track_id,
             }
             submission_error: str | None = None
+            storage_error: str | None = None
             submission_metadata: dict[str, Any] = {}
             try:
                 bundle = ledger.bundle_for(selected)
-                submission_metadata, _spec_path_unused, _resource_records_unused = (
-                    _submission_inputs(track, bundle)
-                )
             except CivError as error:
-                submission_error = str(error)
+                storage_error = str(error)
+            else:
+                try:
+                    submission_metadata, _spec_path_unused, _resource_records_unused = (
+                        _submission_inputs(track, bundle)
+                    )
+                except CivError as error:
+                    submission_error = str(error)
             for product in track["products"]:
                 product_valid, product_error = product_cache[(track_id, str(product["product_id"]))]
+                assignment_submission_error = submission_error
                 if (
                     product_error is None
                     and submission_error is None
+                    and storage_error is None
                     and not set(submission_metadata["signal_topics"]).issubset(
                         set(product["input_contract"]["topics"])
                     )
                 ):
-                    product_error = "EventSpec topics are not present in the product input contract"
+                    assignment_submission_error = (
+                        "EventSpec topics are not present in the product input contract"
+                    )
                 replay_record: dict[str, Any] | None = None
                 metrics: dict[str, Any] | None = None
-                failure = submission_error or product_error
+                failure = storage_error or assignment_submission_error or product_error
+                replay_failure_origin: str | None = None
                 failure_stage = (
-                    "submission_validation"
-                    if submission_error
+                    "ledger_storage"
+                    if storage_error
+                    else "submission_validation"
+                    if assignment_submission_error
                     else "product_validation"
                     if product_error
                     else None
@@ -1317,15 +1381,17 @@ def run_cohort_batch(
                             TemporaryDirectory(prefix="civ-cohort-replay-") as replay_temp,
                         ):
                             working_path = working
-                            spec_path = working / "detector" / "detector.yaml"
+                            spec_path = submission_spec_path(working)
                             replay = require_mapping(track["replay"], "track replay")
                             temp_output = Path(replay_temp) / "output"
-                            succeeded, failure, replay_attempts = _run_replay(
-                                spec_path,
-                                cast(Path, product_valid["recording_path"]),
-                                temp_output,
-                                timeout_seconds=float(replay["timeout_seconds"]),
-                                retries=int(replay["retries"]),
+                            succeeded, failure, replay_attempts, replay_failure_origin = (
+                                _run_replay(
+                                    spec_path,
+                                    cast(Path, product_valid["recording_path"]),
+                                    temp_output,
+                                    timeout_seconds=float(replay["timeout_seconds"]),
+                                    retries=int(replay["retries"]),
+                                )
                             )
                             if succeeded:
                                 metrics = score_submission(
@@ -1386,6 +1452,7 @@ def run_cohort_batch(
                 record = {
                     "contract": RESULTS_CONTRACT,
                     "official_score": official_score,
+                    "official_scope": "automatic_components" if official else None,
                     "identity": identity,
                     "track_id": track_id,
                     "product_id": product["product_id"],
@@ -1404,11 +1471,33 @@ def run_cohort_batch(
                     "replay": replay_record,
                     "metrics": metrics,
                     "failure": failure,
+                    "failure_origin": (
+                        "organizer"
+                        if failure
+                        and (
+                            failure_stage
+                            in (
+                                "ledger_storage",
+                                "product_validation",
+                                "scoring_or_artifact_write",
+                            )
+                            or (
+                                failure_stage == "trusted_replay"
+                                and replay_failure_origin == "organizer"
+                            )
+                        )
+                        else "submission"
+                        if failure
+                        else None
+                    ),
                 }
                 result_records.append(record)
                 counts[status] = counts.get(status, 0) + 1
     computed_detection, aggregation_blockers = _aggregate_detection(result_records, plan)
     blockers.extend(aggregation_blockers)
+    if official and blockers:
+        staging_context.cleanup()
+        raise CivError(f"official scoring blocked: {'; '.join(blockers)}")
     technical_scores: dict[str, dict[str, object]] = {}
     detection_rows = (
         cast(dict[str, Any], computed_detection["participants"])
@@ -1426,7 +1515,10 @@ def run_cohort_batch(
                 (["detection"] if detection_points is None else [])
                 + ["evidence", "reproducibility"]
             ),
-            "status": "pending_machine_components",
+            "status": "pending_manual_review"
+            if isinstance(scoring_policy, dict)
+            and scoring_policy.get("manual_review") == "organizer_or_agent"
+            else "pending_machine_components",
         }
     results_path = staging_root / "results.jsonl"
     results_path.write_text(
@@ -1437,10 +1529,14 @@ def run_cohort_batch(
     summary = {
         "contract": SUMMARY_CONTRACT,
         "official_score": official_score,
+        "official_scope": "automatic_components" if official else None,
+        "final_total_points": None,
+        "final_score_status": "pending_manual_review",
         "plan_sha256": plan_sha,
         "input_fingerprint": input_digest,
         "runtime": runtime,
         "blockers": blockers,
+        "input_diagnostics": fingerprint_diagnostics,
         "detection_metrics": _detection_metrics(result_records),
         "computed_detection": computed_detection,
         "technical_scores": {
@@ -1452,15 +1548,23 @@ def run_cohort_batch(
                 + 30.0
                 if isinstance(scoring_policy, dict)
                 and isinstance(scoring_policy.get("detection_points"), dict)
+                and isinstance(scoring_policy.get("bonus_points", {}), dict)
                 and set(scoring_policy["detection_points"])
-                == {track["track_id"] for track in tracks}
+                == {
+                    track["track_id"]
+                    for track in tracks
+                    if track["track_id"] not in scoring_policy.get("bonus_points", {})
+                }
                 and all(
                     _finite_number(value) and value >= 0
                     for value in cast(dict[str, Any], scoring_policy["detection_points"]).values()
                 )
                 else None
             ),
-            "status": "pending_machine_components",
+            "status": "pending_manual_review"
+            if isinstance(scoring_policy, dict)
+            and scoring_policy.get("manual_review") == "organizer_or_agent"
+            else "pending_machine_components",
             "pending_components": (
                 ["detection"]
                 if any(row["detection_points"] is None for row in technical_scores.values())
@@ -1487,6 +1591,13 @@ def run_cohort_batch(
     }
     (staging_root / "summary.json").write_text(
         f"{canonical_json(summary)}\n", encoding="utf-8", newline="\n"
+    )
+    from civ_workshop.organizer.manual_scoring import review_sheet
+
+    (staging_root / "manual-review-template.json").write_text(
+        f"{canonical_json(review_sheet(participants, plan_sha, input_digest))}\n",
+        encoding="utf-8",
+        newline="\n",
     )
     final_digest, final_diagnostics = input_fingerprint(ledger_root, plan_path)
     if final_digest != input_digest or final_diagnostics != fingerprint_diagnostics:
