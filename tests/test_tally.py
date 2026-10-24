@@ -380,9 +380,17 @@ def test_intake_tally_cli_dispatches_the_manual_csv_path(
         "outcomes": [],
     }
 
-    def fake_import(csv_path: Path, ledger_root: Path) -> dict[str, object]:
+    def fake_import(
+        csv_path: Path,
+        ledger_root: Path,
+        *,
+        cutoff: str | None = None,
+        evaluation_plan_sha256: str | None = None,
+    ) -> dict[str, object]:
         assert csv_path == tmp_path / "submissions.csv"
         assert ledger_root == tmp_path / "ledger"
+        assert cutoff is None
+        assert evaluation_plan_sha256 is None
         return expected
 
     monkeypatch.setattr(cli_module, "import_tally_csv", fake_import)

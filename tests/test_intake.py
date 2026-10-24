@@ -85,7 +85,15 @@ def test_existing_intake_ledger_adds_nullable_source_provenance_column(
             ),
         )
 
+    original_bytes = database.read_bytes()
+    old_receipts = IntakeLedger(root).receipts(read_only=True)
+    assert database.read_bytes() == original_bytes
+    assert old_receipts[0].cutoff is None
+    assert old_receipts[0].evaluation_plan_sha256 is None
+    assert old_receipts[0].received_at_original == "2026-09-03T12:00:00+09:00"
+    assert old_receipts[0].bundle_sha256 == "0" * 64
     receipts = IntakeLedger(root).receipts()
+    assert receipts == old_receipts
 
     assert len(receipts) == 1
     assert receipts[0].source_sha256 is None

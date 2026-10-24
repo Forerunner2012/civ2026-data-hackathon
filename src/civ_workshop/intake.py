@@ -25,6 +25,7 @@ from civ_workshop.reporting import (
 from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 TOKYO_CUTOFF = datetime.fromisoformat("2026-09-03T12:30:00+09:00").astimezone(timezone.utc)
+HISTORICAL_CUTOFF = "2026-09-03T12:30:00+09:00"
 MAX_FORM_RESPONSE_BYTES = 16 * 1024
 MAX_IDENTITY_CHARACTERS = 200
 MAX_DELIVERY_ID_CHARACTERS = 200
@@ -42,6 +43,8 @@ class IntakeReceipt:
     source_sha256: str | None
     status: Literal["on_time", "late"]
     track_id: str | None = None
+    cutoff: str | None = None
+    evaluation_plan_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -230,14 +233,22 @@ def _receipt_from_row(record: sqlite3.Row) -> IntakeReceipt:
         source_sha256=cast(str | None, record["source_sha256"]),
         status=cast(Literal["on_time", "late"], record["status"]),
         track_id=cast(str | None, record["track_id"]),
+        cutoff=cast(str | None, record["cutoff"]),
+        evaluation_plan_sha256=cast(str | None, record["evaluation_plan_sha256"]),
     )
 
 
 class IntakeLedger:
-    def __init__(self, root: Path) -> None:
+    def __init__(
+        self, root: Path, *, cutoff: str | None = None, evaluation_plan_sha256: str | None = None
+    ) -> None:
         self.root = root.resolve()
         self.database_path = self.root / "intake.sqlite3"
         self.bundles_path = self.root / "bundles"
+        self.cutoff_original, self.cutoff_utc = _parse_received_at(
+            HISTORICAL_CUTOFF if cutoff is None else cutoff
+        )
+        self.evaluation_plan_sha256 = evaluation_plan_sha256
 
     @contextmanager
     def _connection(self) -> Iterator[sqlite3.Connection]:
@@ -272,6 +283,9 @@ class IntakeLedger:
                 connection.execute("ALTER TABLE receipts ADD COLUMN source_sha256 TEXT")
             if "track_id" not in columns:
                 connection.execute("ALTER TABLE receipts ADD COLUMN track_id TEXT")
+            for column in ("cutoff", "evaluation_plan_sha256"):
+                if column not in columns:
+                    connection.execute(f"ALTER TABLE receipts ADD COLUMN {column} TEXT")
             yield connection
         except OSError as error:
             raise CivError(f"cannot create intake ledger directory: {error}") from error
@@ -299,10 +313,15 @@ class IntakeLedger:
                     }
                     source = "source_sha256" if "source_sha256" in columns else "NULL"
                     track = "track_id" if "track_id" in columns else "NULL"
+                    cutoff = "cutoff" if "cutoff" in columns else "NULL"
+                    plan = (
+                        "evaluation_plan_sha256" if "evaluation_plan_sha256" in columns else "NULL"
+                    )
                     rows = connection.execute(
                         "SELECT delivery_id, identity, source, received_at_original, "
                         "received_at_utc, bundle_sha256, "
-                        f"{source} AS source_sha256, {track} AS track_id, status "
+                        f"{source} AS source_sha256, {track} AS track_id, status, "
+                        f"{cutoff} AS cutoff, {plan} AS evaluation_plan_sha256 "
                         "FROM receipts ORDER BY sequence"
                     ).fetchall()
                 return [_receipt_from_row(row) for row in rows]
@@ -312,7 +331,8 @@ class IntakeLedger:
             rows = connection.execute(
                 """
                 SELECT delivery_id, identity, source, received_at_original, received_at_utc,
-                       bundle_sha256, source_sha256, track_id, status
+                       bundle_sha256, source_sha256, track_id, status, cutoff,
+                       evaluation_plan_sha256
                 FROM receipts
                 ORDER BY sequence
                 """
@@ -491,8 +511,10 @@ class IntakeLedger:
                 received_at_utc=received_utc.isoformat(),
                 bundle_sha256=bundle_sha256,
                 source_sha256=validated.source_sha256,
-                status="on_time" if received_utc <= TOKYO_CUTOFF else "late",
+                status="on_time" if received_utc <= self.cutoff_utc else "late",
                 track_id=normalized_track_id,
+                cutoff=self.cutoff_original,
+                evaluation_plan_sha256=self.evaluation_plan_sha256,
             )
             try:
                 with self._connection() as connection, connection:
@@ -500,8 +522,9 @@ class IntakeLedger:
                         """
                         INSERT INTO receipts (
                             delivery_id, identity, source, received_at_original, received_at_utc,
-                            bundle_sha256, source_sha256, track_id, status
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            bundle_sha256, source_sha256, track_id, status, cutoff,
+                            evaluation_plan_sha256
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             receipt.delivery_id,
@@ -513,6 +536,8 @@ class IntakeLedger:
                             receipt.source_sha256,
                             receipt.track_id,
                             receipt.status,
+                            receipt.cutoff,
+                            receipt.evaluation_plan_sha256,
                         ),
                     )
                     self._publish_bundle(snapshot, bundle_sha256)
@@ -566,7 +591,13 @@ class IntakeLedger:
             raise CivError("stored submission bundle failed its content-hash check")
 
 
-def import_form_response(response_path: Path, ledger_root: Path) -> IntakeReceipt:
+def import_form_response(
+    response_path: Path,
+    ledger_root: Path,
+    *,
+    cutoff: str | None = None,
+    evaluation_plan_sha256: str | None = None,
+) -> IntakeReceipt:
     response_path = response_path.resolve()
     try:
         if response_path.stat().st_size > MAX_FORM_RESPONSE_BYTES:
@@ -591,7 +622,9 @@ def import_form_response(response_path: Path, ledger_root: Path) -> IntakeReceip
         bundle_path.relative_to(response_path.parent.resolve())
     except ValueError as error:
         raise CivError("form response bundle resolves outside the response directory") from error
-    return IntakeLedger(ledger_root).accept_online(
+    return IntakeLedger(
+        ledger_root, cutoff=cutoff, evaluation_plan_sha256=evaluation_plan_sha256
+    ).accept_online(
         identity=_bounded_string(
             response.get("identity"), "form response identity", MAX_IDENTITY_CHARACTERS
         ),

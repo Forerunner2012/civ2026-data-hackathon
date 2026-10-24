@@ -78,7 +78,10 @@ def _parse_timestamp(value: object, context: str) -> datetime:
 
 
 def load_evaluation_plan(path: Path) -> dict[str, Any]:
-    plan = read_json_file(path, "evaluation plan")
+    return validate_evaluation_plan(read_json_file(path, "evaluation plan"))
+
+
+def validate_evaluation_plan(plan: dict[str, Any]) -> dict[str, Any]:
     if plan.get("contract") != PLAN_CONTRACT:
         raise CivError(f"cohort replay requires contract '{PLAN_CONTRACT}'")
     _closed(

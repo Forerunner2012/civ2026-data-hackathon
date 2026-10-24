@@ -61,6 +61,8 @@ class TallyReceiptPayload(TypedDict):
     bundle_sha256: str
     status: Literal["on_time", "late"]
     track_id: str | None
+    cutoff: str | None
+    evaluation_plan_sha256: str | None
 
 
 class TallyOutcome(TypedDict, total=False):
@@ -257,6 +259,8 @@ def _receipt_payload(receipt: IntakeReceipt) -> TallyReceiptPayload:
         "bundle_sha256": receipt.bundle_sha256,
         "status": receipt.status,
         "track_id": receipt.track_id,
+        "cutoff": receipt.cutoff,
+        "evaluation_plan_sha256": receipt.evaluation_plan_sha256,
     }
 
 
@@ -364,10 +368,12 @@ def import_tally_csv(
     ledger_root: Path,
     *,
     downloader: DownloadTallyUpload | None = None,
+    cutoff: str | None = None,
+    evaluation_plan_sha256: str | None = None,
 ) -> TallyImportSummary:
     """Import a manually exported Tally CSV into the shared online intake ledger."""
 
-    ledger = IntakeLedger(ledger_root)
+    ledger = IntakeLedger(ledger_root, cutoff=cutoff, evaluation_plan_sha256=evaluation_plan_sha256)
     download = downloader or _download_tally_upload
     outcomes: list[TallyOutcome] = []
     with _open_tally_csv(csv_path.resolve()) as reader:
