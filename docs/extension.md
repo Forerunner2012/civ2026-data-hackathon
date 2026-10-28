@@ -57,6 +57,16 @@ Expect `events.jsonl`, `run-manifest.json`, the exact resource copy under `detec
 
 Inspect detected intervals and their `cave_distance_m` trigger values. Open local clips in a supplied viewer or sample the same GNSS interval. Zero events can be valid, especially with illustrative points. Check locations, coordinate units, timing and the distance threshold before changing them. Clips remain local.
 
+Timing first merges matching samples using `merge_gap`, then keeps only whole intervals within the inclusive `min_duration` and `max_duration` bounds. An interval longer than `max_duration` is discarded, not split or capped. A wider radius can lengthen an interval enough to reject it.
+
+Use `--explain` to distinguish no matching samples from candidates rejected by timing:
+
+```text
+civ detect working-points/detector/detector.yaml data/REIMS_SIGNALS.mcap --output working-points --dry-run --explain
+```
+
+The JSON `timing` object reports `matching_samples`, `merged_candidates`, `rejected_below_min_duration`, `rejected_above_max_duration` and `emitted_events`. Matching samples are condition hits, not distinct visits. This dry run writes no outputs and uses the same detection rules.
+
 Record the practice evaluation state without accessing truth:
 
 ```text
