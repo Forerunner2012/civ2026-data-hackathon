@@ -13,7 +13,7 @@ if ($PracticeLabels -ne "-") {
 }
 $Destination = $Workspace
 if ($NewOutput) {
-    $Destination = [System.IO.Path]::GetFullPath($NewOutput)
+    $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($NewOutput)
     if (Test-Path -LiteralPath $Destination) { throw "Choose a new output directory." }
     New-Item -ItemType Directory -Path $Destination | Out-Null
     Copy-Item -LiteralPath (Join-Path $Workspace "detector") -Destination $Destination -Recurse

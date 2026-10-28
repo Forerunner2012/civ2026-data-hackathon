@@ -19,32 +19,70 @@ from tests.test_submission_v2 import _add_extension_payloads, _resource_case
 
 @pytest.mark.parametrize("evaluated", [True, False])
 @pytest.mark.parametrize("with_resource", [True, False])
+@pytest.mark.parametrize("shell", ["powershell", "posix"])
+@pytest.mark.parametrize("relative_output", [True, False])
 def test_trusted_generated_entrypoint_rebuilds_a_fresh_submission(
-    tmp_path: Path, evaluated: bool, with_resource: bool
+    tmp_path: Path, evaluated: bool, with_resource: bool, shell: Shell, relative_output: bool
 ) -> None:
+    executable = shutil.which("pwsh") or shutil.which("powershell")
+    if shell == "posix":
+        executable = shutil.which("sh")
+        if executable is None and os.name == "nt":
+            git = shutil.which("git")
+            git_sh = Path(git).parent.parent / "bin/sh.exe" if git else None
+            if git_sh is not None and git_sh.is_file():
+                executable = str(git_sh)
+    if executable is None:
+        pytest.skip(f"{shell} shell is not installed")
     case = (
         _resource_case(tmp_path / "case")[0]
         if with_resource
         else create_micro_case(tmp_path / "case")
     )
     working = tmp_path / "completed"
-    shell: Shell = "powershell" if os.name == "nt" else "posix"
     scaffold_submission(working, shell)
     shutil.copyfile(case.spec, working / "detector/detector.yaml")
-    (working / "report.md").write_text(MICRO_REPORT, encoding="utf-8")
-    (working / "figure.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+    figure_name = "figure.svg"
+    if shell == "posix":
+        figure_name = "figure.SVG" if evaluated else "figure.sVg"
+    (working / "report.md").write_text(
+        MICRO_REPORT.replace("figure.svg", figure_name), encoding="utf-8"
+    )
+    (working / "figure.svg").unlink()
+    (working / figure_name).write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
     if with_resource:
         detect_events(case.spec, case.bag, working)
         _add_extension_payloads(working)
     before = {p.relative_to(working): p.read_bytes() for p in working.rglob("*") if p.is_file()}
-    output = tmp_path / "fresh output"
-    if os.name == "nt":
-        executable = shutil.which("pwsh") or shutil.which("powershell")
-        assert executable is not None
-        command = [executable, "-NoProfile", "-File", str(working / "reproduce.ps1")]
+    location = tmp_path / "shell location"
+    location.mkdir()
+    output = (location if relative_output else tmp_path) / "fresh output"
+    arguments = [str(case.bag), str(case.labels) if evaluated else "-", str(output)]
+    if shell == "powershell":
+        if relative_output:
+            arguments[-1] = output.name
+            invocation = " ".join(
+                "'" + value.replace("'", "''") + "'"
+                for value in [str(working / "reproduce.ps1"), *arguments]
+            )
+            quoted_location = str(location).replace("'", "''")
+            command = [
+                executable,
+                "-NoProfile",
+                "-Command",
+                f"Set-Location -LiteralPath '{quoted_location}'; & {invocation}",
+            ]
+        else:
+            command = [
+                executable, "-NoProfile", "-File", str(working / "reproduce.ps1"), *arguments
+            ]
     else:
-        command = ["sh", str(working / "reproduce.sh")]
-    command += [str(case.bag), str(case.labels) if evaluated else "-", str(output)]
+        arguments = [
+            case.bag.as_posix(),
+            case.labels.as_posix() if evaluated else "-",
+            output.relative_to(tmp_path).as_posix() if relative_output else output.as_posix(),
+        ]
+        command = [executable, (working / "reproduce.sh").as_posix(), *arguments]
     environment = {
         **os.environ,
         "PATH": str(Path(sys.executable).parent) + os.pathsep + os.environ.get("PATH", ""),
@@ -56,6 +94,9 @@ def test_trusted_generated_entrypoint_rebuilds_a_fresh_submission(
     metrics = json.loads((output / "metrics.json").read_text())
     assert metrics["contract"] == ("civ.metrics/v1" if evaluated else "civ.metrics/v2")
     assert (output / "submission.zip").is_file()
+    assert (output / figure_name).read_bytes() == (working / figure_name).read_bytes()
+    if relative_output:
+        assert not (tmp_path / output.name).exists()
     if with_resource:
         assert (output / "extension/manifest.json").read_bytes() == (
             working / "extension/manifest.json"

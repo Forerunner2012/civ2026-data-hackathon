@@ -22,8 +22,8 @@ if [ "$#" -eq 3 ]; then
     cp -R -- "$workspace/extension" "$destination/extension"
   fi
   for artifact in "$workspace/report.md" "$workspace/reproduce.sh" \
-      "$workspace"/*.svg "$workspace"/*.png "$workspace"/*.jpg \
-      "$workspace"/*.jpeg "$workspace"/*.webp; do
+      "$workspace"/*.[sS][vV][gG] "$workspace"/*.[pP][nN][gG] "$workspace"/*.[jJ][pP][gG] \
+      "$workspace"/*.[jJ][pP][eE][gG] "$workspace"/*.[wW][eE][bB][pP]; do
     if [ -f "$artifact" ]; then cp -- "$artifact" "$destination/"; fi
   done
 fi
