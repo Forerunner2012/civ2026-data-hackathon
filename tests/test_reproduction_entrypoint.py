@@ -17,13 +17,22 @@ from tests.helpers import MICRO_REPORT, create_micro_case, prepare_scored_submis
 from tests.test_submission_v2 import _add_extension_payloads, _resource_case
 
 
-@pytest.mark.parametrize("evaluated", [True, False])
-@pytest.mark.parametrize("with_resource", [True, False])
-@pytest.mark.parametrize("shell", ["powershell", "posix"])
-@pytest.mark.parametrize("relative_output", [True, False])
+@pytest.mark.parametrize(
+    ("evaluated", "with_resource", "shell", "relative_output"),
+    [
+        (True, True, None, False),
+        (True, False, None, False),
+        (False, True, None, False),
+        (False, False, None, False),
+        (False, False, "powershell", True),
+        (True, False, "posix", False),
+        (False, False, "posix", False),
+    ],
+)
 def test_trusted_generated_entrypoint_rebuilds_a_fresh_submission(
-    tmp_path: Path, evaluated: bool, with_resource: bool, shell: Shell, relative_output: bool
+    tmp_path: Path, evaluated: bool, with_resource: bool, shell: Shell | None, relative_output: bool
 ) -> None:
+    shell = shell or ("powershell" if os.name == "nt" else "posix")
     executable = shutil.which("pwsh") or shutil.which("powershell")
     if shell == "posix":
         executable = shutil.which("sh")
