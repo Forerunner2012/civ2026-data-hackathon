@@ -412,15 +412,16 @@ def _verify_participant_assembly(
         path = contained_archive_path(root, target, "assembly target")
         if path.suffix.casefold() not in PARTICIPANT_TEXT_SUFFIXES:
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        folded = text.casefold()
-        for term in FORBIDDEN_ASSEMBLY_TEXT:
-            if term.casefold() in folded:
-                raise CivError(
-                    f"attendee kit text contains private operation '{term}': {target}"
-                )
-        if ABSOLUTE_PATH_PATTERN.search(text):
-            raise CivError(f"attendee kit text contains an absolute host path: {target}")
+        _verify_participant_text(path.read_text(encoding="utf-8", errors="ignore"), target)
+
+
+def _verify_participant_text(text: str, target: str) -> None:
+    folded = text.casefold()
+    for term in FORBIDDEN_ASSEMBLY_TEXT:
+        if term.casefold() in folded:
+            raise CivError(f"attendee kit text contains private operation '{term}': {target}")
+    if ABSOLUTE_PATH_PATTERN.search(text):
+        raise CivError(f"attendee kit text contains an absolute host path: {target}")
 
 
 def _copy_participant_runtime(repository: Path, target: Path) -> None:
@@ -580,6 +581,12 @@ def _session_inputs(
                         raise CivError(
                             "participant wheel contains an unexpected distribution payload"
                         )
+                    if Path(name).suffix.casefold() in PARTICIPANT_TEXT_SUFFIXES or (
+                        ".dist-info/" in name
+                    ):
+                        _verify_participant_text(
+                            archive.read(name).decode("utf-8", errors="ignore"), name
+                        )
                 entry_points = [
                     name for name in names if name.endswith(".dist-info/entry_points.txt")
                 ]
@@ -645,10 +652,16 @@ def _copy_session_inputs(output: Path, copies: Sequence[tuple[Path, str]]) -> No
     (output / "SESSION-MATERIALS.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
     brief = output / "SESSION-BRIEF.md"
     if brief.is_file():
-        for destination in re.findall(r"\]\(([^)]+)\)", brief.read_text(encoding="utf-8")):
+        for inline in re.findall(r"\]\(([^)]+)\)", brief.read_text(encoding="utf-8")):
+            link = re.match(r"\s*(?:<([^<>\n]+)>|([^\s<>]+))", inline)
+            if link is None:
+                raise CivError("session brief link has an invalid Markdown destination")
+            destination = link.group(1) or link.group(2)
             if "://" in destination or destination.startswith(("#", "mailto:")):
                 continue
             relative = destination.split("#", 1)[0]
+            while relative.startswith("./"):
+                relative = relative.removeprefix("./")
             if not contained_archive_path(output, relative, "session brief link").exists():
                 raise CivError(f"session brief link is missing from the kit: {relative}")
 

@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 from typing import Literal, TypedDict
 
@@ -661,11 +662,102 @@ def test_session_inputs_are_exposed_by_cli() -> None:
     assert args.participant_wheel == Path("participant.whl")
 
 
+@pytest.mark.parametrize(
+    "destination",
+    [
+        'guide.md "Setup"',
+        "guide.md 'Setup'",
+        "guide.md (Setup)",
+        "<guide.md>",
+        '<guide.md> "Setup"',
+        "./guide.md",
+        '././guide.md#setup "Setup"',
+        '<./guide.md#setup> "Setup"',
+    ],
+)
+def test_session_brief_accepts_markdown_destinations(tmp_path: Path, destination: str) -> None:
+    output = tmp_path / "output"
+    output.mkdir()
+    (output / "guide.md").write_text("# Setup\n", encoding="utf-8")
+    brief = tmp_path / "brief.md"
+    brief.write_text(f"[Guide]({destination})\n", encoding="utf-8")
+    original = brief.read_bytes()
+    assembly_module._copy_session_inputs(output, [(brief, "SESSION-BRIEF.md")])
+    assert (output / "SESSION-BRIEF.md").read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    "destination",
+    [
+        'missing.md "Setup"',
+        "<missing.md>",
+        "./missing.md",
+        '../outside.md "Setup"',
+        "<./../outside.md>",
+        "./../outside.md",
+        'missing.md "https://example.com"',
+    ],
+)
+def test_session_brief_rejects_missing_or_outside_destinations(
+    tmp_path: Path, destination: str
+) -> None:
+    output = tmp_path / "output"
+    output.mkdir()
+    (tmp_path / "outside.md").write_text("Outside the kit\n", encoding="utf-8")
+    brief = tmp_path / "brief.md"
+    brief.write_text(f"[Guide]({destination})\n", encoding="utf-8")
+    with pytest.raises(CivError, match="missing from the kit|contained archive-relative"):
+        assembly_module._copy_session_inputs(output, [(brief, "SESSION-BRIEF.md")])
+
+
+def test_session_brief_rejects_symlink_outside_kit(tmp_path: Path) -> None:
+    output = tmp_path / "output"
+    output.mkdir()
+    outside = tmp_path / "outside.md"
+    outside.write_text("Outside the kit\n", encoding="utf-8")
+    try:
+        (output / "guide.md").symlink_to(outside)
+    except OSError as error:
+        pytest.skip(f"symlinks unavailable: {error}")
+    brief = tmp_path / "brief.md"
+    brief.write_text('[Guide](<./guide.md> "Setup")\n', encoding="utf-8")
+    with pytest.raises(CivError, match="resolves outside its intended root"):
+        assembly_module._copy_session_inputs(output, [(brief, "SESSION-BRIEF.md")])
+
+
+@pytest.mark.parametrize(
+    "member",
+    [
+        "civ_workshop/_templates/submission/README.md",
+        "civ_workshop/_templates/submission/detector.yaml",
+        "civ_workshop-0.1.0.dist-info/METADATA",
+        "civ_workshop-0.1.0.dist-info/WHEEL",
+        "civ_workshop-0.1.0.dist-info/licenses/LICENSE.txt",
+    ],
+)
+@pytest.mark.parametrize("text", ["private /organizers route", "CIV SCORE-BATCH", r"C:\private"])
+def test_session_wheel_reuses_participant_text_privacy_rules(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs, member: str, text: str
+) -> None:
+    wheel = tmp_path / "participant.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for name in (*assembly_module.PARTICIPANT_RUNTIME_MODULES, "__init__.py", "__main__.py"):
+            archive.writestr(f"civ_workshop/{name}", "# Synthetic public module\n")
+        archive.writestr(
+            "civ_workshop-0.1.0.dist-info/entry_points.txt",
+            "[console_scripts]\nciv = civ_workshop.participant_cli:main\n",
+        )
+        archive.writestr(member, text)
+    original = wheel.read_bytes()
+    with pytest.raises(CivError, match="private operation|absolute host path"):
+        assemble_kit(**assembly_inputs, participant_wheel=wheel)
+    assert not assembly_inputs["output"].exists()
+    assert wheel.read_bytes() == original
+
+
 def test_real_participant_wheel_is_supported_and_organizer_entrypoint_is_rejected(
     tmp_path: Path, assembly_inputs: _AssemblyInputs
 ) -> None:
-    import zipfile
-
     wheel_root = tmp_path / "dist"
     built = subprocess.run(
         ["uv", "build", str(REPOSITORY / "participant"), "--wheel", "--out-dir", str(wheel_root)],
@@ -675,11 +767,14 @@ def test_real_participant_wheel_is_supported_and_organizer_entrypoint_is_rejecte
     )
     assert built.returncode == 0, built.stderr
     wheel = next(wheel_root.glob("*.whl"))
+    original = wheel.read_bytes()
     result = assemble_kit(**assembly_inputs, participant_wheel=wheel)
     assert result["valid"] is True
     assert (
         assembly_inputs["output"] / "runtime/wheels" / wheel.name
-    ).read_bytes() == wheel.read_bytes()
+    ).read_bytes() == original
+    assert wheel.read_bytes() == original
+    assert audit_assembly(assembly_inputs["output"] / "attendee-kit-assembly.json") == result
     rejected = tmp_path / "organizer.whl"
     with zipfile.ZipFile(wheel) as source, zipfile.ZipFile(rejected, "w") as target:
         for name in source.namelist():
