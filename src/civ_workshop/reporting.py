@@ -118,7 +118,11 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
     ]
     detect_command = re.compile(r"^(?:&\s*)?(?:uv\s+run\s+)?civ\s+detect(?:\s|$)")
     if not any(detect_command.match(line) for line in command_lines):
-        raise CivError("reproduction entry point must invoke civ detect")
+        raise CivError(
+            "reproduction entry point must invoke civ detect on a direct command line; "
+            "supported prefixes: civ detect, uv run civ detect, & civ detect, "
+            "or & uv run civ detect; wrappers and command variables are not recognized"
+        )
     return figure_path, reproduction[0]
 
 
