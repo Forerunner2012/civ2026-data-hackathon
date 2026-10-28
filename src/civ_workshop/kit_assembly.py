@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import csv
 import json
 import math
 import re
 import shutil
 import sys
+import zipfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from civ_workshop.kit_inventory import (
     audit_kit_inventory,
 )
 from civ_workshop.presentation_files import verified_presentations
+from civ_workshop.score_reference import validate_score_reference
 from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 ASSEMBLY_CONTRACT = "civ.attendee-kit-assembly/v1"
@@ -532,6 +535,124 @@ def _context_inputs(
     return inputs
 
 
+def _session_inputs(
+    inventory: Mapping[str, object],
+    participant_wheel: Path | None,
+    practice_packs: Sequence[Path],
+    session_brief: Path | None,
+) -> list[tuple[Path, str]]:
+    """Validate explicitly released session inputs before creating an output."""
+    copies: list[tuple[Path, str]] = []
+    if participant_wheel is not None:
+        if participant_wheel.suffix != ".whl":
+            raise CivError("participant wheel must be a .whl file")
+        try:
+            with zipfile.ZipFile(participant_wheel) as archive:
+                names = archive.namelist()
+                for name in names:
+                    safe_archive_path(name.rstrip("/"), "participant wheel member")
+                modules = {
+                    Path(name).name
+                    for name in names
+                    if name.startswith("civ_workshop/") and name.endswith(".py")
+                }
+                expected = set(PARTICIPANT_RUNTIME_MODULES) | {"__init__.py", "__main__.py"}
+                if modules != expected:
+                    raise CivError("participant wheel does not match the public runtime modules")
+                for name in names:
+                    if name.endswith("/"):
+                        continue
+                    if name.startswith("civ_workshop/"):
+                        relative = name.removeprefix("civ_workshop/")
+                        allowed_templates = {
+                            "_" + target
+                            for target in TRACKED_ASSET_SOURCES
+                            if target.startswith("templates/submission/")
+                        }
+                        if relative not in expected and relative not in allowed_templates:
+                            raise CivError(
+                                "participant wheel contains an unexpected package payload"
+                            )
+                    elif (
+                        not name.split("/")[0].startswith("civ_workshop-")
+                        or ".dist-info/" not in name
+                    ):
+                        raise CivError(
+                            "participant wheel contains an unexpected distribution payload"
+                        )
+                entry_points = [
+                    name for name in names if name.endswith(".dist-info/entry_points.txt")
+                ]
+                if len(entry_points) != 1:
+                    raise CivError("participant wheel requires one console entry-point definition")
+                configuration = configparser.ConfigParser()
+                configuration.read_string(archive.read(entry_points[0]).decode("utf-8"))
+                if configuration.get("console_scripts", "civ", fallback="") != (
+                    "civ_workshop.participant_cli:main"
+                ):
+                    raise CivError("participant wheel must expose the participant CLI")
+        except (OSError, zipfile.BadZipFile, UnicodeDecodeError, configparser.Error) as error:
+            raise CivError(f"cannot validate participant wheel: {error}") from error
+        copies.append((participant_wheel, _target(f"runtime/wheels/{participant_wheel.name}")))
+    product_set = inventory.get("product_set")
+    if not isinstance(product_set, dict) or not isinstance(product_set.get("products"), list):
+        raise CivError("session inputs require an inventory product set")
+    products = {str(product["sha256"]): product for product in product_set["products"]}
+    targets: set[str] = set()
+    for pack in practice_packs:
+        reference = validate_score_reference(read_json_file(pack, "released practice pack"))
+        product = products.get(reference["source_sha256"])
+        if product is None:
+            raise CivError("released practice pack does not match a participant product")
+        provenance = reference.get("provenance")
+        if (
+            provenance is not None
+            and provenance["product_manifest_sha256"] != product["manifest_sha256"]
+        ):
+            raise CivError("released practice pack does not match the product manifest")
+        if pack.suffix != ".json":
+            raise CivError("released practice packs must be JSON files")
+        target = _target(f"practice-labels/{pack.name}")
+        if target.casefold() in targets:
+            raise CivError("released practice packs have colliding filenames")
+        targets.add(target.casefold())
+        copies.append((pack, target))
+    if session_brief is not None:
+        if session_brief.suffix.lower() != ".md" or not session_brief.is_file():
+            raise CivError("session brief must be an existing Markdown file")
+        copies.append((session_brief, "SESSION-BRIEF.md"))
+    return copies
+
+
+def _copy_session_inputs(output: Path, copies: Sequence[tuple[Path, str]]) -> None:
+    if not copies:
+        return
+    lines = [
+        "# Session materials",
+        "",
+        "These are the organizer-selected inputs for this session.",
+        "",
+    ]
+    for source, target in copies:
+        _copy_file(source, contained_archive_path(output, target, "session material"))
+        lines.append(f"- [{target}]({target})")
+    lines += [
+        "",
+        "Only explicitly released practice references are included. A wheel alone does not",
+        "provide its dependencies or establish offline installation readiness.",
+        "",
+    ]
+    (output / "SESSION-MATERIALS.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    brief = output / "SESSION-BRIEF.md"
+    if brief.is_file():
+        for destination in re.findall(r"\]\(([^)]+)\)", brief.read_text(encoding="utf-8")):
+            if "://" in destination or destination.startswith(("#", "mailto:")):
+                continue
+            relative = destination.split("#", 1)[0]
+            if not contained_archive_path(output, relative, "session brief link").exists():
+                raise CivError(f"session brief link is missing from the kit: {relative}")
+
+
 def assemble_kit(
     inventory_path: Path,
     repository: Path,
@@ -544,6 +665,9 @@ def assemble_kit(
     output: Path,
     context_root: Path | None = None,
     presentations_root: Path | None = None,
+    participant_wheel: Path | None = None,
+    practice_packs: Sequence[Path] = (),
+    session_brief: Path | None = None,
 ) -> dict[str, object]:
     audit_kit_inventory(inventory_path)
     inventory = read_json_file(inventory_path, "participant kit inventory")
@@ -557,6 +681,7 @@ def assemble_kit(
             presentation_files = verified_presentations(presentations_root)
         except (OSError, ValueError, KeyError, StopIteration) as error:
             raise CivError(f"presentation input validation failed: {error}") from error
+    session_copies = _session_inputs(inventory, participant_wheel, practice_packs, session_brief)
     _verify_static_site(site_root)
     fallback_manifest = read_json_file(
         fallback_root / "fallback-manifest.json", "fallback manifest"
@@ -661,6 +786,7 @@ def assemble_kit(
             if "</body>" not in text:
                 raise CivError("assembled brief has no body insertion point")
             brief.write_text(text.replace("</body>", links + "</body>"), encoding="utf-8")
+    _copy_session_inputs(output, session_copies)
     records = _file_records(
         output, excluded={"attendee-kit-assembly.json", "checksums/ASSEMBLY-SHA256SUMS"}
     )
@@ -759,6 +885,15 @@ def build_parser() -> argparse.ArgumentParser:
     assemble.add_argument("--container-archive", type=Path, required=True)
     assemble.add_argument("--context-root", type=Path)
     assemble.add_argument("--presentations-root", type=Path)
+    assemble.add_argument("--participant-wheel", type=Path)
+    assemble.add_argument(
+        "--practice-pack",
+        type=Path,
+        action="append",
+        default=[],
+        help="explicitly released participant practice reference; repeat for each pack",
+    )
+    assemble.add_argument("--session-brief", type=Path)
     assemble.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit")
     audit.add_argument("manifest", type=Path)
@@ -783,6 +918,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                 args.output,
                 args.context_root,
                 args.presentations_root,
+                args.participant_wheel,
+                args.practice_pack,
+                args.session_brief,
             )
         else:
             result = audit_assembly(args.manifest)

@@ -565,3 +565,131 @@ def test_invalid_optional_presentations_fail_before_assembly_output(
     with pytest.raises(CivError, match="presentation input validation failed"):
         assemble_kit(**assembly_inputs, presentations_root=root)
     assert not assembly_inputs["output"].exists()
+
+
+def _released_pack(assembly_inputs: _AssemblyInputs, path: Path) -> Path:
+    inventory = json.loads(assembly_inputs["inventory_path"].read_text())
+    product = inventory["product_set"]["products"][0]
+    path.write_text(
+        canonical_json(
+            {
+                "contract": "civ.label-pack/v1alpha1",
+                "dataset": "fixture",
+                "source_sha256": product["sha256"],
+                "labels": [],
+                "data_gaps": [],
+            }
+        )
+    )
+    return path
+
+
+def test_session_materials_are_exact_audited_copies(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
+) -> None:
+    pack = _released_pack(assembly_inputs, tmp_path / "practice.json")
+    brief = tmp_path / "brief.md"
+    brief.write_text("# Session\n[Practice](practice-labels/practice.json)\n")
+    originals = {p: p.read_bytes() for p in (pack, brief)}
+    result = assemble_kit(**assembly_inputs, practice_packs=[pack], session_brief=brief)
+    output = assembly_inputs["output"]
+    assert result["valid"] is True
+    for source, target in ((pack, "practice-labels/practice.json"), (brief, "SESSION-BRIEF.md")):
+        assert (output / target).read_bytes() == originals[source]
+        assert source.read_bytes() == originals[source]
+    assert "SESSION-BRIEF.md" in (output / "SESSION-MATERIALS.md").read_text()
+    (output / "practice-labels/practice.json").write_text("changed")
+    with pytest.raises(CivError, match="does not match"):
+        audit_assembly(output / "attendee-kit-assembly.json")
+
+
+def test_session_pack_must_match_a_participant_product_before_output(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
+) -> None:
+    pack = _released_pack(assembly_inputs, tmp_path / "practice.json")
+    document = json.loads(pack.read_text())
+    document["source_sha256"] = "0" * 64
+    pack.write_text(canonical_json(document))
+    with pytest.raises(CivError, match="does not match a participant product"):
+        assemble_kit(**assembly_inputs, practice_packs=[pack])
+    assert not assembly_inputs["output"].exists()
+
+
+@pytest.mark.parametrize("text", ["[Missing](missing.md)", "private /organizers route"])
+def test_session_brief_cannot_bypass_navigation_or_privacy_checks(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs, text: str
+) -> None:
+    brief = tmp_path / "brief.md"
+    brief.write_text(text)
+    with pytest.raises(CivError, match="missing from the kit|private operation"):
+        assemble_kit(**assembly_inputs, session_brief=brief)
+
+
+def test_session_inputs_are_exposed_by_cli() -> None:
+    parser = assembly_module.build_parser()
+    args = parser.parse_args(
+        [
+            "assemble",
+            "inventory.json",
+            "--repository",
+            ".",
+            "--data-root",
+            "data",
+            "--viewer",
+            "viewer",
+            "--site-root",
+            "site",
+            "--fallback-root",
+            "fallback",
+            "--cache-root",
+            "cache",
+            "--container-archive",
+            "container.tar",
+            "--output",
+            "out",
+            "--participant-wheel",
+            "participant.whl",
+            "--practice-pack",
+            "one.json",
+            "--practice-pack",
+            "two.json",
+            "--session-brief",
+            "brief.md",
+        ]
+    )
+    assert args.practice_pack == [Path("one.json"), Path("two.json")]
+    assert args.participant_wheel == Path("participant.whl")
+
+
+def test_real_participant_wheel_is_supported_and_organizer_entrypoint_is_rejected(
+    tmp_path: Path, assembly_inputs: _AssemblyInputs
+) -> None:
+    import zipfile
+
+    wheel_root = tmp_path / "dist"
+    built = subprocess.run(
+        ["uv", "build", str(REPOSITORY / "participant"), "--wheel", "--out-dir", str(wheel_root)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert built.returncode == 0, built.stderr
+    wheel = next(wheel_root.glob("*.whl"))
+    result = assemble_kit(**assembly_inputs, participant_wheel=wheel)
+    assert result["valid"] is True
+    assert (
+        assembly_inputs["output"] / "runtime/wheels" / wheel.name
+    ).read_bytes() == wheel.read_bytes()
+    rejected = tmp_path / "organizer.whl"
+    with zipfile.ZipFile(wheel) as source, zipfile.ZipFile(rejected, "w") as target:
+        for name in source.namelist():
+            content = source.read(name)
+            if name.endswith("entry_points.txt"):
+                content = content.replace(
+                    b"civ_workshop.participant_cli:main", b"civ_workshop.cli:main"
+                )
+            target.writestr(name, content)
+    with pytest.raises(CivError, match="participant CLI"):
+        assembly_module._session_inputs(
+            json.loads(assembly_inputs["inventory_path"].read_text()), rejected, (), None
+        )
