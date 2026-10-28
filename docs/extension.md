@@ -67,26 +67,51 @@ Expect `working-points/metrics.json` with `status: "not_evaluated"`, null metric
 
 ## Declare provenance and package
 
-After the last detection run, finish `extension/provenance.md`. Compute its exact file hash:
+Finish `extension/provenance.md`, the report, figure, reproduction script and metrics before packaging. Declare provenance with:
 
-```sh
-sha256sum working-points/extension/provenance.md
+```text
+civ report working-points --extension provenance extension/provenance.md
 ```
 
-Append this entry to the existing `entries` array in `working-points/extension/manifest.json`, replacing the hash placeholder with the printed 64-character hash:
+Paths are relative to the submission workspace, not the shell's current directory. The command hashes the exact payload bytes, preserves other declarations, validates the full extension, and writes the sorted `extension/manifest.json` before packaging. It does not edit or execute payloads. The manifest keeps contract `civ.submission-extension/v1`.
+
+After editing a declared payload, repeat its `--extension KIND PATH` argument to refresh that hash. An unrelated changed or invalid declaration remains an error. All requested declarations are validated together before the manifest is replaced. A later packaging failure leaves the valid declarations saved, so complete the core artifacts and retry `civ report`.
+
+Rerunning detection preserves valid non-resource declarations and refreshes generated resource entries. If an edited payload has a stale hash, explicitly refresh its declaration before detection. Detection does not silently accept changed payload bytes. For a fresh reproduction workspace, copy the detector/resources and extension payloads plus manifest before detection.
+
+The extension allows at most eight payloads, 1 MiB per payload and 4 MiB combined. Optional `agent-trace` and `regression-test` entries require the same exact hashes and supported text media. Intake treats those files as data and never executes them. The kit's `schemas/civ.submission-extension.v1.schema.json` defines the declaration.
+
+## Include a grounded trace and a failure-derived test
+
+These examples show the shape of participant-authored evidence. Replace every placeholder with observations from tools you actually ran and artifacts you produced. Do not claim that this illustrative example is your own executed work. Packaging validates structure and hashes; it does not grant bonus eligibility.
+
+For `extension/agent-trace.jsonl`, retain a short tool-to-artifact chain. For example, one JSON record per actual invocation:
+
+```json
+{"tool":"civ detect","arguments":["detector/detector.yaml","SOURCE_NAME","--output","working-points"],"exit_code":0,"inputs":{"source_sha256":"ACTUAL_SOURCE_SHA256","spec_sha256":"ACTUAL_SPEC_SHA256"},"outputs":[{"path":"events.jsonl","sha256":"ACTUAL_EVENTS_SHA256"}],"observation":"ACTUAL_EVENT_ID and interval support the claim in report heading 4"}
+```
+
+The grounded-trace bonus requires claims linked to executed tools and produced artifacts in the accepted v2 extension. A transcript outside the accepted ZIP, prompt style, confidence, transcript length and model choice do not qualify. Include no credentials, private absolute paths, raw recordings or labels.
+
+For `extension/regression-test.json`, connect one demonstrated failure to a check that would catch its return. An inert example for an overlong merged candidate is:
 
 ```json
 {
-  "kind": "provenance",
-  "media_type": "text/markdown",
-  "path": "extension/provenance.md",
-  "sha256": "REPLACE_WITH_EXACT_LOWERCASE_SHA256"
+  "failure_evidence": {"artifact":"report.md","section":"One failure and the resulting change","observation":"REPLACE_WITH_ACTUAL_RECORDED_FAILURE"},
+  "case": {"condition_hit_times_ns":[0,1000000000,2000000000],"min_duration_ns":0,"merge_gap_ns":1100000000,"max_duration_ns":1000000000},
+  "check": {"expected_event_count":0,"would_catch":"Emitting or capping a merged interval that exceeds maximum duration"}
 }
 ```
 
-Keep `contract` equal to `civ.submission-extension/v1`. Preserve the generated resource entry and sort all entries by `path`. Do not declare the manifest itself. Recompute the hash after editing provenance. Rerunning detection regenerates the extension manifest, so add your provenance declaration again after the final run.
+The test's synthetic interval is 2 s long and exceeds its 1 s maximum. Adapt the case to your demonstrated failure and resulting change. A generic checksum check or an unconnected hypothetical failure does not establish eligibility. This JSON is an inert test specification for review, not an executable test runner. Organizers never execute submitted tests.
 
-The extension allows at most eight payloads, 1 MiB per payload and 4 MiB combined. Optional `agent-trace` and `regression-test` entries require the same exact hashes and supported text media. Intake treats those files as data and never executes them. The kit's `schemas/civ.submission-extension.v1.schema.json` defines the declaration.
+Declare the actual files together with provenance:
+
+```text
+civ report working-points --extension provenance extension/provenance.md --extension agent-trace extension/agent-trace.jsonl --extension regression-test extension/regression-test.json
+```
+
+Inspect the ZIP using a local archive viewer. It must contain the exact declared payload paths plus `extension/manifest.json`; each entry's lowercase SHA-256 must match that member's bytes. Reopening and validating the ZIP confirms inclusion, not the truth of the claims. Submit that unchanged ZIP and its printed hash.
 
 Finish the report, figure, reproduction script and required metrics as described in the [QuickStart](quickstart.md#8-validate-and-keep-the-metadata-only-zip). Make the reproduction script use the bundled EventSpec and resource with the same recording. Then run:
 

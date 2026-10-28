@@ -11,6 +11,7 @@ from civ_workshop.inspection import inspect_bag, render_inventory, render_sample
 from civ_workshop.reporting import build_report_bundle
 from civ_workshop.scoring import score_submission
 from civ_workshop.submission import scaffold_submission
+from civ_workshop.submission_extension import declare_extension_payloads
 
 
 def add_participant_commands(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
@@ -60,6 +61,13 @@ def add_participant_commands(commands: argparse._SubParsersAction[argparse.Argum
 
     report_parser = commands.add_parser("report", help="validate and bundle a submission")
     report_parser.add_argument("submission", type=Path)
+    report_parser.add_argument(
+        "--extension",
+        action="append",
+        nargs=2,
+        metavar=("KIND", "PATH"),
+        help="declare or refresh one inert provenance, agent-trace or regression-test payload",
+    )
 
     submission_parser = commands.add_parser(
         "submission-init", help="create a deliberately incomplete submission workspace"
@@ -112,6 +120,8 @@ def dispatch_participant_command(args: argparse.Namespace) -> bool:
         score_result = score_submission(args.submission, args.labels)
         print(json.dumps(score_result, sort_keys=True, separators=(",", ":")))
     elif args.command == "report":
+        if args.extension:
+            declare_extension_payloads(args.submission, args.extension)
         report_result = build_report_bundle(args.submission)
         print(json.dumps(report_result, sort_keys=True, separators=(",", ":")))
     elif args.command == "submission-init":

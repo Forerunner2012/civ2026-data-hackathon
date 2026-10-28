@@ -2,10 +2,17 @@ from __future__ import annotations
 
 import mimetypes
 import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
-from civ_workshop.artifacts import file_sha256, read_json_file, require_mapping, require_string
+from civ_workshop.artifacts import (
+    canonical_json,
+    file_sha256,
+    read_json_file,
+    require_mapping,
+    require_string,
+)
 from civ_workshop.errors import CivError
 
 EXTENSION_CONTRACT = "civ.submission-extension/v1"
@@ -160,6 +167,12 @@ def load_extension_entries(working: Path) -> list[ExtensionEntry]:
     if not manifest_path.is_file():
         return []
     manifest = read_json_file(manifest_path, "submission extension manifest")
+    return _validate_extension_document(working, manifest)
+
+
+def _validate_extension_document(
+    working: Path, manifest: dict[str, object]
+) -> list[ExtensionEntry]:
     if set(manifest) != {"contract", "entries"}:
         unknown = sorted(set(manifest) - {"contract", "entries"})
         if unknown:
@@ -255,3 +268,56 @@ def load_extension_entries(working: Path) -> list[ExtensionEntry]:
     if entries != sorted(entries):
         raise CivError("submission extension entries must be sorted by archive-relative path")
     return entries
+
+
+def declare_extension_payloads(working: Path, declarations: list[list[str]]) -> None:
+    """Hash explicitly selected inert payloads, validate the entire manifest, then replace it."""
+    manifest_path = contained_archive_path(working, EXTENSION_MANIFEST_PATH, "extension manifest")
+    if manifest_path.is_symlink():
+        raise CivError("extension manifest must not be a symlink")
+    document: dict[str, object] = (
+        read_json_file(manifest_path, "submission extension manifest")
+        if manifest_path.exists()
+        else {"contract": EXTENSION_CONTRACT, "entries": []}
+    )
+    if set(document) != {"contract", "entries"} or document.get("contract") != EXTENSION_CONTRACT:
+        raise CivError("invalid submission extension manifest contract or fields")
+    raw_entries = document.get("entries")
+    if not isinstance(raw_entries, list):
+        raise CivError("submission extension entries must be a list")
+    entries = [require_mapping(entry, "submission extension entry") for entry in raw_entries]
+    selected: set[str] = set()
+    for kind, relative in declarations:
+        if kind not in {"provenance", "agent-trace", "regression-test"}:
+            raise CivError("declare only provenance, agent-trace or regression-test payloads")
+        archive_path = safe_archive_path(relative, "extension declaration")
+        _validate_payload_name(archive_path, kind)
+        if relative.casefold() in selected:
+            raise CivError("duplicate extension declaration")
+        selected.add(relative.casefold())
+        for entry in entries:
+            if str(entry.get("path", "")).casefold() == relative.casefold() and (
+                entry.get("path") != relative or entry.get("kind") != kind
+            ):
+                raise CivError("extension declaration cannot change an existing path or kind")
+        payload = contained_archive_path(working, relative, "extension declaration")
+        replacement = ExtensionEntry(relative, kind, file_sha256(payload), media_type_for(payload))
+        entries = [entry for entry in entries if entry.get("path") != relative]
+        entries.append(replacement.as_dict())
+    document["entries"] = sorted(entries, key=lambda entry: str(entry.get("path", "")))
+    validated = _validate_extension_document(working, document)
+    document["entries"] = [entry.as_dict() for entry in validated]
+    temporary: Path | None = None
+    try:
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", dir=manifest_path.parent, delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            stream.write(canonical_json(document) + "\n")
+        temporary.replace(manifest_path)
+    except OSError as error:
+        raise CivError(f"cannot write submission extension manifest: {error}") from error
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
