@@ -621,11 +621,11 @@ def test_drive_path_rejection_creates_no_intake_artifacts(tmp_path: Path) -> Non
 def test_windows_join_semantics_demonstrate_drive_escape() -> None:
     from pathlib import PurePosixPath, PureWindowsPath
 
-    root = PureWindowsPath("D:/workspace/extracted")
+    root = PureWindowsPath("W:/workspace/extracted")
     assert root.joinpath(*PurePosixPath("C:/workspace/sentinel.txt").parts) == PureWindowsPath(
         "C:workspace/sentinel.txt"
     )
-    assert root.joinpath(*PurePosixPath("D:sentinel.txt").parts).drive == "D:"
+    assert root.joinpath(*PurePosixPath("W:sentinel.txt").parts).drive == "W:"
 
 
 def test_extraction_rejects_existing_parent_symlink_before_writing(tmp_path: Path) -> None:

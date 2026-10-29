@@ -181,7 +181,7 @@ The rule, stated so a driver can apply it live:
 | Work the published warm-up route and Reims development chunks `_0`–`_4` | Touch a sealed route or chunk |
 | Narrate its own false positives and dead ends | **Discuss handedness** |
 
-**Handedness is the line.** [Ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)
+**Handedness is the line.** Ticket 18
 made the transfer a comprehension test — *the turn that crosses oncoming traffic*, right in Kashiwa,
 left in France — and that is the one thing the rabbit must never illuminate.
 
@@ -199,7 +199,7 @@ where the spoiler risk inverts.
 
 This does mean the rabbit eventually demonstrates *deriving speed from `/fix_velocity` on a stack
 with no vehicle bus* — the topic-archaeology half of the transfer. That is deliberate:
-[ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) explicitly
+ticket 18 explicitly
 converts transfer *from a topic remap into a comprehension test*, so the remap is not what is being
 scored. Removing grunt work while leaving the comprehension test intact aims the difficulty at the
 thing worth testing.
@@ -356,7 +356,7 @@ The rule this ticket sets, for [17](17-attendee-page.md) to implement:
 - **A stage's solution unlocks only once that stage's points are effectively settled.** Kashiwa's
   unlocks at the transfer boundary. It does not rescue a Kashiwa score; it unblocks the Reims
   attempt, which is where the difficulty was deliberately moved
-  ([ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
+  (ticket 14).
 - **Solutions are reconstructable, not copy-pasteable.** The approach, the signals, the shape of the
   timing block — not a runnable spec. Preserves a gradient and keeps assembly as real work.
 - **Handedness is never solved.** Unchanged, and it is now the only thing in the day that is

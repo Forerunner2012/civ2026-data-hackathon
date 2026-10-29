@@ -26,7 +26,7 @@ below.
 
 ### Part 1 — the shape of the opening
 
-[Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) fixed the arc and it
+Ticket 14 fixed the arc and it
 is not negotiable:
 
 > Manual analysis first, so the room feels how tedious finding events by hand is; then `civ` is
@@ -106,7 +106,7 @@ output is not tedium: it is disagreement.**
 
 ### The finding: the lesson is that experts do not agree
 
-[Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) asks the room to
+Ticket 14 asks the room to
 *feel how tedious finding events by hand is*. Taken literally that produces a weak exercise — a room
 of practitioners registers "this is tedious" in about ninety seconds, and the remaining minutes are
 theatre they will find patronising.
@@ -116,7 +116,7 @@ four-minute window and produce different intervals: different starts, different 
 counts a hesitation as two turns. Nobody is wrong.
 
 That disagreement is the setup for everything downstream — why labels are **intervals** and not
-timestamps ([ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)), why
+timestamps (ticket 18), why
 matching needs a **tolerance** and why it is temporal IoU ≥ 0.5
 ([ticket 16](../../challenge-spec/issues/16-evaluator-calibration.md)), why `merge_gap` has
 teeth, and why there is a sealed label set at all. All of that is otherwise abstract at 09:40 and

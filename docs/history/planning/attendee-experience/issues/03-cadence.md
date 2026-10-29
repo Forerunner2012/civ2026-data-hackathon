@@ -53,7 +53,7 @@ transfer-boundary board, which is the hardest.
 
 ### The three structural risks in the baseline
 
-1. **The 00:00–00:30 Observe block is manual by design.** [Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)
+1. **The 00:00–00:30 Observe block is manual by design.** Ticket 14
    wants the room to *feel how tedious finding events by hand is*. That is deliberate friction in the
    window where [ticket 04](../../challenge-spec/issues/04-target-machine.md) says
    environment failure lands. Two forms of pain in the same thirty minutes, and only one of them is

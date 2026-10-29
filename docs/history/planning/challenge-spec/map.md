@@ -20,7 +20,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   that retrieves an artifact a decision waits on.
 - **Event facts** (verified against the published programme): CIV 2026 runs 31 Aug – 4 Sep 2026
   in **Miyazaki, Japan**; the **hackathon is Thu 3 Sep, 09:30–12:30**, with a separate results
-  slot at **14:30–15:00** ([ticket 08](issues/08-agenda-duration.md)). These are design inputs —
+  slot at **14:30–15:00** (ticket 08). These are design inputs —
   the three-hour ladder and the fact that pitches have their own slot — not a countdown.
 - **Schedule is not a constraint on this map.** Decide what the event *should* be; the build
   follows. Do not water down a decision to fit a calendar, and do not carry delay caveats into
@@ -56,19 +56,19 @@ building the runner, dataset and evaluator is downstream execution, not part of 
 - [What machine must the required path run on?](issues/04-target-machine.md) — Container-first,
   BYOD only, Windows/WSL2 + Ubuntu, CPU-only. Risk accepted: setup failure has no hardware
   swap, so the non-ROS fallback pack is load-bearing.
-- [Are URT-Kashiwa redistribution terms sufficient?](../../../../.scratch/civ2026-challenge-spec/issues/05-kashiwa-redistribution-rights.md)
+- Are URT-Kashiwa redistribution terms sufficient?
   — **Copyright cleared: CC BY 4.0**, subsets and permanent offline attendee copies expressly
   permitted, attribution the only condition. Two catches: a delete-after-the-event clause would
   itself breach the licence, and access is not guaranteed to persist, so mirror the 16 MCAPs now.
   Personal data graduated to ticket 19, since closed.
-- [Retrieve and review the previous hackathon's solution](../../../../.scratch/civ2026-challenge-spec/issues/06-retrieve-previous-solution.md)
-  — logic, thresholds and workflow extracted; Heex stack and terminology left behind (07). The
+- Retrieve and review the previous hackathon's solution
+  — logic, thresholds and workflow extracted. The
   prior "unprotected right turn" detector was really *a right turn while something was detected*,
   and nothing was ever scored against ground truth, so **no historical calibration data exists**.
-- [Is the agenda three hours or three and a half?](issues/08-agenda-duration.md) — **not a
+- Is the agenda three hours or three and a half? — **not a
   decision; fixed by the programme at three hours.** Plus a separate 14:30–15:00 results slot,
   which means pitches can leave the three-hour block entirely and teams get lunch to prepare.
-- [Is the camera imagery clear to redistribute?](../../../../.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md) — **yes.**
+- Is the camera imagery clear to redistribute? — **yes.**
   T-Lab participates in the hackathon, so this is a direct collaboration with the publishing lab.
   Attribution remains the one live obligation.
 - [Is the detector surface CEL-only, or CEL plus a Python API?](issues/09-detector-authoring-surface.md)
@@ -77,8 +77,8 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   unreachable without it. Python and conflict geometry are **deferred** to the organizer demo and
   an extra track, with a reserved `detector:` seam. The enforceable line is what the runner
   executes for the scored submission, not what teams may write.
-- [Where is the clean-room boundary?](issues/07-clean-room-boundary.md) — **independent functional
-  reimplementation with provenance review**, drawn around the **Heex stack and its terminology**,
+- Where is the clean-room boundary? — **independent functional
+  reimplementation with provenance review**, drawn around product-specific stack and terminology,
   not the domain logic. Never System/Datasource/Signal/Trigger/Recording; always
   bag/topic/field/EventSpec/detector/event/clip. Condition expressions and their thresholds are
   reusable — they describe the data, not the product.
@@ -92,7 +92,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   on a trace pointing to executed tools and evidence, never prompt style. Said plainly: with
   rung 3 deferred and no model shipped, the agent track is thin this edition — the AI story is
   carried by how the kit is built.
-- [Is the CLI `cive` or `civ`?](issues/13-cli-name.md) — **`civ`**.
+- Is the CLI `cive` or `civ`? — **`civ`**.
 - [What are the review and test gates for AI-built tooling?](issues/15-ai-build-review-gates.md)
   — **gate by failure visibility × cost.** Evaluator gets golden files, a determinism check, the
   rank test and line-by-line review; runner gets behavioural tests and actionable errors; clips
@@ -116,7 +116,7 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   fix, fix_velocity) under 40 MB per 3.2 GB chunk. Signals-only for the whole 38-minute session is
   **~350 MB**. Ticket 17's 15 GB target was solving a problem that does not exist; the Reims
   dev/sealed split rests on pedagogy alone. **Kashiwa is still unmeasured.**
-- [Does the Reims recording contain enough of the target manoeuvre?](../../../../.scratch/civ2026-challenge-spec/issues/24-survey-reims-bag.md)
+- Does the Reims recording contain enough of the target manoeuvre?
   — **yes: 16 clear junction-left manoeuvres plus 2 development-side borderline cases.** Chunks
   `_0`–`_4` become development (~21m49s, 7 clear events); `_5`–`_8` stay sealed (~16m09s, 9 clear
   events). Objects support evidence but cannot establish right-of-way. The 13.3 km route is in
@@ -133,21 +133,21 @@ building the runner, dataset and evaluator is downstream execution, not part of 
   participants, solo or in duos**, all experienced with robotic/vehicular data. Kit ships
   permissively (MIT/Apache-2.0 code, CC BY 4.0 content) with credit suggested; workshop content
   and the site go public. Closes the Phase 0 remainder the first map missed.
-- [How is the organizer view kept out of the public site?](../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)
+- How is the organizer view kept out of the public site?
   — **production builds contain only the participant app.** `/` and `/participants` render the
   public participant view; `/organizers` is absent from the route manifest and from both server
   and client bundles. The full organizer app remains available through local development only.
-- [Do the golden-path tool licences compose cleanly?](../../../../.scratch/civ2026-challenge-spec/issues/23-tool-licence-audit.md) — **yes,
+- Do the golden-path tool licences compose cleanly? — **yes,
   with an artifact-level release gate.** Standardize on ROS 2 Humble / Ubuntu 22.04; pin the base
   image by digest; treat PlotJuggler and Lichtblick as MPL-2.0 standalone programs with matching
   source availability; pin custom schemas by commit plus MCAP schema hash; and generate the SBOM,
   third-party notices and copyleft source/relinking paths from the built image. CIV code remains
   MIT/Apache and data/content remain CC BY 4.0, but the aggregate image has no single licence.
-- [What do the bespoke Reims bags add?](../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) —
+- What do the bespoke Reims bags add? —
   **REVERSED. In the main track, scored as a sealed generalisation test.** With 30 practitioners
   the Kashiwa core is a warm-up, so the difficulty moves to transfer: manual analysis, then `civ`
   as facilitator, then the same reasoning applied to a structurally different dataset.
-- [The event, defined semantically](../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) — **the turn that
+- The event, defined semantically — **the turn that
   crosses oncoming traffic.** Right turns in Kashiwa, **left** turns in France, because handedness
   is a property of the country and not of the detector. Converts transfer from a topic remap into
   a comprehension test: copy a threshold and you find nothing.

@@ -21,7 +21,7 @@ contradicts them:
 - **Failure is a deliverable.** §2 says so; [ticket 21](../../challenge-spec/issues/21-pitch-and-judging-model.md)
   puts the *most instructive failure* in the results block and warns that it will read as a booby
   prize unless framed. An award solves the framing problem in a way that a walkthrough slot does not.
-- **Transfer is the difficulty.** [Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)
+- **Transfer is the difficulty.** Ticket 14
   moved the event's whole point onto the second dataset. A single overall leaderboard buries that
   under 100 points of everything else.
 - **Solo and duo rank together** ([ticket 21](../../challenge-spec/issues/21-pitch-and-judging-model.md)).
@@ -82,7 +82,7 @@ never instead of it. Get the number if it exists; do not block on it.
 | | What it rewards | Why it exists |
 |---|---|---|
 | **1st, 2nd, 3rd overall** | the leaderboard, all 100 points plus bonus | Ordinary and expected; the field would feel unfinished without it |
-| **Best transfer** | report heading 3 and Reims Detection | [Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the event's whole point onto the second dataset. A single overall leaderboard buries it under 100 points of everything else |
+| **Best transfer** | report heading 3 and Reims Detection | Ticket 14 moved the event's whole point onto the second dataset. A single overall leaderboard buries it under 100 points of everything else |
 | **Most instructive failure** | an honest dead end, well analysed | §2 makes failure a deliverable. [Ticket 21](../../challenge-spec/issues/21-pitch-and-judging-model.md) warns it reads as a booby prize unless framed — **an award is the framing.** A walkthrough slot alone is not |
 
 **Five recognitions, no more.** A 30-minute results block cannot hold more, and each additional

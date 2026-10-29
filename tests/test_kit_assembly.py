@@ -459,7 +459,7 @@ def test_assembly_rejects_invalid_later_context_entry_before_output(
             "private runtime module",
         ),
         ("docs/private.md", "Run civ score-batch now.\n", "private operation"),
-        ("docs/path.md", "D:\\private\\labels.json\n", "absolute host path"),
+        ("docs/path.md", "W:\\private\\labels.json\n", "absolute host path"),
     ],
 )
 def test_assembly_leakage_gate_rejects_private_payload(

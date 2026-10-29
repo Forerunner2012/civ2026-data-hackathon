@@ -24,6 +24,6 @@ Consequences carried forward:
 
 - Scoring has to stay objective against a fixed class — resolved in ticket 03.
 - "Other event types" needs a home in the bonus track — also ticket 03.
-- The reference EventSpec sketched in `docs/history/planning/exploration/exploration-notes-INBOX.md`
+- The reference EventSpec sketched in an early working note
   (`acceleration lt -3.0` AND `speed gt 2.0`) is a *hard-braking* example, not a URT one. A URT
   reference detector still has to be written; ticket 09 produces the first one.
