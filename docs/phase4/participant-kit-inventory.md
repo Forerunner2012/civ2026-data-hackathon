@@ -1,5 +1,7 @@
 # Phase 4 participant-kit inventory contract
 
+> Historical inventory scope and acceptance. Use [Build and audit a participant kit](../organizers/participant-kit.md) for the current procedure and optional session materials. The original commands below record Phase 4 behavior; current inventory validation requires all five pinned viewer files.
+
 Status: **implemented; real inventory acceptance recorded below**
 
 Recorded: 2026-08-29
@@ -72,40 +74,3 @@ sealed identity, viewer state, container state, secret, camera/context entry, or
 It remained outside git. Its exact hash is intentionally not frozen here because the tool source
 commit changes when this implementation is committed; Phase 5 will freeze the final generated
 inventory against that release commit and both physical platform payloads.
-
-
-## Include organizer-selected session materials
-
-The assembly command accepts three optional session inputs in addition to its existing required
-arguments. Select the released files explicitly. It never discovers references from a private
-directory or decides what may be disclosed:
-
-```text
---participant-wheel PARTICIPANT_WHEEL.whl
---practice-pack RELEASED_PRACTICE_REFERENCE.json
---session-brief SESSION_BRIEF.md
-```
-
-Repeat `--practice-pack` for each authorized complete practice reference. Each pack must validate
-against the scoring-reference contract and match a participant product's exact source hash. Any
-declared product-manifest hash must match too. Structural validity and a matching recording do not
-grant release authority: the organizer must select only references already authorized for the
-session. Never pass sealed or unreleased evaluation references. Existing source-bound review and
-release checkpoints still apply.
-
-The wheel must contain the public participant runtime and expose
-`civ_workshop.participant_cli:main`. An organizer wheel is rejected. Build the participant target
-with `uv build participant --wheel --out-dir EXTERNAL_DIST`, then supply that reviewed wheel.
-A wheel alone does not establish offline installation readiness. Supply and qualify matching
-dependencies separately, following the setup guide.
-
-Assembly copies the exact wheel to `runtime/wheels/`, practice references to `practice-labels/`,
-and the brief to `SESSION-BRIEF.md`. `SESSION-MATERIALS.md` links the selected inputs. The brief
-must contain confirmed session instructions without credentials or private paths. Its inline
-relative Markdown links must resolve inside the assembled kit. Use `practice-labels/NAME.json`
-and the actual wheel path when linking those inputs.
-
-The existing privacy audit, assembly file inventory, component sizes and checksum writer cover
-all copies. Do not rewrite the manifest through private helpers. With these inputs omitted, the
-existing source-runtime assembly remains available. No new session input creates approval,
-publication authority or a release claim.

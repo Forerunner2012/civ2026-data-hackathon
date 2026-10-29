@@ -16,10 +16,12 @@ This workspace is deliberately incomplete. It supplies the stable shape, not a d
    identities, environment versions, the command and any material differences in your report.
    Valid extension declarations are preserved by detection. Finish optional payload declarations
    before this check. Packaging success alone is not proof of reproducibility.
-5. Submit only the unchanged `submission.zip`, the printed SHA-256, and the same participant or
-   team identity you used for earlier submissions. A replacement script must include a direct
-   `civ detect` or `uv run civ detect` line; PowerShell may prefix it with `&`. Static validation
-   does not recognize wrappers or command variables and does not execute your script.
+5. Keep the validated `submission.zip` and printed SHA-256 unchanged until organizers confirm
+   a collection route. Use the same participant or team identity for any replacement delivery.
+
+A replacement script must include a direct
+`civ detect` or `uv run civ detect` line; PowerShell may prefix it with `&`. Static validation
+does not recognize wrappers or command variables and does not execute your script.
 
 `events.jsonl` is runner output, not a hand-edited label file. Each line is a normalized
 `civ.event/v1` interval in nanoseconds with source and spec hashes. Events are sorted

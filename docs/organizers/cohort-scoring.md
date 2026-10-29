@@ -65,7 +65,7 @@ sha256sum /path/to/recording.mcap
 
 The same Reims recording can appear in both Reims tracks, with different truth packs. Never substitute turn labels for Cave truth. The scorer consumes reviewed Cave packs through the same mapping as turn packs. It does not generate truth during scoring.
 
-The example includes the agreed event policy. Replace its placeholder product weights with weights for every assigned recording. Use equal turn-track weights, and limit empty Cave recordings collectively to 10% of its weight. Check duration ranges, event counts, and the score of an always-silent detector before freezing weights. These are private checks, not participant hints. The [points policy](../reference/scoring.md#event-policy) and [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json) describe the fields.
+The example includes the agreed event policy. Replace its placeholder product weights with weights for every assigned recording. Apply the [event weighting policy](../reference/scoring.md#event-policy). Before freezing weights, check duration ranges, event counts, and the score of an always-silent detector privately. The [points policy](../reference/scoring.md#event-policy) and [plan schema](../../schemas/civ.evaluation-plan.v1alpha2.schema.json) describe the fields.
 
 Resolve the profile into a new saved plan before intake or scoring:
 

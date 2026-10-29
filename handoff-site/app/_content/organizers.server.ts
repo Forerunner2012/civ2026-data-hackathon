@@ -203,10 +203,10 @@ export const blockers = [
 ];
 
 export const sources = [
-  "exploration/data-hackathon-01-brainstorming.md — initial goals and inheritance from CIV 2025",
-  "exploration/data-hackathon-02-survey-and-directions.md — architecture, evaluation and preparation",
-  "exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md — rule ladder and proof contract",
-  ".scratch/civ2026-challenge-spec/map.md — complete 25-ticket decision map",
+  "docs/history/planning/exploration/data-hackathon-01-brainstorming.md — initial goals and inheritance from CIV 2025",
+  "docs/history/planning/exploration/data-hackathon-02-survey-and-directions.md — architecture, evaluation and preparation",
+  "docs/history/planning/exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md — rule ladder and proof contract",
+  "docs/history/planning/challenge-spec/map.md — complete 25-ticket decision map",
   ".scratch/civ2026-challenge-spec/research/23-tool-licence-audit.md — primary-source licence and release audit",
   ".scratch/civ2026-challenge-spec/research/survey_reims_bag.py + ticket 24 — measured Reims manoeuvre, GNSS and zone evidence",
 ];

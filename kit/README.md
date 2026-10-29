@@ -2,7 +2,7 @@
 
 ## Start here
 
-Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action. Start with the participant page and kit README, then follow the kit's `docs/quickstart.md`. Build a reproducible metadata-only bundle. Recordings and evidence clips stay local.
+Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action. Build a reproducible metadata-only bundle. Recordings and evidence clips stay local.
 
 1. Open `site/index.html` for the static participant page. It does not show live room state.
 2. Open [setup and recovery](docs/setup.md) to install the participant CLI and check recovery requirements.
@@ -16,22 +16,7 @@ Paths on this page are relative to the unpacked kit root. The [runtime requireme
 
 ## Viewer reference
 
-The pinned offline viewers are under `viewer/<platform>/`; read `viewer/README.md` before running one and verify its file against `checksums/SHA256SUMS`. The kit carries:
-
-- PlotJuggler `3.999.3` for Windows amd64 and Linux amd64;
-- Lichtblick `1.28.0` for Windows amd64, Linux amd64, and macOS universal.
-
-PlotJuggler does not publish a macOS binary for this pinned release. macOS attendees can use the supplied Lichtblick build for visual inspection; the qualified CLI/container route remains the one stated by the event organizers.
-
-Upstream project and release references:
-
-- PlotJuggler: <https://github.com/PlotJuggler/PlotJuggler> ·
-  <https://github.com/PlotJuggler/PlotJuggler/releases>
-- Lichtblick: <https://github.com/lichtblick-suite/lichtblick> ·
-  <https://github.com/lichtblick-suite/lichtblick/releases>
-
-On a connected machine, the official no-install Lichtblick app is available at
-<https://lichtblick-suite.github.io/lichtblick/>. The core QuickStart does not depend on it.
+Use the [viewer guide](viewer/README.md) for pinned versions, platform files, upstream references, and checksum checks. Viewer availability does not qualify a CLI platform. Use the runtime route confirmed for your session.
 
 ## Layout and context reference
 
