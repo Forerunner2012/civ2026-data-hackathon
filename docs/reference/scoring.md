@@ -25,7 +25,7 @@ Intervals use integer nanoseconds with half-open `[start_ns, end_ns)` bounds. Sc
 
 For example, the synthetic `highest-iou-duplicate` fixture has one label `[0,100)` and predictions `[0,75)` and `[0,100)`: the exact match wins, leaving one true positive, one false positive, and no false negatives. Precision is `1/2`, recall `1`, and F1 is `2/3` (`0.666666666667`); see the [fixture](../../tests/fixtures/scoring/matching_and_duplicates.json) and [scoring test](../../tests/test_scoring.py).
 
-An omitted valid event in an incomplete practice pack can count as a false positive. Treat precision, recall, and F1 as complete-reference results only after every relevant event for that source or chunk is reviewed and included. Adjustments, rejections, and genuine data-gap exclusions need reasons; uncertain intervals and missing context need a human disposition, and export requires missed-event signoff. See the [local review guide](../phase3/label-review.md).
+An omitted valid event in an incomplete practice pack can count as a false positive. Treat precision, recall, and F1 as complete-reference results only after every relevant event for that source or chunk is reviewed and included. Adjustments, rejections, and genuine data-gap exclusions need reasons; uncertain intervals and missing context need a human disposition, and export requires missed-event signoff. See the [local review guide](../organizers/label-review.md).
 
 ## Point allocation
 
@@ -88,4 +88,4 @@ The [example plan](../organizers/examples/cohort-plan.example.json) shows this p
 
 For this mode, `official_score: true` has `official_scope: "automatic_components"`: it covers Detection and the Cave bonus. Evidence, Reproducibility, jury, and other bonus awards are completed outside the scoring engine. The technical and final totals remain `null` and `final_score_status` remains `pending_manual_review`. Without `--official`, outputs remain diagnostic. Neither mode authorizes participant-facing publication.
 
-For the artifact versions and submission boundary, see [participant contracts](participant-contracts.md), the [practice-labels README](../../practice-labels/README.md), the [organizer label-pack contract](../phase3/organizer-label-packs.md), and the [stable contract inventory](participant-contracts.md#producer-and-consumer-responsibilities).
+For the artifact versions and submission boundary, see [participant contracts](participant-contracts.md), the [practice-labels README](../../practice-labels/README.md), the [organizer label-pack contract](../history/phase3/organizer-label-packs.md), and the [stable contract inventory](participant-contracts.md#producer-and-consumer-responsibilities).

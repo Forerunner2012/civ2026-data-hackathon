@@ -1,10 +1,10 @@
 # Contributing
 
-This guide covers open-source contributions that add code capabilities. To adapt a session with existing tools, follow [Make it your own](MAKE-IT-YOUR-OWN.md).
+This guide covers open-source contributions that add code capabilities. To adapt a session with existing tools, follow [Adapt a session](docs/organizers/adapt-session.md).
 
 ## Check EventSpec first
 
-Before proposing code, check whether existing EventSpec signal bindings, derivations, conditions, timing rules, and evidence rules express the need. Follow the [EventSpec rules](docs/phase2/eventspec-cel-and-derive.md). If they do, adapt the session without adding a runtime capability.
+Before proposing code, check whether existing EventSpec signal bindings, derivations, conditions, timing rules, and evidence rules express the need. Follow the [EventSpec rules](docs/reference/eventspec-cel-and-derive.md). If they do, adapt the session without adding a runtime capability.
 
 ## Agree on a bounded change
 
@@ -49,6 +49,11 @@ uv run python scripts/onboarding_check.py \
 The folder must contain exactly one top-level MCAP file. Pass the MCAP path directly when a folder contains more than one. The helper calls the detector and scorer functions used by `civ detect` and `civ score --labels`. It validates the pack and source hash. Choose an authorized source, a matching EventSpec, and a complete human-reviewed practice pack before you run the helper. The helper does not establish authorization, human review, or label coverage. It writes to a new output folder outside the input folders.
 
 ## Keep documentation consistent
+
+Use the [documentation index](docs/README.md) to find the page that owns a topic. Keep current
+artifact rules in `docs/reference/`, organizer procedures in `docs/organizers/`, and past
+planning and acceptance records in `docs/history/`. The root README introduces the project
+and links to these guides.
 
 Use [GLOSSARY.md](GLOSSARY.md) for the repository's domain vocabulary. Canonical Markdown owns
 workflow commands and rules; the website summarizes them, and the kit receives exact guide copies

@@ -2,9 +2,9 @@
 
 > **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
 > below describe the original event and its recorded scope. Start a current session with the
-> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
-> [participant contracts](../reference/participant-contracts.md). See the
-> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> [QuickStart](../../quickstart.md), [organizer guide](../../organizers/README.md) and
+> [participant contracts](../../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../civ-2026.md) for later changes. This record does not grant
 > new data rights, platform qualification or public-release approval.
 
 Status: **accepted — all Phase 3 data and evaluation criteria pass**

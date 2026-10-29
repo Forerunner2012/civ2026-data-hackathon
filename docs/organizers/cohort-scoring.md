@@ -23,7 +23,7 @@ Use consistent track IDs in the plan and intake:
 | `reims-rlt` | Reims right or left turns |
 | `reims-caves-optional` | Reims Cave encounters |
 
-Labels alone are insufficient because scoring replays detectors against recordings. Review images, GUIs, and previous rehearsal results are unnecessary once reviewed references are ready. Prepare missing references through the [label-review procedure](../phase3/label-review.md#export-a-reviewed-organizer-reference) before scoring.
+Labels alone are insufficient because scoring replays detectors against recordings. Review images, GUIs, and previous rehearsal results are unnecessary once reviewed references are ready. Prepare missing references through the [label-review procedure](label-review.md#export-a-reviewed-organizer-reference) before scoring.
 
 ## 2. Set up the environment and session directory
 

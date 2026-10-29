@@ -1,7 +1,7 @@
 # Phase 1 lunch scoring acceptance
 
 > **Historical scoring route.** Both this selector and its Phase 3 successor below are legacy
-> evidence. Current organizers use [track-aware cohort scoring](../organizers/cohort-scoring.md)
+> evidence. Current organizers use [track-aware cohort scoring](../../organizers/cohort-scoring.md)
 > with one saved session plan for intake and scoring.
 
 > Phase 3 supersedes the one-bundle-per-identity selector recorded below. Current authority and
