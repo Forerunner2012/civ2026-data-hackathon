@@ -137,7 +137,25 @@ When no matching practice labels are supplied, run `civ score working` without `
 
 ## 8. Validate and keep the metadata-only ZIP
 
-Complete the five report headings, replace the figure, and make the reproduction script rerun the same path. Then:
+Complete the five report headings and replace the figure before running the generated reproduction script. It runs detection, clips, practice or unevaluated scoring, and packaging. Use the exact source and matching practice pack, with a new output directory to keep the completed submission unchanged:
+
+```sh
+sh working/reproduce.sh data/KSH-64ac27cd029b-signals.mcap PRACTICE_LABELS.json reproduced
+```
+
+For a track without matching practice truth, use `-` as the second argument. This records `not_evaluated`, not a zero score:
+
+```sh
+sh working/reproduce.sh data/REIMS_SIGNALS.mcap - reproduced-reims
+```
+
+PowerShell uses the same argument order: `./working/reproduce.ps1 DATASET PRACTICE_LABELS.json reproduced`. Omit the third argument only when you intend to regenerate the existing workspace. The script stops on a failed command and refuses an existing explicit output directory. Fresh runs copy the detector/resources, declared extension payloads, report, figure and script; labels and recordings stay outside the output. Valid extension declarations survive detection. Finish and declare any optional payloads before the reproduction check.
+
+Compare `events.jsonl`, `metrics.json` and clip hashes with the original run. Record the source, EventSpec/resource hashes, CLI/Python versions and the exact command in your report. Explain any material differences. Packaging alone does not establish reproducibility or earn its assessment points.
+
+If you replace the generated script, keep a direct command line beginning with `civ detect` or `uv run civ detect`. PowerShell may prefix either with `&`. The static validator does not recognize wrappers or command variables and never executes submitted scripts.
+
+To package an already completed workspace directly:
 
 ```text
 civ report working
