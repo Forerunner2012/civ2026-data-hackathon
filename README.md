@@ -30,7 +30,7 @@ approval. CIV 2026 evidence applies to the exact original artifacts and recorded
 | Session preparation, kit construction and release checks | [Organizer guide](docs/organizers/README.md) |
 | Website development | [Site guide](handoff-site/README.md) |
 | Adapt existing session settings | [Make it your own](MAKE-IT-YOUR-OWN.md) and [settings reference](docs/session-settings.md) |
-| Historical CIV 2026 qualification evidence | [Phase 1–5 history index](docs/history/civ-2026.md) |
+| History | [Implementation, live event, feedback, and rework](docs/history/civ-2026.md) |
 
 Recordings, imagery, viewer binaries, containers, generated bundles and runtime evidence are
 separate release inputs. Kit assembly verifies their identities. Keep them out of Git.
