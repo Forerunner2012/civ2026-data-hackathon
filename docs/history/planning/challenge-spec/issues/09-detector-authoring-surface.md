@@ -10,7 +10,7 @@ Status: resolved
 `HACKATHON-HANDOFF.md` §8: EventSpec with CEL only, or EventSpec plus an advanced Python
 detector API?
 
-`docs/history/planning/exploration/exploration-notes-INBOX.md` sketches both shapes — a declarative `condition` /
+An early working note sketches both shapes — a declarative `condition` /
 `evidenceWindow` / `topicsToCollect` YAML, and a `def detect(signals) -> list[EventCandidate]`
 escape hatch — without choosing.
 
@@ -21,7 +21,7 @@ unprotected right turn can be expressed declaratively — heading change over ti
 oncoming-lane occupancy, plus a speed profile — CEL-only holds and the Python API is scope you
 do not need. If it cannot, the answer is forced and the bonus track has somewhere to live.
 
-Note from ticket 02: the existing INBOX example is *hard-braking*, not URT. This ticket produces
+Note from ticket 02: the early example is *hard-braking*, not URT. This ticket produces
 the first real URT spec, which several later artifacts depend on.
 
 Produce and link:
@@ -81,8 +81,7 @@ evidence:
             /sensing/camera/traffic_light/image_raw ]
 ```
 
-All values above are **placeholders**. Real thresholds get derived from the data; the previous
-solution's tuned numbers stay behind the clean-room line (ticket 06).
+All values above are **placeholders**. Real thresholds get derived from the data.
 
 ### The rungs
 

@@ -226,7 +226,7 @@ Then respond to the hypothesis, not to the code. This is §4.7's *ask for eviden
 before suggesting thresholds*, made applicable while standing at a desk.
 
 **And one prohibition that is easy to miss:** coaches must not rescue people from the *designed*
-friction. [Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) wants the
+friction. Ticket 14 wants the
 room to feel how tedious finding events by hand is before `civ` arrives as the facilitator. A coach
 whose instinct is to shortcut that destroys the arc the whole event is built on. Struggling in the
 warm-up is not a failure state.

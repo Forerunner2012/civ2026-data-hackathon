@@ -12,9 +12,9 @@ skill floor and licensing, and language never came up.
 The facts that make it a real question:
 
 - CIV 2026 runs **31 August – 4 September 2026 in Miyazaki, Japan**
-  ([ticket 08](../../challenge-spec/issues/08-agenda-duration.md)).
+  (ticket 08).
 - **T-Lab participates in the hackathon** — a direct collaboration with the publishing lab
-  ([ticket 19](../../../../../.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md)).
+  (ticket 19).
 - The cohort is **30 practitioners** at an international conference
   ([ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)); the mix of
   local and international attendees is not recorded anywhere.
@@ -39,9 +39,9 @@ already been written once.
   Japanese, and split reading must route accordingly. If English is required, say so in the
   pre-event pack, because discovering it at 12:00 costs someone the points the event is most trying
   to reward.
-- **The vocabulary boundary crosses languages too.** The banned terms from
-  [ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md) have Japanese
-  equivalents; the clean-room line is about meaning, not spelling.
+- **The vocabulary boundary crosses languages too.** The banned terms
+  (System, Datasource, Signal, Trigger, Recording) have Japanese
+  equivalents; the line is about meaning, not spelling.
 
 ## The fact to establish first
 
@@ -76,8 +76,7 @@ the cohort, it is an observation of the previous edition of the same event with 
   coaches stands unchanged — this was the item with a real lead time, and it is now free.
 - **`report.md` is written in English**, which matters because it carries **45 of 100 points**.
   [10](10-jury-composition.md) therefore needs no non-English reading capacity.
-- **The clean-room vocabulary boundary** from
-  [ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md) only has to hold in one
+- **The vocabulary boundary** only has to hold in one
   language, which makes it enforceable by the same term list everywhere.
 
 ### The one thing to still do

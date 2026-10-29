@@ -36,12 +36,11 @@ and **who owns it** — the specification, not the prose. Writing them is Phase 
 
 ## Constraints every entry inherits
 
-- **The leakage rule.** [Ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)
+- **The leakage rule.** Ticket 22
   keeps the scenario off the participant site and `handoff-site` enforces it by test. Each artifact
   must be marked **public-early**, **public-on-the-day**, or **organizer-only**, and anything touching
   the site must keep `npm test` green.
-- **The vocabulary ban** ([ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md)):
-  never System, Datasource, Signal, Trigger, Recording. Always bag, topic, field, EventSpec,
+- **The vocabulary ban:** never System, Datasource, Signal, Trigger, Recording. Always bag, topic, field, EventSpec,
   detector, event, clip, manifest.
 - **Language** ([15](15-language-of-the-room.md)) — which artifacts are bilingual and which are not.
 - **Everything is public and CC BY 4.0** ([ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)),
@@ -149,9 +148,9 @@ them were decided across this map and exist nowhere else a participant would loo
 
 Every public-early artifact inherits [07](07-pre-event-readiness-and-reveal.md)'s naming rule: **"the
 Kashiwa recordings", never the acronym**, because *URT* expands to the scenario and
-[ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite tests the
+ticket 22's suite tests the
 built bundle. All artifacts are **English only** ([15](15-language-of-the-room.md)) and inherit the
-vocabulary ban ([ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md)).
+vocabulary ban.
 
 ### Standing alone after the event
 

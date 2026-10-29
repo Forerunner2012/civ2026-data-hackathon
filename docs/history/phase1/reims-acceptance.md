@@ -6,7 +6,7 @@ Recorded: 2026-08-06
 
 ## Authorized source
 
-- Organizer-local path: `D:\Bags\Data Hackathon\2025-07-30 Recording sessions\rosbag2_2025_07_31-13_24_53\rosbag2_2025_07_31-13_24_53_0.mcap`
+- Organizer-local path: `<data-root>/2025-07-30 Recording sessions/rosbag2_2025_07_31-13_24_53/rosbag2_2025_07_31-13_24_53_0.mcap`
 - Adjacent descriptor: `metadata.yaml`, rosbag2 metadata version 5, MCAP storage, CDR serialization
 - Selected chunk: first of nine files in the recording; no other chunk was copied or processed
 - Size: 3,221,880,955 bytes

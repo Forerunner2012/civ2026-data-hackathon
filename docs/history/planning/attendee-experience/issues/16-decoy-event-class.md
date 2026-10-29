@@ -107,8 +107,7 @@ nice-to-have on the trip, not a gate.
 
 This map holds no bag data, and the paths in map-one
 [tickets 17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md) and
-[24](../../../../../.scratch/civ2026-challenge-spec/issues/24-survey-reims-bag.md) (`D:\Bags`, `C:\Program
-Files\MCAP`) are **provenance from another machine**, not dependencies.
+24 (`<data-root>/Bags`, `<tools>/MCAP`) are **provenance from another machine**, not dependencies.
 
 **This is the only ticket on the map that cannot be resolved from the repository.** Hand it to
 whoever has the data with the checklist above; do not wait on it, because option B is a complete

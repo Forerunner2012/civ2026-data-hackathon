@@ -64,5 +64,5 @@ Two consequences worth carrying:
   runner does not do what you need, change it" is a stronger closing message than "here is our
   tool".
 - **Framing and maintenance expectations.** Say "take it" rather than "join us". No issue tracker
-  triage, no PR review burden, no roadmap implied. That also keeps the ticket 07 clean-room story
-  simple: the published artifact stands alone and owes nothing upstream.
+  triage, no PR review burden, no roadmap implied. The published artifact stands alone and owes
+  nothing upstream.

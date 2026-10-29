@@ -38,7 +38,7 @@ beforehand.* Nothing decides how.
 ## Part 2 — the hold/reveal boundary
 
 The pre-event pack must make an environment work **without teaching the challenge**.
-[Ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md) puts the
+Ticket 22 puts the
 participant view on a public site and `handoff-site` enforces by test that the scenario does not
 appear on it. So there is a hard constraint: *whatever ships early cannot carry the scenario.*
 
@@ -48,7 +48,7 @@ That creates a live tension nobody has resolved:
   ([04](../../challenge-spec/issues/04-target-machine.md),
   [17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md)). So a curious
   participant holds the Reims bag before the transfer is revealed.
-- The transfer is the event's difficulty ([ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
+- The transfer is the event's difficulty (ticket 14).
   Its force depends on the participant meeting it as a **comprehension test**, not on the bytes being
   secret.
 - In-room distribution *is* technically possible — ~350 MB over a room LAN — but it trades the
@@ -146,7 +146,7 @@ stripped for no gain.
 
 **What enforces it is the test, not this table.** `handoff-site`'s leakage suite bans the scenario
 from the public bundle by pattern
-([ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)). Anything that
+(ticket 22). Anything that
 belongs in the 09:30 column and reaches the site will fail `npm test` — so the boundary is executable
 rather than remembered, and this table is documentation of it rather than the control.
 
@@ -162,7 +162,7 @@ did not know whether they were allowed.
 
 ### The naming trap, which is real and easy to miss
 
-[Ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md) keeps the scenario
+Ticket 22 keeps the scenario
 off the participant page and `handoff-site` enforces it by test. But the hero dataset is published as
 **URT-Kashiwa**, and *URT* expands to the scenario. **The dataset's own name is a leak.**
 
@@ -170,7 +170,7 @@ off the participant page and `handoff-site` enforces it by test. But the hero da
   the acronym.
 - Accept that a determined participant can find the upstream dataset and infer. That is fine — the
   event is a comprehension test, not a secret, and
-  [ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) made the
+  ticket 18 made the
   difficulty the mirrored manoeuvre rather than the word.
 - **What must hold is the test**, and the test reads the built bundle. Anything added to the site
   must keep `npm test` green.
@@ -246,7 +246,7 @@ threshold* produce different intervals, and matching at 50% overlap is sensitive
 Two or three worked examples convey it exactly. More of them stop being examples and start being a
 **training set**: with enough labelled events, a participant tunes thresholds until they fit, and the
 score measures curve-fitting rather than comprehension — the precise failure
-[ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) designed the event
+ticket 18 designed the event
 to avoid.
 
 **Consequence to state in the brief:** the examples show the convention, they are not a validation

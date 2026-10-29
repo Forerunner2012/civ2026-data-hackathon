@@ -111,7 +111,7 @@ ticket rather than changing what is above:
 
 ## Update - MEASURED. The size problem was an illusion.
 
-Measured with the `mcap` CLI (`C:\Program Files\MCAP\mcap.exe`, on PATH) against Reims chunk 0
+Measured with the `mcap` CLI (`<tools-root>/MCAP/mcap.exe`, on PATH) against Reims chunk 0
 (3.22 GB, 4m21s, 127 102 messages, uncompressed chunks):
 
 | Topic | Bytes | Share |

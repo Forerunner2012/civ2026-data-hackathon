@@ -7,7 +7,7 @@ Recorded: 2026-08-06
 
 ## Authorized source
 
-- Organizer-local path: `D:\Bags\Data Hackathon\2025-07-27 Final Data sample Tsukada Labs\hackathon_data\final_route_02\final_route_2_0.mcap_0.mcap`
+- Organizer-local path: `<data-root>/2025-07-27 Final Data sample Tsukada Labs/hackathon_data/final_route_02/final_route_2_0.mcap_0.mcap`
 - Adjacent descriptor: `metadata.yaml`, rosbag2 metadata version 5, MCAP storage, CDR serialization
 - Size: 7,875,976,476 bytes
 - SHA-256: `b9066692c358bb7aac7bfaa4038dc2f54dc63a02eeb245a014af732a5cc59712`

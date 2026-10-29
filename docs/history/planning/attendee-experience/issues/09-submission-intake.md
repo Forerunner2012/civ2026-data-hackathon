@@ -131,7 +131,7 @@ Intake returns a **content hash and a timestamp**, displayed and printable. Thre
 **A generous hard cap — order 2 GB per submission — published in advance and enforced.**
 
 Realistic submissions are far below it: signals-only Reims is ~350 MB for 38 minutes
-([ticket 24](../../../../../.scratch/civ2026-challenge-spec/issues/24-survey-reims-bag.md)), and a set of few-second
+(ticket 24), and a set of few-second
 evidence clips over a handful of topics is a fraction of that. Anything approaching 2 GB has
 misunderstood *compact evidence* so completely that a clear rejection is more useful than silent
 acceptance.
@@ -224,7 +224,7 @@ than a raw clip: choosing one frame that makes the case is the skill.
 ### Two things this also buys
 
 - **No thirty copies of clipped camera footage on a third-party drive.**
-  [Ticket 19](../../../../../.scratch/civ2026-challenge-spec/issues/19-personal-data-clearance.md) cleared the imagery,
+  Ticket 19 cleared the imagery,
   so this was not a blocker — but not collecting it is simpler on rights, storage and attribution,
   and it removes a conversation nobody needs to have.
 - **The participant keeps their evidence**, which fits

@@ -34,18 +34,18 @@ That’s exactly where the #SmartData approach of Heex Technologies helps with a
 
 - Main sources
   - Smart-Data Hackathon v2
-    - Organizer Page: `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Smart-Data Hackathon v2 - Organizer Page 26c54af7e72280ac834fece8371f2c29.md`
-    - Participant Main Session: `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Smart-Data Hackathon v2 - Participant Main Session 26c54af7e72280e1adaad928be70934e.md`
-  - Correction with full automotion (no longer actionnable as Heex is offline): `D:\heex\r-i\heex-samples`
-  - Dataset from Tokyo University: `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Internal Notes on Dataset from Tokyo University (Q 1e054af7e72280e09b32f885f4fa1bc3.md`
+    - Organizer Page: `<data-root>/notes/Smart-Data Hackathon v2 - Organizer Page.md`
+    - Participant Main Session: `<data-root>/notes/Smart-Data Hackathon v2 - Participant Main Session.md`
+  - Correction with full automotion (no longer actionnable as Heex is offline): `<data-root>/samples`
+  - Dataset from Tokyo University: `<data-root>/notes/Internal Notes on Dataset from Tokyo University.md`
 
 - Second tier
-  - Mail for Hackathon + CIV 2025 invite: `D:\heex\_backup\Notion\heex-operations\raw\Heex Notes and Operations\CIV2025 - Mail for Hackathon + CIV 2025 invite (Se 25b54af7e722809d894ce4757a61da77.md`
-  - URT-Kashiwa Smart-Data [Hackathon | Hands-on] (v2) Session [Maintained] section in `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Heex Demonstrators 2e054af7e72280278e25d7b0231808da.md`
-  - Smart-Data Hackathon - Getting Heex replay with Tier4+Autoware custom messages - `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Smart-Data Hackathon - Getting Heex replay with Ti 27054af7e72280888549fe0ed98b2a2d.md`
-  - Smart-Data Hackathon v2 Participants’ Feedback: `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Smart-Data Hackathon - Participants’ Feedback 26954af7e72280539754e0cb1696c6ef.md`
-  - Smart-Data Hackathon v2 - Participant Preparation Session: `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Smart-Data Hackathon v2 - Participant Preparation  27254af7e72280caa798eb3457b6021b.md`
-  - Upgrade from v1 to v2: `D:\heex\_backup\Notion\heex-operations\raw\R&I Internal Database Notes\Smart-Data Hackathon v2 - Upgrading effort from v1 26554af7e72280768241eca56ad0f4c3.md`
+  - Mail for Hackathon + CIV 2025 invite: `<data-root>/notes/CIV2025 - Mail for Hackathon + CIV 2025 invite.md`
+  - URT-Kashiwa Smart-Data [Hackathon | Hands-on] (v2) Session [Maintained] section in `<data-root>/notes/Demonstrators.md`
+  - Smart-Data Hackathon - Getting Heex replay with Tier4+Autoware custom messages: `<data-root>/notes/Smart-Data Hackathon - Getting replay with custom messages.md`
+  - Smart-Data Hackathon v2 Participants’ Feedback: `<data-root>/notes/Smart-Data Hackathon - Participants’ Feedback.md`
+  - Smart-Data Hackathon v2 - Participant Preparation Session: `<data-root>/notes/Smart-Data Hackathon v2 - Participant Preparation.md`
+  - Upgrade from v1 to v2: `<data-root>/notes/Smart-Data Hackathon v2 - Upgrading effort from v1.md`
 - Other Quickstarts
 
 ### Scoping for Dataviz and Data QUality for actionable results

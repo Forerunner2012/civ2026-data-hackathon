@@ -70,8 +70,7 @@ Contents to specify:
   ([ticket 17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md)), so a
   coach helping with the transfer needs both to hand. Decide whether that is coach-only or
   participant-facing — if participant-facing it belongs to [14](14-participant-materials.md) instead.
-- **What a coach must never say**, including the vocabulary ban from
-  [ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md): never System,
+- **What a coach must never say**, including the vocabulary ban: never System,
   Datasource, Signal, Trigger, Recording. A coach reaching for a familiar word at speed is exactly
   how that boundary gets breached in the room, where no test suite can catch it.
 - **Coach briefing and rehearsal.** When do coaches get trained, and does the internal
@@ -152,8 +151,7 @@ not usable in ten seconds is not on it.
 ────────────────────────────────────────────────────────────────
 ```
 
-Drafting it settled two things. **The vocabulary ban has to be on the card**
-([ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md)) — a coach reaching for a
+Drafting it settled two things. **The vocabulary ban has to be on the card.** A coach reaching for a
 familiar word at speed is exactly how that boundary gets breached, and it is the one place no test
 suite can catch it. And **"leave them"** has to be printed, because it is the instruction that
 contradicts a coach's instinct hardest.
