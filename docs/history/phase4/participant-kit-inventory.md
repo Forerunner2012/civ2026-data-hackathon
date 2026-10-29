@@ -1,6 +1,6 @@
 # Phase 4 participant-kit inventory contract
 
-> Historical inventory scope and acceptance. Use [Build and audit a participant kit](../organizers/participant-kit.md) for the current procedure and optional session materials. The original commands below record Phase 4 behavior; current inventory validation requires all five pinned viewer files.
+> Historical inventory scope and acceptance. Use [Build and audit a participant kit](../../organizers/participant-kit.md) for the current procedure and optional session materials. The original commands below record Phase 4 behavior; current inventory validation requires all five pinned viewer files.
 
 Status: **implemented; real inventory acceptance recorded below**
 

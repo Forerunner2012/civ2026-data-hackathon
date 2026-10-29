@@ -14,7 +14,7 @@ Set these variables to existing, verified inputs. Keep `WORK` outside Git and ch
 | `CACHE` | Prepared uv cache for the source-runtime recovery path. Qualify it on the intended host; copying a cache does not establish offline readiness. |
 | `CONTAINER` | Exported archive of the inventory's pinned container image, `civ-phase4:attendee-candidate-558e85c`. |
 
-The builder remains pinned to the [accepted 13-product set and viewer/container identities](../phase4/participant-kit-inventory.md#frozen-scope). Optional session inputs do not add support for arbitrary product sets or platforms. Do not substitute an unqualified recording, viewer, or image.
+The builder remains pinned to the [accepted 13-product set and viewer/container identities](../history/phase4/participant-kit-inventory.md#frozen-scope). Optional session inputs do not add support for arbitrary product sets or platforms. Do not substitute an unqualified recording, viewer, or image.
 
 Install project dependencies with `uv sync --locked`. Prepare and verify the external recovery inputs using the session's qualified runtime route and [setup guide](../setup.md). Keep private truth and review state separate from every participant input.
 
@@ -60,7 +60,7 @@ uv run --locked -m civ_workshop.kit_assembly assemble "$WORK/inventory/participa
 uv run --locked -m civ_workshop.kit_assembly audit "$WORK/kit/attendee-kit-assembly.json"
 ```
 
-For approved camera context, build the inventory with `--context-set CONTEXT_SET.json` and assemble with the matching `--context-root CONTEXT_DIRECTORY`. A context-bearing inventory requires its exact approved payload. For reviewed decks, add `--presentations-root DECK_DIRECTORY`, containing `briefing.pptx` and `submission-checklist.pptx`. See the [camera approval record](../phase5/camera-context-candidate.md) and [presentation guide](../presentations/README.md) for their separate evidence and preparation.
+For approved camera context, build the inventory with `--context-set CONTEXT_SET.json` and assemble with the matching `--context-root CONTEXT_DIRECTORY`. A context-bearing inventory requires its exact approved payload. For reviewed decks, add `--presentations-root DECK_DIRECTORY`, containing `briefing.pptx` and `submission-checklist.pptx`. See the [camera approval record](../history/phase5/camera-context-candidate.md) and [presentation guide](../presentations/README.md) for their separate evidence and preparation.
 
 Assembly copies and checks the declared files, participant-safe runtime, guide copies, and selected material. It creates `attendee-kit-assembly.json` and `checksums/ASSEMBLY-SHA256SUMS`. The audit must exit successfully and print `"valid": true`. Inspect its file count, byte total, and manifest hash. Keep the manifest and checksum files with the kit.
 

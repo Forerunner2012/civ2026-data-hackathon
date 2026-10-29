@@ -2,9 +2,9 @@
 
 > **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
 > below describe the original event and its recorded scope. Start a current session with the
-> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
-> [participant contracts](../reference/participant-contracts.md). See the
-> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> [QuickStart](../../quickstart.md), [organizer guide](../../organizers/README.md) and
+> [participant contracts](../../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../civ-2026.md) for later changes. This record does not grant
 > new data rights, platform qualification or public-release approval.
 
 > Historical Phase 2 freeze: v1 remains immutable and accepted. New `civ detect` and `civ report`
@@ -13,7 +13,7 @@
 
 Status: **decision for issue #15; enforced by issue #20**
 
-The sections below record the original Phase 2 freeze, including its v1-only matrix and completed issue #20 checklist. Current versions and producer/consumer responsibilities live in [participant contracts](../reference/participant-contracts.md#producer-and-consumer-responsibilities).
+The sections below record the original Phase 2 freeze, including its v1-only matrix and completed issue #20 checklist. Current versions and producer/consumer responsibilities live in [participant contracts](../../reference/participant-contracts.md#producer-and-consumer-responsibilities).
 
 This document fixed the participant-facing contract seam for Phase 2. Issue #20 published the
 schemas under `schemas/` and moved producers and consumers to the stable identifiers atomically.
@@ -234,7 +234,7 @@ stable artifact beside a candidate participant artifact.
 - Validate both checked-in EventSpecs and the final derive/resource examples against their stable
   schema, then exercise them through `civ detect` rather than schema-only tests.
 - Preserve the Phase 1 limit, canonical-ZIP, offline, Kashiwa/Reims transfer, and exact-byte
-  assertions. Historical `docs/phase1/*-acceptance.md` records continue to describe the proven
+  assertions. Historical `docs/history/phase1/*-acceptance.md` records continue to describe the proven
   candidate run and must not be rewritten as if they had emitted stable identifiers.
 
 The freeze is complete only when a repository search finds no participant-path `v1alpha1` producer

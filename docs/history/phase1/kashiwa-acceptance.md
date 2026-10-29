@@ -35,7 +35,7 @@ the candidate detector path.
 | `/perception/object_recognition/is_object_detected` | `std_msgs/msg/Bool` | 1,049 | 9.770775 Hz | `data` |
 | `/sensing/camera/traffic_light/image_raw/compressed` | `sensor_msgs/msg/CompressedImage` | 228 | 2.123677 Hz | visual evidence |
 
-The candidate EventSpec is [`examples/kashiwa/right_turn.yaml`](../../examples/kashiwa/right_turn.yaml).
+The candidate EventSpec is [`examples/kashiwa/right_turn.yaml`](../../../examples/kashiwa/right_turn.yaml).
 It uses a real Pix Hooke CDR field, CEL, timing, and evidence declarations. The mandatory evidence
 set contains only topics present in every candidate window. Sparse `detected_object` markers remain
 available in the full bag for optional conflict-geometry work but are not required in every clip.

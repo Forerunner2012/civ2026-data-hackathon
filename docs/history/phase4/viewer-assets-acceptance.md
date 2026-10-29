@@ -2,9 +2,9 @@
 
 > **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
 > below describe the original event and its recorded scope. Start a current session with the
-> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
-> [participant contracts](../reference/participant-contracts.md). See the
-> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> [QuickStart](../../quickstart.md), [organizer guide](../../organizers/README.md) and
+> [participant contracts](../../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../civ-2026.md) for later changes. This record does not grant
 > new data rights, platform qualification or public-release approval.
 
 Status: **accepted for attendee-kit asset selection**
@@ -66,7 +66,7 @@ online update check, so viewer startup and local source loading did not depend o
 
 Desktop accessibility automation was unavailable on this host, so this record does not claim new
 screenshot evidence. The visible-layout evidence is instead the earlier manual viewer acceptance
-in `docs/phase2/integrated-gate-acceptance.md`, combined here with exact-product inspection and the
+in `docs/history/phase2/integrated-gate-acceptance.md`, combined here with exact-product inspection and the
 deterministic reference-layout assertions below.
 
 ## Layout and product evidence

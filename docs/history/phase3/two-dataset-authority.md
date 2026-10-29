@@ -2,7 +2,7 @@
 
 > **Historical authority policy.** This records the original dataset-specific selector and fixed
 > event cutoff. Current cohort evaluation uses track-specific receipts and a saved session plan.
-> Follow [Score a full cohort](../organizers/cohort-scoring.md) for current operations.
+> Follow [Score a full cohort](../../organizers/cohort-scoring.md) for current operations.
 
 Status: **accepted for the Phase 3 gate**
 

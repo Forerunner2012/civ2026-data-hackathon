@@ -2,7 +2,7 @@
 
 > Historical acceptance record. The participant form and USB intake route described here are
 > retired; there is no current collection route or intended recipient. Use
-> [the submission fields and bundle contract](../submission-fields.md) for the current bundle
+> [the submission fields and bundle contract](../../submission-fields.md) for the current bundle
 > definition and retired-field reference.
 
 > Phase 3 preserves these adapters and bundle bytes but selects authority per identity and derived

@@ -15,7 +15,7 @@ The transport, validation, and authority core was already accepted in
 adds the scaffold, the participant wording, and the tests that hold the wording to the code.
 The per-dataset authority described below is the legacy receipt behavior. The track-aware cohort
 workflow selects one receipt per identity and track under `civ.evaluation-plan/v1alpha2`; see the
-[cohort scoring guide](../organizers/cohort-scoring.md).
+[cohort scoring guide](../../organizers/cohort-scoring.md).
 
 ## The workspace scaffold
 

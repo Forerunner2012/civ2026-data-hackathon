@@ -1,6 +1,6 @@
 # Submission archive contract
 
-This reference defines the current v2 archive and accepted v1 compatibility. Follow the [QuickStart](../quickstart.md#8-validate-and-keep-the-metadata-only-zip) to produce a bundle. The [Phase 5 record](../phase5/extension-aware-submission-v2.md) retains the original implementation, verification, and approval.
+This reference defines the current v2 archive and accepted v1 compatibility. Follow the [QuickStart](../quickstart.md#8-validate-and-keep-the-metadata-only-zip) to produce a bundle. The [Phase 5 record](../history/phase5/extension-aware-submission-v2.md) retains the original implementation, verification, and approval.
 
 ## Scope
 
