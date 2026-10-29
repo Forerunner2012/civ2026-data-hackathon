@@ -6,7 +6,7 @@ import yaml
 
 REPOSITORY = Path(__file__).parents[1]
 SPEC_PATH = REPOSITORY / "examples" / "kashiwa" / "deceleration_timing.yaml"
-ACCEPTANCE_PATH = REPOSITORY / "docs" / "phase4" / "warmup-timing-acceptance.md"
+ACCEPTANCE_PATH = REPOSITORY / "docs" / "history" / "phase4" / "warmup-timing-acceptance.md"
 
 
 def test_warmup_timing_example_is_deliberately_non_answer() -> None:

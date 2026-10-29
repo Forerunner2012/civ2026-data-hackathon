@@ -33,7 +33,7 @@ contract used for Kashiwa. Every schema is embedded `ros2msg`; inspection report
 | `/zed/zed_node/obj_det/objects` | `zed_msgs/msg/ObjectsStamped` | 5,008 | 19.141404 Hz | object evidence |
 | `/zed/zed_node/rgb/image_rect_color/compressed` | `sensor_msgs/msg/CompressedImage` | 5,009 | 19.145227 Hz | visual evidence |
 
-The transfer EventSpec is [`examples/reims/left_turn.yaml`](../../examples/reims/left_turn.yaml).
+The transfer EventSpec is [`examples/reims/left_turn.yaml`](../../../examples/reims/left_turn.yaml).
 It binds only real fields and expresses speed as the squared GNSS velocity-vector magnitude in the
 existing CEL condition. It introduces no Reims-specific runner, decoder, command, interval, or
 artifact adapter.

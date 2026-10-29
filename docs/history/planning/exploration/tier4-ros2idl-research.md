@@ -20,7 +20,7 @@ detector actually requires one of these fields.
 ## Trace inventory and value
 
 The authorized `final_route_02` trace is the same external Kashiwa input used by the
-[sealed acceptance](../docs/phase1/kashiwa-acceptance.md). Each of these five channels contains
+[sealed acceptance](../../phase1/kashiwa-acceptance.md). Each of these five channels contains
 5,237 CDR messages at 48.779362 Hz. The ranges and value counts below came from one offline pass
 with `rosbags==0.11.5`; they are measurements of this trace, not general Autoware guarantees.
 
@@ -104,7 +104,7 @@ The accepted Pix Hooke `ros2msg` fields continue to provide steering and speed f
 ## Minimal external proof
 
 A 13,068-byte MCAP excerpt containing one message from each of the five channels remains outside
-Git at `%LOCALAPPDATA%\Temp\civ-issue13\kashiwa-five-topic-minimal.mcap`; its SHA-256 is
+Git at `<temporary-directory>/civ-issue13/kashiwa-five-topic-minimal.mcap`; its SHA-256 is
 `191fda7c5ab351b1c1a51e69e75efbfafd5f5772d0d404f1a7385bd2037355b8`. The source trace and excerpt
 were read-only, and no dataset or generated message artifact was committed.
 

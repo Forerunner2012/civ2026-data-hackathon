@@ -2,16 +2,16 @@
 
 > **Historical CIV 2026 record.** The dates, commands, artifact identities and acceptance
 > below describe the original event and its recorded scope. Start a current session with the
-> [QuickStart](../quickstart.md), [organizer guide](../organizers/README.md) and
-> [participant contracts](../reference/participant-contracts.md). See the
-> [Phase 1–5 history index](../history/civ-2026.md) for later changes. This record does not grant
+> [QuickStart](../../quickstart.md), [organizer guide](../../organizers/README.md) and
+> [participant contracts](../../reference/participant-contracts.md). See the
+> [Phase 1–5 history index](../civ-2026.md) for later changes. This record does not grant
 > new data rights, platform qualification or public-release approval.
 
 Status: **implemented, agent-verified, and organizer wording approved on 2026-09-02**
 
 Recorded: 2026-09-02
 
-The current [submission archive contract](../reference/submission-archive.md) owns the layout, limits, compatibility, and bonus-evidence boundary. The sections below retain the dated implementation and approval record.
+The current [submission archive contract](../../reference/submission-archive.md) owns the layout, limits, compatibility, and bonus-evidence boundary. The sections below retain the dated implementation and approval record.
 
 ## Implementation inventory
 

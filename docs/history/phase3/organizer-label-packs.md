@@ -13,7 +13,7 @@ supplied separately for participant self-evaluation under the approved distribut
 remain outside participant-authored submission payloads. This historical record does not identify
 a practice source or chunk, select a pack, or establish a release path. See the [stable-contract
 audience guidance](../reference/participant-contracts.md#producer-and-consumer-responsibilities) and
-[local review and coverage guidance](label-review.md).
+[local review and coverage guidance](../../organizers/label-review.md).
 
 Label packs are sealed organizer-only inputs. They are never participant-authored, placed in a
 submission bundle, copied into a report, or published with development data. The checked-in surface

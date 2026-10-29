@@ -9,23 +9,23 @@ qualified inputs, machine checks and release approval.
 
 1. Name the session owner, human event reviewer, data custodian and handout owner. Record the
    intended event definitions, dataset membership, timing and access boundaries. Use
-   [Make it your own](../../MAKE-IT-YOUR-OWN.md) and the [settings reference](../session-settings.md)
+   [Adapt a session](adapt-session.md) and the [settings reference](../session-settings.md)
    for the existing edit locations.
 2. Verify recording and image permissions, attribution, retention and deletion requirements for
    the intended audience. Record exact source hashes and approved products. Use the
    [track and product bindings](cohort-scoring.md#3-bind-the-plan-to-the-session-inputs),
-   [original camera-context approval](../phase5/camera-context-candidate.md) and
-   [original legal-risk acceptance](../phase5/legal-risk-acceptance.md) as references. Historical
+   [original camera-context approval](../history/phase5/camera-context-candidate.md) and
+   [original legal-risk acceptance](../history/phase5/legal-risk-acceptance.md) as references. Historical
    permissions do not authorize another session or public imagery.
 3. Prepare reviewed labels through the [acquisition skill](../../.agents/skills/civ-label-acquisition/SKILL.md)
-   and [local review procedure](../phase3/label-review.md). EventSpecs propose intervals; a human
+   and [local review procedure](label-review.md). EventSpecs propose intervals; a human
    decides their contextual meaning, records reasons and uncertainty, reviews missed events, and
    signs complete coverage after the final edit. Changing an input identity requires a new run
    and review revision. Preserve compatible earlier approvals within their exact scope.
 4. Qualify complete practice coverage for each designated scoring source or chunk. Explicitly
    select every relevant approved interval. Warm-up and development product reviews export
    practice labels and retain their audit locally; they cannot export sealed truth. Prepare and
-   audit approved sealed packs separately with the [organizer label-pack procedure](../phase3/organizer-label-packs.md).
+   audit approved sealed packs separately with the [organizer label-pack procedure](../history/phase3/organizer-label-packs.md).
    A successful export does not authorize a handout or publication. Record the permitted
    practice-pack identities, handout timing and owner before sharing them.
 5. [Build and audit the participant kit](participant-kit.md) from verified inputs. Assemble
@@ -34,8 +34,8 @@ qualified inputs, machine checks and release approval.
    Review the [kit entry point](../../kit/README.md) from a participant's perspective.
 6. Rehearse [the quickstart](../quickstart.md) on the target machines. Verify both dataset
    workflows, exact-source practice scoring, private scoring, submission reproduction and
-   metadata-only bundles. Use the [original workstation evidence](../phase5/workstation-qualification.md)
-   and [release freeze record](../phase5/release-freeze.md) as historical references. A prior Windows or offline result
+   metadata-only bundles. Use the [original workstation evidence](../history/phase5/workstation-qualification.md)
+   and [release freeze record](../history/phase5/release-freeze.md) as historical references. A prior Windows or offline result
    does not qualify another machine or platform. Freeze only the inputs and capabilities that
    the current session has actually qualified.
 
@@ -47,7 +47,7 @@ qualified inputs, machine checks and release approval.
    public participant build. Keep private material off participant screens.
 2. Let participants own their hypotheses and EventSpecs. Coach through evidence inspection and
    failure analysis; do not replace their decisions with an organizer solution. Use the
-   [historical facilitation and recovery record](../phase4/organizer-ops-jury-acceptance.md) as
+   [historical facilitation and recovery record](../history/phase4/organizer-ops-jury-acceptance.md) as
    context. Use the current session's recorded schedule and qualified recovery options.
 3. Release only authorized practice references at the recorded checkpoint. Confirm the session's
    collection route, cutoff, timezone, and participant/team identity convention before delivery.
@@ -65,7 +65,7 @@ qualified inputs, machine checks and release approval.
    private, and inspect sealed metrics separately. Diagnostic runs are nonofficial. An explicit
    `--official` run covers automatic components; final totals still need manual review.
 2. Apply the current manual criteria in the [scoring reference](../reference/scoring.md#manual-technical-criteria)
-   and the organizer-only operations pack. The [original jury acceptance](../phase4/organizer-ops-jury-acceptance.md)
+   and the organizer-only operations pack. The [original jury acceptance](../history/phase4/organizer-ops-jury-acceptance.md)
    records historical evidence. Retain the local
    operational audit, with only the approved participant-facing results released.
 3. Check the current release evidence, permissions and notice requirements before any handout,
@@ -83,7 +83,7 @@ From the repository root, use project mode:
 uv sync --locked
 ```
 
-Follow the [label-review procedure](../phase3/label-review.md) for review commands, fixture checks, approval invalidation, and export boundaries. Keep reviewer identity, progress, and output paths local. Synthetic fixture decisions do not grant human approval.
+Follow the [label-review procedure](label-review.md) for review commands, fixture checks, approval invalidation, and export boundaries. Keep reviewer identity, progress, and output paths local. Synthetic fixture decisions do not grant human approval.
 
 ## Presentation material
 
