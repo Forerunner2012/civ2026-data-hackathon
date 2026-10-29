@@ -45,6 +45,11 @@ def add_participant_commands(commands: argparse._SubParsersAction[argparse.Argum
     detect_parser.add_argument("dataset", type=Path)
     detect_parser.add_argument("--output", type=Path, default=Path.cwd())
     detect_parser.add_argument("--dry-run", action="store_true")
+    detect_parser.add_argument(
+        "--explain",
+        action="store_true",
+        help="include matching-sample, merged-candidate and duration-rejection counts",
+    )
 
     clip_parser = commands.add_parser("clip", help="extract event evidence as MCAP")
     clip_parser.add_argument("events", type=Path)
@@ -103,7 +108,9 @@ def dispatch_participant_command(args: argparse.Namespace) -> bool:
         else:
             print(render_samples(samples), end="")
     elif args.command == "detect":
-        detect_result = detect_events(args.spec, args.dataset, args.output, dry_run=args.dry_run)
+        detect_result = detect_events(
+            args.spec, args.dataset, args.output, dry_run=args.dry_run, explain=args.explain
+        )
         print(json.dumps(detect_result, sort_keys=True, separators=(",", ":")))
     elif args.command == "clip":
         clip_result = clip_events(args.events, args.dataset)

@@ -121,10 +121,19 @@ def _validate_cel_expression(expression: Any) -> None:
                 )
 
 
-def _event_segments(hits: list[SignalHit], spec: EventSpec) -> list[DetectedInterval]:
-    if not hits:
-        return []
+def _event_segments(
+    hits: list[SignalHit], spec: EventSpec, diagnostics: dict[str, int] | None = None
+) -> list[DetectedInterval]:
     segments: list[DetectedInterval] = []
+    if not hits:
+        if diagnostics is not None:
+            diagnostics.update(
+                matching_samples=0,
+                merged_candidates=0,
+                rejected_below_min_duration=0,
+                rejected_above_max_duration=0,
+            )
+        return []
     start = hits[0].timestamp_ns
     previous = hits[0].timestamp_ns
     trigger_values = hits[0].values
@@ -137,6 +146,18 @@ def _event_segments(hits: list[SignalHit], spec: EventSpec) -> list[DetectedInte
         previous = hit.timestamp_ns
         trigger_values = hit.values
     segments.append(DetectedInterval(Interval(start, previous), trigger_values))
+    if diagnostics is not None:
+        durations = [segment.interval.end_ns - segment.interval.start_ns for segment in segments]
+        diagnostics.update(
+            matching_samples=len(hits),
+            merged_candidates=len(segments),
+            rejected_below_min_duration=sum(
+                duration < spec.min_duration_ns for duration in durations
+            ),
+            rejected_above_max_duration=sum(
+                duration > spec.max_duration_ns for duration in durations
+            ),
+        )
     return [
         segment
         for segment in segments
@@ -290,6 +311,7 @@ def _event_records(
     bag_hash: str,
     hits: list[SignalHit],
     resources: dict[str, PointResource],
+    diagnostics: dict[str, int] | None = None,
 ) -> list[EventRecord]:
     records: list[EventRecord] = []
     provenance = f"{bag_hash}:{spec_hash}"
@@ -298,7 +320,7 @@ def _event_records(
             resource.sha256 for _, resource in sorted(resources.items())
         )
         provenance = f"{provenance}:{resource_hashes}"
-    for detected in _event_segments(hits, spec):
+    for detected in _event_segments(hits, spec, diagnostics):
         interval = detected.interval
         identity = sha256(
             f"{provenance}:{interval.start_ns}:{interval.end_ns}".encode()
@@ -316,7 +338,12 @@ def _event_records(
 
 
 def detect_events(
-    spec_path: Path, bag_path: Path, output: Path, *, dry_run: bool = False
+    spec_path: Path,
+    bag_path: Path,
+    output: Path,
+    *,
+    dry_run: bool = False,
+    explain: bool = False,
 ) -> dict[str, object]:
     spec = load_event_spec(spec_path)
     resources = load_point_resources(spec_path, spec.resources)
@@ -324,14 +351,18 @@ def detect_events(
         raise SourceDataError(f"bag does not exist: {bag_path}")
     bag_hash = file_sha256(bag_path)
     spec_hash = file_sha256(spec_path)
+    diagnostics: dict[str, int] = {}
     events = _event_records(
         spec,
         spec_hash,
         bag_hash,
         _evaluate_hits(spec, bag_path, resources),
         resources,
+        diagnostics if explain else None,
     )
     plan: dict[str, object] = {"dry_run": dry_run, "event_count": len(events)}
+    if explain:
+        plan["timing"] = {**diagnostics, "emitted_events": len(events)}
     if dry_run:
         return plan
 
