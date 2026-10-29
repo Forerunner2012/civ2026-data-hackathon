@@ -12,7 +12,7 @@ provenance. A designated practice pack may use the same `civ.label-pack/v1alpha1
 supplied separately for participant self-evaluation under the approved distribution; both types
 remain outside participant-authored submission payloads. This historical record does not identify
 a practice source or chunk, select a pack, or establish a release path. See the [stable-contract
-audience guidance](../phase2/stable-contracts-and-compatibility.md#organizer-only-exclusions) and
+audience guidance](../reference/participant-contracts.md#producer-and-consumer-responsibilities) and
 [local review and coverage guidance](label-review.md).
 
 Label packs are sealed organizer-only inputs. They are never participant-authored, placed in a

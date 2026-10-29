@@ -183,23 +183,7 @@ No bag and no clip is ever bundled. Signal and context MCAPs, extracted frames, 
 
 ## Working directory and metadata-only ZIP
 
-```text
-working/                         ZIP contents
-├── detector/detector.yaml      yes
-├── detector/<resource path>    yes, when declared by EventSpec
-├── events.jsonl                yes
-├── run-manifest.json           yes
-├── metrics.json                yes
-├── report.md                   yes
-├── figure.svg                  yes
-├── reproduce.ps1 or .sh        yes
-├── extension/manifest.json    yes, when extension payloads exist
-├── extension/*                 optional provenance, inert traces, tests
-├── submission.zip              local archive; keep unchanged
-└── evidence/<event_id>.mcap    local only
-```
-
-The seven core artifacts remain mandatory in the ZIP. A v2 extension may carry at most eight declared payloads (1 MiB each, 4 MiB combined). `civ report` rejects undeclared, changed, forbidden, unsafe, or case-colliding files. The ZIP validator does not execute declared traces or regression tests.
+See the [submission artifact checklist](submission-fields.md#metadata-only-bundle) for required and optional ZIP entries and files that stay local. Keep the validated ZIP and printed hash unchanged until organizers confirm a collection route.
 
 ## Recovery references
 

@@ -15,7 +15,7 @@ carries both.
 
 ## Part 1 — readiness
 
-[Ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md) requires *pre-event setup
+[Ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) requires *pre-event setup
 instructions and a `civ doctor` check that attendees run before the day, with a support channel open
 beforehand.* Nothing decides how.
 
@@ -45,8 +45,8 @@ appear on it. So there is a hard constraint: *whatever ships early cannot carry 
 That creates a live tension nobody has resolved:
 
 - Both datasets have to ship **pre-event** for offline safety
-  ([04](../../civ2026-challenge-spec/issues/04-target-machine.md),
-  [17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)). So a curious
+  ([04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md),
+  [17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)). So a curious
   participant holds the Reims bag before the transfer is revealed.
 - The transfer is the event's difficulty ([ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
   Its force depends on the participant meeting it as a **comprehension test**, not on the bytes being
@@ -178,7 +178,7 @@ off the participant page and `handoff-site` enforces it by test. But the hero da
 ## Update — four 2 TB high-speed SSDs exist
 
 Confirmed by the organizer. This does not reopen
-[ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md), which
+[ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md), which
 already named USB SSDs as the venue fallback — it makes that fallback real and well-resourced, and it
 changes how this ticket's cold-arrival risk is handled.
 
@@ -193,7 +193,7 @@ Load each SSD with, in order of value:
 1. **The container image**, exported and ready to `docker load`.
 2. **Both datasets**, signals-only, with checksums.
 3. **The optional image context pack** — 2 TB makes this free to carry, where a download would not be
-   ([ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
+   ([ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
    measured signals+images at ~8 GB for the Reims session).
 4. **The static export of [the attendee page](17-attendee-page.md)**, which
    [08](08-room-requirements.md) mandates as the internet-down path.
@@ -215,7 +215,7 @@ plugging, mounting and queueing. Budget for it as a physical logistics problem, 
 ### Four details that are cheap now and painful on the day
 
 - **Format them exFAT.** It is the only filesystem both Windows and Ubuntu read *and write* natively
-  with no extra driver, and [ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md)
+  with no extra driver, and [ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md)
   fixed the environment as Windows/WSL2 **and** Ubuntu.
 - **Carry USB-C and USB-A adapters.** BYOD means the port mix is unknown.
 - **Load and verify checksums before travelling**, not in Miyazaki.
@@ -230,7 +230,7 @@ once and not worth doing three times.
 ## Update — participants get **2–3 worked examples**, not a labelled development set
 
 Organizer's decision, and it fills in the cell map one
-[ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md) left as
+[ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md) left as
 just *"partial"*.
 
 > On the development routes, publish the answer key for **2–3 events maximum**. Not seven, not one
@@ -265,7 +265,7 @@ before the convention exists would ship the disagreement rather than resolve it.
 
 **Recheck the recordings for a proper count of event types.** Not now, per the organizer. It affects
 how many categories the answer key carries and whether anything beyond the target turn is worth
-labelling — [ticket 03](../../civ2026-challenge-spec/issues/03-scoring-basis.md) scores only the turn
+labelling — [ticket 03](../../../docs/history/planning/challenge-spec/issues/03-scoring-basis.md) scores only the turn
 that crosses oncoming traffic, so extra categories are optional colour. Folded into the data trip in
 [16](16-decoy-event-class.md).
 

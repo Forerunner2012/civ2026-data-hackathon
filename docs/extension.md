@@ -91,7 +91,7 @@ Rerunning detection preserves valid non-resource declarations and refreshes gene
 
 The extension allows at most eight payloads, 1 MiB per payload and 4 MiB combined. Optional `agent-trace` and `regression-test` entries require the same exact hashes and supported text media. Intake treats those files as data and never executes them. The kit's `schemas/civ.submission-extension.v1.schema.json` defines the declaration.
 
-## Include a grounded trace and a failure-derived test
+## Optional bonus evidence
 
 These examples show the shape of participant-authored evidence. Replace every placeholder with observations from tools you actually ran and artifacts you produced. Do not claim that this illustrative example is your own executed work. Packaging validates structure and hashes; it does not grant bonus eligibility.
 
@@ -115,13 +115,13 @@ For `extension/regression-test.json`, connect one demonstrated failure to a chec
 
 The test's synthetic interval is 2 s long and exceeds its 1 s maximum. Adapt the case to your demonstrated failure and resulting change. A generic checksum check or an unconnected hypothetical failure does not establish eligibility. This JSON is an inert test specification for review, not an executable test runner. Organizers never execute submitted tests.
 
-Declare the actual files together with provenance:
+For optional bonus evidence, declare only the actual files you prepared. This combined example includes provenance, a trace, and a regression test:
 
 ```text
 civ report working-points --extension provenance extension/provenance.md --extension agent-trace extension/agent-trace.jsonl --extension regression-test extension/regression-test.json
 ```
 
-Inspect the ZIP using a local archive viewer. It must contain the exact declared payload paths plus `extension/manifest.json`; each entry's lowercase SHA-256 must match that member's bytes. Reopening and validating the ZIP confirms inclusion, not the truth of the claims. Submit that unchanged ZIP and its printed hash.
+Inspect the ZIP using a local archive viewer. It must contain the exact declared payload paths plus `extension/manifest.json`; each entry's lowercase SHA-256 must match that member's bytes. Reopening and validating the ZIP confirms inclusion, not the truth of the claims. Keep that unchanged ZIP and its printed hash until organizers confirm the collection route.
 
 Finish the report, figure, reproduction script and required metrics as described in the [QuickStart](quickstart.md#8-validate-and-keep-the-metadata-only-zip). Make the reproduction script use the bundled EventSpec and resource with the same recording. Then run:
 
@@ -129,6 +129,6 @@ Finish the report, figure, reproduction script and required metrics as described
 civ report working-points
 ```
 
-Expect `working-points/submission.zip` and its SHA-256. An undeclared, changed, missing or oversized payload causes validation to fail. Submit only the validated ZIP and its printed hash. Recordings, clips, labels, caches and credentials stay out of the bundle.
+Expect `working-points/submission.zip` and its SHA-256. An undeclared, changed, missing or oversized payload causes validation to fail. Keep only the validated ZIP and its printed hash for delivery through the confirmed route. Recordings, clips, labels, caches and credentials stay out of the bundle.
 
 The Cave bonus is automatic and separate from manual Evidence and other bonus awards. The existing agent-trace, advanced-method, and regression-test bonuses remain available under their own criteria; Cave participation alone does not earn them. See the [current point allocation](https://github.com/Forerunner2012/civ2026-data-hackathon/blob/develop/docs/reference/scoring.md#point-allocation).

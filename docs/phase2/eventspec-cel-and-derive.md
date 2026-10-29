@@ -1,10 +1,9 @@
-# EventSpec CEL and derive candidate contract
+# EventSpec CEL and derivation rules
 
-Status: **completed behavior for issue #16; stable identifiers remain deferred to #20**
+These rules apply to the stable `civ.eventspec/v1` contract. Issue #16 established the behavior; issue #20 promoted the stable identifier.
 
 The participant EventSpec uses the stable `civ.eventspec/v1` contract after the atomic stable-contract
-promotion. This document fixes the expression and derivation behavior that the promotion must
-preserve. The executable conformance source is
+promotion. This document defines its expression and derivation behavior. The executable conformance source is
 `tests/fixtures/cel/conformance.yaml`, pinned to `cel-python==0.5.0`.
 
 ## CEL condition subset

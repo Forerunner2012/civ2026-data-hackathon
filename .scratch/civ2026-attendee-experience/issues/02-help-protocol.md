@@ -57,7 +57,7 @@ tempo, so it is built as a *radar* and not as a scoreboard.
 The distinction is not cosmetic. A board reading *11 of 22 workstreams have a first Reims event* is
 tempo. A board that names or ranks workstreams is a live leaderboard, and a live leaderboard in a
 room of competitive practitioners changes behaviour in ways nobody has designed for — and
-[ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) deliberately put the
+[ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) deliberately put the
 leaderboard at 14:30. Decide: aggregate-only, coach-visible-only, or not at all. Also decide whether
 this is worth the build cost at all, or whether the checkpoint prompts in
 [13](13-coach-guide-and-checkpoints.md) collect the same signal for free.

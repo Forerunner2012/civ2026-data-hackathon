@@ -27,14 +27,14 @@ to the 15:00 wrap, without inventing anything on the day. The map produces **dec
 > Most of this map was worked **AFK** and self-answered against recommendations. The exceptions,
 > which are Matt's: [01](issues/01-pace-car.md)'s two updates, and the composition in
 > [10](issues/10-jury-composition.md) and [15](issues/15-language-of-the-room.md). See
-> [`charting-grill.md`](charting-grill.md) for what was decided on his behalf during charting and
+> [`charting-grill.md`](../../docs/history/planning/attendee-experience/charting-grill.md) for what was decided on his behalf during charting and
 > which calls are worth overturning first.
 
 ## Notes
 
 - **Domain:** the lived experience of a three-hour ROS 2 data-investigation hackathon — the room,
   the tempo, the support, the afternoon. The challenge itself is settled elsewhere.
-- **Map one is input, not material.** The [CIV 2026 challenge spec map](../civ2026-challenge-spec/map.md)
+- **Map one is input, not material.** The [CIV 2026 challenge spec map](../../docs/history/planning/challenge-spec/map.md)
   and its 25 resolved tickets are the decision authority. A ticket here may depend on them and may
   discover consequences of them; it may **not** reopen them. If a ticket concludes a map-one
   decision is wrong, it says so and stops — that is a fresh effort, not a step on this route.
@@ -51,7 +51,7 @@ to the 15:00 wrap, without inventing anything on the day. The map produces **dec
 - **Do not reintroduce schedule pressure.** Programme times are design inputs, not a countdown.
   Decide what the day *should* be.
 - **Vocabulary.** Never System, Datasource, Signal, Trigger, Recording. Always bag, topic, field,
-  EventSpec, detector, event, clip, manifest. ([ticket 07](../civ2026-challenge-spec/issues/07-clean-room-boundary.md))
+  EventSpec, detector, event, clip, manifest. ([ticket 07](../../docs/history/planning/challenge-spec/issues/07-clean-room-boundary.md))
 - **The scenario must not appear on the participant page.** `handoff-site` has a leakage test
   suite; if you touch the site, `npm test` must pass. ([ticket 22](../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md))
 - **`D:\Bags`, `D:\heex`, `C:\Program Files\MCAP`** in map-one tickets 17 and 24 are *provenance
@@ -77,8 +77,8 @@ If a term needs a paragraph to explain, it is the wrong term.
 ## Where this map hands over
 
 This map ends at decisions. **The build is handed over through
-[`/to-spec`](../../.agents/skills/to-spec/SKILL.md) then
-[`/to-tickets`](../../.agents/skills/to-tickets/SKILL.md), not through a third map** — the route
+`/to-spec` then
+`/to-tickets`, not through a third map** — the route
 `/ask-matt` calls the main flow, where these two maps are steps 1–2.
 
 The reasoning, so nobody re-opens it: the build has almost no fog. Map one froze every contract it

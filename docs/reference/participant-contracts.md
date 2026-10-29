@@ -18,6 +18,20 @@ Stable participant identifiers are exact, case-sensitive values. Candidate `v1al
 
 `civ report` writes `submission.zip` with seven core entries: one EventSpec under `detector/`, `events.jsonl`, one top-level figure, `metrics.json`, `report.md`, one `reproduce.ps1` or `reproduce.sh`, and `run-manifest.json`. The manifest's `submission.contract` identifies `civ.submission-bundle/v1` or `civ.submission-bundle/v2`; both retain `civ.reproduction/v1` with the entry-point `name` and `sha256`.
 
-New runs use the v2 manifest and bundle. Canonical v1 bundles remain accepted. A v2 bundle may include declared EventSpec resources and a bounded extension whose exact entries are hash-bound by `extension/manifest.json`; intake treats trace and test payloads as data and does not execute them. Neither version includes the source recording, evidence clips, scoring labels, caches, secrets, or runtime telemetry. See [submission packaging](../phase4/submission-packaging-acceptance.md), the [v2 archive contract](../phase5/extension-aware-submission-v2.md), and the [bundle schemas](../../schemas/civ.submission-bundle.v1.schema.json) and [v2 schema](../../schemas/civ.submission-bundle.v2.schema.json).
+New runs use the v2 manifest and bundle. Canonical v1 bundles remain accepted. A v2 bundle may include declared EventSpec resources and a bounded extension whose exact entries are hash-bound by `extension/manifest.json`; intake treats trace and test payloads as data and does not execute them. Neither version includes the source recording, evidence clips, scoring labels, caches, secrets, or runtime telemetry. See the [packaging steps](../quickstart.md#8-validate-and-keep-the-metadata-only-zip), the [archive contract](submission-archive.md), and the [bundle schemas](../../schemas/civ.submission-bundle.v1.schema.json) and [v2 schema](../../schemas/civ.submission-bundle.v2.schema.json).
 
-For schema compatibility and producer/consumer responsibilities, see the [stable-contract inventory](../phase2/stable-contracts-and-compatibility.md#contract-inventory). Organizer review and scoring inputs are not participant submission artifacts.
+## Producer and consumer responsibilities
+
+| Artifact | Producer | Consumers and integrity checks |
+| --- | --- | --- |
+| EventSpec and point resources | Participant | `detect` validates and copies exact bytes; `report` and intake verify hashes and declared resource paths. |
+| Events and run manifest | `detect` | `clip`, `score`, and `report` validate source/spec hashes and event coherence. `clip` adds local evidence facts, `score` adds metrics, and `report` finalizes submission provenance. |
+| Metrics | `score` | `report` verifies the manifest-bound bytes. Evaluated metrics identify the reference hash; unevaluated metrics carry null scores. |
+| Report, figure, reproduction recipe | Participant | `report` validates their structure and binds exact bytes. Organizers inspect the recipe without executing submitted scripts. |
+| Submission ZIP | `report` | Intake validates contracts, hashes, paths, limits, and canonical ZIP bytes. Cohort scoring replays the accepted EventSpec/resources with the trusted organizer runtime. Submitted events and metrics are audit artifacts, not cohort predictions. |
+
+Current runs pair a v2 manifest with v1 events, EventSpec, resources, and reproduction declarations. Metrics use v1 for evaluated runs or v2 for `not_evaluated` runs. These combinations are intentional. Canonical v1 bundles remain accepted without conversion. Unknown versions and fields outside declared extension points are rejected. Regenerate candidate participant artifacts in a fresh directory instead of changing identifier strings.
+
+Practice references and sealed truth stay outside the submission. The saved evaluation plan controls roster, cutoff, and assignments; the intake ledger records receipts. Organizer results and runtime telemetry have separate contracts. See the [scoring reference](scoring.md) and [cohort procedure](../organizers/cohort-scoring.md).
+
+The [Phase 2 freeze](../phase2/stable-contracts-and-compatibility.md#contract-inventory) preserves the original inventory, v1 compatibility diagnostics, and implementation history.

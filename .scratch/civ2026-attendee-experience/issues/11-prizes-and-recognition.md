@@ -18,13 +18,13 @@ default "top 3 on the leaderboard" would flatten.
 Named in map one, and worth restating because the award structure either reinforces them or
 contradicts them:
 
-- **Failure is a deliverable.** §2 says so; [ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)
+- **Failure is a deliverable.** §2 says so; [ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)
   puts the *most instructive failure* in the results block and warns that it will read as a booby
   prize unless framed. An award solves the framing problem in a way that a walkthrough slot does not.
 - **Transfer is the difficulty.** [Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)
   moved the event's whole point onto the second dataset. A single overall leaderboard buries that
   under 100 points of everything else.
-- **Solo and duo rank together** ([ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)).
+- **Solo and duo rank together** ([ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)).
   Any award structure that quietly re-splits them reopens a closed decision.
 
 ## What this ticket must decide
@@ -38,7 +38,7 @@ contradicts them:
   30 practitioners at an academic-industrial conference are not primarily there for a prize, and an
   award that is obviously token is better than one that is awkwardly small. Budget is an input this
   ticket needs and does not have — get it or state the assumption.
-- **Is anything awarded for the extension track?** [Ticket 25](../../civ2026-challenge-spec/issues/25-geofence-agent-track.md)
+- **Is anything awarded for the extension track?** [Ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md)
   judges it qualitatively under the bonus, and [04](04-extension-placement.md) may move it out of
   the scored session entirely. If it becomes an unscored lunch clinic, an award for it is
   incoherent — decide whether that costs it too much and whether recognition replaces it.
@@ -61,7 +61,7 @@ substantive prize is publication, not an object.**
 
 ### The finding: the best prize available is free, durable and on-brand
 
-[Ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md) already decided
+[Ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md) already decided
 that the workshop content and the site go **public, CC BY 4.0**. So the event can offer something
 that costs nothing, lasts, and is worth more to this cohort than an object:
 
@@ -83,7 +83,7 @@ never instead of it. Get the number if it exists; do not block on it.
 |---|---|---|
 | **1st, 2nd, 3rd overall** | the leaderboard, all 100 points plus bonus | Ordinary and expected; the field would feel unfinished without it |
 | **Best transfer** | report heading 3 and Reims Detection | [Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the event's whole point onto the second dataset. A single overall leaderboard buries it under 100 points of everything else |
-| **Most instructive failure** | an honest dead end, well analysed | §2 makes failure a deliverable. [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) warns it reads as a booby prize unless framed — **an award is the framing.** A walkthrough slot alone is not |
+| **Most instructive failure** | an honest dead end, well analysed | §2 makes failure a deliverable. [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) warns it reads as a booby prize unless framed — **an award is the framing.** A walkthrough slot alone is not |
 
 **Five recognitions, no more.** A 30-minute results block cannot hold more, and each additional
 named award dilutes the ones that carry a message.
@@ -109,7 +109,7 @@ rewards the behaviour [03](03-cadence.md) spends the day encouraging — submit 
 
 ### Solo and duo
 
-**One leaderboard, unchanged.** [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)
+**One leaderboard, unchanged.** [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)
 settled it and no award here re-splits them. Say so in the brief so nobody feels ambushed.
 
 ### Announcement
@@ -142,7 +142,7 @@ Organizer's decision, and it **replaces publication-as-the-prize** above.
 Top three on the leaderboard, plus **best transfer** and **most instructive failure** — five
 recognitions, no more. The reasoning holds independently of what is handed over: the failure award is
 still the *framing* that stops
-[ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)'s instructive-failure
+[ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)'s instructive-failure
 slot reading as a booby prize, and both named awards are still adjudicable only because
 [10](10-jury-composition.md)'s agents read every entry.
 

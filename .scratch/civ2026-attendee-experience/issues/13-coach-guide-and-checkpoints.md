@@ -67,11 +67,11 @@ Contents to specify:
   entries, which is a question about *which failures are actually likely* on Windows/WSL2 and
   Ubuntu, not about writing them up.
 - **The two topic inventories.** Autoware and ZED/GNSS share no topics
-  ([ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)), so a
+  ([ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)), so a
   coach helping with the transfer needs both to hand. Decide whether that is coach-only or
   participant-facing — if participant-facing it belongs to [14](14-participant-materials.md) instead.
 - **What a coach must never say**, including the vocabulary ban from
-  [ticket 07](../../civ2026-challenge-spec/issues/07-clean-room-boundary.md): never System,
+  [ticket 07](../../../docs/history/planning/challenge-spec/issues/07-clean-room-boundary.md): never System,
   Datasource, Signal, Trigger, Recording. A coach reaching for a familiar word at speed is exactly
   how that boundary gets breached in the room, where no test suite can catch it.
 - **Coach briefing and rehearsal.** When do coaches get trained, and does the internal
@@ -153,7 +153,7 @@ not usable in ten seconds is not on it.
 ```
 
 Drafting it settled two things. **The vocabulary ban has to be on the card**
-([ticket 07](../../civ2026-challenge-spec/issues/07-clean-room-boundary.md)) — a coach reaching for a
+([ticket 07](../../../docs/history/planning/challenge-spec/issues/07-clean-room-boundary.md)) — a coach reaching for a
 familiar word at speed is exactly how that boundary gets breached, and it is the one place no test
 suite can catch it. And **"leave them"** has to be printed, because it is the instruction that
 contradicts a coach's instinct hardest.
@@ -178,7 +178,7 @@ every other failure here.
 
 A corporate laptop running an always-on VPN in full-tunnel mode has **local-subnet access disabled by
 policy**: the internet works, and a machine on the same room network does not. It is plausible at
-this cohort — [ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md) made the event
+this cohort — [ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) made the event
 BYOD and these are work laptops. *Inferred from the architecture, not observed; treat it as a
 plausible failure mode to design for rather than a known one.*
 

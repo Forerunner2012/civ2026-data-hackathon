@@ -14,8 +14,8 @@ qualified inputs, machine checks and release approval.
 2. Verify recording and image permissions, attribution, retention and deletion requirements for
    the intended audience. Record exact source hashes and approved products. Use the
    [track and product bindings](cohort-scoring.md#3-bind-the-plan-to-the-session-inputs),
-   [camera-context procedure](../phase5/camera-context-candidate.md) and
-   [legal qualification procedure](../phase5/legal-risk-acceptance.md) as references. Historical
+   [original camera-context approval](../phase5/camera-context-candidate.md) and
+   [original legal-risk acceptance](../phase5/legal-risk-acceptance.md) as references. Historical
    permissions do not authorize another session or public imagery.
 3. Prepare reviewed labels through the [acquisition skill](../../.agents/skills/civ-label-acquisition/SKILL.md)
    and [local review procedure](../phase3/label-review.md). EventSpecs propose intervals; a human
@@ -28,16 +28,14 @@ qualified inputs, machine checks and release approval.
    audit approved sealed packs separately with the [organizer label-pack procedure](../phase3/organizer-label-packs.md).
    A successful export does not authorize a handout or publication. Record the permitted
    practice-pack identities, handout timing and owner before sharing them.
-5. Build the attendee kit from verified inputs using the
-   [inventory procedure](../phase4/participant-kit-inventory.md) and
-   [assembly procedure](../phase5/camera-context-candidate.md). Keep canonical Markdown and its
-   dependent summaries consistent; assemble guide copies through the existing inventory, rather
-   than editing generated copies. Keep recordings, imagery, sealed packs and review progress out
-   of Git. Review the [kit entry point](../../kit/README.md) from a participant's perspective.
+5. [Build and audit the participant kit](participant-kit.md) from verified inputs. Assemble
+   canonical guide copies through the inventory, and update dependent summaries when their
+   instructions change. Keep recordings, imagery, sealed packs and review progress out of Git.
+   Review the [kit entry point](../../kit/README.md) from a participant's perspective.
 6. Rehearse [the quickstart](../quickstart.md) on the target machines. Verify both dataset
    workflows, exact-source practice scoring, private scoring, submission reproduction and
-   metadata-only bundles. Follow [workstation qualification](../phase5/workstation-qualification.md)
-   and [release qualification](../phase5/release-freeze.md). A prior Windows or offline result
+   metadata-only bundles. Use the [original workstation evidence](../phase5/workstation-qualification.md)
+   and [release freeze record](../phase5/release-freeze.md) as historical references. A prior Windows or offline result
    does not qualify another machine or platform. Freeze only the inputs and capabilities that
    the current session has actually qualified.
 
@@ -51,10 +49,12 @@ qualified inputs, machine checks and release approval.
    failure analysis; do not replace their decisions with an organizer solution. Use the
    [historical facilitation and recovery record](../phase4/organizer-ops-jury-acceptance.md) as
    context. Use the current session's recorded schedule and qualified recovery options.
-3. Release only the authorized practice references at the recorded checkpoint. Participants
-   score the exact matching source, explain false positives and missed events, and submit the
-   [participant contract](../reference/participant-contracts.md). Recordings, evidence clips,
-   labels and review audit stay outside the metadata-only submission bundle.
+3. Release only authorized practice references at the recorded checkpoint. Confirm the session's
+   collection route, cutoff, timezone, and participant/team identity convention before delivery.
+   Participants retain a validated ZIP and hash as described in the
+   [submission checklist](../submission-fields.md). Recordings, clips, labels, and review audit
+   stay outside that bundle. Organizers inspect submitted reproduction recipes and tests as
+   inert artifacts. Use the trusted runtime for EventSpec/resource replay in cohort scoring.
 
 ## Evaluate and finish
 
@@ -83,22 +83,8 @@ From the repository root, use project mode:
 uv sync --locked
 ```
 
-The implemented loopback review interface supports exact interval edits, undo, save/reload,
-whole-source signal/image inspection and independent candidate-profile comparison. It rejects
-stale inputs and unsupported exclusions, and clears approval or completeness after relevant
-edits. Use the exact commands in the [review procedure](../phase3/label-review.md); keep reviewer
-identity, review progress and output paths local. Detection proposals never create truth.
-
-The synthetic acquisition example exercises the production review and scoring consumers without
-using recordings or real labels:
-
-```sh
-uv run python .agents/skills/civ-label-acquisition/scripts/synthetic_demo.py
-```
-
-Its fixed fixture decisions are tests, not a human approval method. Real review still needs the
-named reviewer, permitted-use statement and exact source/spec/resource/context bindings.
+Follow the [label-review procedure](../phase3/label-review.md) for review commands, fixture checks, approval invalidation, and export boundaries. Keep reviewer identity, progress, and output paths local. Synthetic fixture decisions do not grant human approval.
 
 ## Presentation material
 
-Use the [maintained briefing and submission checklist](../presentations/README.md) for the approved 13-slide introduction and separate end-of-hackathon reminder. Edit the HTML, prepare the source-bound illustrations and verify generated decks locally. Include only reviewed artifacts in the approved kit; source presence does not establish a hosted download or kit delivery.
+Use the [maintained briefing and submission checklist](../presentations/README.md) for the introduction and separate end-of-hackathon reminder. Edit the HTML, prepare the source-bound illustrations and verify generated decks locally. Include only reviewed artifacts in the approved kit; source presence does not establish a hosted download or kit delivery.

@@ -38,10 +38,6 @@ separate release inputs. Kit assembly verifies their identities. Keep them out o
 The root [LICENSE](LICENSE) covers eligible original contributions, and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
 and [kit/ATTRIBUTION.md](kit/ATTRIBUTION.md) identify the separate terms for third-party materials and datasets.
 
-## A possible next format
-
-This material can support other challenges in robotics data analysis, including AI-assisted work with data from edge systems. One possible format runs for two or three months, releases new dataset chunks progressively, and repeats evaluation at each release. Organizers would define the schedule, data permissions, labels, and evaluation rules for that format.
-
 ## Credits
 
 Breakout-session suggestions came from [Powei Liao](https://www.linkedin.com/in/powei-liao/), [Dr. Matthieu Carré](https://www.linkedin.com/in/matthieucarreutc/), and Bo Qian.
@@ -51,7 +47,3 @@ We thank Tsukada Laboratory, [Prof. Manabu Tsukada](https://www.linkedin.com/in/
 We also thank the CIV committee, including [Arnaud de La Fortelle](https://www.linkedin.com/in/arnaud-de-la-fortelle/), and the [CIV summer school](https://civ-summerschool.org/).
 
 Development used [Orca](https://github.com/stablyai/orca) for agent orchestration and unattended remote work.
-
-See [kit/ATTRIBUTION.md](kit/ATTRIBUTION.md) for the dataset attribution, modification notes, and
-third-party notices. The file links to the [URT-Kashiwa source](https://github.com/tlab-wide/URT-Kashiwa)
-and the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/).

@@ -185,7 +185,7 @@ Three things the script surfaced that argument alone would not have:
    to be coy — "I've got a condition here, never mind what it is" — and coyness is unwatchable. Hard
    braking lets the rabbit be completely open, which is the only register in which this works.
 2. **The `merge_gap` moment is the single most valuable two minutes in the day**, and it is exactly
-   what [ticket 09](../../civ2026-challenge-spec/issues/09-detector-authoring-surface.md) called the
+   what [ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md) called the
    non-negotiable rung: *without `timing`, a team emits one detection per sample where yaw rate was
    high, not one per turn.* 41 → 6 shows that in fifteen seconds. Told rather than shown, most people
    discover it at 11:30 by scoring badly.

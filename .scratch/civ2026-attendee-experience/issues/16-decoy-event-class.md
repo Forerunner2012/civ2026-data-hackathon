@@ -26,7 +26,7 @@ single most important mechanic in the toolchain:
 > A naive threshold fires on every *sample* where the condition is true. `timing` — `min_duration`
 > and `merge_gap` — is what turns those samples into *intervals*, i.e. into events.
 
-[Ticket 09](../../civ2026-challenge-spec/issues/09-detector-authoring-surface.md) calls this the
+[Ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md) calls this the
 non-negotiable rung: *without `timing`, a team emits one detection per sample where yaw rate was
 high, not one per turn.* Shown, it takes fifteen seconds. Not shown, most people discover it at 11:30
 by scoring badly.
@@ -42,7 +42,7 @@ over the answer forty minutes early and compress Kashiwa's 15 Detection points f
 
 | | Example | For | Against |
 |---|---|---|---|
-| **A** | **Hard braking on the published warm-up route.** Real data the participant already holds | Credible, reproducible by the participant, and unmistakably not a turn — [ticket 09](../../civ2026-challenge-spec/issues/09-detector-authoring-surface.md) notes the prior INBOX example was already hard-braking | Needs one check against real data, which nobody has done |
+| **A** | **Hard braking on the published warm-up route.** Real data the participant already holds | Credible, reproducible by the participant, and unmistakably not a turn — [ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md) notes the prior INBOX example was already hard-braking | Needs one check against real data, which nobody has done |
 | **B** | A **tiny synthetic trace** shipped with the kit | Zero data dependency. Guaranteed to produce a dramatic over-count because it is built to. Closes this ticket immediately | Reads as a textbook exercise rather than *your data, your problem*, which is most of why the moment lands |
 | **C** | The **real turn detector**, accepting early release | No new asset at all | Gives away the Kashiwa answer at 10:20 and undercuts [03](03-cadence.md)'s cliff design, where the solution's arrival at 11:00 is what makes abandoning possible |
 
@@ -68,7 +68,7 @@ out. Roughly twenty minutes.
 
 ## Ride-along: measure Kashiwa per-topic bytes while you are there
 
-Map one's [ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
+Map one's [ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
 closes with *Kashiwa has not been measured — run `mcap du` on one Kashiwa route before fixing the
 numbers.* It is the **same machine, the same bag and the same session** as the check above, so do
 both in one trip.
@@ -83,9 +83,9 @@ small:
    point clouds. The inference is almost certainly right; it is still an inference in a document
    participants will act on.
 2. **The camera retention decision depends on it.**
-   [Ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md) wants
+   [Ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md) wants
    `/sensing/camera/traffic_light/image_raw` kept at ~5 Hz and 640×360, and
-   [ticket 10](../../civ2026-challenge-spec/issues/10-visualization-surface.md)'s evidence and
+   [ticket 10](../../../docs/history/planning/challenge-spec/issues/10-visualization-surface.md)'s evidence and
    visualization value rests on a camera stream existing. If the reduction does not land, that
    contingency fires.
 
@@ -98,7 +98,7 @@ Organizer's note, explicitly deferred: **recheck the recordings for a better cou
 types.** Same trip, same machine.
 
 It matters for exactly one thing — how many categories the answer key carries.
-[Ticket 03](../../civ2026-challenge-spec/issues/03-scoring-basis.md) scores **only** the turn that
+[Ticket 03](../../../docs/history/planning/challenge-spec/issues/03-scoring-basis.md) scores **only** the turn that
 crosses oncoming traffic, so any other category is optional colour: useful for the extension track
 and for the report's *what else did you find*, worth nothing on the 25 points. So this is a
 nice-to-have on the trip, not a gate.
@@ -106,7 +106,7 @@ nice-to-have on the trip, not a gate.
 ## Access note — the one thing this map cannot do
 
 This map holds no bag data, and the paths in map-one
-[tickets 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md) and
+[tickets 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md) and
 [24](../../civ2026-challenge-spec/issues/24-survey-reims-bag.md) (`D:\Bags`, `C:\Program
 Files\MCAP`) are **provenance from another machine**, not dependencies.
 

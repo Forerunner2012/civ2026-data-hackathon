@@ -5,8 +5,8 @@ Status: resolved
 
 ## Question
 
-Map one left this in the fog, waiting on [ticket 12](../../civ2026-challenge-spec/issues/12-agent-scoring.md),
-which has since closed. [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)
+Map one left this in the fog, waiting on [ticket 12](../../../docs/history/planning/challenge-spec/issues/12-agent-scoring.md),
+which has since closed. [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)
 built the whole judging model on a jury it never sized:
 
 > 12:30–14:30 — Jury splits the written reports between them and awards the judgement-based points.
@@ -48,14 +48,14 @@ ranking is an artifact of who read whom.
 - **What the jury produces.** Scores alone, or scores plus the material [12](12-results-block.md)
   needs: the four walkthrough picks including the most instructive failure, and the two or three
   observations that make the reveal worth listening to.
-- **Rubric anchors.** [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)
+- **Rubric anchors.** [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)
   fixed the five report headings so each maps to one category. Decide whether each category needs
   written anchors (what a 5, a 10, a 15 looks like) — recommendation: yes, and drafting one worked
   example per category is inside this ticket's scope, since split reading is unsafe without them.
 
 ## Why this is on the frontier
 
-Nothing blocks it — [ticket 12](../../civ2026-challenge-spec/issues/12-agent-scoring.md) was the
+Nothing blocks it — [ticket 12](../../../docs/history/planning/challenge-spec/issues/12-agent-scoring.md) was the
 dependency and it closed. It blocks [11](11-prizes-and-recognition.md) and
 [12](12-results-block.md).
 
@@ -77,7 +77,7 @@ A three-human jury reading one page each in 12–24 minutes could only ever scor
 could never open `events.jsonl`, check that the failure described in heading 4 corresponds to a real
 detection, confirm that the clip in `evidence/` shows what the report claims, or follow an agent
 trace back to the tool call that produced it — which is precisely what
-[ticket 12](../../civ2026-challenge-spec/issues/12-agent-scoring.md) says the bonus requires.
+[ticket 12](../../../docs/history/planning/challenge-spec/issues/12-agent-scoring.md) says the bonus requires.
 
 **Agent jurors can read the report against the submission.** So the rule for this jury is:
 
@@ -85,12 +85,12 @@ trace back to the tool call that produced it — which is precisely what
 > describes it.**
 
 That is a stricter standard than a human jury could have applied, and it is exactly the standard
-§3.4 and [ticket 12](../../civ2026-challenge-spec/issues/12-agent-scoring.md) ask of *participants*.
+§3.4 and [ticket 12](../../../docs/history/planning/challenge-spec/issues/12-agent-scoring.md) ask of *participants*.
 
 ### The failure mode to design against
 
 **An LLM scoring a written document rewards good writing.** That is the whole risk, and it is the
-same error [ticket 12](../../civ2026-challenge-spec/issues/12-agent-scoring.md) already banned in
+same error [ticket 12](../../../docs/history/planning/challenge-spec/issues/12-agent-scoring.md) already banned in
 the other direction — *never prompt style*. The analogue here is *never prose style*.
 
 [15](15-language-of-the-room.md) sharpens it: with a **C1 lower bar**, fluency varies across the
@@ -104,7 +104,7 @@ Mitigations, all mandatory:
 - **Anchors are written by a human** and are verifiable rather than impressionistic: *does heading 3
   name a specific thing that did not transfer? does heading 4's failure correspond to an interval in
   `events.jsonl`?* This mirrors
-  [ticket 15](../../civ2026-challenge-spec/issues/15-ai-build-review-gates.md)'s rule that a human
+  [ticket 15](../../../docs/history/planning/challenge-spec/issues/15-ai-build-review-gates.md)'s rule that a human
   writes the Tier A assertions.
 - **Explicitly instruct against rewarding fluency, length or confidence.**
 
@@ -153,7 +153,7 @@ agents against human-written anchors, with a human arbitrating disagreement. Dis
 afterwards would poison an otherwise excellent result.
 
 And then go further, because the opportunity is unusually good: **publish the jury agents' traces
-alongside the scores.** [Ticket 12](../../civ2026-challenge-spec/issues/12-agent-scoring.md) asks
+alongside the scores.** [Ticket 12](../../../docs/history/planning/challenge-spec/issues/12-agent-scoring.md) asks
 participants for *a trace that points to executed tools and the evidence they produced*. A jury that
 holds itself to the same standard it is grading against is the strongest possible statement of what
 this event believes, and it costs nothing but the decision to do it. [12](12-results-block.md)
@@ -179,5 +179,5 @@ Agent scoring makes both cheap. Require them as outputs, not as a favour.
   solvable.
 - **Owner needed:** somebody writes the anchors and the agent briefs, and that is real work with a
   Phase 4 lead time. It should be rehearsed against the deliberate-detector submissions from
-  [ticket 16](../../civ2026-challenge-spec/issues/16-evaluator-calibration.md) — those are known-bad
+  [ticket 16](../../../docs/history/planning/challenge-spec/issues/16-evaluator-calibration.md) — those are known-bad
   and known-good entries, which is exactly what you need to check a rubric prompt before trusting it.

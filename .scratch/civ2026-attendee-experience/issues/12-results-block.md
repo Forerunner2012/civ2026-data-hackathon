@@ -6,7 +6,7 @@ Blocked by: 04, 10
 
 ## Question
 
-[Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) fixed the shape of
+[Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) fixed the shape of
 14:30–15:00:
 
 | When | What |
@@ -79,7 +79,7 @@ participant gets written feedback, which is the thing this block could not previ
 ### The finding: the AI jury makes per-entry feedback free
 
 This ticket's last open item was the one with no good answer — *what happens to the 11 to 26 entries
-not shown?* [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) argued
+not shown?* [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) argued
 for this whole model on the grounds that **every submission is genuinely assessed**, and then had no
 way to let most participants experience that.
 
@@ -174,7 +174,7 @@ Six minutes cannot carry that **and** the transfer lesson. So:
 - **The wrap is the extension demo**, and it ends on the horizon rather than on the scoreboard. The
   last thing anyone hears is *the pipeline you were handed is not the edge of what you can do* —
   which is also the message that sends people to the published kit
-  ([ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s *take it,
+  ([ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s *take it,
   not join us*).
 
 ## Update — the organizer narrates. No interviews, no presentations.
@@ -183,7 +183,7 @@ Organizer's decision, and it removes the participant from the front of the room 
 
 **Nobody is interviewed and nobody presents.** The organizer walks the room through the selected
 entries — spec, report heading 3, the required figure — and the participant stays in their seat and
-receives applause. [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)'s
+receives applause. [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)'s
 ~4 walkthroughs are preserved; only the delivery changes.
 
 ### Why this is better than the interview it replaces

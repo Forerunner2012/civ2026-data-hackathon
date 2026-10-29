@@ -56,7 +56,7 @@ keeping (drafted in
 [`prototypes/01-board-and-narration.md`](../prototypes/01-board-and-narration.md)):
 
 - **Sample versus interval.** A naive threshold fires 41 times; `timing` collapses it to 6. This is
-  [ticket 09](../../civ2026-challenge-spec/issues/09-detector-authoring-surface.md)'s non-negotiable
+  [ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md)'s non-negotiable
   rung 1, and told rather than shown, most people discover it at 11:30 by scoring badly.
 - **An honest false positive.** The only thing in the whole design that demonstrates §2's *failure
   is a deliverable* claim **before** a participant is asked to produce one.
@@ -95,7 +95,7 @@ authoring with a real lead time. Pick a format a coach can still edit the week b
 ### The scoring consequence, to price rather than discover
 
 Timed solutions compress **Kashiwa's 15 Detection points**.
-[Ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md) calls the Kashiwa
+[Ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md) calls the Kashiwa
 core a warm-up, so some compression is intended, and map one has already licensed the 15/10 split to
 move after the internal evaluator run. **This ticket states the expected compression as an input to
 that tuning**; it does not change the split, which is map one's and the evaluator's.
@@ -205,7 +205,7 @@ needs no build gymnastics.
 
 **With a static export on USB**, mandated by [08](08-room-requirements.md), which is the LAN-down
 path and also the artifact that ships publicly after the event under
-[ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
+[ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
 
 ### Release: automatic, advance-only
 
@@ -222,7 +222,7 @@ path and also the artifact that ships publicly after the event under
 **Expect Kashiwa Detection to become a near-ceiling category.** Anyone who takes the 11:00 solution
 can produce Kashiwa events in roughly ten minutes, and 90 minutes remain.
 
-That is **intended** — [ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)
+That is **intended** — [ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)
 calls the Kashiwa core a warm-up and
 [ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the difficulty
 to transfer. Discrimination lives in Reims Detection (10), Evidence (15), Reproducibility (15) and
@@ -386,7 +386,7 @@ the organizer machine and published to the public internet via **Tailscale Funne
 - **Valid TLS** without certificate work.
 - **It works before and after the room.** Participants can reach it from a hotel the night before,
   and afterwards until it is turned off — which suits an artifact that ships publicly anyway under
-  [ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
+  [ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
 
 ### What it costs, and this is the real trade
 

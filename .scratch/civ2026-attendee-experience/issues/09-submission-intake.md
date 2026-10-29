@@ -5,7 +5,7 @@ Status: resolved
 
 ## Question
 
-[Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) named this and left
+[Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) named this and left
 it open:
 
 > **Submission intake at 12:30** for 15–30 entries, and it must be quick — a shared drive, a git
@@ -45,7 +45,7 @@ account-free and fast, and it consolidates with the recovery runner. But see the
   Reproducibility. Telling the participant at 12:29 is worth 15 points to them; telling them at
   14:30 is a grievance. Candidate: intake runs a **structural check only** — the directory shape,
   not the content — and returns pass/fail immediately. Anything deeper belongs to
-  [ticket 15](../../civ2026-challenge-spec/issues/15-ai-build-review-gates.md)'s evaluator gates.
+  [ticket 15](../../../docs/history/planning/challenge-spec/issues/15-ai-build-review-gates.md)'s evaluator gates.
 - **Can a participant submit more than once?** Almost certainly yes — submitting early and improving
   is exactly the behaviour to encourage, and it de-risks 12:30 enormously. Decide whether the last
   submission wins and whether the pace car pushes an early-submit beat ([03](03-cadence.md)).
@@ -113,7 +113,7 @@ Intake checks the **directory shape** — is `run-manifest.json` there, is `repo
 The reason is a participant-experience one: a submission missing `run-manifest.json` scores zero on
 Reproducibility. Telling someone at 12:29 is worth 15 points to them. Telling them at 14:30 is a
 grievance nobody can fix. Anything beyond structure belongs to
-[ticket 15](../../civ2026-challenge-spec/issues/15-ai-build-review-gates.md)'s evaluator gates, which
+[ticket 15](../../../docs/history/planning/challenge-spec/issues/15-ai-build-review-gates.md)'s evaluator gates, which
 run unattended after the close.
 
 ### The receipt
@@ -199,7 +199,7 @@ timings* — this extends an existing artifact rather than inventing one.
 
 ### Does the rubric survive? Mostly, with one honest weakening
 
-[Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)'s Evidence and
+[Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)'s Evidence and
 extraction (15) machine-checks *clip validity, correct topics, volume reduction*:
 
 - **Correct topics** — in the manifest. Unaffected.
@@ -212,7 +212,7 @@ extraction (15) machine-checks *clip validity, correct topics, volume reduction*
 on the sealed data, at any time. That also opens a stronger option for the build to consider:
 **score Detection by executing the participant's spec** rather than by trusting their
 `events.jsonl`. It changes nothing about
-[ticket 16](../../civ2026-challenge-spec/issues/16-evaluator-calibration.md)'s semantics — temporal
+[ticket 16](../../../docs/history/planning/challenge-spec/issues/16-evaluator-calibration.md)'s semantics — temporal
 IoU, one-to-one matching, F1 — only where the events come from. Flagged for the evaluator owner, not
 decided here.
 
@@ -228,7 +228,7 @@ than a raw clip: choosing one frame that makes the case is the skill.
   so this was not a blocker — but not collecting it is simpler on rights, storage and attribution,
   and it removes a conversation nobody needs to have.
 - **The participant keeps their evidence**, which fits
-  [ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s *take it, not
+  [ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s *take it, not
   join us* posture better than surrendering it does.
 
 ### What still has to hold

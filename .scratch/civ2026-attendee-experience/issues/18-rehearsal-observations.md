@@ -94,7 +94,7 @@ participate.
 ### Three things that must be deliberately broken
 
 Clean-install rehearsals prove nothing about a design built almost entirely from failure paths.
-[Ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md) already requires *a
+[Ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) already requires *a
 deliberately broken environment, not only clean installs*. Extend it:
 
 1. **A broken container**, to exercise the gate → runner path end to end (observation 5).
@@ -111,7 +111,7 @@ recovery runner ([06](06-fallback-and-recovery.md)) — there is no box and no L
 
 - **The jury.** Run [10](10-jury-composition.md)'s agents and anchors against the deliberate-detector
   submissions from
-  [ticket 16](../../civ2026-challenge-spec/issues/16-evaluator-calibration.md) — known-good and
+  [ticket 16](../../../docs/history/planning/challenge-spec/issues/16-evaluator-calibration.md) — known-good and
   known-bad entries are exactly what checks a rubric prompt before it is trusted. Watch specifically
   for **fluency being rewarded**, which is the failure [10](10-jury-composition.md) is designed
   against and the one that will not announce itself.

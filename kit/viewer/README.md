@@ -18,3 +18,5 @@ Official upstream references:
 - PlotJuggler releases: <https://github.com/PlotJuggler/PlotJuggler/releases>
 - Lichtblick project: <https://github.com/lichtblick-suite/lichtblick>
 - Lichtblick releases: <https://github.com/lichtblick-suite/lichtblick/releases>
+
+On a connected machine, the official [Lichtblick web app](https://lichtblick-suite.github.io/lichtblick/) supports visual inspection without installation. The core QuickStart does not depend on it.

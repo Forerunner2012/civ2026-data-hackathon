@@ -5,7 +5,7 @@ Status: resolved
 
 ## Question
 
-Handed over explicitly by [ticket 25](../../civ2026-challenge-spec/issues/25-geofence-agent-track.md),
+Handed over explicitly by [ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md),
 which closed with:
 
 > **Where do the 30-45 minutes come from?** […] This module has to be placed deliberately — inside
@@ -22,7 +22,7 @@ qualitatively. ~10–15 min acquiring zones, ~10 min writing the spec, ~10 min r
 
 ## The collision map one did not notice
 
-Ticket 25 says *judge it under the existing bonus*. [Ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)
+Ticket 25 says *judge it under the existing bonus*. [Ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)
 closes submissions at **12:30** and machine-scores unattended. **Anything built after 12:30 cannot
 enter the submission.** So placement and scoring are one decision, not two.
 
@@ -52,7 +52,7 @@ and a **teaching module** that everyone should get. They do not have to be the s
 - If B: is it truly optional, how is attendance encouraged without coercion, and what happens to the
   people who skip it — does the 13:45–14:30 gap become dead time for them instead?
 - Who runs it, and are they the same people the jury needs reading reports at that hour? The jury
-  has **two hours to read 15–30 reports** ([ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md));
+  has **two hours to read 15–30 reports** ([ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md));
   a clinic in the middle of that window competes for the same organizers. This is a real resourcing
   clash and [10](10-jury-composition.md) inherits it.
 - Whether an unscored clinic still needs the worked example spec shipped in the kit, or whether it
@@ -85,13 +85,13 @@ attendance, and it puts the event's most memorable idea behind a door half the r
 through.
 
 It also created a resourcing clash: the jury has **two hours to read 15–30 reports**
-([ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)), and a structured
+([ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)), and a structured
 clinic in the middle of that window competes for the same organizers.
 
 ### The split
 
 **The lesson is three minutes and everyone gets it.**
-[Ticket 25](../../civ2026-challenge-spec/issues/25-geofence-agent-track.md) states it plainly: *the
+[Ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md) states it plainly: *the
 system took knowledge that was never in the bag, and used it to find events I could not otherwise
 have found.* That is a demonstration, not an exercise, and its strongest possible placement is the
 **wrap at 14:55** — the last thing anyone hears, in front of the whole room, with the champagne
@@ -102,7 +102,7 @@ message.
 [the attendee page](17-attendee-page.md), unlocked at 12:30 alongside the day's remaining solutions.
 Self-serve, referrable, no staffing, consistent with everything [01](01-pace-car.md) decided — and
 doable at lunch, on the plane, or six months later, which is exactly the right shape for something
-[ticket 20](../../civ2026-challenge-spec/issues/20-cohort-skill-floor-licensing.md) frames as *take
+[ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md) frames as *take
 it, not join us*.
 
 **Coaches are simply around** for the first 45 minutes of lunch, for anyone who wants to try it. No
@@ -113,7 +113,7 @@ cost, and it captures whatever energy exists without depending on it.
 
 - **In-session extension work still scores** under the existing bonus, for whoever genuinely reaches
   it before 12:30. Unchanged from
-  [ticket 25](../../civ2026-challenge-spec/issues/25-geofence-agent-track.md).
+  [ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md).
 - **The page version is unscored.** Submissions are closed; no late window is invented.
 - **The run of show does not budget for the in-session route.** The ladder has six stages and no
   slack; pretending there is a 45-minute hole inside 180 minutes makes the extension a trap for
@@ -123,7 +123,7 @@ Say this in the brief. The failure mode is someone discovering at 12:20 that the
 
 ### What ships regardless
 
-Unchanged from [ticket 25](../../civ2026-challenge-spec/issues/25-geofence-agent-track.md), and now
+Unchanged from [ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md), and now
 needed for the page rather than for a clinic: the **worked example spec**, the CSV seed contract,
 the 40 m radius, the bounded cave set. *Swap the resource and adjust the radius* — nobody has 45
 minutes to discover `resources:` unaided, and that is more true self-serve than it was live.
@@ -132,7 +132,7 @@ minutes to discover `resources:` unaided, and that is more true self-serve than 
 
 Organizer's decision, and it **corrects the framing above**: the extension carries **additional
 points under the existing 20-point bonus**, as
-[ticket 25](../../civ2026-challenge-spec/issues/25-geofence-agent-track.md) always intended. Calling
+[ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md) always intended. Calling
 the taught version "unscored" was my invention and it is withdrawn.
 
 **What changes:** the extension section unlocks on [the attendee page](17-attendee-page.md) **during

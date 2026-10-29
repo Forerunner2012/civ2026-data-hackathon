@@ -6,7 +6,7 @@ Blocked by: 05
 
 ## Question
 
-[Ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md) accepted BYOD with no
+[Ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) accepted BYOD with no
 recovery hardware and named the mitigation:
 
 > The **non-ROS fallback pack** (§4.7) — pre-extracted tables and clips so data reasoning continues
@@ -19,7 +19,7 @@ That is the whole spec. It answers *what do they read* and leaves the harder que
 **Can someone on the fallback path produce a submission that scores?**
 
 A participant whose container never worked cannot run `civ detect`, `civ clip` or `civ report`.
-Against [ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)'s rubric that
+Against [ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)'s rubric that
 is:
 
 | Category | Points | Reachable on tables and clips alone? |
@@ -36,7 +36,7 @@ runs and a valid submission* — has no room for it.
 
 ## The answer map one already wrote down without noticing
 
-[Ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md), in its
+[Ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md), in its
 measurement update:
 
 > **The "send only CLI calls to the organizer's machine" option** stays valuable for full-resolution
@@ -70,7 +70,7 @@ slowly*, which is a materially different day for that person.
   tables, at what rate, for **both** stacks (Autoware and ZED/GNSS share no topics), which pre-cut
   clips, and in what format a non-ROS tool can open.
 - **Buddying up.** Can a broken solo join a working solo as a duo mid-session? Cheapest recovery
-  there is, costs nothing to build, and [ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md)
+  there is, costs nothing to build, and [ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md)
   already ranks solo and duo together. Decide whether it is offered or merely tolerated.
 - **The trigger and the exit. [05](05-warm-up-and-environment-gate.md) has resolved and delivered
   the trigger:** everyone starts the day with the help card **up**, and puts it down when
@@ -95,7 +95,7 @@ busy.
 
 [08](08-room-requirements.md)'s Update 3 made **pairing the stated mitigation for inadequate
 hardware**. It covers a broken container identically, and
-[ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) already ranks solo and
+[ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) already ranks solo and
 duo together — so a paired participant has a **complete** entry, not a degraded one. That is a better
 outcome than the runner produced, at zero build cost.
 
@@ -156,7 +156,7 @@ No queue, no operator, no one to interrupt.
 - **Turnaround is the runtime plus a polling interval.** No human latency, so iteration stays
   possible — which was the thing an operator-based queue would have destroyed.
 - **Reproducible by construction.** The run manifest records exactly what was executed, which is
-  what [ticket 17](../../civ2026-challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
+  what [ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
   noticed and precisely what Reproducibility's 15 points measure. A recovered participant is not
   disadvantaged on that category — arguably the reverse.
 - **Not policed.** It is for people whose gate failed, on the honour system. If someone else uses
@@ -197,7 +197,7 @@ longer only an environment fallback; it covers:
 1. **A broken environment** — the container will not run.
 2. **Underpowered hardware** — it runs, badly, or not at all.
 
-The second has no other mitigation at all: [ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md)
+The second has no other mitigation at all: [ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md)
 accepted BYOD with no spare machines, and "your spec, our runner" helps someone whose container is
 broken, not someone whose laptop is merely slow. **That makes pairing the only answer to a real and
 likely case**, which raises it from a nicety to a named mitigation.
@@ -208,7 +208,7 @@ which pairing is still useful closes fast.
 
 A broken solo may join a working solo as a duo, mid-session. It is the cheapest recovery available,
 costs nothing to build, and
-[ticket 21](../../civ2026-challenge-spec/issues/21-pitch-and-judging-model.md) already ranks solo and
+[ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) already ranks solo and
 duo together so there is no scoring wrinkle. **Say it in the opening briefing**
 ([05](05-warm-up-and-environment-gate.md)), because nobody will propose it themselves at 10:15.
 
@@ -226,7 +226,7 @@ support anyone working away from their own machine:
 - **A handful of pre-cut clips** per stack.
 
 It is no longer load-bearing on its own, which is the substantive change from
-[ticket 04](../../civ2026-challenge-spec/issues/04-target-machine.md)'s framing.
+[ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md)'s framing.
 
 ### The two triggers, and what happens at each
 

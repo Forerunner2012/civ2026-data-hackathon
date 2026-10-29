@@ -13,9 +13,11 @@
 
 Status: **decision for issue #15; enforced by issue #20**
 
-This document fixes the participant-facing contract seam for Phase 2. Issue #20 published the
+The sections below record the original Phase 2 freeze, including its v1-only matrix and completed issue #20 checklist. Current versions and producer/consumer responsibilities live in [participant contracts](../reference/participant-contracts.md#producer-and-consumer-responsibilities).
+
+This document fixed the participant-facing contract seam for Phase 2. Issue #20 published the
 schemas under `schemas/` and moved producers and consumers to the stable identifiers atomically.
-The participant path now emits and accepts only the `v1` contracts below; the candidate `v1alpha1`
+At that freeze, the participant path emitted and accepted only the `v1` contracts below; the candidate `v1alpha1`
 identifiers survive only as rejection cases and in historical Phase 1 records.
 
 ## Decision
@@ -178,6 +180,8 @@ their closed schema and invariants. This concentrates compatibility changes in o
 the public command seam the test surface.
 
 ## Freeze implementation and test inventory
+
+This completed checklist is historical implementation evidence for issue #20.
 
 Issue #20 must update the participant path atomically. No mergeable intermediate state may emit a
 stable artifact beside a candidate participant artifact.
