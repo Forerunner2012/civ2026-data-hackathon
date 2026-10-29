@@ -26,7 +26,7 @@ The only live delivery in the day is a short opening briefing, and that is
 ## Where it is served — decide this first
 
 **It is almost certainly not the public participant page.**
-[Ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md) puts
+[Ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md) puts
 `/participants` in the production build, and `handoff-site` enforces by test that the scenario does
 not appear on it. A page that progressively reveals expectations, hints and **solutions** cannot
 ship in a public pre-event bundle.
@@ -56,7 +56,7 @@ keeping (drafted in
 [`prototypes/01-board-and-narration.md`](../prototypes/01-board-and-narration.md)):
 
 - **Sample versus interval.** A naive threshold fires 41 times; `timing` collapses it to 6. This is
-  [ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md)'s non-negotiable
+  [ticket 09](../../challenge-spec/issues/09-detector-authoring-surface.md)'s non-negotiable
   rung 1, and told rather than shown, most people discover it at 11:30 by scoring badly.
 - **An honest false positive.** The only thing in the whole design that demonstrates §2's *failure
   is a deliverable* claim **before** a participant is asked to produce one.
@@ -88,14 +88,14 @@ authoring with a real lead time. Pick a format a coach can still edit the week b
 - A coach may **advance or hold**. Decide who holds that control, whether it is shared, and whether
   holding is ever right or only advancing is.
 - **Never self-unlocked.** Letting participants open everything destroys
-  [ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)'s arc — the room is
+  [ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)'s arc — the room is
   supposed to *feel how tedious finding events by hand is* before `civ` arrives as the facilitator.
   If everything is open at minute 5, nobody feels it.
 
 ### The scoring consequence, to price rather than discover
 
 Timed solutions compress **Kashiwa's 15 Detection points**.
-[Ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md) calls the Kashiwa
+[Ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md) calls the Kashiwa
 core a warm-up, so some compression is intended, and map one has already licensed the 15/10 split to
 move after the internal evaluator run. **This ticket states the expected compression as an input to
 that tuning**; it does not change the split, which is map one's and the evaluator's.
@@ -140,7 +140,7 @@ The solution names the topics and fields and shows the condition's shape, but wi
 comparison direction** — `yaw_smooth ‹?› ‹THRESH›`. A participant derives the sign from their own
 plot, gets a working Kashiwa detector, and carries a **signed** threshold into a country where
 traffic runs the other way.
-[Ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md) designed precisely
+[Ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) designed precisely
 this outcome: *copy a threshold and you find nothing.*
 
 **So the solution is safe to release because releasing it arms the comprehension test.** Withholding
@@ -200,12 +200,12 @@ without the ladder degenerating into "more detail, then even more detail".
 **Option 1 — the organizer box on the room LAN.** It is already serving
 [06](06-fallback-and-recovery.md)'s runner and [09](09-submission-intake.md)'s intake, it has zero
 leakage risk against
-[ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite, and it
+[ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite, and it
 needs no build gymnastics.
 
 **With a static export on USB**, mandated by [08](08-room-requirements.md), which is the LAN-down
 path and also the artifact that ships publicly after the event under
-[ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
+[ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
 
 ### Release: automatic, advance-only
 
@@ -214,7 +214,7 @@ path and also the artifact that ships publicly after the event under
 - **Any coach may advance. Nobody may hold.** Holding was in the original framing and is dropped —
   it solves no problem and punishes the people who are on time. If the room is behind, advancing
   helps; if ahead, nothing is needed. One direction, one shared control, no way to misuse it.
-- **Never self-unlocked**, per [ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)'s
+- **Never self-unlocked**, per [ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)'s
   arc. If everything is open at minute 5, nobody ever feels why `civ` is worth having.
 
 ### The scoring consequence, stated as an input rather than discovered
@@ -222,9 +222,9 @@ path and also the artifact that ships publicly after the event under
 **Expect Kashiwa Detection to become a near-ceiling category.** Anyone who takes the 11:00 solution
 can produce Kashiwa events in roughly ten minutes, and 90 minutes remain.
 
-That is **intended** — [ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)
+That is **intended** — [ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)
 calls the Kashiwa core a warm-up and
-[ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the difficulty
+[ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) moved the difficulty
 to transfer. Discrimination lives in Reims Detection (10), Evidence (15), Reproducibility (15) and
 the 45 jury points.
 
@@ -386,7 +386,7 @@ the organizer machine and published to the public internet via **Tailscale Funne
 - **Valid TLS** without certificate work.
 - **It works before and after the room.** Participants can reach it from a hotel the night before,
   and afterwards until it is turned off — which suits an artifact that ships publicly anyway under
-  [ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
+  [ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
 
 ### What it costs, and this is the real trade
 
@@ -412,13 +412,13 @@ and Funnel hostnames are not truly obscure: the HTTPS certificate appears in **p
 transparency logs**, so the address is discoverable by anyone scraping them.
 
 This does not endanger anything in a security sense — it is a hackathon's hint text — but it is
-exactly what [ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s
+exactly what [ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s
 leakage suite exists to prevent *before the event*. **The mitigation is timing:**
 
 - **Enable Funnel on the morning of 3 September, not before.** Pre-event exposure is then nil, which
   is the only window that matters.
 - Do not link it from the public participant site, so
-  [ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite is
+  [ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite is
   untouched and `npm test` stays green.
 - Treat the URL as unlisted, not secret, and design nothing that depends on it being private.
 

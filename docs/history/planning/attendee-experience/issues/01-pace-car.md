@@ -25,7 +25,7 @@ changes how the room works.
 > One shared Kashiwa warm-up; coaches intervene on blocked tooling after a short timebox.
 > Visible checkpoints at 30, 60, 90, 135 and 165 minutes; tune them in rehearsal.
 
-Both assume someone notices. With **15–30 independent workstreams** ([ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md))
+Both assume someone notices. With **15–30 independent workstreams** ([ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md))
 and a handful of coaches, a person who is quietly stuck — not blocked on tooling, just going
 slowly down a wrong branch — is invisible. A high skill floor makes this *worse*, not better:
 experienced practitioners do not put their hand up, they keep debugging.
@@ -76,7 +76,7 @@ and the artifact you should be holding by now.
 the tempo — *11 of 22 workstreams have their first Reims event.*
 *For:* the only candidate that also solves **sensing**, and the tempo it broadcasts is real rather
 than planned. *Against:* build work in `civ` that nobody has scoped, needs a room LAN, and it edges
-against local-first (defensible — a LAN is not SaaS, and [ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
+against local-first (defensible — a LAN is not SaaS, and [ticket 17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md)
 already contemplates an organizer machine on the network). Risk of turning tempo into a scoreboard,
 which is a different and more corrosive pressure.
 
@@ -129,7 +129,7 @@ board rendered at four minutes, and two minutes of rabbit narration written out.
 
 The binding constraint on this event is **not skill, and not blockage. It is budget awareness.**
 
-Every participant is an experienced practitioner ([ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md))
+Every participant is an experienced practitioner ([ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md))
 and every one of them can do this work. What they cannot do is do it in 180 minutes without knowing
 the budget. A practitioner who spends 70 minutes perfecting a Kashiwa detector has done excellent
 work and failed the event — and **nothing in the current design tells them 70 is too many.** The
@@ -170,7 +170,7 @@ over 15 points, and showing the Reims remap hands over the comprehension test. B
 is a wasted organizer for three hours.
 
 **So the rabbit targets a different event class entirely.** Hard braking on the warm-up route.
-[Ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md) notes the INBOX
+[Ticket 09](../../challenge-spec/issues/09-detector-authoring-surface.md) notes the INBOX
 example was already hard-braking, so there is precedent and the class is unmistakably distinct.
 
 The rule, stated so a driver can apply it live:
@@ -181,7 +181,7 @@ The rule, stated so a driver can apply it live:
 | Work the published warm-up route and Reims development chunks `_0`–`_4` | Touch a sealed route or chunk |
 | Narrate its own false positives and dead ends | **Discuss handedness** |
 
-**Handedness is the line.** [Ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md)
+**Handedness is the line.** [Ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)
 made the transfer a comprehension test — *the turn that crosses oncoming traffic*, right in Kashiwa,
 left in France — and that is the one thing the rabbit must never illuminate.
 
@@ -199,7 +199,7 @@ where the spoiler risk inverts.
 
 This does mean the rabbit eventually demonstrates *deriving speed from `/fix_velocity` on a stack
 with no vehicle bus* — the topic-archaeology half of the transfer. That is deliberate:
-[ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md) explicitly
+[ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) explicitly
 converts transfer *from a topic remap into a comprehension test*, so the remap is not what is being
 scored. Removing grunt work while leaving the comprehension test intact aims the difficulty at the
 thing worth testing.
@@ -210,7 +210,7 @@ participants and costs nothing else.
 
 ### Telemetry is rejected as tempo
 
-[Ticket 25](../../../docs/history/planning/challenge-spec/issues/25-geofence-agent-track.md)-style instrumentation —
+[Ticket 25](../../challenge-spec/issues/25-geofence-agent-track.md)-style instrumentation —
 `civ` reporting milestones to a room board — is the only candidate that also solves sensing, and it
 is still the wrong answer **here**, for a reason independent of build cost:
 
@@ -221,7 +221,7 @@ statement of **budget**, never of state.
 
 Sensing is a real problem and it is [02](02-help-protocol.md)'s. Deciding it there keeps it built as
 a coach's radar rather than as a live leaderboard —
-[ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) deliberately put the
+[ticket 21](../../challenge-spec/issues/21-pitch-and-judging-model.md) deliberately put the
 leaderboard at 14:30.
 
 ### Minimum viable form and degraded fallback
@@ -356,14 +356,14 @@ The rule this ticket sets, for [17](17-attendee-page.md) to implement:
 - **A stage's solution unlocks only once that stage's points are effectively settled.** Kashiwa's
   unlocks at the transfer boundary. It does not rescue a Kashiwa score; it unblocks the Reims
   attempt, which is where the difficulty was deliberately moved
-  ([ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
+  ([ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)).
 - **Solutions are reconstructable, not copy-pasteable.** The approach, the signals, the shape of the
   timing block — not a runnable spec. Preserves a gradient and keeps assembly as real work.
 - **Handedness is never solved.** Unchanged, and it is now the only thing in the day that is
   genuinely unaided.
 
 **Consequence to hand over, not to swallow:** this compresses Kashiwa's 15 Detection points.
-[Ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md) already calls the
+[Ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md) already calls the
 Kashiwa core a warm-up so some compression is intended, and map one has already licensed the 15/10
 split to move after the internal evaluator run — **so this is an input to that tuning.** Say so when
 handing over; do not let it be discovered.

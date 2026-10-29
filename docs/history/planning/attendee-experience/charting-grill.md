@@ -15,7 +15,7 @@
 > Correct anything here by editing the map and the affected tickets. Nothing below is a decision
 > of record; the tickets are.
 
-Charting session: 2026-07-30. Map: [`map.md`](../../../../.scratch/civ2026-attendee-experience/map.md). Predecessor: the CIV 2026 challenge spec
+Charting session: 2026-07-30. Map: [`map.md`](map.md). Predecessor: the CIV 2026 challenge spec
 map, 25 tickets, all resolved.
 
 ---
@@ -119,8 +119,8 @@ becomes self-diagnosed rather than coach-diagnosed, and *that* is what scales to
 Coaching then becomes demand-driven — the exception handler you predicted — but only if there is a
 socially cheap way to raise a hand.
 
-**Recommendation: two tickets.** [01 The pace car](../../../../.scratch/civ2026-attendee-experience/issues/01-pace-car.md) decides the broadcast
-tempo. [02 The help protocol](../../../../.scratch/civ2026-attendee-experience/issues/02-help-protocol.md) decides how a stuck workstream surfaces
+**Recommendation: two tickets.** [01 The pace car](issues/01-pace-car.md) decides the broadcast
+tempo. [02 The help protocol](issues/02-help-protocol.md) decides how a stuck workstream surfaces
 itself, how coaches triage, and what §4.7 becomes. 01 blocks 02, because what a coach is
 *responding to* depends on what the room is broadcasting.
 
@@ -184,7 +184,7 @@ Flag: this is the one place where the recommendation touches a map-one decision'
 "judge it under the existing bonus"). It does not overturn it — the bonus route survives — but it
 does say the taught version is not the scored version. Worth your eye.
 
-> **AFK — provisional. Answered: ticket it as [04](../../../../.scratch/civ2026-attendee-experience/issues/04-extension-placement.md), lunch clinic
+> **AFK — provisional. Answered: ticket it as [04](issues/04-extension-placement.md), lunch clinic
 > as the leading candidate, and make the scoring collision explicit in the ticket body.**
 
 ---
@@ -201,7 +201,7 @@ BYOD risk and noted the failure "lands in the first thirty minutes". **So make t
 environment gate.** Find the broken laptops at minute 10, not minute 90 — and that also gives
 ticket 06 a concrete trigger for the fallback path instead of a vibe.
 
-**Recommendation:** one ticket, [05](../../../../.scratch/civ2026-attendee-experience/issues/05-warm-up-and-environment-gate.md), which decides the
+**Recommendation:** one ticket, [05](issues/05-warm-up-and-environment-gate.md), which decides the
 warm-up's shape *and* whether it doubles as the gate. It does not block on 01, because the warm-up
 is where the pace car launches rather than something the pace car shapes.
 
@@ -228,7 +228,7 @@ mitigation. Buddying-up into a duo is the social fallback. This turns ticket 04'
 from "you learn but you cannot compete" into "you compete more slowly", which is a materially
 different day for that person.
 
-> **AFK — provisional. Answered: ticket [06](../../../../.scratch/civ2026-attendee-experience/issues/06-fallback-and-recovery.md), blocked by 05,
+> **AFK — provisional. Answered: ticket [06](issues/06-fallback-and-recovery.md), blocked by 05,
 > and it must decide the scoring path, not just the pack contents.**
 
 ---
@@ -249,7 +249,7 @@ the bytes do not carry the framing.
 Most participants will be **travelling to Miyazaki** in the days before, which argues hard for
 async-first over a live session.
 
-**Recommendation:** one ticket, [07](../../../../.scratch/civ2026-attendee-experience/issues/07-pre-event-readiness-and-reveal.md), covering the
+**Recommendation:** one ticket, [07](issues/07-pre-event-readiness-and-reveal.md), covering the
 readiness mechanism, the readiness *token* (`civ doctor` output as the artifact), and the
 hold-versus-reveal boundary.
 
@@ -267,7 +267,7 @@ what the venue must provide and what the design becomes if it does not.
 Nobody has designed the room's physical affordances at all: screens, power for 30 laptops, a room
 LAN, seating that lets coaches circulate, and where the organizer runner machine sits.
 
-**Recommendation:** ticket [08](../../../../.scratch/civ2026-attendee-experience/issues/08-room-requirements.md), blocked by 01, 02, 06, 09.
+**Recommendation:** ticket [08](issues/08-room-requirements.md), blocked by 01, 02, 06, 09.
 
 > **AFK — provisional. Answered: yes, ticket it, blocked downstream.**
 
@@ -283,7 +283,7 @@ This is not cosmetic at this cohort size. It decides: the language of the brief 
 whether checkpoints are called bilingually, whether coach coverage must include a Japanese speaker,
 what language `report.md` may be written in — and therefore what the jury must be able to read.
 
-**Recommendation:** ticket [15](../../../../.scratch/civ2026-attendee-experience/issues/15-language-of-the-room.md), on the frontier, unblocked. It
+**Recommendation:** ticket [15](issues/15-language-of-the-room.md), on the frontier, unblocked. It
 is small, it is cheap to settle, and it blocks the materials inventory.
 
 > **AFK — provisional. Answered: yes, new ticket, and flag it to you as a genuine gap rather than
@@ -295,11 +295,11 @@ is small, it is cheap to settle, and it blocks the materials inventory.
 
 Three distinct questions, one blocking chain:
 
-- **Jury** ([10](../../../../.scratch/civ2026-attendee-experience/issues/10-jury-composition.md)) — how many, who, whether a coach may judge someone
+- **Jury** ([10](issues/10-jury-composition.md)) — how many, who, whether a coach may judge someone
   they coached, and the reading protocol that gets 45 + 20 points across 15–30 reports in two
   hours. Frontier.
-- **Prizes and recognition** ([11](../../../../.scratch/civ2026-attendee-experience/issues/11-prizes-and-recognition.md)) — blocked by 10.
-- **The results block minute by minute** ([12](../../../../.scratch/civ2026-attendee-experience/issues/12-results-block.md)) — blocked by 10 and 04.
+- **Prizes and recognition** ([11](issues/11-prizes-and-recognition.md)) — blocked by 10.
+- **The results block minute by minute** ([12](issues/12-results-block.md)) — blocked by 10 and 04.
   The hard part is not the reveal; it is that four walkthrough participants get ~15 minutes' notice.
   Leading candidate: the organizer drives the screen from the *submitted artifacts* and interviews
   the participant, so prep burden is zero.
@@ -310,10 +310,10 @@ Three distinct questions, one blocking chain:
 
 ### Q14. What is left, and what stays fog?
 
-Ticketed: [03 cadence](../../../../.scratch/civ2026-attendee-experience/issues/03-cadence.md) (blocked by 01, 04, 05), [09 submission
-intake](../../../../.scratch/civ2026-attendee-experience/issues/09-submission-intake.md) (frontier), [13 coach guide and checkpoint
-prompts](../../../../.scratch/civ2026-attendee-experience/issues/13-coach-guide-and-checkpoints.md) (blocked by 02, 03), [14 participant materials
-inventory](../../../../.scratch/civ2026-attendee-experience/issues/14-participant-materials.md) (blocked by 03, 05, 07, 15).
+Ticketed: [03 cadence](issues/03-cadence.md) (blocked by 01, 04, 05), [09 submission
+intake](issues/09-submission-intake.md) (frontier), [13 coach guide and checkpoint
+prompts](issues/13-coach-guide-and-checkpoints.md) (blocked by 02, 03), [14 participant materials
+inventory](issues/14-participant-materials.md) (blocked by 03, 05, 07, 15).
 
 Left as fog, because I cannot phrase them sharply until the frontier advances:
 

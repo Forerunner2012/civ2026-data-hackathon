@@ -180,7 +180,7 @@ This is the finding that surprised me, and it inverts the worry the ticket was w
 The solution deliberately withholds **the comparison direction** — `yaw_smooth ‹?› ‹THRESH›`. A
 participant derives it from their own plot, gets a working Kashiwa detector, and carries a signed
 threshold into a country where traffic runs the other way.
-[Ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md) designed exactly
+[Ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md) designed exactly
 this: *copy a threshold and you find nothing.*
 
 So the solution is safe to hand over at 11:00 **because** handing it over arms the comprehension

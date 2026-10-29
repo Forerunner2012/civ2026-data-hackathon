@@ -25,7 +25,7 @@ and **who owns it** — the specification, not the prose. Writing them is Phase 
 
 | Artifact | The open question |
 |---|---|
-| **The brief** | §4.3 has a paragraph. Does it survive contact with a room of 30 practitioners at 09:30, and what else is handed over with it — rubric, deadline, report template, the *what the runner executes* line from [ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md)? |
+| **The brief** | §4.3 has a paragraph. Does it survive contact with a room of 30 practitioners at 09:30, and what else is handed over with it — rubric, deadline, report template, the *what the runner executes* line from [ticket 09](../../challenge-spec/issues/09-detector-authoring-surface.md)? |
 | **The cheat sheet** | One page a participant keeps open all day. What is on it: the CLI surface, the EventSpec skeleton, or the two topic inventories? It cannot be all three |
 | **The report template** | Five fixed headings, one page, hard cap. Is the cap words, characters or a rendered page — and is it enforced at intake ([09](09-submission-intake.md)) or trusted? |
 | **Viewer layouts** | Two, sharing no topics. What must each show on open, and does the participant get them pre-loaded or build their own? |
@@ -36,15 +36,15 @@ and **who owns it** — the specification, not the prose. Writing them is Phase 
 
 ## Constraints every entry inherits
 
-- **The leakage rule.** [Ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)
+- **The leakage rule.** [Ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)
   keeps the scenario off the participant site and `handoff-site` enforces it by test. Each artifact
   must be marked **public-early**, **public-on-the-day**, or **organizer-only**, and anything touching
   the site must keep `npm test` green.
-- **The vocabulary ban** ([ticket 07](../../../docs/history/planning/challenge-spec/issues/07-clean-room-boundary.md)):
+- **The vocabulary ban** ([ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md)):
   never System, Datasource, Signal, Trigger, Recording. Always bag, topic, field, EventSpec,
   detector, event, clip, manifest.
 - **Language** ([15](15-language-of-the-room.md)) — which artifacts are bilingual and which are not.
-- **Everything is public and CC BY 4.0** ([ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)),
+- **Everything is public and CC BY 4.0** ([ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)),
   so these are also the artifacts a stranger downloads six months later with no room around them.
   Decide which ones must stand alone and which may assume the day.
 
@@ -100,7 +100,7 @@ produces them anyway) · the report template · the submission structure · the 
 **Plus the static export**, carried on [07](07-pre-event-readiness-and-reveal.md)'s SSDs. It is the
 **internet-down** path — since [17](17-attendee-page.md) put the page on Tailscale Funnel, that is
 the failure that costs it — *and* the artifact that ships publicly afterwards under
-[ticket 20](../../../docs/history/planning/challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
+[ticket 20](../../challenge-spec/issues/20-cohort-skill-floor-licensing.md)'s CC BY.
 
 ### What the brief must contain
 
@@ -117,7 +117,7 @@ them were decided across this map and exist nowhere else a participant would loo
    arbitrating** ([10](10-jury-composition.md)). Non-negotiable for legitimacy.
 6. **Awards, the tie-break, and that winning entries are published** — a consent question
    ([11](11-prizes-and-recognition.md)), not a surprise to spring afterwards.
-7. The line from [ticket 09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md):
+7. The line from [ticket 09](../../challenge-spec/issues/09-detector-authoring-surface.md):
    the constraint is **what the runner executes for the scored submission**, not what you may write.
 8. Everyone gets written feedback at 15:00 ([12](12-results-block.md)).
 
@@ -149,9 +149,9 @@ them were decided across this map and exist nowhere else a participant would loo
 
 Every public-early artifact inherits [07](07-pre-event-readiness-and-reveal.md)'s naming rule: **"the
 Kashiwa recordings", never the acronym**, because *URT* expands to the scenario and
-[ticket 22](../../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite tests the
+[ticket 22](../../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md)'s suite tests the
 built bundle. All artifacts are **English only** ([15](15-language-of-the-room.md)) and inherit the
-vocabulary ban ([ticket 07](../../../docs/history/planning/challenge-spec/issues/07-clean-room-boundary.md)).
+vocabulary ban ([ticket 07](../../challenge-spec/issues/07-clean-room-boundary.md)).
 
 ### Standing alone after the event
 

@@ -6,8 +6,8 @@ Status: resolved
 ## Question
 
 Map one left this in the fog, blocked on knowing what a detector looks like and what data a team
-holds. Both are now closed ([09](../../../docs/history/planning/challenge-spec/issues/09-detector-authoring-surface.md),
-[17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md)), so the warm-up
+holds. Both are now closed ([09](../../challenge-spec/issues/09-detector-authoring-surface.md),
+[17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md)), so the warm-up
 is specifiable.
 
 Three things now, because [01](01-pace-car.md)'s update 2 made the opening briefing **the only live
@@ -26,7 +26,7 @@ below.
 
 ### Part 1 — the shape of the opening
 
-[Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) fixed the arc and it
+[Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) fixed the arc and it
 is not negotiable:
 
 > Manual analysis first, so the room feels how tedious finding events by hand is; then `civ` is
@@ -34,7 +34,7 @@ is not negotiable:
 > structurally different datasets.
 
 So the first block is **not** "run the tool". It is "find turns by hand in PlotJuggler on the fully
-published warm-up route" ([ticket 17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md):
+published warm-up route" ([ticket 17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md):
 1 warm-up route, fully labelled). Open:
 
 - **Collective or individual?** Led from the front in lockstep, or thirty people working alone with
@@ -54,7 +54,7 @@ published warm-up route" ([ticket 17](../../../docs/history/planning/challenge-s
 
 ### Part 2 — the environment gate
 
-[Ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) accepted the BYOD risk with
+[Ticket 04](../../challenge-spec/issues/04-target-machine.md) accepted the BYOD risk with
 its eyes open:
 
 > with no pool of preloaded recovery laptops, a team whose WSL2 or Docker Desktop setup fails has no
@@ -106,7 +106,7 @@ output is not tedium: it is disagreement.**
 
 ### The finding: the lesson is that experts do not agree
 
-[Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) asks the room to
+[Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md) asks the room to
 *feel how tedious finding events by hand is*. Taken literally that produces a weak exercise — a room
 of practitioners registers "this is tedious" in about ninety seconds, and the remaining minutes are
 theatre they will find patronising.
@@ -116,9 +116,9 @@ four-minute window and produce different intervals: different starts, different 
 counts a hesitation as two turns. Nobody is wrong.
 
 That disagreement is the setup for everything downstream — why labels are **intervals** and not
-timestamps ([ticket 18](../../civ2026-challenge-spec/issues/18-urt-operational-definition.md)), why
+timestamps ([ticket 18](../../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)), why
 matching needs a **tolerance** and why it is temporal IoU ≥ 0.5
-([ticket 16](../../../docs/history/planning/challenge-spec/issues/16-evaluator-calibration.md)), why `merge_gap` has
+([ticket 16](../../challenge-spec/issues/16-evaluator-calibration.md)), why `merge_gap` has
 teeth, and why there is a sealed label set at all. All of that is otherwise abstract at 09:40 and
 expensive to explain later.
 

@@ -53,9 +53,9 @@ transfer-boundary board, which is the hardest.
 
 ### The three structural risks in the baseline
 
-1. **The 00:00–00:30 Observe block is manual by design.** [Ticket 14](../../civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)
+1. **The 00:00–00:30 Observe block is manual by design.** [Ticket 14](../../../../../.scratch/civ2026-challenge-spec/issues/14-bespoke-collection-scope.md)
    wants the room to *feel how tedious finding events by hand is*. That is deliberate friction in the
-   window where [ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) says
+   window where [ticket 04](../../challenge-spec/issues/04-target-machine.md) says
    environment failure lands. Two forms of pain in the same thirty minutes, and only one of them is
    pedagogical. [Ticket 05](05-warm-up-and-environment-gate.md) resolves the shape; this ticket
    resolves how many minutes it gets.
@@ -148,7 +148,7 @@ heading is written **at the beat where its content is freshest**:
 | Heading | Written at | Why there |
 |---|---|---|
 | 1. Question and hypothesis · 2. Signals used, missing, unreliable | **B3, 10:40** | Both are settled by the end of Formalize and get vaguer every minute after |
-| 3. What transferred and what did not · 4. One failure and what you changed | **B6, 11:45** | Immediately after the transfer. Heading 3 is the one [ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) added to make the transfer insight scoreable, and it is unrecoverable an hour later |
+| 3. What transferred and what did not · 4. One failure and what you changed | **B6, 11:45** | Immediately after the transfer. Heading 3 is the one [ticket 21](../../challenge-spec/issues/21-pitch-and-judging-model.md) added to make the transfer insight scoreable, and it is unrecoverable an hour later |
 | 5. Downstream action and deployment mode | **B7, 12:10** | Reflective; it is the only one that genuinely belongs at the end |
 
 Three prompts of about five minutes each, plus the final fifteen. **A 30-minute report budget instead

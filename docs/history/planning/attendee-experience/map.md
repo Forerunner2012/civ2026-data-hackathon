@@ -1,5 +1,7 @@
 # Map: CIV 2026 attendee experience
 
+> Historical planning. Follow the [archive index](../README.md) for current guides and record boundaries.
+
 Label: `wayfinder:map`
 
 ## Destination
@@ -27,14 +29,14 @@ to the 15:00 wrap, without inventing anything on the day. The map produces **dec
 > Most of this map was worked **AFK** and self-answered against recommendations. The exceptions,
 > which are Matt's: [01](issues/01-pace-car.md)'s two updates, and the composition in
 > [10](issues/10-jury-composition.md) and [15](issues/15-language-of-the-room.md). See
-> [`charting-grill.md`](../../docs/history/planning/attendee-experience/charting-grill.md) for what was decided on his behalf during charting and
+> [`charting-grill.md`](charting-grill.md) for what was decided on his behalf during charting and
 > which calls are worth overturning first.
 
 ## Notes
 
 - **Domain:** the lived experience of a three-hour ROS 2 data-investigation hackathon — the room,
   the tempo, the support, the afternoon. The challenge itself is settled elsewhere.
-- **Map one is input, not material.** The [CIV 2026 challenge spec map](../../docs/history/planning/challenge-spec/map.md)
+- **Map one is input, not material.** The [CIV 2026 challenge spec map](../challenge-spec/map.md)
   and its 25 resolved tickets are the decision authority. A ticket here may depend on them and may
   discover consequences of them; it may **not** reopen them. If a ticket concludes a map-one
   decision is wrong, it says so and stops — that is a fresh effort, not a step on this route.
@@ -51,9 +53,9 @@ to the 15:00 wrap, without inventing anything on the day. The map produces **dec
 - **Do not reintroduce schedule pressure.** Programme times are design inputs, not a countdown.
   Decide what the day *should* be.
 - **Vocabulary.** Never System, Datasource, Signal, Trigger, Recording. Always bag, topic, field,
-  EventSpec, detector, event, clip, manifest. ([ticket 07](../../docs/history/planning/challenge-spec/issues/07-clean-room-boundary.md))
+  EventSpec, detector, event, clip, manifest. ([ticket 07](../challenge-spec/issues/07-clean-room-boundary.md))
 - **The scenario must not appear on the participant page.** `handoff-site` has a leakage test
-  suite; if you touch the site, `npm test` must pass. ([ticket 22](../civ2026-challenge-spec/issues/22-public-site-organizer-gate.md))
+  suite; if you touch the site, `npm test` must pass. ([ticket 22](../../../../.scratch/civ2026-challenge-spec/issues/22-public-site-organizer-gate.md))
 - **`D:\Bags`, `D:\heex`, `C:\Program Files\MCAP`** in map-one tickets 17 and 24 are *provenance
   from another machine*, not dependencies. This map needs no bag data.
 - As decisions close, update **§4.2 and §4.7** of `HACKATHON-HANDOFF.md` so the handoff and the map
@@ -217,7 +219,7 @@ Design inputs, all settled upstream. Listed once so no ticket re-derives them.
   the comparison **direction** are not (judgement). **The finding: releasing the Kashiwa solution
   arms the transfer test rather than undermining it** — a participant derives the sign from their own
   plot and carries a *signed* threshold into a country where traffic runs the other way, which is
-  exactly what [ticket 18](../civ2026-challenge-spec/issues/18-urt-operational-definition.md)
+  exactly what [ticket 18](../../../../.scratch/civ2026-challenge-spec/issues/18-urt-operational-definition.md)
   designed. **The format is the enforcement**: if the YAML is complete, the rule has been broken, and
   that is visible at a glance. Text not video, because a participant at 11:20 is skimming. Escalation
   differs in kind — hint says *where to look*, tip says *a technique or hazard*, solution says *the

@@ -44,7 +44,7 @@ statement of what the venue must provide, plus the **degraded design** for each 
 - **The results room** at 14:30 — [12](12-results-block.md) needs a screen and, if walkthroughs are
   interview-style, a way to put a participant's submitted artifacts on it.
 - **Physical consumables**: help tokens, pace cards, printed briefs, USB fallback media
-  ([17](../../../docs/history/planning/challenge-spec/issues/17-dataset-subsetting-and-distribution.md) keeps USB as
+  ([17](../../challenge-spec/issues/17-dataset-subsetting-and-distribution.md) keeps USB as
   the data fallback), and who carries them to Japan.
 
 ## The output that matters
@@ -197,10 +197,10 @@ the one thing the shared screen does that thirty individual laptops do not.
 ### The residual risk is hardware, and duos are the mitigation
 
 *Participants have appropriate material* is an assumption, not a guarantee, and
-[ticket 04](../../../docs/history/planning/challenge-spec/issues/04-target-machine.md) accepted BYOD with no spare
+[ticket 04](../../challenge-spec/issues/04-target-machine.md) accepted BYOD with no spare
 machines. **Someone arriving with an underpowered laptop pairs into a duo** — the organizer's stated
 mitigation, and it costs nothing:
-[ticket 21](../../../docs/history/planning/challenge-spec/issues/21-pitch-and-judging-model.md) already ranks solo and
+[ticket 21](../../challenge-spec/issues/21-pitch-and-judging-model.md) already ranks solo and
 duo together, so there is no scoring wrinkle.
 
 This makes [06](06-fallback-and-recovery.md)'s buddying-up carry **two** failure modes rather than
