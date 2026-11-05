@@ -156,6 +156,36 @@ def test_inventory_checksum_manifest_covers_products_manifests_and_tracked_asset
         assert f"{product['manifest_sha256']}  {product['manifest']}" in lines
     for asset in document["tracked_assets"]:
         assert f"{asset['sha256']}  {asset['path']}" in lines
+    notice_targets = {
+        "THIRD-PARTY-NOTICES.md",
+        "LICENSES/OpenAI-Sites-2023-MIT.txt",
+        "LICENSES/ROS-Apache-2.0.txt",
+        "LICENSES/CIV-MIT.txt",
+        "LICENSES/MCAP-MIT.txt",
+        "site/LICENSES/Geist-OFL-1.1.txt",
+        "viewer/NOTICES.md",
+        "viewer/LICENSES/Lichtblick-MPL-2.0.txt",
+        "viewer/LICENSES/PlotJuggler-MPL-2.0.txt",
+        "container/NOTICES.md",
+    }
+    assert {
+        asset["path"]
+        for asset in document["tracked_assets"]
+        if asset["path"] in notice_targets and asset["role"] == "attribution"
+    } == notice_targets
+    guide_targets = {asset["path"] for asset in document["tracked_assets"]}
+    assert {
+        "docs/setup.md",
+        "docs/runtime-requirements.md",
+        "docs/extension.md",
+        "docs/submission-fields.md",
+    } <= guide_targets
+    submission_guide = next(
+        asset
+        for asset in document["tracked_assets"]
+        if asset["path"] == "docs/submission-fields.md"
+    )
+    assert submission_guide["role"] == "participant-instructions"
     template_targets = {
         asset["path"]
         for asset in document["tracked_assets"]
@@ -169,6 +199,17 @@ def test_inventory_checksum_manifest_covers_products_manifests_and_tracked_asset
         "templates/submission/reproduce.ps1",
         "templates/submission/reproduce.sh",
     }
+
+
+def test_inventory_requires_notice_assets_before_assembly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        inventory_module, "TRACKED_ASSETS", (("attribution", "LICENSES/MCAP-MIT.txt"),)
+    )
+    monkeypatch.setattr(inventory_module, "TRACKED_ASSET_SOURCES", {})
+    with pytest.raises(CivError, match="tracked kit asset does not exist: LICENSES/MCAP-MIT.txt"):
+        inventory_module._tracked_assets(tmp_path)
 
 
 def test_inventory_rejects_context_without_separate_human_approval(

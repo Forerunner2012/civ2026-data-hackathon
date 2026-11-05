@@ -4,13 +4,24 @@ This workspace is deliberately incomplete. It supplies the stable shape, not a d
 
 1. Replace every `CIV_TEMPLATE_REPLACE_ME` prompt in `detector/detector.yaml`, `report.md`, and
    `figure.svg` with your own participant-safe work.
-2. Run your selected `reproduce.ps1 DATASET` or `./reproduce.sh DATASET` entry point. It invokes
-   `civ detect` and rebuilds the normalized `events.jsonl` and `run-manifest.json` in this directory.
-3. Run `civ clip events.jsonl DATASET`, then the supplied development `civ score` path. These update
-   the manifest and create `metrics.json`; evidence clips remain under `evidence/` on your machine.
-4. Complete the five fixed report headings and replace the single figure placeholder.
-5. Run `civ report .`. Submit only the unchanged `submission.zip`, the printed SHA-256, and the same
-   participant or team identity you used for earlier submissions.
+2. Complete the five fixed report headings and replace the single figure placeholder.
+3. Run `sh reproduce.sh DATASET PRACTICE_LABELS.json NEW_OUTPUT`, or
+   `./reproduce.ps1 DATASET PRACTICE_LABELS.json NEW_OUTPUT`, using exact matching practice inputs.
+   Use `-` instead of the practice pack when no matching truth is supplied. The script runs
+   `civ detect`, `civ clip`, `civ score` and `civ report`, stopping on failure. It copies completed
+   authored artifacts and declared extensions into a new output, then rebuilds events, clips,
+   metrics, the run manifest and ZIP. An explicit output must not exist. Omitting NEW_OUTPUT
+   regenerates this workspace instead. Evidence clips remain local.
+4. Compare events, metrics and clip hashes with your original run. Record exact input/resource
+   identities, environment versions, the command and any material differences in your report.
+   Valid extension declarations are preserved by detection. Finish optional payload declarations
+   before this check. Packaging success alone is not proof of reproducibility.
+5. Keep the validated `submission.zip` and printed SHA-256 unchanged until organizers confirm
+   a collection route. Use the same participant or team identity for any replacement delivery.
+
+A replacement script must include a direct
+`civ detect` or `uv run civ detect` line; PowerShell may prefix it with `&`. Static validation
+does not recognize wrappers or command variables and does not execute your script.
 
 `events.jsonl` is runner output, not a hand-edited label file. Each line is a normalized
 `civ.event/v1` interval in nanoseconds with source and spec hashes. Events are sorted

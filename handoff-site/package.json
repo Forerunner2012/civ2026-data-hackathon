@@ -10,8 +10,10 @@
     "build": "node scripts/build-audience.mjs public",
     "export:static": "node scripts/export-public-static.mjs tmp/participant-static",
     "start": "vinext start",
-    "test": "node scripts/test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern tmp"
+    "test": "npm run test:live-polling && node scripts/test.mjs",
+    "test:live-polling": "node --test tests/live-polling.test.mjs",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern tmp",
+    "test:navigation": "node scripts/check-participant-navigation.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -29,6 +31,7 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
+    "jsdom": "26.1.0",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",

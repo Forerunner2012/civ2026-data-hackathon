@@ -8,14 +8,16 @@ import sys
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from hashlib import sha256
-from pathlib import Path, PurePosixPath
-from typing import Any
+from pathlib import Path
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
+from civ_workshop.artifacts import require_string as _string
 from civ_workshop.camera_context import SET_CONTRACT as CAMERA_CONTEXT_SET_CONTRACT
 from civ_workshop.contracts import require_closed_fields
 from civ_workshop.data_products import audit_participant_set
 from civ_workshop.errors import CivError
+from civ_workshop.submission_extension import safe_archive_path
 
 CONTRACT = "civ.participant-kit-inventory/v1"
 PHASE4_RELEASE = "civ-2026-phase4-participant-kit-v1"
@@ -52,7 +54,21 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("participant-instructions", "README.md"),
     ("viewer-instructions", "viewer/README.md"),
     ("attribution", "ATTRIBUTION.md"),
+    ("attribution", "THIRD-PARTY-NOTICES.md"),
+    ("attribution", "LICENSES/OpenAI-Sites-2023-MIT.txt"),
+    ("attribution", "LICENSES/ROS-Apache-2.0.txt"),
+    ("attribution", "LICENSES/CIV-MIT.txt"),
+    ("attribution", "LICENSES/MCAP-MIT.txt"),
+    ("attribution", "site/LICENSES/Geist-OFL-1.1.txt"),
+    ("attribution", "viewer/NOTICES.md"),
+    ("attribution", "viewer/LICENSES/Lichtblick-MPL-2.0.txt"),
+    ("attribution", "viewer/LICENSES/PlotJuggler-MPL-2.0.txt"),
+    ("attribution", "container/NOTICES.md"),
     ("quickstart", "docs/quickstart.md"),
+    ("participant-instructions", "docs/setup.md"),
+    ("participant-instructions", "docs/runtime-requirements.md"),
+    ("participant-instructions", "docs/extension.md"),
+    ("participant-instructions", "docs/submission-fields.md"),
     ("layout", "layouts/kashiwa-right-turn.pj4.xml"),
     ("layout", "layouts/lichtblick-kashiwa-right-turn.json"),
     ("layout", "layouts/lichtblick-reims-left-turn.json"),
@@ -67,6 +83,7 @@ TRACKED_ASSETS: tuple[tuple[str, str], ...] = (
     ("schema", "schemas/civ.run-manifest.v1.schema.json"),
     ("schema", "schemas/civ.run-manifest.v2.schema.json"),
     ("schema", "schemas/civ.metrics.v1.schema.json"),
+    ("schema", "schemas/civ.metrics.v2.schema.json"),
     ("schema", "schemas/civ.submission-bundle.v1.schema.json"),
     ("schema", "schemas/civ.submission-bundle.v2.schema.json"),
     ("schema", "schemas/civ.submission-extension.v1.schema.json"),
@@ -104,6 +121,12 @@ TRACKED_ASSET_SOURCES.update(
         "README.md": "kit/README.md",
         "viewer/README.md": "kit/viewer/README.md",
         "ATTRIBUTION.md": "kit/ATTRIBUTION.md",
+        "THIRD-PARTY-NOTICES.md": "kit/THIRD-PARTY-NOTICES.md",
+        "site/LICENSES/Geist-OFL-1.1.txt": "kit/site/LICENSES/Geist-OFL-1.1.txt",
+        "viewer/NOTICES.md": "kit/viewer/NOTICES.md",
+        "viewer/LICENSES/Lichtblick-MPL-2.0.txt": ("kit/viewer/LICENSES/Lichtblick-MPL-2.0.txt"),
+        "viewer/LICENSES/PlotJuggler-MPL-2.0.txt": ("kit/viewer/LICENSES/PlotJuggler-MPL-2.0.txt"),
+        "container/NOTICES.md": "kit/container/NOTICES.md",
     }
 )
 
@@ -136,18 +159,6 @@ VIEWER_ASSETS: dict[str, dict[str, object]] = {
 }
 
 
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
-def _string(value: object, context: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise CivError(f"{context} must be a non-empty string")
-    return value.strip()
-
-
 def _sha256(value: object, context: str) -> str:
     digest = _string(value, context)
     if SHA256_PATTERN.fullmatch(digest) is None:
@@ -162,9 +173,7 @@ def _positive_integer(value: object, context: str) -> int:
 
 
 def _target(path: str) -> str:
-    candidate = PurePosixPath(path)
-    if candidate.is_absolute() or ".." in candidate.parts or str(candidate) != path:
-        raise CivError(f"kit target must be a normalized relative path: {path}")
+    safe_archive_path(path, 'kit target')
     return path
 
 

@@ -10,6 +10,15 @@
 export const brief =
   "A fleet recorded several passages through a shared environment. A risky or operationally significant behaviour was reported, but the report is incomplete. You must locate relevant occurrences, encode a reusable detector, transfer the reasoning to a structurally different recording, extract compact evidence, evaluate its limitations, and recommend what should happen next.";
 
+export const participantOpening =
+  "Investigate an incomplete report of vehicle behaviour. Inspect the recordings, write an EventSpec, and test your reasoning on a different recording. Check the evidence, explain one failure, and recommend a next action.";
+
+export const participantIntroduction =
+  `${participantOpening} Start with the participant page and kit README, then follow the kit's docs/quickstart.md. Build a reproducible metadata-only bundle. Recordings and evidence clips stay local.`;
+
+export const datasetAttributionUrl =
+  "https://github.com/Forerunner2012/civ2026-data-hackathon/blob/main/kit/ATTRIBUTION.md";
+
 /**
  * The three-hour run of show. A rehearsal baseline, not a countdown: the order
  * and the 12:30 deadline are fixed, the minutes may move.
@@ -19,7 +28,7 @@ export const journey: { time: string; title: string; doing: string; produces: st
     time: "09:30",
     title: "Briefing",
     doing: "Five minutes on where everything is and what to do if you get lost.",
-    produces: "Nothing to build yet. Start your container while you listen.",
+    produces: "Nothing to build yet. Open your supplied kit while you listen.",
   },
   {
     time: "09:35",
@@ -48,7 +57,7 @@ export const journey: { time: string; title: string; doing: string; produces: st
   {
     time: "10:40",
     title: "Scale",
-    doing: "Batch the detector across routes and inspect one failure you can name.",
+    doing: "Run your EventSpec across recordings and inspect one failure you can name.",
     produces: "Events, metrics, one reasoned iteration — and report headings 1 and 2, written now.",
   },
   {
@@ -65,22 +74,21 @@ export const journey: { time: string; title: string; doing: string; produces: st
   },
   {
     time: "12:10",
-    title: "Submit",
-    doing: "Rerun reproduction, finish the one-page report, hand in.",
-    produces: "An accepted submission — and you may keep improving it until 12:30.",
+    title: "Package",
+    doing: "Rerun reproduction, finish the one-page report, build and validate the metadata-only ZIP, then keep it and its SHA-256 locally.",
+    produces: "A validated metadata-only ZIP and its SHA-256, with recordings and evidence kept locally through 12:30.",
   },
 ];
 
 /**
- * The page is the room's tempo. It says what you should be holding by now and,
- * more usefully, what to do if you are not.
+ * The static participant page points readers to the separate live session page.
  */
 export const theDayPage = [
-  "A page you keep open all session. It moves on a schedule; you do not have to watch it.",
-  "At each step it states what you should have by now — and what to do if you do not.",
-  "Hints and tips unlock as the session goes. Waiting for one is legitimate, not a confession.",
+  "This participant page and its kit copy are static guides. Use the separate live page supplied for your session.",
+  "The live page states what you should have at each step and what to do if you do not.",
+  "Hints and tips unlock on the live page as the session goes. Waiting for a public hint is allowed.",
   "A coach can release the next hints early for the whole room, so help is never private.",
-  "Worked solutions are published after the event, not during it.",
+  "Worked solutions require a separate approved release after the session.",
 ];
 
 export const youOwn = [
@@ -102,15 +110,16 @@ export const youReceive = [
   "Clip extraction and standardized output",
   "Pre-loaded PlotJuggler and Lichtblick layouts for both recordings, and an offline bundle",
   "Practice data, a reference detector and a submission template",
-  "The answer key for two or three events, so you can see where an occurrence starts and ends",
-  "A page that tells you what you should have by now, and what to do if you do not",
-  "SSDs in the room carrying the container image and both recordings, if your download failed",
+  "Complete reviewed practice labels for the exact source announced in your session, when supplied",
+  "These labels may be shared in the same space as participant kits at a time chosen for your session",
+  "Static kit guidance and a separately supplied live page for session progress",
+  "Setup and recovery instructions in docs/setup.md",
 ];
 
 export const deliverables = [
   "The engineering question and your detection hypothesis",
   "The signals you used, what was missing, and what you judged unreliable",
-  "An executable EventSpec or detector",
+  "An executable EventSpec",
   "Normalized events.jsonl — the intervals you found, not the data behind them",
   "A run manifest and metrics, recording the clips you cut: topics, durations, bytes in and out",
   "One figure in the report — a plot or a frame with the occurrence marked",
@@ -123,31 +132,35 @@ export const deliverables = [
 export const scoring: { category: string; points: number; looksFor: string }[] = [
   { category: "Investigation and hypothesis", points: 15, looksFor: "Deliberate signal choice, inspection, physical reasoning" },
   { category: "Detection", points: 25, looksFor: "15 points on the first set, 10 on transfer; timing, duplicates, robustness" },
-  { category: "Evidence and extraction", points: 15, looksFor: "Read from your run manifest: correct topics, sane windows, real volume reduction" },
+  { category: "Evidence and extraction", points: 15, looksFor: "Event team or agent review: relevant topics, bounded windows, measured extraction and limitations; 5 points each" },
   { category: "Quality and evaluation", points: 15, looksFor: "Metrics, failure analysis, missing and bad data handling" },
   { category: "Visualization and explanation", points: 15, looksFor: "Synchronized, legible proof and careful claims" },
-  { category: "Reproducibility", points: 15, looksFor: "One command, pinned inputs, manifest, stable output" },
+  { category: "Reproducibility", points: 15, looksFor: "Event team or agent review: one command, exact inputs and environment, repeatable outputs; 5 points each" },
 ];
 
 export const bonus = [
   { label: "Bounded agent with a useful trace", points: 10 },
   { label: "Advanced multimodal, data-quality or external-resource method", points: 5 },
   { label: "Regression test built from a failure you found", points: 5 },
+  { label: "Cave encounters, automatic F1 bonus", points: 10 },
 ];
 
 /** Published scoring and judging rules; the answer key itself stays private. */
 export const scoringRules = [
-  "The common score is 100 points, with up to 20 bonus points on top.",
-  "Detection is split 15 points on the first held-back set and 10 on the transfer set.",
-  "At 12:30, 55 points are machine-scored; the jury reads the one-page report for the other 45 over lunch.",
-  "A development score validates submission format and basic metrics during the session.",
-  "The final ranking runs on a held-back test set, so a detector tuned to one route will not travel.",
-  "Submit as often as you like. The last one counts, and the deadline is hard at 12:30.",
+  "The common score is 100 points, with up to 30 bonus points on top, including a separate Cave bonus of up to 10.",
+  "Detection is split 15 Kashiwa RT points and 10 Reims right-or-left-turn points. All assigned warm-up, development and sealed recordings count.",
+  "25 Detection points are automatic. The event team or agents review 30 Evidence and Reproducibility points; the jury reviews the other 45.",
+  "Practice labels support learning and self-evaluation.",
+  "Development metrics do not guarantee results on sealed evaluation.",
+  "Sealed evaluation truth is visible only to the event team.",
+  "Points use the weighted mean of recording F1. Turn recordings have equal weight; empty Cave recordings collectively count for at most 10% of its bonus. Pooled metrics are additional diagnostics.",
+  "Missing tracks and submission errors receive zero. Event equipment or software failures are repaired and rerun. Empty truth earns full recording credit only when the detector stays silent. Track points round half up to two decimals before addition; matching receipt times select the later ledger entry.",
+  "During the event, participants could submit multiple versions by 12:30. The event team used the latest valid on-time receipt for each participant or duo on each dataset. The team retained late receipts separately. A late receipt did not replace an on-time receipt. For a score tie, the team ranked the entry with the earliest receipt for that score first.",
   "Solo and duo entries share one leaderboard; the selected afternoon walkthroughs do not change the score.",
-  "Ties break on the earliest submission of the tied score.",
   "The 45 report points are scored by AI agents against anchors written by a human, with a human resolving any disagreement between them. You are told this because you should know it.",
   "Every entry gets written feedback at 15:00 — not just the ones shown.",
-  "Bonus points cannot compensate for a core result that does not reproduce.",
+  "The existing 20 manual bonus points cannot compensate for a core result that does not reproduce.",
+  "The automatic Cave bonus is separate from that manual bonus condition and needs no Evidence award. Submit your own locations for caves, headquarters, venues, visitor sites or showrooms. Truth locations and occurrence times remain private. Run civ score without --labels to record unevaluated practice metrics and continue to reporting.",
   "Prompt style is not graded. Executed evidence is.",
 ];
 
@@ -168,47 +181,17 @@ export const pipeline: { title: string; note: string; owner: "you" | "provided" 
   { title: "Evidence", note: "clips + score", owner: "provided" },
 ];
 
-export const commands = [
-  { command: "civ doctor", note: "check your machine", output: "readiness only · no files" },
-  { command: "civ inspect BAG", note: "topics, fields, durations", output: "inventory · no files" },
-  { command: "civ sample BAG --topic ... --field ...", note: "inspect values", output: "timestamped values · no files" },
-  { command: "civ submission-init working --shell ...", note: "create your workspace once", output: "detector + report + figure + reproduce templates" },
-  { command: "civ detect SPEC DATASET --output working", note: "run your detector, --dry-run first", output: "detector/ (spec + exact resources) + events.jsonl + v2 run-manifest.json" },
-  { command: "civ clip working/events.jsonl DATASET", note: "cut compact local evidence", output: "evidence/*.mcap + updated manifest" },
-  { command: "civ score working --labels DEVELOPMENT_LABELS", note: "development score", output: "metrics.json + updated manifest" },
-  { command: "civ report working", note: "validate and package", output: "submission.zip + printed SHA-256" },
+export const workflow = [
+  { step: "Inspect", action: "Explore the supplied signals in a viewer or with the CLI." },
+  { step: "Detect", action: "Write an EventSpec and run it across the supplied recordings." },
+  { step: "Check evidence", action: "Inspect local clips and evaluate the detected intervals." },
+  { step: "Package", action: "Run `civ report` to validate the metadata-only ZIP, then keep the ZIP and its SHA-256 locally." },
 ];
 
-export const viewerResources = [
-  {
-    tool: "PlotJuggler 3.999.3",
-    platforms: "Windows amd64 · Linux amd64",
-    project: "https://github.com/PlotJuggler/PlotJuggler",
-    releases: "https://github.com/PlotJuggler/PlotJuggler/releases",
-  },
-  {
-    tool: "Lichtblick 1.28.0",
-    platforms: "Windows amd64 · Linux amd64 · macOS universal",
-    project: "https://github.com/lichtblick-suite/lichtblick",
-    releases: "https://github.com/lichtblick-suite/lichtblick/releases",
-  },
-];
-
-export const participantProducts = [
-  {
-    dataset: "Kashiwa warm-up",
-    product: "data/KSH-64ac27cd029b-signals.mcap",
-    plotJugglerLayout: "layouts/kashiwa-right-turn.pj4.xml",
-    lichtblickLayout: "layouts/lichtblick-kashiwa-right-turn.json",
-    inventory: "steering angle, vehicle speed, vehicle error code, object-detected flag",
-  },
-  {
-    dataset: "Reims development chunk 0",
-    product: "data/RMS-CHUNK-0-0a0817b3afc8-signals.mcap",
-    plotJugglerLayout: "layouts/reims-left-turn.pj4.xml",
-    lichtblickLayout: "layouts/lichtblick-reims-left-turn.json",
-    inventory: "IMU yaw rate and linear velocity x, y, z",
-  },
+export const kitGuides = [
+  { title: "Attendee kit guide", path: "README.md", note: "Kit contents, supplied recordings, layouts, and fallback material." },
+  { title: "Viewer guide", path: "viewer/README.md", note: "Choose a supplied viewer and verify its checksum." },
+  { title: "Participant quickstart", path: "docs/quickstart.md", note: "Run the workflow and prepare your metadata-only ZIP." },
 ];
 
 export const deskMaterials = [
@@ -218,10 +201,10 @@ export const deskMaterials = [
 ];
 
 /**
- * You keep your evidence. What is handed in is the record of the work, not the
- * recordings behind it — kilobytes, through a form.
+ * The bundle contains the record of the work. Source recordings stay local.
+ * The collection route is retired. This list describes the file contract.
  */
-export const submissionTree = `working/                       handed in?
+export const submissionTree = `working/                       in ZIP?
 ├── detector/                  yes   EventSpec + exact declared resources
 ├── events.jsonl               yes   the intervals you found
 ├── run-manifest.json          yes   v2 versions, hashes, parameters, timings,
@@ -234,21 +217,11 @@ export const submissionTree = `working/                       handed in?
 └── evidence/                  no    your clips stay on your machine`;
 
 export const submissionSteps = [
-  "Start once with `civ submission-init working --shell powershell` (or `--shell posix`). The workspace is deliberately incomplete and is never an answer.",
+  "Start once with `civ submission-init working --shell posix` (use `--shell powershell` in PowerShell on Windows). The workspace is deliberately incomplete and is never an answer.",
   "Replace every template prompt, run the stable detect → clip → score path, and keep exactly one reproduction script plus one marked figure.",
-  "Run `civ report working`. It validates the metadata shape and prints the SHA-256 of the unchanged `submission.zip`.",
-  "Optional traces and regression tests are inert: intake validates but never runs them.",
-  "Submit the unchanged ZIP, printed hash, and the same participant or team identity. Keep the confirmation reference; its server receipt time is authoritative.",
-  "If the form is unavailable, hand over those same three items by USB. Never unpack, rename, recompress, or add recordings or clips.",
-];
-
-export const submissionOutcomes = [
-  { state: "Accepted", action: "Keep the reference, hash, and receipt time. You may continue working." },
-  { state: "Replaced", action: "A later valid on-time bundle for the same dataset is authoritative; keep both receipts." },
-  { state: "Incomplete or invalid", action: "Read the `civ report` diagnostic, fix the named artifact, rebuild, and submit again." },
-  { state: "Hash mismatch", action: "Upload the unchanged ZIP and paste the exact hash printed by the same report run." },
-  { state: "Duplicate reference", action: "The existing receipt stands. Use a new form response only for a newly built bundle." },
-  { state: "Late", action: "The receipt is retained as late and cannot replace your last valid on-time bundle." },
+  "Run `civ report working`. It builds and validates the metadata-only ZIP and prints its SHA-256. Keep both locally.",
+  "Optional traces and regression tests are inert. `civ report` validates their declarations but never runs them.",
+  "The historical form and USB route for this event are retired. No collection route or recipient is active. See docs/submission-fields.md for the historical fields and current metadata-only ZIP contract.",
 ];
 
 /**
@@ -256,43 +229,19 @@ export const submissionOutcomes = [
  * deliberately carries no zone coordinates — sourcing them is the exercise.
  */
 export const extensionTrack = {
-  lesson:
-    "The system used knowledge that was never in the bag to find events it could not otherwise have found.",
-  placement: [
-    "This branch is open and scored before 12:30, and it receives no time in the run of show. Nothing in the three hours is planned around it.",
-    "If your core submission is not accepted yet, do the core. Bonus points cannot rescue a result that does not reproduce.",
-    "It stays on this page after the event, and it runs on the same products you keep. Do it at lunch, on the plane, or in six months.",
-  ],
+  lesson: "Find encounters using geographic points from outside both the recording and kit.",
   steps: [
-    "Choose a class of places the recording never knew about. The worked case is the champagne cellars along the Reims route.",
-    "Write a `civ.point-resource/v1` file: an id, a latitude and a longitude per point. That is the entire contract.",
-    "Reference it from an EventSpec under `resources:`, derive `min_distance_to` from your GNSS latitude and longitude signals, and put that distance in the condition. The shipped `examples/reims/cave-encounter.yaml` is a complete worked spec with illustrative points — the shape is real, the coordinates are not.",
-    "Run it across the Reims development products with the same `civ detect` you already use. It copies each declared resource byte-for-byte beside the bundled EventSpec and declares it in `extension/manifest.json`.",
-    "Put a short provenance note under `extension/` and declare its kind, path, SHA-256, and media type in the sorted extension manifest.",
+    "Collect the geographic points and note your sources.",
+    "Copy the supplied point resource and EventSpec into your workspace. Replace the illustrative points and use them in the EventSpec.",
+    "Run detection, inspect the evidence, and include your resource and provenance in the submission.",
   ],
-  provenance: [
-    "How you source the points is deliberately unconstrained: a chat assistant, an OpenStreetMap query, a published directory, or twenty minutes with a map and a spreadsheet are all legitimate.",
-    "No model is required, and nothing on the required path needs network access — only your own sourcing step might.",
-    "There is no answer key here and nothing is diffed against a held-back list. What is judged is whether the zones are plausible, the predicate is sound, the evidence shows what you claim, and you can say where the knowledge came from.",
-    "A 40 m radius is a sensible starting point on this route, and `timing.min_duration` is what suppresses a glancing hit. Expect a handful of encounters at most: this is a small exercise, not a hunt.",
-  ],
-  budget:
-    "Budget 30–45 minutes, and expect almost all of it to be sourcing. The detection itself is seconds — one spec across all five Reims development products finishes in under ten seconds on the target machine.",
-  scoredAs:
-    "Maximum +20: grounded agent trace +10; advanced multimodal, data-quality, or external-resource method +5; regression test derived from a demonstrated failure +5. Every non-zero award cites a bundled artifact.",
 };
 
 export const comeReady = [
-  "A laptop you can install software on, with room to spare: a container plus recordings needs disk and memory, not a GPU.",
-  "Set up before you arrive: Docker, plus WSL2 on Windows. The kit ships as a container.",
-  "Run `civ doctor && civ inspect <warm-up>` in the week before, open the day's page, and post what it prints. That is the whole readiness check.",
-  "Support is asynchronous from two weeks out, with two live drop-ins about ten days before — deliberately before anyone starts travelling.",
-  "Explore the recordings beforehand if you want to. It is allowed and encouraged; you are not stealing a march on anyone.",
-  "Nothing to compile or download on the day. If your download failed, SSDs in the room carry the image and both recordings.",
-  "No account, paid model or API key is required. The required path runs fully offline.",
-  "Work solo or with one partner. Solo and duo entries share one leaderboard — and if your machine struggles, pairing up on the day is normal and expected.",
-  "Everything runs in professional English.",
-  "Bring experience with robotic or vehicular recordings; the challenge starts above the beginner floor.",
+  "Bring a laptop you can install software on, with space for the supplied kit and recordings.",
+  "Follow your session's setup guide before arriving.",
+  "Run civ doctor and inspect the supplied warm-up recording.",
+  "Open a supplied recording in a viewer, or check its signals with civ sample. Use the kit fallback material or pair with someone if blocked.",
 ];
 
 export const notYourJob = [

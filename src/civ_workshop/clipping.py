@@ -114,8 +114,17 @@ def clip_events(events_path: Path, bag_path: Path) -> dict[str, object]:
     before_ns = evidence.get("before_ns")
     after_ns = evidence.get("after_ns")
     raw_topics = evidence.get("topics")
-    if not isinstance(before_ns, int) or not isinstance(after_ns, int):
-        raise CivError("run manifest evidence window is invalid")
+    if (
+        not isinstance(before_ns, int)
+        or isinstance(before_ns, bool)
+        or before_ns < 0
+        or not isinstance(after_ns, int)
+        or isinstance(after_ns, bool)
+        or after_ns < 0
+    ):
+        raise CivError(
+            "run manifest evidence window must contain non-negative integers, not booleans"
+        )
     if not isinstance(raw_topics, list) or not raw_topics:
         raise CivError("run manifest evidence topics are invalid")
     topics = sorted(require_string(topic, "run manifest evidence topic") for topic in raw_topics)

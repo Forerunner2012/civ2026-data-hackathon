@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
@@ -19,6 +20,15 @@ from civ_workshop.intake import (
 )
 from civ_workshop.reporting import MAX_SUBMISSION_ENTRY_BYTES, build_report_bundle
 from tests.helpers import MicroCase, create_micro_case, prepare_scored_submission, run_civ
+
+
+def _write_stored_zip_entry(archive: zipfile.ZipFile, name: str, content: bytes) -> None:
+    """Preserve hostile ZIP names verbatim on every host, including Windows."""
+    info = zipfile.ZipInfo()
+    info.filename = name
+    info.orig_filename = name
+    info.compress_type = zipfile.ZIP_STORED
+    archive.writestr(info, content)
 
 
 @pytest.fixture
@@ -75,7 +85,16 @@ def test_existing_intake_ledger_adds_nullable_source_provenance_column(
             ),
         )
 
+    original_bytes = database.read_bytes()
+    old_receipts = IntakeLedger(root).receipts(read_only=True)
+    assert database.read_bytes() == original_bytes
+    assert old_receipts[0].cutoff is None
+    assert old_receipts[0].evaluation_plan_sha256 is None
+    assert old_receipts[0].validation_error is None
+    assert old_receipts[0].received_at_original == "2026-09-03T12:00:00+09:00"
+    assert old_receipts[0].bundle_sha256 == "0" * 64
     receipts = IntakeLedger(root).receipts()
+    assert receipts == old_receipts
 
     assert len(receipts) == 1
     assert receipts[0].source_sha256 is None
@@ -246,6 +265,27 @@ def test_invalid_and_duplicate_deliveries_do_not_replace_an_earlier_valid_submis
 
     assert ledger.receipts() == [accepted]
     assert ledger.authoritative("team-1") == accepted
+
+
+def test_track_intake_io_errors_do_not_become_participant_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bundle = tmp_path / "submission.zip"
+    bundle.write_bytes(b"fixture")
+    ledger = IntakeLedger(tmp_path / "ledger")
+
+    def fail_validation(_bundle: Path) -> None:
+        raise CivError("temporary storage failure") from OSError("disk unavailable")
+
+    monkeypatch.setattr(intake_module, "validated_submission", fail_validation)
+    with pytest.raises(CivError, match="temporary storage failure"):
+        ledger.accept_local(
+            identity="team-a", track_id="micro-turn", received_at="2026-09-03T03:00:00Z",
+            submitted_sha256=sha256(bundle.read_bytes()).hexdigest(),
+            bundle_path=bundle, delivery_id="storage-failure",
+        )
+    assert ledger.receipts(read_only=True) == []
+    assert not list(ledger.root.glob(".incoming-*"))
 
 
 def test_cli_imports_form_export_and_usb_bundle_through_the_same_contract(
@@ -477,3 +517,150 @@ def test_concurrent_duplicate_delivery_is_atomic_and_corrupt_bundle_is_repaired(
     )
     assert len(ledger.receipts()) == 1
     assert ledger.scorer_input("team-atomic").read_bytes() == bundle.read_bytes()
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "C:/audit-outside/file.txt", "C:audit-outside.txt", "file.txt:stream",
+        "nested/file.txt:stream", "//server/share/file.txt", "nested\\file.txt",
+        "../file.txt", "/file.txt", "nested/CON.txt", "nested/NUL",
+        "nested/COM1.txt", "nested/LPT9.txt", "nested/file.", "nested/file ",
+        "nested//file.txt", "nested/./file.txt",
+    ],
+)
+def test_unsafe_archive_paths_fail_before_extraction(tmp_path: Path, name: str) -> None:
+    if os.name == "nt" and name.startswith("C:"):
+        name = (
+            (tmp_path / "sentinel.txt").as_posix()
+            if "/" in name else f"{tmp_path.drive}sentinel.txt"
+        )
+    bundle = tmp_path / "unsafe.zip"
+    extracted = tmp_path / "extracted"
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("valid/nested.txt", b"must not be extracted")
+        _write_stored_zip_entry(archive, name, b"rejected")
+    with zipfile.ZipFile(bundle) as archive:
+        assert [info.orig_filename for info in archive.infolist()] == ["valid/nested.txt", name]
+
+    with pytest.raises(CivError, match="unsafe artifact path"):
+        intake_module._extract_validated_submission(bundle, extracted)
+
+    assert not extracted.exists()
+    assert sentinel.read_bytes() == b"unchanged"
+
+
+def test_raw_backslash_zip_headers_are_rejected_before_extraction(tmp_path: Path) -> None:
+    name = "nested\\file.txt"
+    bundle = tmp_path / "raw-backslash.zip"
+    extracted = tmp_path / "extracted"
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("valid/nested.txt", b"must not be extracted")
+        _write_stored_zip_entry(archive, name, b"rejected")
+    with zipfile.ZipFile(bundle) as archive:
+        info = archive.infolist()[1]
+        assert info.orig_filename == name
+        local_offset = info.header_offset
+
+    payload = bundle.read_bytes()
+    assert payload[local_offset:local_offset + 4] == b"PK\x03\x04"
+    # The synthetic archive has two entries; inspect the second central header.
+    first_central = payload.index(b"PK\x01\x02")
+    central_offset = payload.index(b"PK\x01\x02", first_central + 4)
+    local_size = int.from_bytes(payload[local_offset + 26:local_offset + 28], "little")
+    central_size = int.from_bytes(payload[central_offset + 28:central_offset + 30], "little")
+    assert payload[local_offset + 30:local_offset + 30 + local_size] == name.encode("ascii")
+    assert payload[central_offset + 46:central_offset + 46 + central_size] == name.encode("ascii")
+
+    with pytest.raises(CivError, match="unsafe artifact path"):
+        intake_module._extract_validated_submission(bundle, extracted)
+
+    assert not extracted.exists()
+    assert not (extracted / "valid" / "nested.txt").exists()
+    assert sentinel.read_bytes() == b"unchanged"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows filesystem")
+def test_native_windows_drive_paths_do_not_modify_sibling_sentinel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    names = [sentinel.as_posix(), f"{tmp_path.drive}sentinel.txt", "sentinel.txt:stream"]
+    for index, name in enumerate(names):
+        bundle = tmp_path / f"unsafe-{index}.zip"
+        with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+            _write_stored_zip_entry(archive, name, b"rejected")
+        with zipfile.ZipFile(bundle) as archive:
+            assert [info.orig_filename for info in archive.infolist()] == [name]
+        with pytest.raises(CivError, match="unsafe artifact path"):
+            intake_module._extract_validated_submission(bundle, tmp_path / "extracted")
+        assert sentinel.read_bytes() == b"unchanged"
+        assert not (tmp_path / "extracted").exists()
+
+
+def test_drive_path_rejection_creates_no_intake_artifacts(tmp_path: Path) -> None:
+    bundle = tmp_path / "unsafe.zip"
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("C:sentinel.txt", b"rejected")
+    root = tmp_path / "intake"
+    with pytest.raises(CivError, match="unsafe artifact path"):
+        IntakeLedger(root).accept_local(
+            identity="team", received_at="2026-09-03T03:29:00Z",
+            submitted_sha256=sha256(bundle.read_bytes()).hexdigest(),
+            bundle_path=bundle, delivery_id="unsafe",
+        )
+    assert not root.exists()
+
+
+def test_windows_join_semantics_demonstrate_drive_escape() -> None:
+    from pathlib import PurePosixPath, PureWindowsPath
+
+    root = PureWindowsPath("W:/workspace/extracted")
+    assert root.joinpath(*PurePosixPath("C:/workspace/sentinel.txt").parts) == PureWindowsPath(
+        "C:workspace/sentinel.txt"
+    )
+    assert root.joinpath(*PurePosixPath("W:sentinel.txt").parts).drive == "W:"
+
+
+def test_extraction_rejects_existing_parent_symlink_before_writing(tmp_path: Path) -> None:
+    extracted = tmp_path / "extracted"
+    extracted.mkdir()
+    sibling = tmp_path / "sibling"
+    sibling.mkdir()
+    sentinel = sibling / "sentinel.txt"
+    sentinel.write_bytes(b"unchanged")
+    try:
+        (extracted / "linked").symlink_to(sibling, target_is_directory=True)
+    except OSError:
+        pytest.skip("host does not permit directory symlinks")
+    bundle = tmp_path / "unsafe.zip"
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("first.txt", b"must not be extracted")
+        archive.writestr("linked/sentinel.txt", b"rejected")
+    with pytest.raises(CivError, match="outside its intended root"):
+        intake_module._extract_validated_submission(bundle, extracted)
+    assert sentinel.read_bytes() == b"unchanged"
+    assert not (extracted / "first.txt").exists()
+
+
+@pytest.mark.parametrize(
+    "module_name", ["kit_assembly", "kit_inventory", "release_freeze", "workstation_qualification"]
+)
+@pytest.mark.parametrize(
+    "name", ["C:/file.txt", "C:file.txt", "nested/file:stream", "nested/NUL.txt"]
+)
+def test_organizer_targets_use_portable_path_rules(module_name: str, name: str) -> None:
+    import importlib
+
+    module = importlib.import_module(f"civ_workshop.{module_name}")
+    with pytest.raises(CivError, match="contained archive-relative POSIX path"):
+        if module_name == "workstation_qualification":
+            module._target(name, "participant recovery path")
+        else:
+            module._target(name)

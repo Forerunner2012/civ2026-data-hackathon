@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local label review</title>
+  <style>
+    :root{font:16px/1.45 system-ui,sans-serif;color:#192737;background:#f3f6f8}
+    *{box-sizing:border-box}body{margin:0}header,main{max-width:1280px;margin:auto;padding:20px}
+    header{padding-bottom:6px}h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.05rem;margin:0 0 12px}
+    p{margin:8px 0}.muted{color:#536273;font-size:.9rem}.mono{font: .85rem ui-monospace,monospace;overflow-wrap:anywhere}
+    section,.panel,aside{background:#fff;border:1px solid #d5dde5;border-radius:8px;padding:16px}
+    .warning{border:2px solid #a23b30;background:#fff6f3;color:#54251f}
+    section{margin:12px 0}.topbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+    label{display:block;font-weight:600;margin:8px 0}input,select,textarea{display:block;width:100%;padding:8px;margin-top:4px;border:1px solid #9eacba;border-radius:5px;font:inherit}
+    input[type=checkbox]{display:inline;width:auto;margin-right:7px}label.check{display:flex;align-items:center;font-weight:500}
+    textarea{min-height:76px;resize:vertical}button{background:#e9f0f7;border:1px solid #9db5cb;border-radius:5px;padding:8px 12px;color:#173d5e;font:inherit;cursor:pointer}
+    button.primary{background:#174b75;color:#fff;border-color:#174b75}button.danger{background:#fff1ee;color:#842e24;border-color:#d2a39d}
+    button:disabled{opacity:.5;cursor:default}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .workspace{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:12px;align-items:start}
+    aside{position:sticky;top:12px}.candidate-list{display:grid;gap:6px;max-height:70vh;overflow:auto}
+    .candidate-list button{text-align:left;display:flex;justify-content:space-between;gap:8px}
+    .candidate-list button{min-width:0;border-left:5px solid #9db5cb}
+    .candidate-list button[data-decision=pending]{background:#fff8e1;border-left-color:#916800}
+    .candidate-list button[data-decision=approved]{background:#edf8f0;border-left-color:#287341}
+    .candidate-list button[data-decision=rejected]{background:#fff0ed;border-left-color:#a23b30}
+    .candidate-list button[data-decision=data_gap]{background:#fff5e9;border-left-color:#98570c}
+    .candidate-list button.active{outline:2px solid #174b75;outline-offset:1px}
+    .candidate-list .candidate-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .status{font-size:.82rem;font-weight:700;white-space:nowrap;flex-shrink:0}
+    .required-hint{color:#842e24;font-weight:600}.review-rule{white-space:pre-wrap;overflow-wrap:anywhere}
+    #candidate-title{overflow-wrap:anywhere}.camera-box img[hidden]{display:none}
+    [aria-invalid=true]{border:2px solid #a23b30;outline:2px solid #ffd7cf}
+    .missing-field{animation:missing-field .25s ease-in-out 3}
+    @keyframes missing-field{50%{outline:4px solid #a23b30}}
+    @media(prefers-reduced-motion:reduce){.missing-field{animation:none}}
+    .review-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr);gap:12px}
+    .evidence{display:grid;grid-template-columns:1fr;gap:10px}.camera-box{min-height:190px;background:#eef2f5;display:grid;place-items:center;border-radius:5px;overflow:hidden}
+    .camera-box img{display:block;max-width:100%;max-height:360px}.camera-box span{padding:16px;text-align:center;color:#536273}
+    input[type=range]{padding:0}.signal-box{height:190px;border:1px solid #e0e6eb;border-radius:5px;overflow:hidden}
+    .signal-box svg{width:100%;height:100%}.signal-name{font-size:12px;fill:#435366}.gate{padding:10px;background:#edf4fa;border-radius:5px;min-height:38px}
+    .gate.blocked{background:#fff0ec;color:#842e24}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    details pre{max-height:320px;overflow:auto;background:#f4f6f8;padding:10px;border-radius:5px}
+    #message{min-height:24px;color:#174b75}#message.error{color:#9b3025}
+    @media(max-width:850px){.workspace,.review-grid{grid-template-columns:1fr}aside{position:static}.candidate-list{max-height:230px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Local label review</h1>
+    <p id="identity" class="muted mono"></p>
+  </header>
+  <main>
+    <section class="warning" role="note" aria-labelledby="live-review-warning">
+      <h2 id="live-review-warning">Live review and export warning</h2>
+      <p>This page edits the active review. Saving a change replaces the active progress file, and exporting replaces the active output. These edits can change the exported labels and scoring results.</p>
+      <p>Before replacement, the previous bytes of each active file are archived in a sibling directory named with that filename plus <code>.revisions</code>. Progress snapshots include decisions, approvals, completeness signoff, and audit history. Opening or inspecting a review does not change those records, and saving unchanged state keeps them intact.</p>
+      <p>A boundary edit clears approval for that interval. Adding a missed event or changing the accepted event set clears completeness signoff. Review the whole source, make the affected decisions again, and sign off before export.</p>
+    </section>
+    <section aria-labelledby="review-rule-heading">
+      <h2 id="review-rule-heading">Expected event rule</h2>
+      <p id="review-rule" class="review-rule"></p>
+      <p class="muted">Use the organizer-approved contextual definition to approve or reject complete events. Threshold hits are proposals. Review the whole source for missed events and avoid approving duplicate fragments of one event.</p>
+    </section>
+    <section>
+      <div class="topbar">
+        <label style="flex:1;min-width:220px">Reviewer name (required)
+          <input id="reviewer" autocomplete="name" placeholder="Enter your name before reviewing" required aria-describedby="reviewer-hint">
+        </label>
+        <button id="save">Save locally</button>
+        <button id="reload">Reload saved review</button>
+        <button id="undo">Undo</button>
+      </div>
+      <p id="reviewer-hint" class="required-hint">Enter your name before recording any decisions.</p>
+      <p id="gate" class="gate" role="status" aria-live="polite"></p>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="source-heading">
+      <h2 id="source-heading">Whole recording</h2>
+      <p id="source-bounds" class="mono muted"></p>
+      <div id="source-timeline" class="signal-box" aria-label="Source intervals and checked windows"></div>
+      <p class="muted">Blue marks proposals, green marks approved events, orange marks data gaps, gray marks rejected proposals. The lower row marks checked windows. These notes do not prove completeness.</p>
+      <div class="row">
+        <label>Window start, exact ns<input id="window-start" inputmode="numeric"></label>
+        <label>Window end, exact ns<input id="window-end" inputmode="numeric"></label>
+      </div>
+      <div class="buttons">
+        <button id="window-previous">Previous window</button>
+        <button id="window-next">Next window</button>
+        <button id="window-open">Inspect window</button>
+        <button id="window-full">Inspect whole source</button>
+        <button id="window-check" disabled>Mark displayed window checked</button>
+      </div>
+      <p id="window-context" class="muted"></p>
+      <div id="window-signals" class="signal-box" aria-label="Whole-source signal evidence"></div>
+      <label>Window signal and camera time<input id="window-scrub" type="range" min="0" max="1000" value="0"></label>
+      <p id="window-cursor-time" class="mono muted"></p>
+      <div class="camera-box">
+        <img id="window-frame" alt="Approved local camera context in source window" hidden>
+        <span id="window-frame-empty">Inspect a window to see available context.</span>
+      </div>
+      <button id="window-missed">Use displayed window for missed-event boundaries</button>
+    </section>
+
+    <section id="profile-panel" hidden>
+      <h2>Compare candidate profiles</h2>
+      <p class="muted">Alternative runs are read-only proposals. Their middle timeline row shows retained geometry in blue, changed boundaries in gold and added proposals in red. Agreement does not establish truth.</p>
+      <label>Alternative profile<select id="profile-select"></select></label>
+      <p id="profile-summary" class="mono muted"></p>
+      <details><summary>Exact alternative EventSpec</summary><pre id="profile-spec" class="mono"></pre></details>
+      <div id="profile-intervals" class="candidate-list"></div>
+      <p class="muted">Choose an interval to inspect it and prefill missed-event boundaries. Supply your reason and use Add missed event if review confirms it. The active run stays unchanged.</p>
+    </section>
+
+    <div class="workspace">
+      <aside>
+        <h2>Candidates</h2>
+        <div id="candidate-list" class="candidate-list" role="list"></div>
+        <p class="muted">Detected intervals are proposals. Review each one and check the full recording for missed events.</p>
+      </aside>
+      <article>
+        <div class="review-grid">
+          <section class="evidence">
+            <h2 id="candidate-title">Select a candidate</h2>
+            <p id="missing-context" class="muted"></p>
+            <div class="camera-box">
+              <img id="frame" alt="Approved local camera context">
+              <span id="frame-empty">No permitted camera frame is available for this interval.</span>
+            </div>
+            <label>Synchronize signal and camera time
+              <input id="scrub" type="range" min="0" max="1000" value="500">
+            </label>
+            <p id="cursor-time" class="muted mono"></p>
+            <div id="signals" class="signal-box" aria-label="Synchronized signal plots"></div>
+          </section>
+
+          <section>
+            <h2>Human decision</h2>
+            <div class="row">
+              <label>Start time (integer ns)
+                <input id="start-ns" inputmode="numeric" autocomplete="off">
+              </label>
+              <label>End time (integer ns)
+                <input id="end-ns" inputmode="numeric" autocomplete="off">
+              </label>
+            </div>
+            <label>Reason for adjustment, rejection, or data gap
+              <textarea id="reason" placeholder="Required when adjusting, rejecting, or excluding a data gap"></textarea>
+            </label>
+            <label>Uncertainty disposition
+              <select id="uncertainty">
+                <option value="unresolved">Choose a disposition</option>
+                <option value="clear">No material uncertainty</option>
+                <option value="accept_event">Accept event with uncertainty</option>
+                <option value="reject_candidate">Reject as not an event</option>
+                <option value="scoring_data_gap">Exclude as a scoring data gap</option>
+              </select>
+            </label>
+            <label>Reason for accepting uncertainty
+              <textarea id="uncertainty-reason" placeholder="Required when accepting an uncertain event"></textarea>
+            </label>
+            <div class="buttons">
+              <button id="approve" class="primary">Approve</button>
+              <button id="adjust">Adjust</button>
+              <button id="reject" class="danger">Reject</button>
+              <button id="data-gap">Mark scoring data gap</button>
+            </div>
+            <label id="practice-wrap" class="check">
+              <input id="practice-selected" type="checkbox">
+              Include this interval in participant practice labels
+            </label>
+            <p id="decision-status" class="muted"></p>
+          </section>
+        </div>
+      </article>
+    </div>
+
+    <section>
+      <h2>Missed-event review</h2>
+      <div class="row">
+        <label>Missed event start (integer ns)
+          <input id="missed-start" inputmode="numeric" autocomplete="off">
+        </label>
+        <label>Missed event end (integer ns)
+          <input id="missed-end" inputmode="numeric" autocomplete="off">
+        </label>
+      </div>
+      <label>Why this interval is an event
+        <textarea id="missed-reason" placeholder="Required evidence note"></textarea>
+      </label>
+      <button id="add-missed">Add missed event</button>
+      <label class="check">
+        <input id="coverage" type="checkbox">
+        I reviewed the whole recording for missed events
+      </label>
+      <p id="coverage-status" class="muted"></p>
+    </section>
+
+    <section>
+      <h2>Separate outputs</h2>
+      <p class="muted">The local audit remains in the progress file. Practice export contains only intervals you explicitly selected.</p>
+      <div class="buttons">
+        <button id="export-practice" class="primary">Export participant practice labels</button>
+        <button id="export-private">Export organizer-private truth</button>
+      </div>
+      <p id="private-export-status" class="muted"></p>
+    </section>
+    <details>
+      <summary>View local review audit</summary>
+      <pre id="audit" class="mono"></pre>
+    </details>
+  </main>
+
+  <script>
+    "use strict";
+    const token = new URLSearchParams(window.location.search).get("token") || "";
+    const $ = (id) => document.getElementById(id);
+    function normalizeTimestampField(id) {
+      const field = $(id);
+      field.value = field.value.replace(/[ \t]+$/, "");
+      return field.value;
+    }
+    const svgNS = "http://www.w3.org/2000/svg";
+    let review = null;
+    let selectedId = null;
+    const reasonDrafts = new Map();
+    let cursorNs = 0n;
+    let windowEvidence = null;
+    let windowCursorNs = 0n;
+    let windowRequestRevision = 0;
+
+    async function request(path, body) {
+      const options = {headers: {"X-CIV-Token": token}};
+      if (body !== undefined) {
+        options.method = "POST";
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+      const response = await fetch(path, options);
+      const value = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(value.error || "The local review request failed.");
+      return value;
+    }
+
+    function showMessage(text, error) {
+      $("message").textContent = text || "";
+      $("message").className = error ? "error" : "";
+    }
+
+    function candidateById(id) {
+      return review.state.candidates.find((item) => item.id === id);
+    }
+
+    function currentCandidate() {
+      return candidateById(selectedId) || review.state.candidates[0] || null;
+    }
+
+    function makeSvg(tag, attributes) {
+      const node = document.createElementNS(svgNS, tag);
+      Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
+      return node;
+    }
+
+    function timeWindow(candidate) {
+      const start = BigInt(candidate.start_ns);
+      const end = BigInt(candidate.end_ns);
+      const times = [start, end];
+      Object.values(candidate.signals || {}).forEach((points) => {
+        points.forEach((point) => times.push(BigInt(point.timestamp_ns)));
+      });
+      (candidate.camera_frames || []).forEach((frame) => times.push(BigInt(frame.timestamp_ns)));
+      let left = times.reduce((a, b) => a < b ? a : b);
+      let right = times.reduce((a, b) => a > b ? a : b);
+      if (left === right) right = left + 1n;
+      return [left, right];
+    }
+
+    function relativeX(time, left, span, width) {
+      return Number(time - left) * width / Number(span);
+    }
+
+    function renderSignals(candidate, elementId = "signals", cursor = cursorNs) {
+      const container = $(elementId);
+      container.replaceChildren();
+      const names = Object.keys(candidate.signals || {});
+      const svg = makeSvg("svg", {viewBox: "0 0 720 190", role: "img", "aria-label": "Signal traces with synchronized cursor"});
+      const [left, right] = timeWindow(candidate);
+      const span = right - left;
+      const chartTop = 12;
+      const chartHeight = 158;
+      const chartWidth = 650;
+      const colors = ["#145c8a", "#b25a18", "#43804b", "#784a8e", "#9a3443"];
+      let plotted = 0;
+      names.forEach((name, index) => {
+        const numeric = candidate.signals[name].filter((point) => typeof point.value === "number");
+        if (!numeric.length) return;
+        plotted += 1;
+        const values = numeric.map((point) => point.value);
+        let min = Math.min(...values);
+        let max = Math.max(...values);
+        if (min === max) { min -= 1; max += 1; }
+        const points = numeric.map((point) => {
+          const x = 46 + relativeX(BigInt(point.timestamp_ns), left, span, chartWidth);
+          const y = chartTop + chartHeight - ((point.value - min) / (max - min)) * chartHeight;
+          return x.toFixed(1) + "," + y.toFixed(1);
+        }).join(" ");
+        svg.append(makeSvg("polyline", {points, fill: "none", stroke: colors[index % colors.length], "stroke-width": 2}));
+        const label = makeSvg("text", {x: 4, y: 20 + index * 16, class: "signal-name"});
+        label.textContent = name;
+        svg.append(label);
+      });
+      const eventStart = relativeX(BigInt(candidate.start_ns), left, span, chartWidth);
+      const eventEnd = relativeX(BigInt(candidate.end_ns), left, span, chartWidth);
+      svg.prepend(makeSvg("rect", {x: 46 + eventStart, y: 4, width: Math.max(1, eventEnd - eventStart), height: 174, fill: "#66a4dc", opacity: .13}));
+      const cursorX = 46 + relativeX(cursor, left, span, chartWidth);
+      svg.append(makeSvg("line", {x1: cursorX, x2: cursorX, y1: 4, y2: 178, stroke: "#1b2836", "stroke-width": 1.5}));
+      if (!plotted) {
+        const empty = makeSvg("text", {x: 18, y: 36, class: "signal-name"});
+        empty.textContent = "No numeric signal trace is available in this interval.";
+        svg.append(empty);
+      }
+      container.append(svg);
+    }
+
+    function renderFrame(candidate, prefix = "", cursor = cursorNs) {
+      const frames = candidate.camera_frames || [];
+      const image = $(prefix + "frame");
+      const empty = $(prefix + "frame-empty");
+      $(prefix + "cursor-time").textContent = "Cursor " + cursor.toString() + " ns.";
+      if (!frames.length) {
+        image.removeAttribute("src");
+        image.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+      let nearest = frames[0];
+      let distance = BigInt(nearest.timestamp_ns) - cursor;
+      if (distance < 0n) distance = -distance;
+      frames.slice(1).forEach((frame) => {
+        let nextDistance = BigInt(frame.timestamp_ns) - cursor;
+        if (nextDistance < 0n) nextDistance = -nextDistance;
+        if (nextDistance < distance) { nearest = frame; distance = nextDistance; }
+      });
+      image.hidden = false;
+      empty.hidden = true;
+      image.src = "/api/frame/" + nearest.index + "?token=" + encodeURIComponent(token);
+      $(prefix + "cursor-time").textContent = "Cursor " + cursor.toString() + " ns; nearest approved frame " + nearest.timestamp_ns + " ns.";
+    }
+
+    function renderCandidate() {
+      const candidate = currentCandidate();
+      ["approve", "adjust", "reject", "data-gap"].forEach((id) => { $(id).disabled = !candidate; });
+      if (!candidate) {
+        $("candidate-title").textContent = "No candidates";
+        $("frame").removeAttribute("src");
+        $("frame").hidden = true;
+        $("frame-empty").hidden = false;
+        $("cursor-time").textContent = "";
+        $("practice-selected").checked = false;
+        $("practice-selected").disabled = true;
+        $("signals").textContent = "Add a missed event to begin review.";
+        $("missing-context").textContent = "No detected intervals were supplied.";
+        return;
+      }
+      selectedId = candidate.id;
+      $("candidate-title").textContent = (candidate.kind === "missed" ? "Missed event " : "Candidate ") + candidate.id;
+      $("start-ns").value = candidate.start_ns;
+      $("end-ns").value = candidate.end_ns;
+      const adjustments = candidate.adjustment_history || [];
+      const lastAdjustment = adjustments.length ? adjustments[adjustments.length - 1].reason : "";
+      $("reason").value = reasonDrafts.has(candidate.id)
+        ? reasonDrafts.get(candidate.id) : candidate.reason || lastAdjustment || "";
+      $("uncertainty").value = candidate.uncertainty_disposition;
+      $("uncertainty-reason").value = candidate.uncertainty_reason || "";
+      $("practice-selected").checked = candidate.practice_selected === true;
+      $("practice-selected").disabled = !["approved", "data_gap"].includes(candidate.decision);
+      $("decision-status").textContent = "Decision: " + candidate.decision + "; context: " + candidate.context_status + ".";
+      $("missing-context").textContent = (candidate.missing_context || []).join(" ");
+      const [left, right] = timeWindow(candidate);
+      const position = right === left ? 500 : Number((cursorNs - left) * 1000n / (right - left));
+      $("scrub").value = String(Math.min(1000, Math.max(0, position)));
+      renderSignals(candidate);
+      renderFrame(candidate);
+      $("candidate-list").querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.id === candidate.id);
+      });
+    }
+
+    function render() {
+      if (!review) return;
+      const state = review.state;
+      const identity = review.identity;
+      $("identity").textContent = identity.dataset + " · source " + identity.source_sha256.slice(0, 12) + " · EventSpec " + identity.spec_sha256.slice(0, 12);
+      $("reviewer").value = state.reviewer || review.default_reviewer || "";
+      const needsReviewer = !$("reviewer").value.trim();
+      $("reviewer-hint").textContent = needsReviewer
+        ? "Enter your name before recording any decisions."
+        : "Decisions will be recorded under this name. Check it before reviewing.";
+      $("reviewer-hint").classList.toggle("required-hint", needsReviewer);
+      const datasetRules = {
+        kashiwa: "Kashiwa: review unprotected right turns under the agreed contextual rule.",
+        reims: "Reims: review right or left turns under the agreed contextual rule. Inspect both directions, even if the scan proposes only one."
+      };
+      $("review-rule").textContent = review.review_rule || datasetRules[identity.dataset]
+        || "Use the contextual event definition supplied by the organizer.";
+      $("coverage").checked = state.coverage_reviewed === true && state.coverage_revision === state.geometry_revision;
+      $("coverage-status").textContent = state.coverage_reviewed ? "Signed off by " + (state.coverage_reviewer || "reviewer") : "Not signed off.";
+      $("gate").textContent = review.gate.length ? review.gate.join(" ") : "Review complete. Choose an explicit output target.";
+      $("gate").classList.toggle("blocked", review.gate.length > 0);
+      $("undo").disabled = !review.can_undo;
+      $("export-practice").disabled = review.gate.length > 0 || !review.outputs.practice;
+      $("export-private").disabled = review.gate.length > 0 || !review.outputs["organizer-private"];
+      $("private-export-status").textContent = review.output_blockers["organizer-private"] || "";
+      const list = $("candidate-list");
+      list.replaceChildren();
+      state.candidates.forEach((candidate) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.id = candidate.id;
+        button.dataset.decision = candidate.decision;
+        button.title = candidate.id + " · " + candidate.decision;
+        button.setAttribute("aria-label", candidate.id + ", " + candidate.decision);
+        button.setAttribute("role", "listitem");
+        const name = document.createElement("span");
+        name.className = "candidate-name";
+        name.textContent = candidate.id.length > 18
+          ? candidate.id.slice(0, 8) + "…" + candidate.id.slice(-4) : candidate.id;
+        const status = document.createElement("span");
+        status.className = "status";
+        status.textContent = {
+          pending: "Pending", approved: "Approved", rejected: "Rejected", data_gap: "Data gap"
+        }[candidate.decision] || candidate.decision;
+        button.append(name, status);
+        button.onclick = () => {
+          selectedId = candidate.id;
+          cursorNs = BigInt(candidate.start_ns);
+          render();
+        };
+        list.append(button);
+      });
+      $("audit").textContent = JSON.stringify(state, null, 2);
+      renderProfiles();
+      renderSourceTimeline();
+      if (currentCandidate()) {
+        if (!cursorNs) cursorNs = BigInt(currentCandidate().start_ns);
+        renderCandidate();
+      } else {
+        renderCandidate();
+      }
+    }
+
+    function missingField(id, message) {
+      const field = $(id);
+      field.setAttribute("aria-invalid", "true");
+      field.classList.remove("missing-field");
+      void field.offsetWidth;
+      field.classList.add("missing-field");
+      field.focus();
+      showMessage(message, true);
+      return false;
+    }
+
+    function hasRequiredFields(action) {
+      if (!$("reviewer").value.trim()) {
+        return missingField("reviewer", "Enter your reviewer name before recording a decision.");
+      }
+      if (["edit", "reject", "data-gap"].includes(action.type) && !String(action.reason || "").trim()) {
+        return missingField("reason", "Add a reason for this adjustment, rejection or data gap.");
+      }
+      if (action.type === "add-missed" && !String(action.reason || "").trim()) {
+        return missingField("missed-reason", "Explain why this missed interval is an event.");
+      }
+      if (["edit", "add-missed"].includes(action.type)) {
+        const prefix = action.type === "edit" ? "" : "missed-";
+        for (const [value, id] of [[action.start_ns, prefix ? "missed-start" : "start-ns"], [action.end_ns, prefix ? "missed-end" : "end-ns"]]) {
+          if (!String(value || "").trim()) return missingField(id, "Enter both exact interval boundaries.");
+        }
+      }
+      if (action.type === "approve") {
+        if (!["clear", "accept_event"].includes(action.uncertainty_disposition)) {
+          return missingField("uncertainty", "Choose how uncertainty is resolved before approving.");
+        }
+        if (action.uncertainty_disposition === "accept_event" && !String(action.uncertainty_reason || "").trim()) {
+          return missingField("uncertainty-reason", "Add a reason for accepting uncertainty.");
+        }
+      }
+      return true;
+    }
+
+    async function act(action) {
+      const previous = review ? currentCandidate() : null;
+      if (!hasRequiredFields(action)) return;
+      try {
+        if (action.type !== "set-reviewer") {
+          const name = $("reviewer").value.trim();
+          if (!name) throw new Error("Name the reviewer before recording a decision.");
+          if (review && name !== review.state.reviewer) {
+            review = await request("/api/action", {type: "set-reviewer", name});
+          }
+        }
+        review = await request("/api/action", action);
+        const updated = currentCandidate();
+        if (updated && previous &&
+            (updated.start_ns !== previous.start_ns || updated.end_ns !== previous.end_ns)) {
+          cursorNs = BigInt(updated.start_ns);
+        }
+        if (action.type === "edit" && previous) reasonDrafts.set(previous.id, action.reason);
+        if (action.type === "undo") reasonDrafts.clear();
+        showMessage("Review saved locally.");
+        render();
+      } catch (error) {
+        showMessage(error.message, true);
+        render();
+      }
+    }
+
+    document.querySelectorAll("input,textarea,select").forEach((field) => {
+      field.addEventListener("input", () => {
+        field.removeAttribute("aria-invalid");
+        field.classList.remove("missing-field");
+      });
+    });
+    $("reason").addEventListener("input", () => {
+      if (selectedId) reasonDrafts.set(selectedId, $("reason").value);
+    });
+    $("reviewer").addEventListener("change", () => act({type: "set-reviewer", name: $("reviewer").value}));
+    $("save").onclick = async () => {
+      try { review = await request("/api/save", {}); showMessage("Review progress saved locally."); render(); }
+      catch (error) { showMessage(error.message, true); }
+    };
+    $("reload").onclick = async () => {
+      try { review = await request("/api/reload", {}); reasonDrafts.clear(); selectedId = null; cursorNs = 0n; showMessage("Saved review reloaded."); render(); }
+      catch (error) { showMessage(error.message, true); }
+    };
+    $("undo").onclick = () => act({type: "undo"});
+    $("approve").onclick = () => {
+      const disposition = $("uncertainty").value;
+      act({type: "approve", candidate_id: selectedId, uncertainty_disposition: disposition, uncertainty_reason: $("uncertainty-reason").value});
+    };
+    $("adjust").onclick = () => act({
+      type: "edit", candidate_id: selectedId, start_ns: normalizeTimestampField("start-ns"),
+      end_ns: normalizeTimestampField("end-ns"), reason: $("reason").value
+    });
+    $("reject").onclick = () => act({
+      type: "reject", candidate_id: selectedId, reason: $("reason").value,
+      uncertainty_disposition: "reject_candidate"
+    });
+    $("data-gap").onclick = () => act({
+      type: "data-gap", candidate_id: selectedId, reason: $("reason").value,
+      exclusion_kind: "scoring_data_gap", uncertainty_disposition: "scoring_data_gap"
+    });
+    $("practice-selected").addEventListener("change", () => act({
+      type: "set-practice", candidate_id: selectedId, selected: $("practice-selected").checked
+    }));
+    $("add-missed").onclick = () => act({
+      type: "add-missed", start_ns: normalizeTimestampField("missed-start"),
+      end_ns: normalizeTimestampField("missed-end"),
+      reason: $("missed-reason").value
+    });
+    $("coverage").addEventListener("change", () => act({type: "signoff", checked: $("coverage").checked}));
+    $("scrub").addEventListener("input", () => {
+      const candidate = currentCandidate();
+      if (!candidate) return;
+      const [left, right] = timeWindow(candidate);
+      cursorNs = left + (right - left) * BigInt($("scrub").value) / 1000n;
+      renderSignals(candidate);
+      renderFrame(candidate);
+    });
+
+    let selectedProfileId = null;
+
+    function selectedProfile() {
+      return (review.comparisons || []).find((profile) => profile.id === selectedProfileId) || null;
+    }
+
+    function renderProfiles() {
+      const profiles = review.comparisons || [];
+      $("profile-panel").hidden = !profiles.length;
+      if (!profiles.length) return;
+      if (!profiles.some((profile) => profile.id === selectedProfileId)) selectedProfileId = profiles[0].id;
+      $("profile-select").replaceChildren();
+      profiles.forEach((profile) => {
+        const option = document.createElement("option");
+        option.value = profile.id;
+        option.textContent = profile.id + " · " + profile.name;
+        $("profile-select").append(option);
+      });
+      $("profile-select").value = selectedProfileId;
+      const profile = selectedProfile();
+      const changes = profile.differences;
+      $("profile-summary").textContent = "Spec " + profile.identity.spec_sha256 + "; run " + profile.identity.manifest_sha256 + "; condition " + profile.condition + "; timing ns " + JSON.stringify(profile.timing_ns) + ". Retained " + changes.retained.length + ", boundary changed " + changes.boundary_changed.length + ", added " + changes.added.length + ", removed " + changes.removed.length + ".";
+      $("profile-spec").textContent = profile.spec_text;
+      $("profile-intervals").replaceChildren();
+      profile.intervals.forEach((interval) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "Inspect/prefill " + interval.start_ns + " to " + interval.end_ns + " ns";
+        button.onclick = () => {
+          $("window-start").value = interval.start_ns;
+          $("window-end").value = interval.end_ns;
+          $("missed-start").value = interval.start_ns;
+          $("missed-end").value = interval.end_ns;
+          $("missed-reason").value = "";
+          $("missed-reason").focus();
+          inspectWindow();
+          showMessage("Alternative proposal copied for inspection. Explain and add it only if your review confirms a missed event.");
+        };
+        $("profile-intervals").append(button);
+      });
+      if (!profile.intervals.length) $("profile-intervals").textContent = "This profile has zero proposals. Whole-source review is still required.";
+    }
+
+    $("profile-select").onchange = () => {
+      selectedProfileId = $("profile-select").value;
+      renderProfiles();
+      renderSourceTimeline();
+    };
+
+    function renderSourceTimeline() {
+      const bounds = review.source_bounds;
+      const left = BigInt(bounds.start_ns);
+      const right = BigInt(bounds.end_ns);
+      const span = right > left ? right - left : 1n;
+      $("source-bounds").textContent = "Source " + bounds.start_ns + " to " + bounds.end_ns + " ns.";
+      const svg = makeSvg("svg", {viewBox: "0 0 720 190", role: "img", "aria-label": "All proposals and checked windows across source bounds"});
+      const colors = {approved: "#43804b", rejected: "#75818a", data_gap: "#b25a18", pending: "#145c8a"};
+      function interval(item, y, color, title) {
+        const x = 10 + relativeX(BigInt(item.start_ns), left, span, 700);
+        const end = 10 + relativeX(BigInt(item.end_ns), left, span, 700);
+        const rect = makeSvg("rect", {x, y, width: Math.max(1, end - x), height: 45, fill: color, opacity: .7});
+        const label = makeSvg("title", {});
+        label.textContent = title + " " + item.start_ns + " to " + item.end_ns + " ns";
+        rect.append(label);
+        svg.append(rect);
+      }
+      review.state.candidates.forEach((item) => interval(item, 25, colors[item.decision] || "#145c8a", item.id + " " + item.decision));
+      const profile = selectedProfile();
+      if (profile) {
+        const added = new Set(profile.differences.added.map((item) => item.event_id));
+        const changed = new Set(profile.differences.boundary_changed.map((item) => item.alternative.event_id));
+        profile.intervals.forEach((item) => interval(item, 80, added.has(item.event_id) ? "#9b3b25" : changed.has(item.event_id) ? "#9c7a17" : "#145c8a", "Reference " + profile.id));
+      }
+      (review.state.checked_windows || []).forEach((item) => interval(item, 135, "#784a8e", "Checked by " + item.reviewer));
+      $("source-timeline").replaceChildren(svg);
+    }
+
+    function renderWindow() {
+      if (!windowEvidence) return;
+      $("window-context").textContent = (windowEvidence.missing_context || []).join(" ") + " Signal traces are sampled for display; inspect smaller windows for detail.";
+      renderSignals(windowEvidence, "window-signals", windowCursorNs);
+      renderFrame(windowEvidence, "window-", windowCursorNs);
+    }
+
+    async function inspectWindow() {
+      const revision = ++windowRequestRevision;
+      $("window-open").disabled = true;
+      $("window-check").disabled = true;
+      try {
+        const start_ns = normalizeTimestampField("window-start");
+        const end_ns = normalizeTimestampField("window-end");
+        const value = await request("/api/window", {start_ns, end_ns});
+        if (revision !== windowRequestRevision) return;
+        windowEvidence = value;
+        windowCursorNs = BigInt(value.start_ns);
+        $("window-scrub").value = "0";
+        $("window-check").disabled = false;
+        renderWindow();
+        showMessage("Source window loaded. Record any missed event separately.");
+      } catch (error) {
+        if (revision !== windowRequestRevision) return;
+        windowEvidence = null;
+        $("window-signals").replaceChildren();
+        $("window-frame").removeAttribute("src");
+        $("window-frame").hidden = true;
+        $("window-frame-empty").hidden = false;
+        $("window-context").textContent = "Window evidence could not be loaded.";
+        showMessage(error.message, true);
+      } finally { if (revision === windowRequestRevision) $("window-open").disabled = false; }
+    }
+
+    function shiftWindow(direction) {
+      try {
+        const lower = BigInt(review.source_bounds.start_ns);
+        const upper = BigInt(review.source_bounds.end_ns);
+        const start = BigInt(normalizeTimestampField("window-start"));
+        const end = BigInt(normalizeTimestampField("window-end"));
+        const width = end - start;
+        if (width <= 0n || start < lower || end > upper) throw new Error("Choose a positive window inside source bounds.");
+        let next = start + BigInt(direction) * width;
+        if (next < lower) next = lower;
+        if (next + width > upper) next = upper - width;
+        $("window-start").value = next.toString();
+        $("window-end").value = (next + width).toString();
+        inspectWindow();
+      } catch (error) { showMessage(error.message, true); }
+    }
+
+    $("window-open").onclick = inspectWindow;
+    $("window-previous").onclick = () => shiftWindow(-1);
+    $("window-next").onclick = () => shiftWindow(1);
+    $("window-full").onclick = () => {
+      $("window-start").value = review.source_bounds.start_ns;
+      $("window-end").value = review.source_bounds.end_ns;
+      inspectWindow();
+    };
+    $("window-check").onclick = () => {
+      if (windowEvidence) act({type: "check-window", start_ns: windowEvidence.start_ns, end_ns: windowEvidence.end_ns});
+    };
+    $("window-missed").onclick = () => {
+      if (!windowEvidence) return;
+      $("missed-start").value = windowEvidence.start_ns;
+      $("missed-end").value = windowEvidence.end_ns;
+      $("missed-reason").focus();
+    };
+    $("window-scrub").addEventListener("input", () => {
+      if (!windowEvidence) return;
+      const left = BigInt(windowEvidence.start_ns);
+      const right = BigInt(windowEvidence.end_ns);
+      windowCursorNs = left + (right - left) * BigInt($("window-scrub").value) / 1000n;
+      renderWindow();
+    });
+
+    async function exportTarget(target) {
+      try {
+        const result = await request("/api/export", {target});
+        showMessage("Exported " + result.target + " output: " + result.name + " · SHA-256 " + result.sha256);
+      } catch (error) {
+        showMessage(error.message, true);
+      }
+    }
+    $("export-practice").onclick = () => exportTarget("practice");
+    $("export-private").onclick = () => exportTarget("organizer-private");
+
+    request("/api/state?token=" + encodeURIComponent(token)).then((value) => {
+      review = value;
+      $("window-start").value = review.source_bounds.start_ns;
+      const firstEnd = BigInt(review.source_bounds.start_ns) + 10000000000n;
+      const upper = BigInt(review.source_bounds.end_ns);
+      $("window-end").value = (firstEnd < upper ? firstEnd : upper).toString();
+      cursorNs = review.state.candidates.length ? BigInt(review.state.candidates[0].start_ns) : 0n;
+      render();
+      if (!$("reviewer").value.trim()) $("reviewer").focus();
+    }).catch((error) => showMessage(error.message, true));
+  </script>
+</body>
+</html>

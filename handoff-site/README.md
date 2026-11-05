@@ -1,13 +1,13 @@
 # CIV 2026 hackathon handoff site
 
-Interactive companion to [`../HACKATHON-HANDOFF.md`](../HACKATHON-HANDOFF.md), split into two
+Interactive companion to the [organizer guide](../docs/organizers/README.md), split into two
 audience views so organizer material is never shown to participants.
 
 | Route | Audience | Contains |
 | --- | --- | --- |
-| `/` | either | Entry door. Links to both views, carries no audience content of its own. |
+| `/` | attendees in public builds; entry door in local/internal builds | Public participant page, equivalent to `/participants`; the local/internal entry door links audience views. |
 | `/participants` | attendees | Brief, the three-hour ladder, ownership boundary, deliverables, the published rubric, toolkit and CLI, submission layout, what to come ready with. |
-| `/organizers` | **internal** | Strategy/tactics/operations, success criteria and non-goals, the six preparation phases and gates, readiness workstreams, evaluation internals, facilitation mechanics, the seven driving forces, the open decision queue, source precedence. |
+| `/organizers` | **internal, historical** | The original CIV 2026 design, decisions, and source context. Its historical labels and scoring language are not current operating instructions. Current operations use the organizer guide and saved-plan cohort procedure. |
 | `/organizers/pack` | organizers and jury, **internal** | Day-of coach, recovery, scoring, feedback, and results runbook; absent from the public production artifact. |
 | `/live` | attendees, **local only** | Current session beat, cumulative unlocked guidance, countdown, and static fallback. |
 | `/live/coach` | coach, **local only** | One authorized, next-only advance action. |
@@ -36,13 +36,11 @@ that must never appear in the participant route, on the entry door, or in any fi
 `organizers.server.ts`.**
 
 > [!IMPORTANT]
-> The split is a *content* boundary, not access control. `/organizers` is unauthenticated — anyone
-> who knows the URL can read it. It is marked `noindex`, but before deploying anywhere participants
-> can reach, put a real gate in front of the route (`worker/index.ts` is the place to do it).
+> Local/internal audience routes are not access control. Public builds exclude organizer, live and solution routes; keep internal builds in their authorized local scope. This documentation does not change route access or hosting.
 
 ## Local preview
 
-```powershell
+```sh
 npm install
 npm run dev
 ```
@@ -57,16 +55,17 @@ The live page and coach API exist in local development and internal acceptance b
 hint, and tip; later beats remain server-only. The three printable desk materials live under
 `/desk/` and contain no worked answer.
 
-Copy `.env.example` to `.env` — it carries the configured `SUBMISSION_FORM_URL`, and Wrangler loads
-it into the dev worker. Add a private coach token to the same file, then start the local server:
+Copy `.env.example` to `.env`; Wrangler loads it into the dev worker. Add a private coach token to
+the same file, then start the local server:
 
-```powershell
-Copy-Item .env.example .env
-Add-Content .env 'LIVE_COACH_TOKEN=replace-with-a-long-random-value'
+```sh
+cp .env.example .env
+printf '\n%s\n' 'LIVE_COACH_TOKEN=replace-with-a-long-random-value' >> .env
 npm run dev
 ```
 
-`.env` is git-ignored and is where secrets belong; `.env.example` holds only the public form URL.
+`.env` is git-ignored and is where secrets belong. The historical participant submission form is
+retired; `.env.example` contains no submission destination.
 
 Participants open `/live`; the facilitator opens `/live/coach` and enters the same token. The page
 advances from the Tokyo schedule automatically. The coach can only advance it one state early;
@@ -75,13 +74,13 @@ refreshes but resets when the server restarts.
 
 For rehearsals only, enable a controlled clock and append an ISO-8601 `now` query:
 
-```powershell
-Add-Content .env 'LIVE_ALLOW_CONTROLLED_CLOCK=true'
+```sh
+printf '\n%s\n' 'LIVE_ALLOW_CONTROLLED_CLOCK=true' >> .env
 # http://localhost:3000/live?now=2026-09-03T10:40:00%2B09:00
 ```
 
 The accepted Vinext worker loads these values from `.env`; setting them only in the parent
-PowerShell process does not configure the worker routes. Remove the controlled-clock line after the
+shell process does not configure the worker routes. Remove the controlled-clock line after the
 rehearsal and keep the coach token private.
 
 Leave `LIVE_ALLOW_CONTROLLED_CLOCK` unset on event day. If the local server or network is
@@ -93,18 +92,26 @@ internal preview with `POST_EVENT_SOLUTIONS_PREVIEW=true`. Release requires both
 status to be `approved` and `POST_EVENT_SOLUTIONS_RELEASED=true`; preview and release flags remain
 unset during the session. No release flag can add this route to the public production artifact.
 
-`SUBMISSION_FORM_URL` is participant-visible by design. It must be HTTPS and must not contain
-credentials. On event day it is the public Tally form URL, currently `https://tally.so/r/81Yy1x`; the
-form collects participant identity, the SHA-256 printed by `civ report`, and the unchanged
-`submission.zip`, and shows a confirmation containing its unique submission reference. Provider
-configuration and the export-to-envelope mapping are in
-[`docs/phase1/intake-acceptance.md`](../docs/phase1/intake-acceptance.md). Organizer credentials and
-response exports remain outside this site.
+The `/live` page shows that the historical submission form and USB instructions are retired; it has
+no collection link. The historical collection fields and v2 bundle contents are documented in
+[`docs/submission-fields.md`](../docs/submission-fields.md).
 
 ## Verification
 
-```powershell
+```sh
 npm run build
 node --test tests/rendered-html.test.mjs   # or: npm run test
 npm run lint
 ```
+
+### Participant navigation browser check
+
+After `npm test`, run `npm run test:navigation` from this directory. The check uses an existing Chromium browser, a temporary local server and an isolated browser profile. It exercises the two public routes and both exported files at desktop/mobile sizes, then checks the disk fallback with JavaScript disabled. Receipts and screenshots stay in ignored `tmp/navigation-browser/`.
+
+Windows defaults to the installed Microsoft Edge executable. Set `CIV_BROWSER_EXECUTABLE` to an existing Chrome or Chromium executable on another test host. This browser is test infrastructure; participants do not need it for the CLI workflows.
+
+## Participant content ownership
+
+Canonical commands and recovery belong to `docs/quickstart.md` and `docs/setup.md`; runtime limits belong to `docs/runtime-requirements.md`, and point-resource instructions belong to `docs/extension.md`. Kit inventory and assembly copy those exact files. The website summarizes them and displays kit-relative paths. Update the guide and affected participant summaries together.
+
+The participant page and offline export are static guidance with local section navigation. Room progress comes from the separately supplied live page. Export retains only `participant-navigation.js`; framework JavaScript and organizer/live content remain excluded. Local label qualification does not make a pack available for download or authorize distribution. Use the pack announced for the exact source and event definition.

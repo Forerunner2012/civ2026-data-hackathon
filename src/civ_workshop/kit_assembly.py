@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import csv
 import json
 import math
 import re
 import shutil
 import sys
+import zipfile
 from collections.abc import Mapping, Sequence
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from mcap.exceptions import McapError
 from mcap.reader import make_reader
@@ -25,6 +27,9 @@ from civ_workshop.kit_inventory import (
     TRACKED_ASSET_SOURCES,
     audit_kit_inventory,
 )
+from civ_workshop.presentation_files import verified_presentations
+from civ_workshop.score_reference import validate_score_reference
+from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 ASSEMBLY_CONTRACT = "civ.attendee-kit-assembly/v1"
 INVENTORY_CONTRACT = CONTRACT
@@ -85,6 +90,7 @@ PARTICIPANT_RUNTIME_MODULES = (
     "inspection.py",
     "models.py",
     "participant_cli.py",
+    "participant_commands.py",
     "reporting.py",
     "resources.py",
     "schema_pins.py",
@@ -101,7 +107,9 @@ PRIVATE_RUNTIME_MODULES = frozenset(
         "data_products.py",
         "intake.py",
         "kit_assembly.py",
+        "presentation_files.py",
         "kit_inventory.py",
+        "label_review.py",
         "label_packs.py",
         "release_freeze.py",
         "tally.py",
@@ -121,9 +129,7 @@ ABSOLUTE_PATH_PATTERN = re.compile(r"(?:[A-Za-z]:\\|/(?:home|Users)/)")
 
 
 def _target(value: str) -> str:
-    path = PurePosixPath(value)
-    if path.is_absolute() or ".." in path.parts or str(path) != value or "\\" in value:
-        raise CivError(f"assembly target must be a normalized relative path: {value}")
+    safe_archive_path(value, 'assembly target')
     return value
 
 
@@ -134,9 +140,10 @@ def _copy_file(source: Path, target: Path) -> None:
     shutil.copyfile(source, target)
 
 
-def _copy_tree(source: Path, target: Path) -> None:
+def _tree_inputs(source: Path, output: Path, prefix: str) -> list[tuple[Path, Path]]:
     if not source.is_dir():
         raise CivError(f"assembly input directory does not exist: {source.name}")
+    inputs: list[tuple[Path, Path]] = []
     for path in sorted(item for item in source.rglob("*") if item.is_file()):
         relative = path.relative_to(source)
         if any(
@@ -146,7 +153,11 @@ def _copy_tree(source: Path, target: Path) -> None:
             continue
         if path.suffix in {".pyc", ".pyo"}:
             continue
-        _copy_file(path, target / relative)
+        target = contained_archive_path(
+            output, f"{prefix}/{relative.as_posix()}", "assembly target"
+        )
+        inputs.append((path, target))
+    return inputs
 
 
 def _scalar(value: object) -> str:
@@ -398,18 +409,19 @@ def _verify_participant_assembly(
             PRIVATE_RUNTIME_MODULES
         ):
             raise CivError(f"attendee kit contains private runtime module: {target}")
-        path = root / Path(target)
+        path = contained_archive_path(root, target, "assembly target")
         if path.suffix.casefold() not in PARTICIPANT_TEXT_SUFFIXES:
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        folded = text.casefold()
-        for term in FORBIDDEN_ASSEMBLY_TEXT:
-            if term.casefold() in folded:
-                raise CivError(
-                    f"attendee kit text contains private operation '{term}': {target}"
-                )
-        if ABSOLUTE_PATH_PATTERN.search(text):
-            raise CivError(f"attendee kit text contains an absolute host path: {target}")
+        _verify_participant_text(path.read_text(encoding="utf-8", errors="ignore"), target)
+
+
+def _verify_participant_text(text: str, target: str) -> None:
+    folded = text.casefold()
+    for term in FORBIDDEN_ASSEMBLY_TEXT:
+        if term.casefold() in folded:
+            raise CivError(f"attendee kit text contains private operation '{term}': {target}")
+    if ABSOLUTE_PATH_PATTERN.search(text):
+        raise CivError(f"attendee kit text contains an absolute host path: {target}")
 
 
 def _copy_participant_runtime(repository: Path, target: Path) -> None:
@@ -429,10 +441,6 @@ def _copy_participant_runtime(repository: Path, target: Path) -> None:
         "from civ_workshop.participant_cli import main\n\nmain()\n",
         encoding="utf-8",
         newline="\n",
-    )
-    _copy_tree(
-        package_source / "_templates" / "submission",
-        package_target / "_templates" / "submission",
     )
 
 
@@ -484,9 +492,7 @@ def _context_inputs(
     raw_products = context_set.get("products")
     if not isinstance(raw_products, list) or len(raw_products) != 13:
         raise CivError("assembly camera-context set must contain exactly 13 products")
-    inputs: list[tuple[Path, str, str]] = [
-        (set_source, set_target, str(pack["manifest_sha256"]))
-    ]
+    inputs: list[tuple[Path, str, str]] = [(set_source, set_target, str(pack["manifest_sha256"]))]
     observed_bytes = set_source.stat().st_size
     seen: set[str] = set()
     for raw in raw_products:
@@ -503,12 +509,17 @@ def _context_inputs(
         if dataset not in {"kashiwa", "reims"}:
             raise CivError("assembly camera-context dataset is invalid")
         for name_field, hash_field, byte_field in (
-            ("camera_context_product", "camera_context_sha256", "camera_context_bytes"),
+            (
+            "camera_context_product",
+            "camera_context_sha256",
+            "camera_context_bytes",
+        ),
             ("manifest", "manifest_sha256", "manifest_bytes"),
         ):
             name = str(raw.get(name_field))
             if Path(name).name != name:
                 raise CivError("assembly camera-context name is not a basename")
+            target_name = _target(f"context/{dataset}/{name}")
             source = context_root / "participant" / dataset / name
             digest = str(raw.get(hash_field))
             expected_bytes = raw.get(byte_field)
@@ -519,10 +530,140 @@ def _context_inputs(
             ):
                 raise CivError(f"assembly camera-context input does not match: {name}")
             observed_bytes += source.stat().st_size
-            inputs.append((source, f"context/{dataset}/{name}", digest))
+            inputs.append((source, target_name, digest))
     if seen != set(signals) or observed_bytes != pack.get("required_disk_bytes"):
         raise CivError("assembly camera-context membership or byte total is invalid")
     return inputs
+
+
+def _session_inputs(
+    inventory: Mapping[str, object],
+    participant_wheel: Path | None,
+    practice_packs: Sequence[Path],
+    session_brief: Path | None,
+) -> list[tuple[Path, str]]:
+    """Validate explicitly released session inputs before creating an output."""
+    copies: list[tuple[Path, str]] = []
+    if participant_wheel is not None:
+        if participant_wheel.suffix != ".whl":
+            raise CivError("participant wheel must be a .whl file")
+        try:
+            with zipfile.ZipFile(participant_wheel) as archive:
+                names = archive.namelist()
+                for name in names:
+                    safe_archive_path(name.rstrip("/"), "participant wheel member")
+                modules = {
+                    Path(name).name
+                    for name in names
+                    if name.startswith("civ_workshop/") and name.endswith(".py")
+                }
+                expected = set(PARTICIPANT_RUNTIME_MODULES) | {"__init__.py", "__main__.py"}
+                if modules != expected:
+                    raise CivError("participant wheel does not match the public runtime modules")
+                for name in names:
+                    if name.endswith("/"):
+                        continue
+                    if name.startswith("civ_workshop/"):
+                        relative = name.removeprefix("civ_workshop/")
+                        allowed_templates = {
+                            "_" + target
+                            for target in TRACKED_ASSET_SOURCES
+                            if target.startswith("templates/submission/")
+                        }
+                        if relative not in expected and relative not in allowed_templates:
+                            raise CivError(
+                                "participant wheel contains an unexpected package payload"
+                            )
+                    elif (
+                        not name.split("/")[0].startswith("civ_workshop-")
+                        or ".dist-info/" not in name
+                    ):
+                        raise CivError(
+                            "participant wheel contains an unexpected distribution payload"
+                        )
+                    if Path(name).suffix.casefold() in PARTICIPANT_TEXT_SUFFIXES or (
+                        ".dist-info/" in name
+                    ):
+                        _verify_participant_text(
+                            archive.read(name).decode("utf-8", errors="ignore"), name
+                        )
+                entry_points = [
+                    name for name in names if name.endswith(".dist-info/entry_points.txt")
+                ]
+                if len(entry_points) != 1:
+                    raise CivError("participant wheel requires one console entry-point definition")
+                configuration = configparser.ConfigParser()
+                configuration.read_string(archive.read(entry_points[0]).decode("utf-8"))
+                if configuration.get("console_scripts", "civ", fallback="") != (
+                    "civ_workshop.participant_cli:main"
+                ):
+                    raise CivError("participant wheel must expose the participant CLI")
+        except (OSError, zipfile.BadZipFile, UnicodeDecodeError, configparser.Error) as error:
+            raise CivError(f"cannot validate participant wheel: {error}") from error
+        copies.append((participant_wheel, _target(f"runtime/wheels/{participant_wheel.name}")))
+    product_set = inventory.get("product_set")
+    if not isinstance(product_set, dict) or not isinstance(product_set.get("products"), list):
+        raise CivError("session inputs require an inventory product set")
+    products = {str(product["sha256"]): product for product in product_set["products"]}
+    targets: set[str] = set()
+    for pack in practice_packs:
+        reference = validate_score_reference(read_json_file(pack, "released practice pack"))
+        product = products.get(reference["source_sha256"])
+        if product is None:
+            raise CivError("released practice pack does not match a participant product")
+        provenance = reference.get("provenance")
+        if (
+            provenance is not None
+            and provenance["product_manifest_sha256"] != product["manifest_sha256"]
+        ):
+            raise CivError("released practice pack does not match the product manifest")
+        if pack.suffix != ".json":
+            raise CivError("released practice packs must be JSON files")
+        target = _target(f"practice-labels/{pack.name}")
+        if target.casefold() in targets:
+            raise CivError("released practice packs have colliding filenames")
+        targets.add(target.casefold())
+        copies.append((pack, target))
+    if session_brief is not None:
+        if session_brief.suffix.lower() != ".md" or not session_brief.is_file():
+            raise CivError("session brief must be an existing Markdown file")
+        copies.append((session_brief, "SESSION-BRIEF.md"))
+    return copies
+
+
+def _copy_session_inputs(output: Path, copies: Sequence[tuple[Path, str]]) -> None:
+    if not copies:
+        return
+    lines = [
+        "# Session materials",
+        "",
+        "These are the organizer-selected inputs for this session.",
+        "",
+    ]
+    for source, target in copies:
+        _copy_file(source, contained_archive_path(output, target, "session material"))
+        lines.append(f"- [{target}]({target})")
+    lines += [
+        "",
+        "Only explicitly released practice references are included. A wheel alone does not",
+        "provide its dependencies or establish offline installation readiness.",
+        "",
+    ]
+    (output / "SESSION-MATERIALS.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    brief = output / "SESSION-BRIEF.md"
+    if brief.is_file():
+        for inline in re.findall(r"\]\(([^)]+)\)", brief.read_text(encoding="utf-8")):
+            link = re.match(r"\s*(?:<([^<>\n]+)>|([^\s<>]+))", inline)
+            if link is None:
+                raise CivError("session brief link has an invalid Markdown destination")
+            destination = link.group(1) or link.group(2)
+            if "://" in destination or destination.startswith(("#", "mailto:")):
+                continue
+            relative = destination.split("#", 1)[0]
+            while relative.startswith("./"):
+                relative = relative.removeprefix("./")
+            if not contained_archive_path(output, relative, "session brief link").exists():
+                raise CivError(f"session brief link is missing from the kit: {relative}")
 
 
 def assemble_kit(
@@ -536,6 +677,10 @@ def assemble_kit(
     container_archive: Path,
     output: Path,
     context_root: Path | None = None,
+    presentations_root: Path | None = None,
+    participant_wheel: Path | None = None,
+    practice_packs: Sequence[Path] = (),
+    session_brief: Path | None = None,
 ) -> dict[str, object]:
     audit_kit_inventory(inventory_path)
     inventory = read_json_file(inventory_path, "participant kit inventory")
@@ -543,6 +688,13 @@ def assemble_kit(
         raise CivError("assembly requires the participant-kit inventory")
     if output.exists():
         raise CivError("assembly output must not already exist")
+    presentation_files: tuple[Path, ...] = ()
+    if presentations_root is not None:
+        try:
+            presentation_files = verified_presentations(presentations_root)
+        except (OSError, ValueError, KeyError, StopIteration) as error:
+            raise CivError(f"presentation input validation failed: {error}") from error
+    session_copies = _session_inputs(inventory, participant_wheel, practice_packs, session_brief)
     _verify_static_site(site_root)
     fallback_manifest = read_json_file(
         fallback_root / "fallback-manifest.json", "fallback manifest"
@@ -550,7 +702,23 @@ def assemble_kit(
     if fallback_manifest.get("product_set_sha256") != ACCEPTED_PRODUCT_SET_SHA256:
         raise CivError("fallback pack does not match the accepted product set")
     viewer_by_name = {path.name: path for path in viewer_paths}
-    context_inputs = _context_inputs(inventory, context_root)
+    context_copies = [
+        (source, contained_archive_path(output, target, "assembly target"), digest)
+        for source, target, digest in _context_inputs(inventory, context_root)
+    ]
+    tree_inputs = [
+        entry
+        for source, prefix in (
+            (site_root, "site"),
+            (fallback_root, "fallback"),
+            (cache_root, "offline/uv-cache"),
+            (
+                repository / "src" / "civ_workshop" / "_templates" / "submission",
+                "runtime/source/src/civ_workshop/_templates/submission",
+            ),
+        )
+        for entry in _tree_inputs(source, output, prefix)
+    ]
     output.mkdir(parents=True)
     product_set = inventory["product_set"]
     assert isinstance(product_set, dict)
@@ -567,15 +735,17 @@ def assemble_kit(
             source = data_root / source_name
             if file_sha256(source) != digest:
                 raise CivError(f"assembly data input does not match inventory: {source_name}")
-            _copy_file(source, output / Path(target_name))
+            _copy_file(source, contained_archive_path(output, target_name, "assembly target"))
     set_source = data_root / Path(str(product_set["manifest"])).name
     if file_sha256(set_source) != product_set["sha256"]:
         raise CivError("assembly product-set manifest does not match inventory")
-    _copy_file(set_source, output / Path(str(product_set["manifest"])))
-    for source, target, digest in context_inputs:
-        if file_sha256(source) != digest:
-            raise CivError(f"assembly camera-context changed during copy: {source.name}")
-        _copy_file(source, output / Path(target))
+    _copy_file(
+        set_source, contained_archive_path(output, str(product_set["manifest"]), "assembly target")
+    )
+    for context_source, context_target, context_digest in context_copies:
+        if file_sha256(context_source) != context_digest:
+            raise CivError(f"assembly camera-context changed during copy: {context_source.name}")
+        _copy_file(context_source, context_target)
     for asset in inventory["tracked_assets"]:
         assert isinstance(asset, dict)
         target_name = str(asset["path"])
@@ -583,26 +753,53 @@ def assemble_kit(
         source = repository / source_name
         if file_sha256(source) != asset["sha256"]:
             raise CivError(f"tracked assembly asset changed after inventory: {target_name}")
-        _copy_file(source, output / Path(target_name))
+        _copy_file(source, contained_archive_path(output, target_name, "assembly target"))
     for viewer in inventory["viewers"]:
         assert isinstance(viewer, dict)
         viewer_source = viewer_by_name.get(str(viewer["name"]))
         if viewer_source is None or file_sha256(viewer_source) != viewer["sha256"]:
             raise CivError(f"assembly viewer input does not match inventory: {viewer['name']}")
-        _copy_file(viewer_source, output / Path(str(viewer["target"])))
+        _copy_file(
+            viewer_source, contained_archive_path(output, str(viewer["target"]), "assembly target")
+        )
     _copy_file(inventory_path, output / "participant-kit.json")
     _copy_file(
         inventory_path.parent / "checksums" / "SHA256SUMS",
         output / "checksums" / "SHA256SUMS",
     )
-    _copy_tree(site_root, output / "site")
-    _copy_tree(fallback_root, output / "fallback")
-    _copy_tree(cache_root, output / "offline" / "uv-cache")
+    for tree_source, tree_target in tree_inputs:
+        _copy_file(tree_source, tree_target)
     _copy_file(
         container_archive,
         output / "container" / "civ-phase4-attendee-candidate-558e85c.tar",
     )
     _copy_participant_runtime(repository, output / "runtime" / "source")
+    if presentation_files:
+        target = output / "presentations"
+        target.mkdir()
+        for presentation in presentation_files:
+            _copy_file(presentation, target / presentation.name)
+        (target / "README.md").write_text(
+            "# Workshop presentations\n\n"
+            "- [Briefing](briefing.pptx)\n"
+            "- [Submission checklist](submission-checklist.pptx)\n\n"
+            "These are the reviewed decks supplied for this kit. "
+            "Use the session brief for intake and deadline instructions.\n",
+            encoding="utf-8",
+        )
+        brief = output / "site" / "desk" / "brief.html"
+        if brief.is_file():
+            links = (
+                '<p class="presentation-links">Workshop presentations: '
+                '<a href="../../presentations/briefing.pptx">Briefing</a> · '
+                '<a href="../../presentations/submission-checklist.pptx">Submission checklist</a>'
+                "</p>"
+            )
+            text = brief.read_text(encoding="utf-8")
+            if "</body>" not in text:
+                raise CivError("assembled brief has no body insertion point")
+            brief.write_text(text.replace("</body>", links + "</body>"), encoding="utf-8")
+    _copy_session_inputs(output, session_copies)
     records = _file_records(
         output, excluded={"attendee-kit-assembly.json", "checksums/ASSEMBLY-SHA256SUMS"}
     )
@@ -657,7 +854,7 @@ def audit_assembly(manifest_path: Path) -> dict[str, object]:
         if target in seen:
             raise CivError("attendee kit assembly contains duplicate targets")
         seen.add(target)
-        path = root / Path(target)
+        path = contained_archive_path(root, target, "assembly target")
         if (
             not path.is_file()
             or path.stat().st_size != raw["byte_size"]
@@ -700,6 +897,16 @@ def build_parser() -> argparse.ArgumentParser:
     assemble.add_argument("--cache-root", type=Path, required=True)
     assemble.add_argument("--container-archive", type=Path, required=True)
     assemble.add_argument("--context-root", type=Path)
+    assemble.add_argument("--presentations-root", type=Path)
+    assemble.add_argument("--participant-wheel", type=Path)
+    assemble.add_argument(
+        "--practice-pack",
+        type=Path,
+        action="append",
+        default=[],
+        help="explicitly released participant practice reference; repeat for each pack",
+    )
+    assemble.add_argument("--session-brief", type=Path)
     assemble.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit")
     audit.add_argument("manifest", type=Path)
@@ -723,6 +930,10 @@ def main(argv: Sequence[str] | None = None) -> None:
                 args.container_archive,
                 args.output,
                 args.context_root,
+                args.presentations_root,
+                args.participant_wheel,
+                args.practice_pack,
+                args.session_brief,
             )
         else:
             result = audit_assembly(args.manifest)

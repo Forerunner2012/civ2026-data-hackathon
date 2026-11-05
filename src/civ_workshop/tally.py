@@ -38,6 +38,7 @@ TALLY_HEADERS = (
     "SHA-256 printed by civ report",
     "Your submission.zip",
 )
+TALLY_HEADERS_WITH_TRACK = (*TALLY_HEADERS[:-1], "Track ID", TALLY_HEADERS[-1])
 TALLY_IMPORT_CONTRACT = "civ.tally-import-summary/v1alpha1"
 TALLY_STORAGE_HOST = "storage.tally.so"
 TALLY_DOWNLOAD_TIMEOUT_SECONDS = 30
@@ -59,6 +60,10 @@ class TallyReceiptPayload(TypedDict):
     received_at_utc: str
     bundle_sha256: str
     status: Literal["on_time", "late"]
+    track_id: str | None
+    cutoff: str | None
+    evaluation_plan_sha256: str | None
+    validation_error: str | None
 
 
 class TallyOutcome(TypedDict, total=False):
@@ -93,6 +98,7 @@ class _TallyRow:
     identity: str
     submitted_sha256: str
     upload_url: str
+    track_id: str | None = None
 
 
 def _required_text(row: Mapping[str | None, str | None], header: str, maximum: int) -> str:
@@ -165,12 +171,19 @@ def _parse_tally_row(row: Mapping[str | None, str | None]) -> _TallyRow:
     upload_url = _validate_tally_upload_url(
         _required_text(row, "Your submission.zip", MAX_TALLY_UPLOAD_URL_CHARACTERS)
     )
+    track_value = row.get("Track ID")
+    track_id = track_value.strip() if track_value is not None else None
+    if track_id == "":
+        track_id = None
+    if track_id is not None and len(track_id) > MAX_DELIVERY_ID_CHARACTERS:
+        raise CivError(f"Tally track id exceeds {MAX_DELIVERY_ID_CHARACTERS} characters")
     return _TallyRow(
         delivery_id=delivery_id,
         received_at=received_at,
         identity=identity,
         submitted_sha256=submitted_sha256,
         upload_url=upload_url,
+        track_id=track_id,
     )
 
 
@@ -246,6 +259,10 @@ def _receipt_payload(receipt: IntakeReceipt) -> TallyReceiptPayload:
         "received_at_utc": receipt.received_at_utc,
         "bundle_sha256": receipt.bundle_sha256,
         "status": receipt.status,
+        "track_id": receipt.track_id,
+        "cutoff": receipt.cutoff,
+        "evaluation_plan_sha256": receipt.evaluation_plan_sha256,
+        "validation_error": receipt.validation_error,
     }
 
 
@@ -271,7 +288,15 @@ def _process_tally_row(
                 and existing.identity == row.identity
                 and existing.received_at_original == row.received_at
                 and existing.bundle_sha256 == row.submitted_sha256
+                and existing.track_id == row.track_id
             ):
+                if existing.validation_error is not None:
+                    return {
+                        **base,
+                        "outcome": "invalid",
+                        "receipt": _receipt_payload(existing),
+                        "diagnostic": _redact_diagnostic(existing.validation_error),
+                    }
                 return {
                     **base,
                     "delivery_id": row.delivery_id,
@@ -304,6 +329,7 @@ def _process_tally_row(
                 submitted_sha256=row.submitted_sha256,
                 bundle_path=downloaded,
                 delivery_id=row.delivery_id,
+                track_id=row.track_id,
             )
         return {
             **base,
@@ -351,14 +377,16 @@ def import_tally_csv(
     ledger_root: Path,
     *,
     downloader: DownloadTallyUpload | None = None,
+    cutoff: str | None = None,
+    evaluation_plan_sha256: str | None = None,
 ) -> TallyImportSummary:
     """Import a manually exported Tally CSV into the shared online intake ledger."""
 
-    ledger = IntakeLedger(ledger_root)
+    ledger = IntakeLedger(ledger_root, cutoff=cutoff, evaluation_plan_sha256=evaluation_plan_sha256)
     download = downloader or _download_tally_upload
     outcomes: list[TallyOutcome] = []
     with _open_tally_csv(csv_path.resolve()) as reader:
-        if tuple(reader.fieldnames or ()) != TALLY_HEADERS:
+        if tuple(reader.fieldnames or ()) not in {TALLY_HEADERS, TALLY_HEADERS_WITH_TRACK}:
             raise CivError("Tally CSV headers do not match the expected export")
         try:
             rows = list(reader)

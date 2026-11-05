@@ -19,7 +19,10 @@ PARTICIPANT_COMMANDS = {
     "score",
     "submission-init",
 }
-ORGANIZER_COMMANDS = ("intake-form", "intake-tally", "intake-local", "score-batch")
+ORGANIZER_COMMANDS = (
+    "intake-form", "intake-tally", "intake-local", "score-batch",
+    "score-readiness", "record-decision",
+)
 REFERENCE_PATHS = [
     ("layouts/kashiwa-right-turn.pj4.xml", "examples/kashiwa/right_turn.yaml"),
     ("layouts/reims-left-turn.pj4.xml", "examples/reims/left_turn.yaml"),
@@ -88,15 +91,16 @@ def test_quickstart_and_layouts_reference_only_existing_files(layout: str, examp
     assert layout in quickstart, "the quickstart never points a reader at this layout"
     for referenced in re.findall(r"(?:layouts|examples|schemas)/[\w./-]+", quickstart):
         assert (REPOSITORY / referenced).is_file(), f"quickstart links a missing file: {referenced}"
-    # Participant artifacts stay offline: no download URL, signed or otherwise.
-    for text in (quickstart, (REPOSITORY / layout).read_text(encoding="utf-8")):
+    # Connected installation precedes the offline analysis; layouts remain local.
+    analysis = quickstart.split("## The route at a glance", 1)[1]
+    for text in (analysis, (REPOSITORY / layout).read_text(encoding="utf-8")):
         assert "http://" not in text and "https://" not in text
 
 
 def test_quickstart_uses_only_public_participant_commands() -> None:
     quickstart = QUICKSTART.read_text(encoding="utf-8")
 
-    invoked = set(re.findall(r"\bciv ([a-z-]+)", quickstart))
+    invoked = set(re.findall(r"\bciv ([a-z][a-z-]*)", quickstart))
     assert invoked, "quickstart invokes no commands"
     assert invoked <= PARTICIPANT_COMMANDS, f"unexpected commands: {sorted(invoked)}"
     for organizer_command in ORGANIZER_COMMANDS:
@@ -114,8 +118,8 @@ def test_quickstart_covers_every_golden_path_step_and_product() -> None:
         "Create your working submission once",
         "Detect intervals",
         "Extract local evidence",
-        "Score against the supplied development labels",
-        "Validate, package, and submit",
+        "Score against the supplied practice labels",
+        "Validate and keep the metadata-only ZIP",
     ]
     for product in (
         "events.jsonl",

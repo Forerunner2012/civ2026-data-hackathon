@@ -5,13 +5,14 @@ import re
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import audit_assembly
+from civ_workshop.submission_extension import safe_archive_path
 
 CONTRACT = "civ.workstation-qualification/v1"
 DECLARATION_CONTRACT = "civ.workstation-qualification-declaration/v1"
@@ -180,12 +181,6 @@ ACCEPTED_RELEASES: Mapping[str, AcceptedRelease] = {
 }
 
 
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
 def _sequence(value: object, context: str) -> list[object]:
     if not isinstance(value, list):
         raise CivError(f"{context} must be a list")
@@ -244,9 +239,7 @@ def _is(value: object, expected: bool, context: str) -> bool:
 
 def _target(value: object, context: str) -> str:
     result = _string(value, context)
-    path = PurePosixPath(result)
-    if path.is_absolute() or ".." in path.parts or str(path) != result or "\\" in result:
-        raise CivError(f"{context} must be a normalized relative path")
+    safe_archive_path(result, context)
     return result
 
 

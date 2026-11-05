@@ -16,11 +16,9 @@ function countdown(nowMs: number, nextStartMs: number | null): string {
 export function LiveSession({
   initialSnapshot,
   controlledNow,
-  submissionFormUrl,
 }: {
   initialSnapshot: LivePublicSnapshot;
   controlledNow: string | null;
-  submissionFormUrl: string | null;
 }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [nowMs, setNowMs] = useState(initialSnapshot.nowMs);
@@ -40,13 +38,21 @@ export function LiveSession({
   useEffect(() => {
     let active = true;
     async function refresh() {
-      const response = await fetch(apiPath, { cache: "no-store" });
-      if (response.ok && active) {
+      try {
+        const response = await fetch(apiPath, { cache: "no-store" });
+        if (!response.ok || !active) {
+          return;
+        }
         const next = (await response.json()) as LivePublicSnapshot;
+        if (!active) {
+          return;
+        }
         setSnapshot(next);
         if (controlledNow) {
           setNowMs(next.nowMs);
         }
+      } catch {
+        // Keep the last valid guidance until a later poll succeeds.
       }
     }
     void refresh();
@@ -86,28 +92,28 @@ export function LiveSession({
 
       <section className="live-checks" aria-label="Current recovery checks">
         <article>
-          <span>BY NOW YOU SHOULD HAVE</span>
+          <span>EXPECTED RESULT</span>
           <p>{stage.shouldHave}</p>
         </article>
         <article>
-          <span>IF YOU DON&apos;T</span>
+          <span>IF BLOCKED</span>
           <p>{stage.ifYouDont}</p>
         </article>
       </section>
 
       <section className="live-layers" aria-label="Current expectation, hint, and tip">
-        <article data-layer="expectation">
-          <span>EXPECTATION</span>
+        <details data-layer="expectation">
+          <summary>Expectation</summary>
           <p>{stage.expectation}</p>
-        </article>
-        <article data-layer="hint">
-          <span>HINT</span>
+        </details>
+        <details data-layer="hint">
+          <summary>Hint</summary>
           <p>{stage.hint}</p>
-        </article>
-        <article data-layer="tip">
-          <span>TIP</span>
+        </details>
+        <details data-layer="tip">
+          <summary>Tip</summary>
           <p>{stage.tip}</p>
-        </article>
+        </details>
       </section>
 
       {stage.reportPrompt ? (
@@ -117,14 +123,8 @@ export function LiveSession({
         </section>
       ) : null}
 
-      <section className="live-guidance" id="guidance">
-        <div className="section-heading compact">
-          <div>
-            <span>UNLOCKED SO FAR</span>
-            <h2>Hints and tips you may use now</h2>
-          </div>
-          <p>Everything below is cumulative. Nothing already visible can be held, relocked, or reversed.</p>
-        </div>
+      <details className="live-guidance" id="guidance">
+        <summary>Guidance released so far</summary><p>Released guidance remains available. Future checkpoints are not shown.</p>
         <ol>
           {snapshot.unlockedGuidance.map((item, index) => (
             <li key={`${index}-${item}`}>
@@ -133,59 +133,22 @@ export function LiveSession({
             </li>
           ))}
         </ol>
-      </section>
+      </details>
 
-      <section className="live-command-pace" aria-label="Attendee command pace car">
-        <div>
-          <span>PACE CAR · QUICKSTART</span>
-          <h2>Eight commands, one evidence chain.</h2>
-          <p>Open <code>docs/quickstart.md</code> from the kit for exact paths and recovery.</p>
-        </div>
-        <ol>
-          <li><code>doctor</code><small>ready; no files</small></li>
-          <li><code>inspect</code><small>inventory; no files</small></li>
-          <li><code>sample</code><small>values; no files</small></li>
-          <li><code>submission-init</code><small>working templates</small></li>
-          <li><code>detect</code><small>events + manifest</small></li>
-          <li><code>clip</code><small>local evidence</small></li>
-          <li><code>score</code><small>metrics</small></li>
-          <li><code>report</code><small>ZIP + hash</small></li>
-        </ol>
-      </section>
+      <section className="live-command-pace" aria-label="Quickstart reference"><p>Open the kit&apos;s <code>docs/quickstart.md</code> for exact commands, paths and recovery.</p></section>
 
       <section className="live-submission" id="submission">
         <div>
-          <span>SUBMISSION · METADATA ONLY</span>
-          <h2>Submit metadata bundle</h2>
-          <ol>
-            <li>Run <code>civ report working</code>.</li>
-            <li>Copy the printed SHA-256 exactly.</li>
-            <li>Send your unchanged identity, hash, and <code>submission.zip</code>.</li>
-          </ol>
+          <span>HISTORICAL EVENT INTAKE</span>
+          <h2>Submission route retired</h2>
+          <p>No collection route or intended recipient is active for this event.</p>
           <p>Limit: 12 MiB per bundle and 8 MiB per metadata artifact.</p>
         </div>
         <div className="live-submission-action">
-          {submissionFormUrl ? (
-            <a
-              className="primary-button"
-              href={submissionFormUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open submission form <span>→</span>
-            </a>
-          ) : (
-            <p role="status">The online form is not configured. Use the USB fallback now.</p>
-          )}
-          <p>
-            Keep the form confirmation with its submission reference; the server receipt time tied
-            to that reference is authoritative. You may submit again. The latest valid response for
-            that dataset received by 12:30 JST is authoritative.
-          </p>
-          <p>
-            <b>USB fallback:</b> hand over the identical <code>submission.zip</code>, your identity,
-            and the same printed hash. The organizer records the same hash-and-time receipt. Do not
-            unpack or reformat it.
+          <p role="status">
+            The former form and USB instructions are retired. See the repository&apos;s
+            <code> docs/submission-fields.md</code> for the historical collection fields and
+            metadata-only bundle contract.
           </p>
         </div>
       </section>

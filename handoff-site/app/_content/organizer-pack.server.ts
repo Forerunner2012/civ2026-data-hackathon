@@ -27,9 +27,9 @@ export const troubleshooting = [
   ["Viewer cannot display", "Continue with civ inspect, sample, and tracked fallback tables/layouts. Viewer state is optional runtime input, not submission content."],
   ["Schema or topic mismatch", "Run civ doctor and civ inspect against the named participant product. If the product hash differs, replace it from tracked event media; do not patch the spec with private knowledge."],
   ["Internet or hosted page lost", "Hand out the static participant export from event media. Keep the same beat, expectation, hint, and tip; coaches become the distribution channel."],
-  ["Online form unreachable", "Accept the unchanged metadata-only ZIP by local/USB intake. Record the same team identity, dataset, server/organizer receipt time, SHA-256, and reference."],
-  ["Submission invalid or incomplete", "Return the exact validation failure. Keep the receipt as rejected and ask for a corrected resubmission; never repair participant artifacts."],
-  ["Duplicate, replacement, or late receipt", "Duplicate hash: retain one reference. Later valid on-time hash for the same team and dataset: replace authority. Late: quarantine and never replace an on-time authority."],
+  ["Historical form outage fallback", "The former event route accepted the unchanged metadata-only ZIP by local or USB intake and recorded team identity, dataset, organizer receipt time, SHA-256, and reference. It is retired for this event. No collection route or recipient is active. The CLI validator and receipt rules remain available for a future authorized workflow."],
+  ["Future authorized intake: invalid or incomplete", "Return the exact validation failure. Record the rejection and ask for a corrected resubmission; never repair participant artifacts or invent an accepted receipt."],
+  ["Future authorized intake: duplicate, replacement, or late receipt", "Use one saved session plan for intake and scoring. Retain each accepted delivery and its original timestamp and hash. Later valid on-time hash for the same team and track: replace authority. Eligibility uses the plan cutoff; equal timestamps select the later ledger entry. Late: quarantine and never replace an on-time authority. A selected submission that fails replay never falls back to an older delivery. Follow docs/organizers/cohort-scoring.md."],
 ] as const;
 
 export const juryCategories = [
@@ -69,10 +69,11 @@ export const bonusCategories = [
   ["Grounded agent trace", 10, "Award only when claims point to executed tools and produced artifacts in the accepted v2 extension. Prompt style, transcript length, confidence, and model choice earn nothing."],
   ["Advanced method", 5, "Award for a defensible multimodal, data-quality, or external-resource method. The resources plus min_distance_to exercise belongs here."],
   ["Failure-derived regression test", 5, "Award only when the accepted inert test encodes a demonstrated failure and a check that would catch its return."],
+  ["Cave encounter replay", 10, "Automatic only: weighted mean recording F1 times 10, with the common temporal matcher. Empty recordings share at most 10% of its weight. No manual or Evidence award is required."],
 ] as const;
 
 export const juryProcedure = [
-  "Freeze the accepted ZIP/hash and machine score first. The jury never changes submission authority or the 55 machine points.",
+  "Freeze the accepted ZIP/hash and automatic score first. The jury never changes submission authority or automatic Detection and Cave points. Organizers or agents separately review Evidence and Reproducibility, 15 points each, using docs/reference/scoring.md.",
   "Give both agents the same accepted metadata-only bundle, machine-score summary, anchors, and output schema. Do not provide sealed labels, coach logs, participant identity, or the other agent's output.",
   "Each agent scores all three categories and all three optional bonuses independently, citing an accepted artifact path plus a verifiable observation for every non-zero award and every deduction.",
   "Do not reward fluency, formatting beyond the contract, length, confidence, prompt craft, or inferred intent. If an artifact does not support a claim, score the artifact—not the prose.",
@@ -90,13 +91,13 @@ export const feedbackTemplate = [
   "What the artifacts support:",
   "Strongest next improvement:",
   "Disagreement/arbitration note (or none):",
-  "Final total __/120. This feedback does not change submission authority.",
+  "Evidence __/15; Reproducibility __/15; automatic Cave bonus __/10. Final total __/130. This feedback does not change submission authority.",
 ] as const;
 
 export const afternoonRun = [
   ["13:15", "Agents flag five worth-showing candidates independently of rank, including more than one honest/instructive failure candidate."],
   ["13:30", "Human confirms scores, skims every feedback sheet, resolves conflicts, and asks walkthrough consent privately. A decline is accepted without negotiation."],
-  ["14:30–14:38", "Reveal the leaderboard and explain 55 machine / 45 jury / 20 optional bonus, the two-agent process, human arbitration, score distribution, signal choices, and how transfer moved ranking."],
+  ["14:30–14:38", "Reveal the leaderboard and explain 25 automatic Detection / 30 manual technical / 45 jury / 20 existing bonus / 10 automatic Cave bonus, the two-agent process, human arbitration, score distribution, signal choices, and how transfer moved ranking."],
   ["14:38–14:54", "Organizer narrates roughly four submitted artifacts—EventSpec, report heading 3 or 4, and the figure. Participants remain seated; recognitions ride on the walkthroughs."],
   ["14:54–14:57", "Deliver the extension lesson in three minutes: external knowledge entered through a declared resource and found events the recording alone could not name."],
   ["14:57–15:00", "Close, hand every entry its reviewed written feedback, and release nothing whose consent or post-event gate is missing."],
@@ -104,3 +105,17 @@ export const afternoonRun = [
 
 export const consentWording =
   "We would like to show your submitted artifacts because the dead end you documented is unusually useful to the room. The organizer will narrate it; you will not present or answer questions. May we show it? No is completely fine.";
+
+export const coachChecklist = [
+  "Ask what the participant observed and what they think is happening.",
+  "Suggest one check they can perform. Do not supply a solution or private evaluation facts.",
+  "Timebox tooling diagnosis to ten minutes, then use the approved fallback or pairing procedure.",
+  "Give the room equal access to released guidance. Record material help using the existing minimal log.",
+] as const;
+
+export const juryChecklist = [
+  "Confirm the accepted bundle and machine-score record.",
+  "Apply the existing rubric to accepted artifacts. Cite the evidence for awards and deductions.",
+  "Follow the existing independent-review and human-arbitration procedure.",
+  "Record the final category scores and written feedback.",
+] as const;

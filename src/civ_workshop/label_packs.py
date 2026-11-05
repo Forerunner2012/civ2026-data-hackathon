@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shutil
 import sys
 import tempfile
@@ -23,56 +22,34 @@ from civ_workshop.artifacts import (
     require_string,
 )
 from civ_workshop.errors import CivError
+from civ_workshop.score_reference import (
+    PROVENANCE_FIELDS,
+    SCORING_FIELDS,
+    TIMESTAMP_MAPPING_FIELDS,
+    _closed,
+    _records,
+    _sha256,
+    parse_reference_intervals,
+)
+from civ_workshop.score_reference import (
+    REFERENCE_FIELDS as PACK_FIELDS,
+)
+from civ_workshop.score_reference import (
+    SCORE_REFERENCE_CONTRACT as LABEL_PACK_CONTRACT,
+)
+from civ_workshop.score_reference import (
+    SCORING_POLICY as SCORING_POLICY,
+)
+from civ_workshop.score_reference import (
+    TEMPORAL_IOU_THRESHOLD as TEMPORAL_IOU_THRESHOLD,
+)
 
-LABEL_PACK_CONTRACT = "civ.label-pack/v1alpha1"
 TRUTH_CONTRACT = "civ.phase3.source-relative-truth/v1"
 SET_CONTRACT = "civ.phase3.label-pack-set/v1"
 DATA_PRODUCT_CONTRACT = "civ.data-product-manifest/v1"
 DATA_PRODUCT_RECIPE_CONTRACT = "civ.data-product-recipe/v1"
 DATA_PRODUCT_WRITER = "civ-workshop/data-products-v1"
-SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
-TEMPORAL_IOU_THRESHOLD = 0.5
-SCORING_POLICY: dict[str, object] = {
-    "assignment": "one_to_one_best",
-    "duplicate_predictions": "false_positive",
-    "metric": "f1",
-    "temporal_iou_threshold": TEMPORAL_IOU_THRESHOLD,
-}
 
-PACK_FIELDS = frozenset(
-    {
-        "contract",
-        "data_gaps",
-        "dataset",
-        "labels",
-        "provenance",
-        "scoring",
-        "source_sha256",
-    }
-)
-LABEL_FIELDS = frozenset({"end_ns", "label_id", "start_ns"})
-GAP_FIELDS = frozenset({"end_ns", "gap_id", "reason", "start_ns"})
-PROVENANCE_FIELDS = frozenset(
-    {
-        "product_manifest_sha256",
-        "source_id",
-        "source_sha256",
-        "timestamp_mapping",
-        "truth_contract",
-        "truth_sha256",
-    }
-)
-TIMESTAMP_MAPPING_FIELDS = frozenset(
-    {
-        "kind",
-        "product_message_end_ns",
-        "product_message_start_ns",
-        "source_message_end_ns",
-        "source_message_start_ns",
-        "writer",
-    }
-)
-SCORING_FIELDS = frozenset(SCORING_POLICY)
 SET_FIELDS = frozenset({"format", "packs", "scoring"})
 SET_ENTRY_FIELDS = frozenset(
     {"data_gap_count", "dataset", "label_count", "name", "sha256", "source_sha256"}
@@ -144,19 +121,6 @@ class TruthDocument:
     sha256: str
 
 
-def _closed(value: Mapping[str, object], allowed: frozenset[str], context: str) -> None:
-    unknown = sorted(set(value) - allowed)
-    if unknown:
-        raise CivError(f"{context} has unknown field '{unknown[0]}'")
-
-
-def _sha256(value: object, context: str) -> str:
-    digest = require_string(value, context)
-    if SHA256_PATTERN.fullmatch(digest) is None:
-        raise CivError(f"{context} must be a lowercase SHA-256")
-    return digest
-
-
 def _integer(value: object, context: str, *, positive: bool = False) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise CivError(f"{context} must be an integer")
@@ -164,30 +128,6 @@ def _integer(value: object, context: str, *, positive: bool = False) -> int:
         qualifier = "positive" if positive else "non-negative"
         raise CivError(f"{context} must be {qualifier}")
     return value
-
-
-def _records(value: object, context: str) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        raise CivError(f"{context} must be a list")
-    return [require_mapping(record, f"{context} {index}") for index, record in enumerate(value)]
-
-
-def _validate_order_and_overlap(
-    records: list[dict[str, object]], context: str
-) -> None:
-    ordered = sorted(
-        records,
-        key=lambda record: (
-            cast(int, record["start_ns"]),
-            cast(int, record["end_ns"]),
-            str(record.get("label_id", record.get("gap_id", ""))),
-        ),
-    )
-    if records != ordered:
-        raise CivError(f"label pack {context} must use deterministic interval order")
-    for previous, current in zip(records, records[1:], strict=False):
-        if cast(int, current["start_ns"]) < cast(int, previous["end_ns"]):
-            raise CivError(f"label pack {context} must not overlap")
 
 
 def validate_label_pack(
@@ -202,45 +142,10 @@ def validate_label_pack(
     dataset = require_string(pack.get("dataset"), "label pack dataset")
     source_sha256 = _sha256(pack.get("source_sha256"), "label pack source_sha256")
 
-    labels: list[dict[str, object]] = []
-    label_ids: set[str] = set()
-    for index, raw_label in enumerate(_records(pack.get("labels"), "label pack labels")):
-        context = f"label {index}"
-        _closed(raw_label, LABEL_FIELDS, context)
-        interval = interval_from_mapping(raw_label, context)
-        label_id = require_string(raw_label.get("label_id"), f"{context} label_id")
-        if label_id in label_ids:
-            raise CivError(f"label pack contains duplicate label_id '{label_id}'")
-        label_ids.add(label_id)
-        labels.append(
-            {
-                "end_ns": interval.end_ns,
-                "label_id": label_id,
-                "start_ns": interval.start_ns,
-            }
-        )
-    _validate_order_and_overlap(labels, "labels")
-
-    gaps: list[dict[str, object]] = []
-    gap_ids: set[str] = set()
-    for index, raw_gap in enumerate(_records(pack.get("data_gaps"), "label pack data_gaps")):
-        context = f"data gap {index}"
-        _closed(raw_gap, GAP_FIELDS, context)
-        interval = interval_from_mapping(raw_gap, context)
-        normalized: dict[str, object] = {
-            "end_ns": interval.end_ns,
-            "start_ns": interval.start_ns,
-        }
-        if "gap_id" in raw_gap:
-            gap_id = require_string(raw_gap.get("gap_id"), f"{context} gap_id")
-            if gap_id in gap_ids:
-                raise CivError(f"label pack contains duplicate gap_id '{gap_id}'")
-            gap_ids.add(gap_id)
-            normalized["gap_id"] = gap_id
-        if "reason" in raw_gap:
-            normalized["reason"] = require_string(raw_gap.get("reason"), f"{context} reason")
-        gaps.append(normalized)
-    _validate_order_and_overlap(gaps, "data_gaps")
+    labels, gaps = parse_reference_intervals(
+        pack, context_name="label pack",
+        labels_context="label pack labels", gaps_context="label pack data_gaps",
+    )
 
     provenance_value = pack.get("provenance")
     provenance: dict[str, object] | None = None
@@ -382,7 +287,9 @@ def _mcap_statistics(path: Path) -> dict[str, int]:
     }
 
 
-def _product_binding(path: Path) -> ProductBinding:
+def _product_binding(
+    path: Path, *, permitted_splits: frozenset[str] = frozenset({"sealed"})
+) -> ProductBinding:
     manifest = read_json_file(path, "data-product manifest")
     _closed(manifest, MANIFEST_FIELDS, "data-product manifest")
     if manifest.get("contract") != DATA_PRODUCT_CONTRACT:
@@ -401,8 +308,10 @@ def _product_binding(path: Path) -> ProductBinding:
     dataset = require_string(provenance.get("dataset"), "data-product manifest dataset")
     if dataset not in {"kashiwa", "reims"}:
         raise CivError(f"unsupported sealed dataset '{dataset}'")
-    if provenance.get("split") != "sealed":
-        raise CivError("label packs require sealed data-product manifests")
+    if provenance.get("split") not in permitted_splits:
+        if permitted_splits == frozenset({"sealed"}):
+            raise CivError("label packs require sealed data-product manifests")
+        raise CivError("data-product manifest split does not permit this review")
     if recipe.get("contract") != DATA_PRODUCT_RECIPE_CONTRACT:
         raise CivError("data-product manifest names an unsupported recipe contract")
     if recipe.get("writer") != DATA_PRODUCT_WRITER:

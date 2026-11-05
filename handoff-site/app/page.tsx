@@ -60,7 +60,7 @@ export default function Home() {
           <>
             This local door exposes both views. Production contains only the participant app;
             organizer material is absent from both server and client artifacts. See{" "}
-            <code>HACKATHON-HANDOFF.md</code> for the full handoff.
+            <code>docs/organizers/README.md</code> for the current organizer checklist.
           </>
         }
         backTo="#top"

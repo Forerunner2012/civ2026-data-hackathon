@@ -1,29 +1,52 @@
 # CIV 2026 data hackathon
 
-This repository builds the offline attendee kit, participant-safe website, command-line workflow,
-and organizer operations for the CIV 2026 Data Detective hackathon.
+Inspect robotics recordings, write YAML EventSpecs, review detected intervals, and submit
+reproducible results without bundling source data. Built for the CIV 2026 data hackathon,
+this project includes a command-line workflow, an offline participant kit, a companion website,
+and tools for organizers to prepare and score a session.
 
 ## Start here
 
-- **Attending the hackathon:** follow the [QuickStart](docs/quickstart.md) from the root of the
-  unpacked kit. It is the shortest path from environment check to a submission bundle.
-- **Using an assembled offline kit:** open `site/index.html`, then read the kit's `README.md` for
-  platform, viewer, fallback, and container details.
-- **Developing this repository:** read [CONTEXT.md](CONTEXT.md) and
-  [docs/agents/domain.md](docs/agents/domain.md), then use `uv sync` and `uv run pytest`.
-- **Working on an issue:** follow [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
-
-## Reference sections
-
-| Concern | Reference |
+| I want to | Start with |
 | --- | --- |
-| First successful attendee run | [QuickStart](docs/quickstart.md) |
-| Attendee kit operation and viewers | [kit/README.md](kit/README.md) |
-| EventSpec contract and examples | [Phase 2 stable contracts](docs/phase2/stable-contracts-and-compatibility.md) |
-| Participant kit inventory | [Phase 4 inventory](docs/phase4/participant-kit-inventory.md) |
-| Release and workstation evidence | [Phase 5 release freeze](docs/phase5/release-freeze.md) |
-| Website development | [handoff-site/README.md](handoff-site/README.md) |
+| Take part in a session | [Participant quickstart](docs/quickstart.md) |
+| Run a hackathon | [Organizer guide](docs/organizers/README.md) |
+| Adapt it for another session | [Adapt a session](docs/organizers/adapt-session.md) |
+| Contribute code or documentation | [Contributing](CONTRIBUTING.md) |
 
-Large viewer binaries, recordings, containers, generated bundles, and runtime evidence are release
-inputs. They are assembled into the attendee kit and verified by hash; they are not committed to
-this repository.
+If you have an assembled kit, open `site/index.html` and its `README.md` for local paths,
+viewers, and setup instructions. Use the inputs and runtime qualified for your session.
+
+## Repository layout
+
+| Directory | Purpose |
+| --- | --- |
+| [docs/](docs/README.md) | Participant guides, organizer procedures, reference, and project history. |
+| [src/civ_workshop/](src/civ_workshop/) | Python CLI and analysis tools, with organizer review tools under `organizer/`. |
+| [participant/](participant/README.md) | Package build target for the participant-only CLI. |
+| [handoff-site/](handoff-site/README.md) | Companion website and its audience-specific builds. |
+| [kit/](kit/README.md) | Offline kit templates, guide copies, and third-party notices. |
+| [examples/](examples/README.md) | EventSpecs and point resources grouped by dataset. |
+| [layouts/](layouts/README.md) | Lichtblick and PlotJuggler viewer layouts. |
+| [practice-labels/](practice-labels/README.md) | Instructions for separately supplied practice references. |
+| [schemas/](schemas/) | Versioned JSON schemas for analysis and organizer artifacts. |
+| [scripts/](scripts/) | Onboarding and presentation helpers. |
+| [tests/](tests/) | Automated checks and synthetic fixtures. |
+
+Browse the [documentation index](docs/README.md) for contracts, scoring rules, and setup,
+or read the [CIV 2026 history](docs/history/README.md) for the original implementation and event records.
+
+Recordings and assembled kits are supplied separately. Keep recordings, imagery, viewer binaries,
+containers, generated bundles, and runtime evidence out of Git. Each session needs its own
+data permissions, runtime qualification, and release approval.
+
+The root [LICENSE](LICENSE) covers eligible original contributions, and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
+and [kit/ATTRIBUTION.md](kit/ATTRIBUTION.md) identify the separate terms for third-party materials and datasets.
+
+## Credits
+
+Breakout-session suggestions came from [Powei Liao](https://www.linkedin.com/in/powei-liao/), [Dr. Matthieu Carré](https://www.linkedin.com/in/matthieucarreutc/), and Bo Qian.
+
+We thank Tsukada Laboratory, [Prof. Manabu Tsukada](https://www.linkedin.com/in/manabutsukada/), and [Ehsan Javanmardi](https://www.linkedin.com/in/ehsan-javanmardi-7326b6a8/).
+
+We also thank the CIV committee, including [Arnaud de La Fortelle](https://www.linkedin.com/in/arnaud-de-la-fortelle/), and the [CIV summer school](https://civ-summerschool.org/).

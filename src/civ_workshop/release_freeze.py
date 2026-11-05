@@ -6,13 +6,16 @@ import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from hashlib import sha256
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 from civ_workshop.artifacts import canonical_json, file_sha256, read_json_file
+from civ_workshop.artifacts import require_mapping as _mapping
+from civ_workshop.artifacts import require_string as _string
 from civ_workshop.contracts import require_closed_fields
 from civ_workshop.errors import CivError
 from civ_workshop.kit_assembly import audit_assembly
+from civ_workshop.submission_extension import contained_archive_path, safe_archive_path
 
 CONTRACT = "civ.release-freeze/v1"
 CONTRACT_V2 = "civ.release-freeze/v2"
@@ -233,22 +236,10 @@ LEGAL_PACKAGE_FIELDS = {
 }
 
 
-def _mapping(value: object, context: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise CivError(f"{context} must be a mapping")
-    return {str(key): item for key, item in value.items()}
-
-
 def _sequence(value: object, context: str) -> list[object]:
     if not isinstance(value, list):
         raise CivError(f"{context} must be a list")
     return list(value)
-
-
-def _string(value: object, context: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise CivError(f"{context} must be a non-empty string")
-    return value.strip()
 
 
 def _sha256(value: object, context: str) -> str:
@@ -273,9 +264,7 @@ def _positive_integer(value: object, context: str) -> int:
 
 def _target(value: object, context: str = "release target") -> str:
     target = _string(value, context)
-    path = PurePosixPath(target)
-    if path.is_absolute() or ".." in path.parts or str(path) != target or "\\" in target:
-        raise CivError(f"{context} must be a normalized relative path: {target}")
+    safe_archive_path(target, context)
     return target
 
 
@@ -629,7 +618,7 @@ def build_legal_approval_document(
         records: list[dict[str, str]] = []
         for raw_target in sorted(set(targets)):
             target = _target(raw_target, context)
-            path = evidence_root / Path(target)
+            path = contained_archive_path(evidence_root, target, "release target")
             if not path.is_file():
                 raise CivError(f"{context} does not exist: {target}")
             records.append({"sha256": file_sha256(path), "target": target})
@@ -675,7 +664,7 @@ def _artifact_record(root: Path, declaration: Mapping[str, object]) -> dict[str,
     if set(declaration) != ARTIFACT_DECLARATION_FIELDS:
         raise CivError("artifact declaration must contain role, target, platform, and provenance")
     target = _target(declaration["target"])
-    path = root / Path(target)
+    path = contained_archive_path(root, target, "release target")
     if not path.is_file():
         raise CivError(f"release artifact does not exist: {target}")
     return {
@@ -710,7 +699,9 @@ def _validate_legal_review(
     if review.get("sboms") != expected_sboms:
         raise CivError("legal review does not bind the exact frozen SBOMs")
     sbom_paths = [
-        evidence_root / Path(_target(record.get("target"), "legal SBOM target"))
+        contained_archive_path(
+            evidence_root, _target(record.get("target"), "legal SBOM target"), "legal SBOM target"
+        )
         for record in sbom_records
     ]
     expected_packages, _ = _legal_package_records(sbom_paths)
@@ -762,11 +753,11 @@ def _validate_legal_review(
         source_target = package.get("source_target")
         if review_mode == PACKAGE_REVIEW_MODE and COPYLEFT_PATTERN.search(concluded):
             source = _target(source_target, "copyleft source_target")
-            if not (evidence_root / Path(source)).is_file():
+            if not (contained_archive_path(evidence_root, source, "release target")).is_file():
                 raise CivError(f"copyleft source archive does not exist: {source}")
         elif source_target is not None:
             source = _target(source_target, "legal source_target")
-            if not (evidence_root / Path(source)).is_file():
+            if not (contained_archive_path(evidence_root, source, "release target")).is_file():
                 raise CivError(f"legal source archive does not exist: {source}")
     unresolved_count = _non_negative_integer(
         review.get("unresolved_count"), "legal unresolved_count"
@@ -781,7 +772,7 @@ def _validate_legal_review(
     if len(source_archives) != len(set(source_archives)):
         raise CivError("legal source_archives must be unique")
     for target in source_archives:
-        if not (evidence_root / Path(target)).is_file():
+        if not (contained_archive_path(evidence_root, target, "release target")).is_file():
             raise CivError(f"legal source archive does not exist: {target}")
     approval_id = _string(review.get("approval_id"), "legal approval_id")
     if not approval_id.startswith("human-"):
@@ -1103,7 +1094,9 @@ def build_release_freeze(
         artifact = next((record for record in artifacts if record["target"] == target), None)
         if artifact is None or artifact["role"] != "sbom":
             raise CivError(f"SBOM target is not declared as an SBOM artifact: {target}")
-        spdx_document = _spdx_document(evidence_root / Path(target), f"SBOM {target}")
+        spdx_document = _spdx_document(
+            contained_archive_path(evidence_root, target, "release target"), f"SBOM {target}"
+        )
         subject = _string(item["subject"], f"SBOM {target} subject")
         namespace = _string(
             spdx_document.get("documentNamespace"), f"SBOM {target} namespace"
@@ -1144,7 +1137,9 @@ def build_release_freeze(
         raise CivError("notices target must be declared as a third-party-notices artifact")
     legal_approval_id, legal_packages, legal_review_mode, legal_unresolved_count = (
         _validate_legal_review(
-        evidence_root / Path(legal_target), sboms, evidence_root
+            contained_archive_path(evidence_root, legal_target, "release target"),
+            sboms,
+            evidence_root,
         )
     )
     if legal_review_mode == PACKAGE_REVIEW_MODE:
@@ -1157,11 +1152,13 @@ def build_release_freeze(
     elif "corresponding-source" not in roles:
         raise CivError("global risk acceptance must retain available source evidence")
     expected_notices = _render_notices(legal_packages)
-    actual_notices = (evidence_root / Path(notices_target)).read_text(encoding="utf-8")
+    actual_notices = contained_archive_path(
+        evidence_root, notices_target, "release target"
+    ).read_text(encoding="utf-8")
     if actual_notices != expected_notices:
         raise CivError("third-party notices do not match the approved legal package review")
     legal_approval = _validate_legal_approval(
-        evidence_root / Path(legal_approval_target),
+        contained_archive_path(evidence_root, legal_approval_target, "release target"),
         approval_id=legal_approval_id,
         legal_review=legal_artifact,
         notices=notices_artifact,
@@ -1282,7 +1279,7 @@ def audit_release_freeze(
     for item in artifacts:
         target = _target(item.get("target"))
         targets.append(target)
-        path = evidence_root / Path(target)
+        path = contained_archive_path(evidence_root, target, "release target")
         if not path.is_file():
             raise CivError(f"release artifact does not exist: {target}")
         if item.get("sha256") != file_sha256(path) or item.get("byte_size") != path.stat().st_size:
@@ -1314,14 +1311,18 @@ def audit_release_freeze(
         raise CivError("release legal approval artifact is missing")
     approval_id, legal_packages, legal_review_mode, legal_unresolved_count = (
         _validate_legal_review(
-        evidence_root / Path(legal_review_target), sboms, evidence_root
+            contained_archive_path(evidence_root, legal_review_target, "release target"),
+            sboms,
+            evidence_root,
         )
     )
     if legal.get("review_mode") != legal_review_mode:
         raise CivError("release legal review_mode changed")
     if legal.get("unresolved_count") != legal_unresolved_count:
         raise CivError("release legal unresolved_count changed")
-    notice_path = evidence_root / Path(_target(legal.get("notice_target"), "notice target"))
+    notice_path = contained_archive_path(
+        evidence_root, _target(legal.get("notice_target"), "notice target"), "notice target"
+    )
     if legal.get("notice_sha256") != file_sha256(notice_path):
         raise CivError("third-party notices changed")
     if notice_path.read_text(encoding="utf-8") != _render_notices(legal_packages):
@@ -1332,7 +1333,9 @@ def audit_release_freeze(
     if notices_artifact is None:
         raise CivError("release third-party notices artifact is missing")
     validated_approval = _validate_legal_approval(
-        evidence_root / Path(str(legal_approval_artifact["target"])),
+        contained_archive_path(
+            evidence_root, str(legal_approval_artifact["target"]), "approval target"
+        ),
         approval_id=approval_id,
         legal_review=legal_review_artifact,
         notices=notices_artifact,

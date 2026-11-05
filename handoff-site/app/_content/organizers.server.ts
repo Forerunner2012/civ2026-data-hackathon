@@ -203,10 +203,20 @@ export const blockers = [
 ];
 
 export const sources = [
-  "exploration/data-hackathon-01-brainstorming.md — initial goals and inheritance from CIV 2025",
-  "exploration/data-hackathon-02-survey-and-directions.md — architecture, evaluation and preparation",
-  "exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md — rule ladder and proof contract",
-  ".scratch/civ2026-challenge-spec/map.md — complete 25-ticket decision map",
+  "docs/history/planning/exploration/data-hackathon-01-brainstorming.md — initial goals and inheritance from CIV 2025",
+  "docs/history/planning/exploration/data-hackathon-02-survey-and-directions.md — architecture, evaluation and preparation",
+  "docs/history/planning/exploration/side-chat-explorations/handoff-recommended-hackathon-shape.md — rule ladder and proof contract",
+  "docs/history/planning/challenge-spec/map.md — complete 25-ticket decision map",
   ".scratch/civ2026-challenge-spec/research/23-tool-licence-audit.md — primary-source licence and release audit",
   ".scratch/civ2026-challenge-spec/research/survey_reims_bag.py + ticket 24 — measured Reims manoeuvre, GNSS and zone evidence",
 ];
+
+/** Approved historical design; original planning exports below remain preserved as evidence. */
+export const historicalDesign = [
+  { id: "purpose", title: "Purpose", description: "Turn observations in robotics recordings into reproducible EventSpec rules. Support the result with inspected evidence, a documented failure, and a concrete next action." },
+  { id: "challenge", title: "Challenge", description: "Develop the first rule on URT-Kashiwa, then test what transfers to the Reims sensor stack. The historical target manoeuvres are Kashiwa right turns and Reims left turns. Unprotected is scenario context; a detected turn does not prove it." },
+  { id: "workflow", title: "Workflow", description: "Inspect the recording, write an EventSpec, run it across practice recordings, review evidence, and refine one failure. Transfer the workflow to the second stack, then reproduce and submit the result. External-resource work is an optional extension. Exact commands remain in the canonical quickstart." },
+  { id: "requirements", title: "Requirements", description: "Submit the detector/EventSpec, normalized events, metrics, capped report, figure, reproduction entry point, and run manifest in the metadata-only bundle. Keep source recordings and evidence clips local. No paid model, API key, or GPU is required." },
+  { id: "evaluation", title: "Evaluation", description: "The historical scoring framework combines 55 machine points, 45 jury points, and up to 20 evidence-backed bonus points. Temporal interval matching uses IoU ≥ 0.5, one-to-one matching, and F1. Jury awards follow the rubric and accepted artifacts, with defined human arbitration." },
+  { id: "organizing", title: "Organizing choices", description: "Participants worked solo or in pairs. Coaches supported the next observation without supplying solutions or private evaluation facts. The design included timed checkpoints, tooling recovery, metadata-only intake, written feedback, and consent for selected walkthroughs." },
+] as const;

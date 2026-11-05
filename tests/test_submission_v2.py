@@ -17,7 +17,13 @@ from civ_workshop.reporting import (
     write_canonical_submission_bundle,
 )
 from civ_workshop.submission_extension import MAX_EXTENSION_PAYLOAD_BYTES
-from tests.helpers import MicroCase, create_micro_case, prepare_scored_submission
+from tests.helpers import (
+    MICRO_REPORT,
+    MicroCase,
+    create_micro_case,
+    prepare_scored_submission,
+    run_civ,
+)
 
 
 def _resource_case(root: Path) -> tuple[MicroCase, Path]:
@@ -86,9 +92,7 @@ def _add_extension_payloads(working: Path) -> dict[str, bytes]:
             }
         )
     manifest["entries"].sort(key=lambda entry: entry["path"])
-    manifest_path.write_text(
-        canonical_json(manifest) + "\n", encoding="utf-8", newline="\n"
-    )
+    manifest_path.write_text(canonical_json(manifest) + "\n", encoding="utf-8", newline="\n")
     return payloads
 
 
@@ -103,9 +107,7 @@ def _legacy_v1_bundle(case: MicroCase, root: Path) -> Path:
         "contract": "civ.submission-bundle/v1",
         "reproduction": manifest["submission"]["reproduction"],
     }
-    manifest_path.write_text(
-        canonical_json(manifest) + "\n", encoding="utf-8", newline="\n"
-    )
+    manifest_path.write_text(canonical_json(manifest) + "\n", encoding="utf-8", newline="\n")
     entries = validate_submission_directory(working, require_submission=True)
     bundle = working / "submission-v1.zip"
     write_canonical_submission_bundle(bundle, working, entries)
@@ -175,12 +177,92 @@ def test_v1_and_v2_bundles_share_deterministic_form_and_usb_authority(
     assert validate_submission_bundle(v1) == file_sha256(v1)
 
 
+def test_point_submission_without_practice_truth_reaches_intake_and_reproduces(
+    tmp_path: Path,
+) -> None:
+    case, resource = _resource_case(tmp_path / "case")
+    working = tmp_path / "working"
+    # The participant workflow must succeed without reading any truth file.
+    case.labels.unlink()
+    for command in (
+        ["detect", str(case.spec), str(case.bag), "--output", str(working)],
+        ["clip", str(working / "events.jsonl"), str(case.bag)],
+        ["score", str(working)],
+    ):
+        result = run_civ(case.root, command)
+        assert result.returncode == 0, result.stderr
+    metrics = json.loads((working / "metrics.json").read_text())
+    assert metrics["status"] == "not_evaluated"
+    assert metrics["aggregate"] == {
+        "counts": None,
+        "precision": None,
+        "recall": None,
+        "f1": None,
+        "match_quality": None,
+    }
+    assert metrics["label_pack_sha256"] is None
+    (working / "report.md").write_text(MICRO_REPORT, encoding="utf-8")
+    (working / "figure.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"></svg>\n',
+        encoding="utf-8",
+    )
+    (working / "reproduce.sh").write_text(
+        "civ detect detector/detector.yaml REIMS.mcap --output replay\n"
+        "civ clip replay/events.jsonl REIMS.mcap\nciv score replay\n",
+        encoding="utf-8",
+    )
+    result = run_civ(case.root, ["report", str(working)])
+    assert result.returncode == 0, result.stderr
+    ledger = IntakeLedger(tmp_path / "intake")
+    receipt = ledger.accept_local(
+        identity="team-points",
+        track_id="reims-caves-optional",
+        received_at="2026-09-03T12:00:00+09:00",
+        submitted_sha256=file_sha256(working / "submission.zip"),
+        bundle_path=working / "submission.zip",
+        delivery_id="points-no-truth",
+    )
+    assert receipt.track_id == "reims-caves-optional"
+    with open_validated_submission(working / "submission.zip") as extracted:
+        reproduced = tmp_path / "reproduced"
+        detect_events(extracted / "detector/detector.yaml", case.bag, reproduced)
+        assert (reproduced / "events.jsonl").read_bytes() == (working / "events.jsonl").read_bytes()
+        assert (extracted / "detector/caves.json").read_bytes() == resource.read_bytes()
+
+
+@pytest.mark.parametrize("mutation", ["score", "missing_matching", "missing_label_hash"])
+def test_unevaluated_metrics_enforce_the_contract(tmp_path: Path, mutation: str) -> None:
+    from civ_workshop.scoring import score_submission
+
+    case = create_micro_case(tmp_path / "case")
+    working = tmp_path / "working"
+    prepare_scored_submission(case, working)
+    score_submission(working)
+    path = working / "metrics.json"
+    metrics = json.loads(path.read_text())
+    if mutation == "score":
+        metrics["aggregate"]["f1"] = 1.0
+    else:
+        del metrics["matching" if mutation == "missing_matching" else "label_pack_sha256"]
+    path.write_text(canonical_json(metrics) + "\n", encoding="utf-8")
+    manifest_path = working / "run-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["metrics"]["sha256"] = file_sha256(path)
+    manifest_path.write_text(canonical_json(manifest) + "\n", encoding="utf-8")
+    with pytest.raises(CivError, match="unevaluated metrics"):
+        build_report_bundle(working)
+
+
 @pytest.mark.parametrize(
     ("mutation", "diagnostic"),
     [
         ("missing", "payload is missing"),
         ("changed", "payload hash changed"),
         ("traversing", "contained archive-relative POSIX path"),
+        ("drive", "contained archive-relative POSIX path"),
+        ("stream", "contained archive-relative POSIX path"),
+        ("device", "contained archive-relative POSIX path"),
+        ("alias", "contained archive-relative POSIX path"),
         ("forbidden", "payload is forbidden"),
         ("case-collision", "duplicate or case-colliding path"),
     ],
@@ -201,6 +283,13 @@ def test_v2_rejects_invalid_extension_payloads(
         target.write_text("changed", encoding="utf-8")
     elif mutation == "traversing":
         manifest["entries"][1]["path"] = "../provenance.md"
+    elif mutation in {"drive", "stream", "device", "alias"}:
+        manifest["entries"][1]["path"] = {
+            "drive": "C:provenance.md",
+            "stream": "extension/provenance.md:stream",
+            "device": "extension/NUL.md",
+            "alias": "extension/provenance.md.",
+        }[mutation]
     elif mutation == "forbidden":
         forbidden = working / "extension" / "labels.json"
         forbidden.write_bytes(payloads["extension/regression-test.json"])
@@ -219,6 +308,7 @@ def test_v2_rejects_invalid_extension_payloads(
 
     with pytest.raises(CivError, match=diagnostic):
         build_report_bundle(working)
+    assert not (working / "submission.zip").exists()
 
 
 def test_v2_rejects_extension_payload_size_limit(tmp_path: Path) -> None:

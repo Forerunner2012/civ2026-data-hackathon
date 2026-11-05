@@ -13,6 +13,7 @@ from civ_workshop.artifacts import (
     require_string,
 )
 from civ_workshop.contracts import (
+    STABLE_FIELDS,
     require_closed_fields,
     require_run_contracts,
     require_stable_contract,
@@ -41,7 +42,7 @@ MAX_SUBMISSION_ARCHIVE_ENTRIES = 16
 TEMPLATE_MARKER = "CIV_TEMPLATE_REPLACE_ME"
 
 
-def _detector_spec(working: Path) -> Path:
+def submission_spec_path(working: Path) -> Path:
     detector_directory = working / "detector"
     if not detector_directory.is_dir():
         raise CivError("submission is missing the detector directory")
@@ -117,7 +118,11 @@ def _validate_report(working: Path) -> tuple[Path, Path]:
     ]
     detect_command = re.compile(r"^(?:&\s*)?(?:uv\s+run\s+)?civ\s+detect(?:\s|$)")
     if not any(detect_command.match(line) for line in command_lines):
-        raise CivError("reproduction entry point must invoke civ detect")
+        raise CivError(
+            "reproduction entry point must invoke civ detect on a direct command line; "
+            "supported prefixes: civ detect, uv run civ detect, & civ detect, "
+            "or & uv run civ detect; wrappers and command variables are not recognized"
+        )
     return figure_path, reproduction[0]
 
 
@@ -196,13 +201,29 @@ def _validate_manifest(
     ):
         raise CivError("metrics.json hash does not match the run manifest")
     metrics = read_json_file(metrics_path, "metrics")
-    require_stable_contract(
-        metrics.get("contract"),
-        kind="metrics",
-        expected="civ.metrics/v1",
-        candidate="civ.metrics/v1alpha1",
-    )
-    require_closed_fields(metrics, kind="metrics", expected="civ.metrics/v1")
+    if metrics.get("contract") == "civ.metrics/v2":
+        require_closed_fields(metrics, kind="metrics", expected="civ.metrics/v2")
+        if set(metrics) != STABLE_FIELDS["civ.metrics/v2"]:
+            raise CivError("unevaluated metrics are missing required fields")
+        empty = dict.fromkeys(("counts", "precision", "recall", "f1", "match_quality"))
+        if (
+            metrics.get("status") != "not_evaluated"
+            or not isinstance(metrics.get("reason"), str)
+            or not str(metrics["reason"]).strip()
+            or metrics.get("label_pack_sha256") is not None
+            or metrics.get("matching") is not None
+            or metrics.get("aggregate") != empty
+            or metrics.get("datasets") != [{**empty, "source_sha256": source_hash}]
+        ):
+            raise CivError("unevaluated metrics must have null scores and match the run source")
+    else:
+        require_stable_contract(
+            metrics.get("contract"),
+            kind="metrics",
+            expected="civ.metrics/v1",
+            candidate="civ.metrics/v1alpha1",
+        )
+        require_closed_fields(metrics, kind="metrics", expected="civ.metrics/v1")
 
     if require_submission and "submission" not in manifest:
         raise CivError("run manifest is missing the submission declaration")
@@ -389,7 +410,7 @@ def validate_submission_directory(
     if not working.is_dir():
         raise CivError(f"submission working directory does not exist: {working}")
     figure_path, reproduction_path = _validate_report(working)
-    spec_path = _detector_spec(working)
+    spec_path = submission_spec_path(working)
     manifest_contract = _validate_manifest(
         working,
         spec_path,

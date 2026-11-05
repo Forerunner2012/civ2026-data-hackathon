@@ -18,8 +18,45 @@ from civ_workshop.label_packs import (
     load_label_pack,
     validate_label_pack,
 )
+from civ_workshop.score_reference import validate_score_reference
 from civ_workshop.scoring import score_submission
 from tests.helpers import create_micro_case, run_complete_workflow, write_micro_bag
+
+
+@pytest.mark.parametrize("alteration", ["none", "kind", "writer", "truth", "missing", "policy"])
+def test_participant_structure_and_organizer_provenance_remain_distinct(
+    tmp_path: Path, alteration: str
+) -> None:
+    case = create_micro_case(tmp_path / "case")
+    document = json.loads(case.labels.read_text("utf-8"))
+    document["scoring"] = dict(SCORING_POLICY)
+    document["provenance"] = {
+        "product_manifest_sha256": "a" * 64, "source_id": "synthetic",
+        "source_sha256": "b" * 64, "truth_sha256": "c" * 64,
+        "truth_contract": "civ.phase3.source-relative-truth/v1",
+        "timestamp_mapping": {
+            "kind": "identity-log-time-ns", "writer": "civ-workshop/data-products-v1",
+            "product_message_end_ns": 10, "product_message_start_ns": 0,
+            "source_message_end_ns": 10, "source_message_start_ns": 0,
+        },
+    }
+    if alteration in {"kind", "writer"}:
+        document["provenance"]["timestamp_mapping"][alteration] = "other"
+    elif alteration == "truth":
+        document["provenance"]["truth_contract"] = "other"
+    elif alteration == "missing":
+        del document["provenance"]
+    elif alteration == "policy":
+        del document["scoring"]
+
+    participant = validate_score_reference(document)
+    if alteration == "none":
+        assert participant == validate_label_pack(document, require_provenance=True)
+    else:
+        with pytest.raises(CivError):
+            validate_label_pack(document, require_provenance=True)
+    if alteration in {"missing", "policy"}:
+        assert participant == validate_label_pack(document)
 
 
 def _write_json(path: Path, value: object) -> None:
