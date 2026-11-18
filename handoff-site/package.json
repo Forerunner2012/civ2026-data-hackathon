@@ -16,7 +16,7 @@
     "test:navigation": "node scripts/check-participant-navigation.mjs"
   },
   "dependencies": {
-    "next": "16.2.6",
+    "next": "16.4.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "server-only": "0.0.1"
